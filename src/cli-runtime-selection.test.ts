@@ -187,7 +187,7 @@ it("does not bypass adapter root validation through an existing connection", asy
 it("preserves rejection of unsupported website-script modes", async () => {
 	vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", "/trusted/fixture");
 	vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", "extension");
-	vi.stubEnv("AGENT_BROWSER_PAGE_SCRIPTS", "module");
+	vi.stubEnv("AGENT_BROWSER_PAGE_SCRIPTS", "modules");
 	const { error } = await invoke();
 	expect(JSON.parse(error.mock.calls[0][0])).toMatchObject({
 		error: { code: "invalid-input" },

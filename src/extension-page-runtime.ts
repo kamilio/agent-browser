@@ -1,4 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
+import type { HtmlModuleRequest } from "./html-module.js";
 import {
 	type PageNetworkModuleOptions,
 	PageNetworkModuleRegistry,
@@ -100,8 +101,20 @@ export function extensionPageRuntime(
 					"aborted",
 					"Page runtime creation was aborted",
 				);
+			const runtimeModuleOptions = options.networkSourceModules;
+			if (runtimeModuleOptions !== undefined && modules !== undefined)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Runtime and factory module configurations cannot be combined",
+				);
+			const selectedModules =
+				runtimeModuleOptions !== undefined
+					? new PageNetworkModuleRegistry(runtimeModuleOptions)
+					: modules;
+			const htmlEntries =
+				(runtimeModuleOptions ?? networkModuleOptions)?.htmlEntries === true;
 			const controller = new AbortController();
-			const moduleScope = modules?.createScope(
+			const moduleScope = selectedModules?.createScope(
 				controller.signal,
 				options.limits.maxSourceCodeUnits,
 			);
@@ -298,6 +311,16 @@ export function extensionPageRuntime(
 			return {
 				budget,
 				supportsSourceModules: moduleScope !== undefined,
+				...(htmlEntries && moduleScope && "prepareHtmlModule" in moduleScope
+					? {
+							prepareModule: async (request: HtmlModuleRequest) => {
+								ensureOpen();
+								const source = await moduleScope.prepareHtmlModule(request);
+								ensureOpen();
+								return source;
+							},
+						}
+					: {}),
 				get closed() {
 					return closed;
 				},

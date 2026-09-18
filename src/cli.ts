@@ -51,6 +51,25 @@ function runtimeConfiguration() {
 			"invalid-input",
 			"AGENT_BROWSER_PAGE_RUNTIME requires an explicit SafeJS package root",
 		);
+	if (
+		websiteScripts !== undefined &&
+		websiteScripts !== "classic" &&
+		websiteScripts !== "module"
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"AGENT_BROWSER_PAGE_SCRIPTS must be classic or module when provided",
+		);
+	if (websiteScripts === "module" && runtimeAdapter !== "extension")
+		throw new AgentBrowserError(
+			"unsupported",
+			"Module website scripts require AGENT_BROWSER_PAGE_RUNTIME=extension",
+		);
+	if (websiteScripts && !packageRoot)
+		throw new AgentBrowserError(
+			"unsupported",
+			"Website scripts require an explicit SafeJS process runtime",
+		);
 	const resourceCache = resourceCacheFromEnvironment(
 		process.env.AGENT_BROWSER_RESOURCE_CACHE,
 		{
@@ -66,7 +85,7 @@ function runtimeConfiguration() {
 		secretConfig,
 		websiteScripts,
 		resourceCache,
-	};
+	} as const;
 }
 
 async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
@@ -82,16 +101,6 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 	const secrets = await loadSecretConfig(secretConfig, {
 		processRuntime: packageRoot !== undefined,
 	});
-	if (websiteScripts !== undefined && websiteScripts !== "classic")
-		throw new AgentBrowserError(
-			"invalid-input",
-			"AGENT_BROWSER_PAGE_SCRIPTS must be classic when provided",
-		);
-	if (websiteScripts && !packageRoot)
-		throw new AgentBrowserError(
-			"unsupported",
-			"Website scripts require an explicit SafeJS process runtime",
-		);
 	if (packageRoot !== undefined)
 		return new SessionProcessHost({
 			process: { packageRoot, websiteScripts, runtimeAdapter, identity },

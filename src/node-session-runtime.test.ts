@@ -214,7 +214,7 @@ it("does not spawn for invalid website-script configuration", async () => {
 		BrowserSessionProcess.create({
 			packageRoot: "/trusted/fixture",
 			runtimeAdapter: "extension",
-			websiteScripts: "module",
+			websiteScripts: "modules",
 		} as unknown as SessionProcessOptions),
 	).rejects.toMatchObject({ code: "invalid-input" });
 	expect(boundary.spawn).not.toHaveBeenCalled();

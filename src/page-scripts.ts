@@ -21,6 +21,12 @@ import {
 import type { ScriptCallbackRuntime } from "./script-events.js";
 import type { SessionPage } from "./session.js";
 import { PageClock } from "./page-performance.js";
+import {
+	type HtmlModuleRequest,
+	type HtmlModuleSource,
+	moduleInputData,
+} from "./html-module.js";
+import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 
 export type {
 	PageRealm,
@@ -29,6 +35,7 @@ export type {
 } from "./page-runtime.js";
 
 export interface PageScriptOptions extends PageBindingOptions {
+	networkSourceModules?: PageNetworkModuleOptions;
 	limits?: Partial<ScriptLimits>;
 	maxPendingCallbacks?: number;
 }
@@ -69,7 +76,20 @@ export class PageScripts {
 				"invalid-input",
 				"Invalid page script options",
 			);
+		const networkSourceModules = moduleInputData(
+			options,
+			"networkSourceModules",
+			true,
+		) as PageNetworkModuleOptions | undefined;
 		this.limits = scriptLimits(options.limits);
+		if (networkSourceModules !== undefined) {
+			const documentUrl = moduleInputData(networkSourceModules, "documentUrl");
+			if (documentUrl !== page.document.url)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Module configuration must belong to this document",
+				);
+		}
 		this.maxPending = options.maxPendingCallbacks ?? 128;
 		if (
 			!Number.isSafeInteger(this.maxPending) ||
@@ -107,6 +127,7 @@ export class PageScripts {
 				this.bindings?.console.buffer.write(level, values);
 			};
 			this.runtime = factory.createPageRuntime({
+				...(networkSourceModules !== undefined ? { networkSourceModules } : {}),
 				limits: this.limits,
 				signal: this.lifetime.signal,
 				globals: pageBindingGlobalNames(page.document, options),
@@ -180,6 +201,23 @@ export class PageScripts {
 	}
 	get storage() {
 		return this.requireBindings().storage;
+	}
+
+	get supportsHtmlModules(): boolean {
+		return !this.closed && typeof this.runtime?.prepareModule === "function";
+	}
+
+	async prepareModule(request: HtmlModuleRequest): Promise<HtmlModuleSource> {
+		this.ensureOpen();
+		const runtime = this.runtime;
+		if (!runtime?.prepareModule)
+			throw new AgentBrowserError(
+				"unsupported",
+				"HTML modules require an explicitly configured extension runtime",
+			);
+		const source = await runtime.prepareModule(request);
+		this.ensureOpen();
+		return source;
 	}
 
 	async evaluate(

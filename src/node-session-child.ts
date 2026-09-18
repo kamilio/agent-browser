@@ -11,6 +11,7 @@ import { processPermissions } from "./node-process-boundary.js";
 import { ScriptFrameDecoder, scriptFrame } from "./node-script-protocol.js";
 import { NodeNetworkTransport } from "./node-transport.js";
 import type { PageFetchTransport } from "./page-fetch.js";
+import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 import { pageRuntimeAdapter } from "./page-runtime-selection.js";
 import { type PageScriptOptions, PageScripts } from "./page-scripts.js";
 import { ScriptLoader } from "./script-loader.js";
@@ -80,23 +81,37 @@ async function receive(raw: unknown) {
 		const runtimeAdapter = pageRuntimeAdapter(message.runtimeAdapter);
 		if (
 			message.websiteScripts !== undefined &&
-			message.websiteScripts !== "classic"
+			message.websiteScripts !== "classic" &&
+			message.websiteScripts !== "module"
 		)
 			throw new AgentBrowserError(
 				"invalid-input",
 				"Invalid website script mode",
 			);
+		if (message.websiteScripts === "module" && runtimeAdapter !== "extension")
+			throw new AgentBrowserError(
+				"unsupported",
+				"Module website scripts require the extension page runtime",
+			);
 		const identity = sessionIdentityOptions(message.identity);
 		const sdk = await loadPageRuntime(message.packageRoot, {
 			adapter: runtimeAdapter,
 		});
-		const ownerFor = (document: DocumentTree, fetch?: PageFetchTransport) => {
+		const ownerFor = (
+			document: DocumentTree,
+			fetch?: PageFetchTransport,
+			networkSourceModules?: PageNetworkModuleOptions,
+		) => {
 			let owner = pageOwners.get(document);
 			if (!owner) {
 				owner = new PageScripts(
 					{ document, interactions: documentInteractions(document) },
 					sdk.factory,
-					{ ...(message.scripts as PageScriptOptions | undefined), fetch },
+					{
+						...(message.scripts as PageScriptOptions | undefined),
+						fetch,
+						networkSourceModules,
+					},
 				);
 				pageOwners.set(document, owner);
 				owners.add(owner);
@@ -110,7 +125,10 @@ async function receive(raw: unknown) {
 		};
 		host = new BrowserCommandHost({
 			pageFetch: true,
-			websiteScripts: message.websiteScripts === "classic",
+			websiteScripts:
+				message.websiteScripts === "module"
+					? "module"
+					: message.websiteScripts === "classic",
 			maxSessions: 1,
 			documentFormats: [
 				"text/html",
@@ -126,10 +144,25 @@ async function receive(raw: unknown) {
 							...(message.network as NetworkPolicyOptions | undefined),
 							cookieJar,
 						}),
-					loadDocument: (response, context) =>
-						loadBrowserDocument(response, {
+					loadDocument: (response, context) => {
+						let networkSourceModules: PageNetworkModuleOptions | undefined;
+						if (message.websiteScripts === "module") {
+							if (!context.fetchScriptWithPolicy)
+								throw new AgentBrowserError(
+									"unsupported",
+									"Module website scripts require policy-aware fetching",
+								);
+							networkSourceModules = {
+								documentUrl: response.url,
+								entries: [],
+								htmlEntries: true,
+								fetchWithPolicy: context.fetchScriptWithPolicy,
+							};
+						}
+						return loadBrowserDocument(response, {
 							...context,
-							...(message.websiteScripts === "classic"
+							...(message.websiteScripts === "classic" ||
+							message.websiteScripts === "module"
 								? {
 										scripts: new ScriptLoader({
 											response,
@@ -137,11 +170,16 @@ async function receive(raw: unknown) {
 											signal: context.signal,
 											fetch: context.fetchScript,
 											fetchWithPolicy: context.fetchScriptWithPolicy,
-											owner: (document) => ownerFor(document, context.fetch),
+											...(networkSourceModules
+												? { limits: { modules: true } }
+												: {}),
+											owner: (document) =>
+												ownerFor(document, context.fetch, networkSourceModules),
 										}),
 									}
 								: {}),
-						}),
+						});
+					},
 				}),
 			evaluatePage: (page, source, signal) =>
 				ownerFor(page.document, page.fetch).evaluate(source, { signal }),

@@ -1,11 +1,22 @@
+import { createHash } from "node:crypto";
 import type { FetchCredentials } from "./cors.js";
 import { AgentBrowserError } from "./errors.js";
+import {
+	type HtmlModuleRequest,
+	type HtmlModuleSource,
+	moduleInputData,
+} from "./html-module.js";
 import { parseNetworkUrl } from "./network.js";
 import {
 	type PageSourceModule,
 	pageSourceModuleLimits,
 } from "./page-source-modules.js";
 import type { ScriptFetchPolicy, ScriptFetchResult } from "./script-fetch.js";
+import {
+	type IntegrityAlgorithm,
+	type IntegrityMetadata,
+	parseIntegrityMetadata,
+} from "./subresource-integrity.js";
 
 export interface PageNetworkModuleEntry extends PageSourceModule {
 	readonly baseUrl?: string;
@@ -20,6 +31,7 @@ export interface PageNetworkModuleOptions {
 		signal: AbortSignal,
 	) => Promise<Readonly<ScriptFetchResult>>;
 	readonly credentials?: FetchCredentials;
+	readonly htmlEntries?: boolean;
 }
 
 export const pageNetworkModuleLimits = Object.freeze({
@@ -68,11 +80,7 @@ function aborted(): AgentBrowserError {
 }
 
 function data(record: unknown, key: string, optional = false): unknown {
-	if (!record || typeof record !== "object") throw invalid();
-	const descriptor = Object.getOwnPropertyDescriptor(record, key);
-	if (!descriptor && optional) return undefined;
-	if (!descriptor || !("value" in descriptor)) throw invalid();
-	return descriptor.value;
+	return moduleInputData(record, key, optional);
 }
 
 function text(value: unknown, maximum: number, empty = false): string {
@@ -114,10 +122,8 @@ function awaitResult<Value>(
 	operation: Promise<Value>,
 	signal: AbortSignal,
 ): Promise<Value> {
-	checkSignal(signal);
 	return new Promise((resolve, reject) => {
 		const cancel = () => reject(aborted());
-		signal.addEventListener("abort", cancel, { once: true });
 		operation.then(
 			(value) => {
 				signal.removeEventListener("abort", cancel);
@@ -128,8 +134,35 @@ function awaitResult<Value>(
 				reject(error);
 			},
 		);
+		checkSignal(signal);
+		signal.addEventListener("abort", cancel, { once: true });
 		if (signal.aborted) cancel();
 	});
+}
+
+function inlineIdentity(value: string): boolean {
+	const match = /^urn:agent-browser:html-module:([1-9][0-9]*)$/.exec(value);
+	return match !== null && Number.isSafeInteger(Number(match[1]));
+}
+
+function integrityDenied(): AgentBrowserError {
+	return new AgentBrowserError(
+		"policy-denied",
+		"Module integrity verification failed",
+	);
+}
+
+type IntegrityDigests = Readonly<Record<IntegrityAlgorithm, string>>;
+
+function checkIntegrity(
+	digests: IntegrityDigests | undefined,
+	metadata: Readonly<IntegrityMetadata> | null,
+): void {
+	if (
+		metadata &&
+		(!digests || !metadata.values.includes(digests[metadata.algorithm]))
+	)
+		throw integrityDenied();
 }
 
 export class PageNetworkModuleRegistry {
@@ -139,8 +172,13 @@ export class PageNetworkModuleRegistry {
 	readonly #fetch: PageNetworkModuleOptions["fetchWithPolicy"];
 	readonly #policy: Readonly<ScriptFetchPolicy>;
 	readonly #entryUnits: number;
+	readonly #htmlEntries: boolean;
 
 	constructor(options: PageNetworkModuleOptions) {
+		const htmlEntries = data(options, "htmlEntries", true);
+		if (htmlEntries !== undefined && typeof htmlEntries !== "boolean")
+			throw invalid();
+		this.#htmlEntries = htmlEntries === true;
 		this.#document = parseNetworkUrl(
 			text(
 				data(options, "documentUrl"),
@@ -167,7 +205,7 @@ export class PageNetworkModuleRegistry {
 		if (
 			typeof length !== "number" ||
 			!Number.isSafeInteger(length) ||
-			length < 1
+			length < (this.#htmlEntries ? 0 : 1)
 		)
 			throw invalid();
 		if (length > pageNetworkModuleLimits.sources) throw limited();
@@ -206,8 +244,13 @@ export class PageNetworkModuleRegistry {
 			if (entry.source.length > maximum) throw limited();
 		const sources = new Map(this.#entries);
 		const bases = new Map(this.#entryBases);
+		const policies = new Map(
+			Array.from(sources.keys(), (id) => [id, this.#policy] as const),
+		);
+		const digests = new Map<string, IntegrityDigests>();
 		const requests = new Map<string, Promise<Readonly<PageSourceModule>>>();
 		const waiters: { resolve(): void; reject(error: unknown): void }[] = [];
+		const lifetime = new AbortController();
 		let closed = false;
 		let active = 0;
 		let reservations = 0;
@@ -218,11 +261,16 @@ export class PageNetworkModuleRegistry {
 			checkSignal(signal);
 		};
 		const close = () => {
+			if (closed) return;
 			closed = true;
+			signal.removeEventListener("abort", close);
 			sources.clear();
 			bases.clear();
+			policies.clear();
+			digests.clear();
 			requests.clear();
 			for (const waiter of waiters.splice(0)) waiter.reject(aborted());
+			lifetime.abort();
 		};
 		signal.addEventListener("abort", close, { once: true });
 		const acquire = async () => {
@@ -243,15 +291,20 @@ export class PageNetworkModuleRegistry {
 				next.resolve();
 			}
 		};
-		const load = async (url: URL): Promise<Readonly<PageSourceModule>> => {
+		const load = async (
+			url: URL,
+			policy: Readonly<ScriptFetchPolicy>,
+			integrity: Readonly<IntegrityMetadata> | null,
+		): Promise<Readonly<PageSourceModule>> => {
 			await acquire();
 			try {
 				live();
-				const result = await Reflect.apply(this.#fetch, undefined, [
+				const operation = Reflect.apply(this.#fetch, undefined, [
 					url.href,
-					this.#policy,
-					signal,
+					policy,
+					lifetime.signal,
 				]);
+				const result = await awaitResult(operation, lifetime.signal);
 				live();
 				if (!result || !["basic", "cors"].includes(result.type))
 					throw new AgentBrowserError(
@@ -314,19 +367,141 @@ export class PageNetworkModuleRegistry {
 					units + source.length > pageNetworkModuleLimits.totalSourceCodeUnits
 				)
 					throw limited();
+				const hashes = this.#htmlEntries
+					? Object.freeze({
+							sha256: createHash("sha256")
+								.update(response.body)
+								.digest("base64"),
+							sha384: createHash("sha384")
+								.update(response.body)
+								.digest("base64"),
+							sha512: createHash("sha512")
+								.update(response.body)
+								.digest("base64"),
+						})
+					: undefined;
+				checkIntegrity(hashes, integrity);
 				const value = Object.freeze({ id, source });
 				units += source.length;
 				sources.set(id, value);
 				bases.set(id, finalUrl.href);
+				policies.set(id, policy);
+				if (hashes) digests.set(id, hashes);
 				return value;
 			} finally {
 				release();
 			}
 		};
+		const request = (
+			url: URL,
+			policy: Readonly<ScriptFetchPolicy>,
+			integrity: Readonly<IntegrityMetadata> | null = null,
+		): Promise<Readonly<PageSourceModule>> => {
+			let operation = requests.get(url.href);
+			if (!operation) {
+				const known = sources.get(url.href);
+				if (known) return Promise.resolve(known);
+				if (
+					requests.size >= pageNetworkModuleLimits.fetches ||
+					sources.size + reservations >= pageNetworkModuleLimits.sources
+				)
+					throw limited();
+				reservations++;
+				operation = load(url, policy, integrity).finally(() => {
+					reservations--;
+				});
+				requests.set(url.href, operation);
+				void operation.catch(() => undefined);
+			}
+			return operation;
+		};
 		return Object.freeze({
+			close,
+			prepareHtmlModule: async (
+				input: HtmlModuleRequest,
+			): Promise<Readonly<HtmlModuleSource>> => {
+				live();
+				if (!this.#htmlEntries)
+					throw new AgentBrowserError(
+						"policy-denied",
+						"HTML module entries are not enabled",
+					);
+				if (Array.isArray(input)) throw invalid();
+				const caller = data(input, "signal");
+				checkSignal(caller);
+				const id = text(
+					data(input, "id"),
+					pageNetworkModuleLimits.identifierCodeUnits,
+				);
+				const sourceInput = data(input, "source", true);
+				const source =
+					sourceInput === undefined
+						? undefined
+						: text(sourceInput, maximum, true);
+				const baseInput = data(input, "baseUrl");
+				const base = moduleUrl(baseInput, this.#document).href;
+				if (base !== baseInput) throw invalid();
+				const credentials = data(input, "credentials");
+				if (!["omit", "same-origin", "include"].includes(credentials as string))
+					throw invalid();
+				const policy: Readonly<ScriptFetchPolicy> = Object.freeze({
+					mode: "cors",
+					credentials: credentials as FetchCredentials,
+				});
+				const metadata = data(input, "integrity", true);
+				const integrity = parseIntegrityMetadata(
+					metadata === undefined ? "" : (metadata as string),
+				);
+				live();
+				checkSignal(caller);
+				if (resolutions++ >= pageNetworkModuleLimits.resolutions)
+					throw limited();
+				if (source !== undefined) {
+					if (!inlineIdentity(id)) throw invalid();
+					const known = sources.get(id);
+					if (known) {
+						if (
+							known.source !== source ||
+							bases.get(id) !== base ||
+							policies.get(id)?.credentials !== credentials
+						)
+							throw invalid();
+						return known;
+					}
+					if (
+						sources.size + reservations >= pageNetworkModuleLimits.sources ||
+						units + source.length > pageNetworkModuleLimits.totalSourceCodeUnits
+					)
+						throw limited();
+					const value = Object.freeze({ id, source });
+					units += source.length;
+					sources.set(id, value);
+					bases.set(id, base);
+					policies.set(id, policy);
+					return value;
+				}
+				const url = moduleUrl(id, this.#document);
+				if (url.href !== id) throw invalid();
+				const operation = awaitResult(
+					request(url, policy, integrity),
+					lifetime.signal,
+				);
+				const value = await awaitResult(operation, caller);
+				live();
+				checkSignal(caller);
+				checkIntegrity(digests.get(id), integrity);
+				return value;
+			},
 			validateEntry: (source: string, filename: string | undefined): void => {
 				live();
-				const id = moduleUrl(filename, this.#document).href;
+				const identity = text(
+					filename,
+					pageNetworkModuleLimits.identifierCodeUnits,
+				);
+				const id =
+					this.#htmlEntries && inlineIdentity(identity)
+						? identity
+						: moduleUrl(identity, this.#document).href;
 				if (
 					id !== filename ||
 					sources.get(id)?.source !== text(source, maximum, true)
@@ -355,23 +530,8 @@ export class PageNetworkModuleRegistry {
 				if (!/^(?:\.{0,2}\/|[A-Za-z][A-Za-z0-9+.-]*:)/.test(requested))
 					return undefined;
 				const url = moduleUrl(requested, this.#document, bases.get(parent));
-				let operation = requests.get(url.href);
-				if (!operation) {
-					const known = sources.get(url.href);
-					if (known) return known;
-					if (
-						requests.size >= pageNetworkModuleLimits.fetches ||
-						sources.size + reservations >= pageNetworkModuleLimits.sources
-					)
-						throw limited();
-					reservations++;
-					operation = load(url).finally(() => {
-						reservations--;
-					});
-					requests.set(url.href, operation);
-					void operation.catch(() => undefined);
-				}
-				const shared = awaitResult(operation, signal);
+				const operation = request(url, policies.get(parent) ?? this.#policy);
+				const shared = awaitResult(operation, lifetime.signal);
 				return contextSignal === undefined
 					? shared
 					: awaitResult(shared, contextSignal);

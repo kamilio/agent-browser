@@ -68,6 +68,23 @@ export class SessionProcessHost {
 				"Invalid process host options",
 			);
 		const runtimeAdapter = pageRuntimeAdapter(options.process.runtimeAdapter);
+		if (
+			options.process.websiteScripts !== undefined &&
+			options.process.websiteScripts !== "classic" &&
+			options.process.websiteScripts !== "module"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid website script mode",
+			);
+		if (
+			options.process.websiteScripts === "module" &&
+			runtimeAdapter !== "extension"
+		)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Module website scripts require the extension page runtime",
+			);
 		this.maxSessions = options.maxSessions ?? 8;
 		this.maxPending = options.maxPendingCommands ?? 64;
 		this.maxCommands = options.maxCommands ?? 10_000;
@@ -99,7 +116,10 @@ export class SessionProcessHost {
 			((options) => BrowserSessionProcess.create(options));
 		this.metadata = new BrowserCommandHost({
 			pageFetch: true,
-			websiteScripts: options.process.websiteScripts === "classic",
+			websiteScripts:
+				options.process.websiteScripts === "module"
+					? "module"
+					: options.process.websiteScripts === "classic",
 			maxSessions: this.maxSessions,
 			maxPendingCommands: this.maxPending,
 			maxCommands: this.maxCommands,

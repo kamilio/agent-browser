@@ -1,5 +1,11 @@
 # Automatic classic-script loading
 
+September 18, 2026 integration update: `HTML-MODULES.md` documents the new
+explicit module mode and its extension-runtime requirement. Classic mode stays
+unchanged. Native fake-SDK checks are not actual module/SafeJS/site acceptance;
+top-level-await lifecycle timing remains partial. Dated material below retains
+its original scope and evidence.
+
 September 17, 2026 policy update: `SCRIPT-POLICY.md` describes the new optional
 native CORS/SRI fetch path for external classic scripts. Missing-provider skips,
 CSP/module refusals and separate actual-SafeJS acceptance remain. The September

@@ -29,8 +29,8 @@ export interface SessionProcessOptions {
 	heartbeatTimeoutMs?: number;
 	maxOldSpaceMiB?: number;
 	maxPendingCommands?: number;
-	scripts?: Omit<PageScriptOptions, "fetch">;
-	websiteScripts?: "classic";
+	scripts?: Omit<PageScriptOptions, "fetch" | "networkSourceModules">;
+	websiteScripts?: "classic" | "module";
 	network?: NetworkPolicyOptions;
 }
 
@@ -98,11 +98,20 @@ export class BrowserSessionProcess {
 		this.runtimeAdapter = pageRuntimeAdapter(options.runtimeAdapter);
 		if (
 			options.websiteScripts !== undefined &&
-			options.websiteScripts !== "classic"
+			options.websiteScripts !== "classic" &&
+			options.websiteScripts !== "module"
 		)
 			throw new AgentBrowserError(
 				"invalid-input",
 				"Invalid website script mode",
+			);
+		if (
+			options.websiteScripts === "module" &&
+			this.runtimeAdapter !== "extension"
+		)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Module website scripts require the extension page runtime",
 			);
 		this.session = parseInvocation(["capabilities"], {
 			AGENT_BROWSER_SESSION: options.session,
@@ -230,7 +239,21 @@ export class BrowserSessionProcess {
 	}
 
 	static async create(options: SessionProcessOptions) {
-		pageRuntimeAdapter(options?.runtimeAdapter);
+		const runtimeAdapter = pageRuntimeAdapter(options?.runtimeAdapter);
+		if (
+			options?.websiteScripts !== undefined &&
+			options.websiteScripts !== "classic" &&
+			options.websiteScripts !== "module"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid website script mode",
+			);
+		if (options?.websiteScripts === "module" && runtimeAdapter !== "extension")
+			throw new AgentBrowserError(
+				"unsupported",
+				"Module website scripts require the extension page runtime",
+			);
 		const identity = sessionIdentityOptions(options?.identity);
 		const root = await processReadRoot(options?.packageRoot);
 		const actor = new BrowserSessionProcess(root, options, identity);

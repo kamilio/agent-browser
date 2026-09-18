@@ -10,6 +10,7 @@ import { AgentBrowserError } from "./errors.js";
 import { hasUnsupportedExecutionCsp } from "./execution-content-security-policy.js";
 import { BrowserEvent } from "./events.js";
 import { documentHistory } from "./history.js";
+import type { HtmlModuleRequest, HtmlModuleSource } from "./html-module.js";
 import type { HtmlScriptContext, HtmlScriptHooks } from "./html-parser.js";
 import { documentInteractions } from "./interactions.js";
 import {
@@ -25,6 +26,7 @@ import {
 } from "./subresource-integrity.js";
 
 export interface ScriptLoaderOptions {
+	modules?: boolean;
 	maxScripts?: number;
 	maxExternal?: number;
 	maxSourceBytes?: number;
@@ -32,9 +34,16 @@ export interface ScriptLoaderOptions {
 
 interface ScriptRunner {
 	readonly closed: boolean;
+	readonly supportsHtmlModules?: boolean;
+	prepareModule?(request: HtmlModuleRequest): Promise<HtmlModuleSource>;
 	evaluate(
 		source: string,
-		options: { signal: AbortSignal; filename: string; discardResult: true },
+		options: {
+			signal: AbortSignal;
+			filename: string;
+			discardResult: true;
+			sourceType?: "module";
+		},
 	): Promise<ScriptEvaluation>;
 }
 
@@ -43,6 +52,7 @@ interface Source {
 	text?: string;
 	url: string;
 	external: boolean;
+	module?: boolean;
 	error?: string;
 }
 
@@ -90,12 +100,14 @@ export class ScriptLoader implements HtmlScriptHooks {
 	private readonly asynchronous: Promise<void>[] = [];
 	private readonly fetchWaiters: (() => void)[] = [];
 	private readonly prepared = new Map<number, PreparedScript>();
+	private readonly moduleResults = new Map<string, { error?: string }>();
+	private modules = false;
 	private activeFetches = 0;
 	private parsingFinished = false;
 	private tail = Promise.resolve();
 	private csp = false;
 	private readonly counts = {
-		mode: "classic" as const,
+		mode: "classic" as ScriptLoadReport["mode"],
 		partial: true as const,
 		discovered: 0,
 		executed: 0,
@@ -110,6 +122,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 	private readonly abort = () => {
 		this.controller.abort();
 		this.prepared.clear();
+		this.moduleResults.clear();
 	};
 
 	constructor(
@@ -127,6 +140,14 @@ export class ScriptLoader implements HtmlScriptHooks {
 			limits?: ScriptLoaderOptions;
 		},
 	) {
+		if (
+			options.limits?.modules !== undefined &&
+			typeof options.limits.modules !== "boolean"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid module script mode",
+			);
 		this.maxScripts = options.limits?.maxScripts ?? 64;
 		this.maxExternal = options.limits?.maxExternal ?? 16;
 		this.maxBytes = options.limits?.maxSourceBytes ?? 1_048_576;
@@ -174,6 +195,11 @@ export class ScriptLoader implements HtmlScriptHooks {
 			this.options.signal.removeEventListener("abort", this.abort);
 		});
 		this.runner = this.options.owner(tree);
+		this.modules =
+			this.options.limits?.modules === true &&
+			this.runner.supportsHtmlModules === true &&
+			typeof this.runner.prepareModule === "function";
+		if (this.modules) this.counts.mode = "classic-and-module";
 		this.publish();
 	}
 
@@ -255,12 +281,17 @@ export class ScriptLoader implements HtmlScriptHooks {
 		const node = tree.get(id);
 		const attributes = node.attributes;
 		const type = scriptType(attributes);
-		if (type && !javascriptTypes.has(type)) {
+		const module = type === "module" && this.modules;
+		if (type && !javascriptTypes.has(type) && !module) {
 			this.skip(
 				["module", "importmap", "speculationrules"].includes(type)
 					? `${type}-not-supported`
 					: "data-block",
 			);
+			return { mode: "skip" };
+		}
+		if (this.modules && !module && Object.hasOwn(attributes, "nomodule")) {
+			this.skip("nomodule");
 			return { mode: "skip" };
 		}
 		if (this.blocked()) {
@@ -270,6 +301,18 @@ export class ScriptLoader implements HtmlScriptHooks {
 		if (!tree.isConnected(id)) {
 			this.skip("disconnected-script");
 			return { mode: "skip" };
+		}
+		if (module) {
+			const external = Object.hasOwn(attributes, "src");
+			if (external && ++this.counts.external > this.maxExternal) {
+				this.counts.halted = true;
+				this.skip("external-count-limit");
+				return { mode: "skip" };
+			}
+			return {
+				mode: Object.hasOwn(attributes, "async") ? "async" : "defer",
+				source: this.prepareModuleSource(tree, id, attributes, external),
+			};
 		}
 		if (!Object.hasOwn(attributes, "src")) {
 			const source = tree.textContent(id);
@@ -347,6 +390,83 @@ export class ScriptLoader implements HtmlScriptHooks {
 			this.asynchronous.length = 0;
 			this.prepared.clear();
 		}
+	}
+
+	private async prepareModuleSource(
+		tree: DocumentTree,
+		id: number,
+		attributes: Readonly<Record<string, string>>,
+		external: boolean,
+	): Promise<Source> {
+		let url = `urn:agent-browser:html-module:${id}`;
+		try {
+			const baseUrl = documentBaseUrl(tree);
+			if (external) {
+				if (!attributes.src.trim())
+					throw new AgentBrowserError("invalid-input", "Missing module URL");
+				url = parseNetworkUrl(new URL(attributes.src, baseUrl).href).href;
+			}
+			if (!this.runner?.prepareModule)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Module preparation unavailable",
+				);
+			const prepared = await this.awaitModule(
+				this.runner.prepareModule({
+					id: url,
+					...(external ? {} : { source: tree.textContent(id) }),
+					baseUrl,
+					credentials:
+						attributes.crossorigin?.toLowerCase() === "use-credentials"
+							? "include"
+							: "same-origin",
+					...(!external || attributes.integrity === undefined
+						? {}
+						: { integrity: attributes.integrity }),
+					signal: this.controller.signal,
+				}),
+			);
+			this.live();
+			return {
+				id,
+				url: prepared.id,
+				text: prepared.source,
+				external,
+				module: true,
+			};
+		} catch (error) {
+			return {
+				id,
+				url,
+				external,
+				module: true,
+				error:
+					error instanceof AgentBrowserError ? error.code : "network-error",
+			};
+		}
+	}
+
+	private awaitModule<Value>(operation: Promise<Value>): Promise<Value> {
+		const signal = this.controller.signal;
+		return new Promise((resolve, reject) => {
+			const cancel = () =>
+				reject(new AgentBrowserError("aborted", "Page script loading aborted"));
+			signal.addEventListener("abort", cancel, { once: true });
+			operation.then(
+				(value) => {
+					signal.removeEventListener("abort", cancel);
+					resolve(value);
+				},
+				(error: unknown) => {
+					signal.removeEventListener("abort", cancel);
+					reject(error);
+				},
+			);
+			if (signal.aborted) {
+				signal.removeEventListener("abort", cancel);
+				cancel();
+			}
+		});
 	}
 
 	private async fetchSource(
@@ -493,6 +613,17 @@ export class ScriptLoader implements HtmlScriptHooks {
 			await this.event(source.id, "error");
 			return;
 		}
+		const previous = source.module
+			? this.moduleResults.get(source.url)
+			: undefined;
+		if (previous) {
+			if (previous.error) {
+				this.counts.failed++;
+				this.issue(previous.error);
+			} else this.skip("module-already-evaluated");
+			await this.event(source.id, previous.error ? "error" : "load");
+			return;
+		}
 		const text = source.text ?? "";
 		const bytes = new TextEncoder().encode(text).length;
 		if (this.counts.sourceBytes + bytes > this.maxBytes) {
@@ -501,6 +632,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 			return;
 		}
 		this.counts.sourceBytes += bytes;
+		if (source.module) return this.executeModule(source, text);
 		const runner = this.runner;
 		return withDocumentWrite(tree, context, async () => {
 			updateDocumentScriptState(tree, { currentScript: source.id });
@@ -534,6 +666,42 @@ export class ScriptLoader implements HtmlScriptHooks {
 			}
 			if (source.external) await this.event(source.id, "load");
 		});
+	}
+
+	private async executeModule(source: Source, text: string) {
+		const tree = this.tree;
+		const runner = this.runner;
+		if (!tree || !runner)
+			throw new AgentBrowserError("closed", "Script document is unavailable");
+		const outcome: { error?: string } = {};
+		updateDocumentScriptState(tree, { currentScript: null });
+		try {
+			const result = await this.awaitModule(
+				runner.evaluate(text, {
+					signal: this.controller.signal,
+					filename: source.url,
+					discardResult: true,
+					sourceType: "module",
+				}),
+			);
+			this.live();
+			if (!result.ok)
+				outcome.error = `execution-${result.error?.code ?? "failed"}`;
+		} catch (error) {
+			this.live();
+			outcome.error =
+				error instanceof AgentBrowserError
+					? `execution-${error.code}`
+					: "execution-failed";
+		}
+		this.moduleResults.set(source.url, outcome);
+		if (outcome.error) {
+			this.counts.failed++;
+			this.issue(outcome.error);
+		} else this.counts.executed++;
+		if (runner.closed) this.counts.halted = true;
+		this.publish();
+		await this.event(source.id, outcome.error ? "error" : "load");
 	}
 
 	private async event(target: number, type: string, bubbles = false) {

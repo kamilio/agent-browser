@@ -251,7 +251,7 @@ it.each([null, false, "auto", ""])(
 );
 
 it("rejects invalid website script mode before module loading", async () => {
-	await initialize({ runtimeAdapter: "extension", websiteScripts: "module" });
+	await initialize({ runtimeAdapter: "extension", websiteScripts: "modules" });
 	expect(await waitMessage("fatal")).toMatchObject({ code: "invalid-input" });
 	expect(fixtureState.load).not.toHaveBeenCalled();
 });

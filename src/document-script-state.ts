@@ -1,7 +1,7 @@
 import type { DocumentTree } from "./document.js";
 
 export interface ScriptLoadReport {
-	mode: "classic";
+	mode: "classic" | "classic-and-module";
 	partial: true;
 	discovered: number;
 	executed: number;

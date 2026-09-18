@@ -138,7 +138,7 @@ export interface CommandHostOptions {
 	uploadSessionLimits?: Partial<
 		Record<keyof typeof uploadSessionLimits, number>
 	>;
-	websiteScripts?: boolean;
+	websiteScripts?: boolean | "module";
 	pageFetch?: boolean;
 	createSession: (name: string) => BrowserSession;
 	evaluatePage?: (
@@ -322,7 +322,7 @@ export class BrowserCommandHost {
 	private readonly createSession: CommandHostOptions["createSession"];
 	private readonly secrets: SecretBroker | undefined;
 	private readonly evaluatePage: CommandHostOptions["evaluatePage"];
-	private readonly websiteScripts: boolean;
+	private readonly websiteScripts: boolean | "module";
 	private readonly pageFetch: boolean;
 
 	constructor(options: CommandHostOptions) {
@@ -398,7 +398,8 @@ export class BrowserCommandHost {
 		this.evaluatePage = options.evaluatePage;
 		if (
 			(options.websiteScripts !== undefined &&
-				typeof options.websiteScripts !== "boolean") ||
+				typeof options.websiteScripts !== "boolean" &&
+				options.websiteScripts !== "module") ||
 			(options.websiteScripts && !options.evaluatePage)
 		)
 			throw new AgentBrowserError(
@@ -431,7 +432,7 @@ export class BrowserCommandHost {
 				postFillInspection: false,
 			},
 			documentFormats: this.formats,
-			websiteJavaScript: this.websiteScripts,
+			websiteJavaScript: !!this.websiteScripts,
 			domMutations: {
 				partial: true,
 				parentNode: ["append", "prepend", "replaceChildren"],
@@ -512,9 +513,14 @@ export class BrowserCommandHost {
 				transportRedirectHops: "adapter-dependent",
 			},
 			scriptLoading: {
-				mode: this.websiteScripts ? "classic" : "disabled",
+				mode:
+					this.websiteScripts === "module"
+						? "module"
+						: this.websiteScripts
+							? "classic"
+							: "disabled",
 				partial: true,
-				modules: false,
+				modules: this.websiteScripts === "module",
 				dynamicInsertion: false,
 				documentWrite: {
 					mode: this.websiteScripts ? "parser-blocking-subset" : "disabled",
@@ -866,9 +872,11 @@ export class BrowserCommandHost {
 			fullPlaywrightCliSuperset: false,
 			limitations: [
 				"HTML support depends on the loader; the built-in HTML parser is partial",
-				this.websiteScripts
-					? "Classic page scripts and normal-flow CSS are partial; modules, many DOM APIs and general layout remain unimplemented"
-					: "Automatic website JavaScript is disabled; CSS layout supports only a restricted normal-flow profile",
+				this.websiteScripts === "module"
+					? "Classic and module page scripts are partial; import maps, dynamic script insertion, many DOM APIs and general layout remain unimplemented"
+					: this.websiteScripts
+						? "Classic page scripts and normal-flow CSS are partial; modules, many DOM APIs and general layout remain unimplemented"
+						: "Automatic website JavaScript is disabled; CSS layout supports only a restricted normal-flow profile",
 				"Cross-document back/forward, submission and non-self navigation targets are incomplete",
 				"Disk profile persistence and full locator/action semantics are incomplete; artifact file writes currently cover native PNG only",
 			],

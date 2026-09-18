@@ -1,4 +1,9 @@
 [
+	"src/page-html-modules.test.ts",
+	"src/script-loader-modules.test.ts",
+	"src/cli-module-mode.test.ts",
+	"src/node-session-module-mode.test.ts",
+	"src/html-module-runtime.test.ts",
 	"src/websocket-receiver.test.ts",
 	"src/node-websocket-handshake.test.ts",
 	"src/node-websocket-connection.test.ts",

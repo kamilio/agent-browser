@@ -6,6 +6,34 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Connect HTML modules to the native page runtime
+
+- Add explicit AGENT_BROWSER_PAGE_SCRIPTS=module with extension-runtime
+  selection; keep classic/default behavior unchanged and reject legacy module
+  mode before SDK/process activation. Parser-inserted modules now use a
+  document-owned registry through PageScripts rather than being always skipped.
+- Share entry/dependency identities, final-response import bases, CORS policy,
+  credential context, bounded source/fetch budgets and cached SRI digests.
+  Keep module currentScript null, parser document.write ownership unavailable,
+  and duplicate external entry evaluation suppressed. No runtime dependency.
+- Final selected native818/0 in23 files, including184 cases in5 new files;
+  build/types/format/lint pass. Verify1655 source/2444 compiled pins and preserve
+  all42 pre-existing dirty tracked/700 untracked files. The1038-entry manifest
+  retains22 missing committed paths; this is not a complete-manifest run.
+- Independent review found an inherited-Proxy/cancellation admission issue.
+  Use bounded descriptor-only prototype inspection and recheck liveness before
+  state changes; retain the original review and negative regression evidence.
+- Actual SafeJS, real processes/sockets, website execution and Zoom admission/
+  audio remain unverified. Existing single-promise evaluation cannot claim
+  correct top-level-await/DOMContentLoaded phase timing. Import maps and general
+  dynamic script insertion remain unsupported; original19 core/10 page SDK
+  expectations still need their separately scoped actual runtime acceptance.
+- Continue native media/recording/transcription/delivery work and diverse-site
+  content validation; do not turn fake-SDK pipeline tests into research, live
+  module or meeting success. See HTML-MODULES.md and
+  reports/native-html-modules-2026-09-18.md/JSON. Preserve unfinished selector
+  work and all historical website results and credential/passkey gates.
+
 ### Native WebSocket host connections: prerequisite, not Zoom completion
 
 - Implement a no-new-dependency Node host transport, strict opening handshake,

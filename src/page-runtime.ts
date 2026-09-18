@@ -1,5 +1,7 @@
 import { AgentBrowserError } from "./errors.js";
 import type { PageBindingContext } from "./page-bindings.js";
+import type { HtmlModuleRequest, HtmlModuleSource } from "./html-module.js";
+import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 import type { SafeJsBudget, ScriptLimits } from "./safejs.js";
 import type { ScriptCallbackRuntime } from "./script-events.js";
 
@@ -57,6 +59,7 @@ export interface PageRuntime {
 	readonly budget: SafeJsBudget;
 	readonly closed: boolean;
 	readonly supportsSourceModules?: boolean;
+	prepareModule?(request: HtmlModuleRequest): Promise<HtmlModuleSource>;
 	initialize(): Promise<void>;
 	evaluate(
 		source: string,
@@ -69,6 +72,7 @@ export interface PageRuntime {
 }
 
 export interface PageRuntimeOptions {
+	networkSourceModules?: PageNetworkModuleOptions;
 	limits: Readonly<ScriptLimits>;
 	signal: AbortSignal;
 	globals: readonly string[];
@@ -101,6 +105,11 @@ export function legacyPageRuntime(core: PageScriptCore): PageRuntimeFactory {
 		);
 	return {
 		createPageRuntime(options) {
+			if (options.networkSourceModules !== undefined)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Network source modules require the extension page runtime",
+				);
 			const budget = new core.Budget({
 				maxSteps: options.limits.maxSteps,
 				maxCallDepth: options.limits.maxCallDepth,
