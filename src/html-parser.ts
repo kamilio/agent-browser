@@ -29,8 +29,12 @@ import { initializeHtmlScripting, setHtmlParseInfo } from "./html-info.js";
 import { HtmlScaffold } from "./html-scaffold.js";
 import { HtmlScope } from "./html-scope.js";
 import { HtmlTables } from "./html-tables.js";
-import { HtmlTokenizer } from "./html-tokenizer.js";
+import { type HtmlToken, HtmlTokenizer } from "./html-tokenizer.js";
 import { resourceLimitError } from "./resource-limit.js";
+import {
+	completeParserScriptElement,
+	initializeParserScriptElement,
+} from "./script-element-state.js";
 
 const voidTags = new Set([
 	"area",
@@ -614,6 +618,7 @@ function* parseHtmlSteps(
 			attributes: Record<string, string> = {},
 			foster = false,
 			namespaceURI = htmlNamespace,
+			token?: HtmlToken,
 		) => {
 			finishOptions();
 			const target = location(
@@ -628,6 +633,15 @@ function* parseHtmlSteps(
 				attributes,
 				namespaceURI,
 			);
+			if (
+				name === "script" &&
+				namespaceURI === htmlNamespace &&
+				scripting &&
+				!fragment &&
+				!fragmentDocument &&
+				!inTemplate()
+			)
+				initializeParserScriptElement(target.tree, id, token);
 			if (
 				namespaceURI === htmlNamespace &&
 				form !== undefined &&
@@ -1342,7 +1356,7 @@ function* parseHtmlSteps(
 				if (!token.selfClosing) stack.push({ ...entry, tag: name });
 				continue;
 			}
-			const entry = insert(name, attributes, foster);
+			const entry = insert(name, attributes, foster, htmlNamespace, token);
 			const { id } = entry;
 			if (
 				scripting &&
@@ -1386,6 +1400,8 @@ function* parseHtmlSteps(
 				if (!closing) issue("eof-in-text");
 				pop(name);
 				if (name === "script") {
+					if (scripting && !fragment && !fragmentDocument && !inTemplate())
+						completeParserScriptElement(entry.tree, id, closing);
 					if (scripting && closing && !fragment && !inTemplate())
 						yield { kind: "script", tree, id };
 					else if (scripting && !fragment && !inTemplate())

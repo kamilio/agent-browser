@@ -1,7 +1,10 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { DocumentTree } from "./document.js";
+import { HtmlTokenizer } from "./html-tokenizer.js";
 import {
 	cloneScriptElementState,
+	completeParserScriptElement,
+	initializeParserScriptElement,
 	initializeScriptElement,
 	markScriptElementStarted,
 	scriptElementAsync,
@@ -32,6 +35,7 @@ it("distinguishes unregistered, dynamic and parser defaults without inferring or
 		origin: "unknown",
 		forceAsync: true,
 		alreadyStarted: false,
+		parserNonceEligibility: "untrusted",
 	});
 	setScriptElementAsync(dynamic.tree, unknown, false);
 	expect(scriptElementState(dynamic.tree, unknown).origin).toBe("unknown");
@@ -99,6 +103,7 @@ it("copies already-started state without inheriting parser defaults or sharing m
 		origin: "dynamic",
 		forceAsync: true,
 		alreadyStarted: true,
+		parserNonceEligibility: "cloned",
 	});
 	setScriptElementAsync(destination.tree, destination.id, false);
 	expect(scriptElementAsync(source.tree, source.id)).toBe(false);
@@ -165,4 +170,120 @@ it("does not claim unknown or inert scripts as started", () => {
 	const unknown = tree.createElement("script");
 	expect(markScriptElementStarted(tree, unknown)).toBe(false);
 	expect(scriptElementState(tree, unknown).alreadyStarted).toBe(false);
+});
+
+it("requires one-shot tokenizer ownership and matching completion without changing async or started state", () => {
+	const { tree } = fixture();
+	const input = new HtmlTokenizer(
+		'<script nonce="synthetic"></script>',
+		() => {},
+	);
+	const id = tree.createParserElement("script", { nonce: "synthetic" });
+	const token = input.next();
+	initializeParserScriptElement(tree, id, token);
+	expect(scriptElementState(tree, id)).toEqual({
+		origin: "parser",
+		forceAsync: false,
+		alreadyStarted: false,
+		parserNonceEligibility: "pending",
+	});
+	setScriptElementAsync(tree, id, true);
+	completeParserScriptElement(tree, id, input.next());
+	expect(scriptElementState(tree, id)).toEqual({
+		origin: "parser",
+		forceAsync: false,
+		alreadyStarted: false,
+		parserNonceEligibility: "eligible",
+	});
+	expect(scriptElementAsync(tree, id)).toBe(true);
+	expect(Object.keys(scriptElementState(tree, id))).not.toContain(
+		"parserTokenOwner",
+	);
+	const reused = tree.createParserElement("script", { nonce: "synthetic" });
+	initializeParserScriptElement(tree, reused, token);
+	expect(scriptElementState(tree, reused).parserNonceEligibility).toBe(
+		"untrusted",
+	);
+	expect(() => initializeParserScriptElement(tree, id, input.next())).toThrow(
+		/provenance/,
+	);
+	initializeScriptElement(tree, id, "parser");
+	expect(scriptElementState(tree, id).parserNonceEligibility).toBe("eligible");
+});
+
+it("does not accept fabricated metadata or a closing token from another tokenizer", () => {
+	const { tree } = fixture();
+	const fabricated = tree.createElement("script");
+	const getter = vi.fn(() => true);
+	initializeParserScriptElement(
+		tree,
+		fabricated,
+		new Proxy({ nonceable: true }, { get: getter }),
+	);
+	expect(scriptElementState(tree, fabricated).parserNonceEligibility).toBe(
+		"untrusted",
+	);
+	expect(getter).not.toHaveBeenCalled();
+	const id = tree.createElement("script");
+	const input = new HtmlTokenizer("<script></script>", () => {});
+	initializeParserScriptElement(tree, id, input.next());
+	completeParserScriptElement(
+		tree,
+		id,
+		new HtmlTokenizer("</script>", () => {}).next(),
+	);
+	expect(scriptElementState(tree, id).parserNonceEligibility).toBe(
+		"ineligible",
+	);
+	completeParserScriptElement(tree, id, input.next());
+	expect(scriptElementState(tree, id).parserNonceEligibility).toBe(
+		"ineligible",
+	);
+});
+
+it.each([
+	'nonce="synthetic" NONCE="synthetic"',
+	'title="<SCRIPT"',
+	'title="&lt;style"',
+])("cannot clear tokenizer refusal for %s", (attributes) => {
+	const { tree } = fixture();
+	const input = new HtmlTokenizer(`<script ${attributes}></script>`, () => {});
+	const id = tree.createElement("script");
+	initializeParserScriptElement(tree, id, input.next());
+	tree.setAttribute(id, "nonce", "synthetic");
+	tree.removeAttribute(id, "title");
+	completeParserScriptElement(tree, id, input.next());
+	expect(scriptElementState(tree, id).parserNonceEligibility).toBe(
+		"ineligible",
+	);
+	expect(() =>
+		initializeParserScriptElement(
+			tree,
+			id,
+			new HtmlTokenizer("<script>", () => {}).next(),
+		),
+	).toThrow(/provenance/);
+});
+
+it("never transfers parser trust through cloning, importing, inert transitions or document closure", () => {
+	const { tree } = fixture();
+	const input = new HtmlTokenizer("<script></script>", () => {});
+	const source = tree.createElement("script");
+	initializeParserScriptElement(tree, source, input.next());
+	completeParserScriptElement(tree, source, input.next());
+	for (const targetTree of [tree, fixture().tree]) {
+		const copy = targetTree.copyFrom(tree, source);
+		cloneScriptElementState(tree, source, targetTree, copy);
+		expect(scriptElementState(targetTree, copy).parserNonceEligibility).toBe(
+			"cloned",
+		);
+	}
+	initializeScriptElement(tree, source, "inert");
+	expect(scriptElementState(tree, source).parserNonceEligibility).toBe(
+		"ineligible",
+	);
+	tree.close();
+	expect(() => completeParserScriptElement(tree, source, input.next())).toThrow(
+		/closed/,
+	);
 });

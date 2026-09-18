@@ -19,7 +19,7 @@ input denies admission without invoking property getters.
 
 Hashes, script URL sources, eval/wasm keywords and other security directives are
 currently unsupported and fail closed. This is not full Zoom CSP support. Real
-integration still needs trusted parser nonceability, loader admission and all
+integration still needs loader admission and all
 resource-destination enforcement; do not strip or ignore a publisher's policy
 to activate this evaluator.
 
@@ -27,8 +27,8 @@ to activate this evaluator.
 
 `bindDocumentScriptCsp(tree, headers, limits?)` binds immutable response policy
 to one native document. Verified dynamic script nodes can be checked through
-`allowsScript(id)`. Parser, unknown, inert, cloned and detached eligibility is
-refused until trusted creation and nonceability metadata is available. Meta
+`allowsScript(id)`. Parser scripts require authentic completed-token provenance;
+unknown, inert, cloned and detached eligibility is refused. Meta
 policies, missed mutations, exhausted work and close cause sticky refusal.
 
 Bound documents hide connected HTML nonce attributes before mutation observers
@@ -45,3 +45,23 @@ missing-fixture and test-type failures remain preserved; the latter required an
 explicit response type in a new cookie-redirect test, not a runtime behavior
 change. This gate includes Image and cookie-redirect regressions, but no actual
 SDK, publisher, network or meeting execution. Live loader refusal remains intact.
+
+## Trusted parser metadata
+
+The script-capable HTML parser now records privately branded, one-use start/end
+token metadata. It retains duplicate-attribute and raw/decoded dangling-markup
+evidence before attribute deduplication, and requires the same tokenizer owner
+to complete an eligible script. Forged, copied, modified or unfinished tokens
+cannot establish trust. Additional scans count toward tokenizer work limits.
+
+Parser nonce eligibility is independent of origin, async and already-started
+state. Inert parsing, fragments, templates, foreign elements and clone/import
+paths do not mint admission trust. The document owner checks current connection,
+attributes and hidden nonce before admitting an eligible, unstarted script.
+This does not itself enable the live loader or support additional CSP directives.
+
+The focused worker passes1681 native tests in40 files, including28 new cases.
+Parent integration with URL and CLI startup controls passes2187 in49 files;
+build, selected-test types, format and lint pass. Earlier missing-vendor,
+test-nullability and formatter-wrapper failures remain recorded separately.
+No actual SDK, publisher policy activation or meeting execution is claimed.

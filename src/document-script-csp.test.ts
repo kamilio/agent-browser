@@ -7,6 +7,7 @@ import {
 import { documentBaseUrl } from "./document-url.js";
 import { DocumentTree } from "./document.js";
 import { svgNamespace } from "./dom-namespaces.js";
+import { parseHtmlDocumentAsync } from "./html-parser.js";
 import { initializeScriptElement } from "./script-element-state.js";
 
 const trees: DocumentTree[] = [];
@@ -34,6 +35,86 @@ function script(
 	tree.append(tree.root, id);
 	return id;
 }
+
+async function parsedScripts(
+	source: string,
+	policy = "script-src 'nonce-native' 'strict-dynamic'",
+) {
+	const decisions: boolean[] = [];
+	let owner: ReturnType<typeof bindDocumentScriptCsp> | undefined;
+	const tree = await parseHtmlDocumentAsync(
+		source,
+		"https://example.com/document/page",
+		{
+			initializeDocument(document) {
+				owner = bindDocumentScriptCsp(document, headers(policy));
+			},
+		},
+		{
+			start() {},
+			async script(document, id) {
+				if (!owner) throw new Error("Missing owner");
+				decisions.push(owner.allowsScript(id));
+			},
+			async finish() {},
+		},
+	);
+	trees.push(tree);
+	if (!owner) throw new Error("Missing owner");
+	return { tree, owner, decisions };
+}
+
+it.each([
+	['<script nonce="native"></script>', true],
+	['<script src="/synthetic.js" nonce="native"></script>', true],
+	['<script src="/synthetic.js"></script>', false],
+	["<script></script>", false],
+	['<script nonce="wrong"></script>', false],
+	['<script nonce="native" NONCE="discarded"></script>', false],
+	['<script nonce="native" title="safe" TITLE="discarded"></script>', false],
+	['<script nonce="native" title="safe" TITLE="<SCRIPT"></script>', false],
+	['<script nonce="native" data-<StYle="x"></script>', false],
+	['<script nonce="native" title="&lt;script"></script>', false],
+	['<script nonce="native" type="module"></script>', false],
+])("uses trusted parser nonceability for %s", async (source, allowed) => {
+	const { decisions } = await parsedScripts(source);
+	expect(decisions).toEqual([allowed]);
+});
+
+it("keeps parse-time refusal sticky and rechecks current attributes and connection", async () => {
+	const { tree, owner, decisions } = await parsedScripts(
+		'<script nonce="native"></script><script nonce="native" title="first" title="duplicate"></script>',
+	);
+	const ids = [...tree.walk()]
+		.filter(({ node }) => node.tagName === "script")
+		.map(({ node }) => node.id);
+	expect(decisions).toEqual([true, false]);
+	tree.removeAttribute(ids[1], "title");
+	tree.setAttribute(ids[1], "nonce", "native");
+	expect(owner.allowsScript(ids[1])).toBe(false);
+	tree.setAttribute(ids[0], "title", "<STYLE");
+	expect(owner.allowsScript(ids[0])).toBe(false);
+	tree.removeAttribute(ids[0], "title");
+	expect(owner.allowsScript(ids[0])).toBe(true);
+	tree.setAttribute(ids[0], "nonce", "wrong");
+	expect(owner.allowsScript(ids[0])).toBe(false);
+	tree.setAttribute(ids[0], "nonce", "native");
+	const clone = tree.clone(ids[0]);
+	tree.append(tree.root, clone);
+	expect(owner.allowsScript(clone)).toBe(false);
+	tree.remove(ids[0]);
+	expect(owner.allowsScript(ids[0])).toBe(false);
+});
+
+it("does not grant parser trust to unterminated, template or foreign scripts", async () => {
+	const { tree, owner, decisions } = await parsedScripts(
+		'<template><script nonce="native"></script></template><svg><script nonce="native"></script></svg><script nonce="native">unfinished',
+	);
+	expect(decisions).toEqual([]);
+	for (const entry of tree.walkIncludingTemplateContents())
+		if (entry.node.tagName === "script")
+			expect(owner.allowsScript(entry.node.id)).toBe(false);
+});
 
 it("captures headers once and cannot be rebound to a weaker policy", () => {
 	const tree = fixture();

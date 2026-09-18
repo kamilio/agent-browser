@@ -52,8 +52,12 @@ SCRIPT-CSP-POLICY.md. It does not yet permit the captured Zoom policy.
 Native document policy ownership and prepublication nonce hiding now integrate
 with base selection, Attr/clone/mutation/selector privacy and close revocation.
 Parent checks pass1148 tests in34 files with build, selected-test types, format
-and lint. Trusted parser nonceability and loader admission remain outstanding;
-unknown/parser/inert provenance and unsupported policies are still refused.
+and lint. Trusted parser nonceability now uses one-shot private start/end token
+metadata with duplicate/raw/decoded attribute checks and independent eligibility.
+The focused worker passes1681 tests in40 files; parent URL/CLI/parser integration
+passes2187 in49 files with all quality checks. Only eligible completed parser
+scripts can pass owner admission; unknown/inert/cloned provenance remains refused.
+Live loader admission and unsupported policy directives remain outstanding.
 
 Explicit classic-global/after-prefix options now flow through native CLI,
 runtime selection, SDK loading and process initialization/ready validation.

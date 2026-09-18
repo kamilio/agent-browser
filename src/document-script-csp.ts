@@ -187,7 +187,16 @@ export function bindDocumentScriptCsp(
 					ancestor = tree.parentOf(ancestor);
 				}
 				const state = scriptElementState(tree, id);
-				if (state.origin !== "dynamic" || state.alreadyStarted) return false;
+				if (state.alreadyStarted || state.parserNonceEligibility === "cloned")
+					return false;
+				if (
+					state.origin !== "dynamic" &&
+					!(
+						state.origin === "parser" &&
+						state.parserNonceEligibility === "eligible"
+					)
+				)
+					return false;
 				for (const [name, value] of Object.entries(node.attributes)) {
 					work += name.length + value.length;
 					if (
@@ -209,7 +218,7 @@ export function bindDocumentScriptCsp(
 				return parsed.allowsScript({
 					kind: Object.hasOwn(node.attributes, "src") ? "external" : "inline",
 					nonce,
-					parserInserted: false,
+					parserInserted: state.origin === "parser",
 					nonceable: true,
 				});
 			} catch {

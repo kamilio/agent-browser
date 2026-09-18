@@ -1,19 +1,29 @@
 import type { DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
+import { consumeHtmlScriptToken } from "./html-tokenizer.js";
 
 export type ScriptElementOrigin = "dynamic" | "parser" | "inert";
+export type ParserNonceEligibility =
+	| "untrusted"
+	| "pending"
+	| "eligible"
+	| "ineligible"
+	| "cloned";
 
 export interface ScriptElementState {
 	readonly origin: ScriptElementOrigin | "unknown";
 	readonly forceAsync: boolean;
 	readonly alreadyStarted: boolean;
+	readonly parserNonceEligibility: ParserNonceEligibility;
 }
 
 interface MutableScriptElementState {
 	origin: ScriptElementState["origin"];
 	forceAsync: boolean;
 	alreadyStarted: boolean;
+	parserNonceEligibility: ParserNonceEligibility;
+	parserTokenOwner?: object;
 }
 
 const documents = new WeakMap<
@@ -61,6 +71,7 @@ function state(tree: DocumentTree, id: number): MutableScriptElementState {
 			origin: "unknown",
 			forceAsync: !Object.hasOwn(node.attributes, "async"),
 			alreadyStarted: false,
+			parserNonceEligibility: "untrusted",
 		};
 		elements.set(id, entry);
 	}
@@ -71,7 +82,62 @@ export function scriptElementState(
 	tree: DocumentTree,
 	id: number,
 ): Readonly<ScriptElementState> {
-	return Object.freeze({ ...state(tree, id) });
+	const entry = state(tree, id);
+	return Object.freeze({
+		origin: entry.origin,
+		forceAsync: entry.forceAsync,
+		alreadyStarted: entry.alreadyStarted,
+		parserNonceEligibility: entry.parserNonceEligibility,
+	});
+}
+
+export function initializeParserScriptElement(
+	tree: DocumentTree,
+	id: number,
+	token: unknown,
+): void {
+	const entry = state(tree, id);
+	if (
+		entry.origin !== "unknown" ||
+		entry.parserNonceEligibility !== "untrusted" ||
+		entry.alreadyStarted
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Cannot replace parser script provenance",
+		);
+	const metadata = consumeHtmlScriptToken(token);
+	initializeScriptElement(tree, id, "parser");
+	if (!metadata || metadata.kind !== "start") return;
+	entry.parserNonceEligibility =
+		metadata.duplicateAttribute ||
+		metadata.unsafeAttribute ||
+		metadata.selfClosing
+			? "ineligible"
+			: "pending";
+	if (entry.parserNonceEligibility === "pending")
+		entry.parserTokenOwner = metadata.owner;
+}
+
+export function completeParserScriptElement(
+	tree: DocumentTree,
+	id: number,
+	token: unknown,
+): void {
+	const entry = state(tree, id);
+	const metadata = consumeHtmlScriptToken(token);
+	if (entry.origin !== "parser" || entry.parserNonceEligibility !== "pending")
+		return;
+	entry.parserNonceEligibility =
+		metadata?.kind === "end" &&
+		metadata.owner === entry.parserTokenOwner &&
+		!metadata.duplicateAttribute &&
+		!metadata.unsafeAttribute &&
+		!metadata.selfClosing &&
+		!entry.alreadyStarted
+			? "eligible"
+			: "ineligible";
+	entry.parserTokenOwner = undefined;
 }
 
 export function initializeScriptElement(
@@ -92,6 +158,10 @@ export function initializeScriptElement(
 			"Cannot change script element origin",
 		);
 	entry.origin = origin;
+	if (origin === "inert") {
+		entry.parserNonceEligibility = "ineligible";
+		entry.parserTokenOwner = undefined;
+	}
 	if (origin !== "dynamic") entry.forceAsync = false;
 }
 
@@ -154,5 +224,7 @@ export function cloneScriptElementState(
 			: "dynamic",
 	);
 	const target = state(targetTree, targetId);
+	target.parserNonceEligibility = "cloned";
+	target.parserTokenOwner = undefined;
 	if (source.alreadyStarted) target.alreadyStarted = true;
 }

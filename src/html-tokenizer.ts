@@ -16,6 +16,70 @@ export type HtmlToken =
 			selfClosing: boolean;
 	  };
 
+export interface HtmlScriptTokenMetadata {
+	readonly kind: "start" | "end";
+	readonly owner: object;
+	readonly duplicateAttribute: boolean;
+	readonly unsafeAttribute: boolean;
+	readonly selfClosing: boolean;
+}
+
+const scriptTokens = new WeakMap<
+	object,
+	{
+		metadata: Readonly<HtmlScriptTokenMetadata>;
+		attributes: Record<string, string>;
+		entries: readonly (readonly [string, string])[];
+	}
+>();
+
+export function consumeHtmlScriptToken(
+	token: unknown,
+): Readonly<HtmlScriptTokenMetadata> | undefined {
+	if (typeof token !== "object" || token === null) return undefined;
+	const recorded = scriptTokens.get(token);
+	if (!recorded) return undefined;
+	scriptTokens.delete(token);
+	if (
+		Object.getOwnPropertyNames(token).length !== 4 ||
+		Object.getOwnPropertySymbols(token).length
+	)
+		return undefined;
+	for (const [name, expected] of [
+		["kind", recorded.metadata.kind],
+		["name", "script"],
+		["selfClosing", recorded.metadata.selfClosing],
+		["attributes", recorded.attributes],
+	]) {
+		const descriptor = Object.getOwnPropertyDescriptor(token, name as string);
+		if (
+			!descriptor ||
+			!Object.hasOwn(descriptor, "value") ||
+			descriptor.value !== expected
+		)
+			return undefined;
+	}
+	if (
+		Object.getOwnPropertyNames(recorded.attributes).length !==
+			recorded.entries.length ||
+		Object.getOwnPropertySymbols(recorded.attributes).length
+	)
+		return undefined;
+	for (const [name, value] of recorded.entries) {
+		const descriptor = Object.getOwnPropertyDescriptor(
+			recorded.attributes,
+			name,
+		);
+		if (
+			!descriptor ||
+			!Object.hasOwn(descriptor, "value") ||
+			descriptor.value !== value
+		)
+			return undefined;
+	}
+	return recorded.metadata;
+}
+
 const whitespace = (character: string | undefined) =>
 	character !== undefined && /[\t\n\f\r ]/.test(character);
 const needInput = Symbol("HTML input boundary");
@@ -231,6 +295,7 @@ export class HtmlRawDiscardSession {
 }
 
 export class HtmlTokenizer {
+	private readonly scriptTokenOwner = Object.freeze({});
 	private offset = 0;
 	private input: string;
 	private boundary?: number;
@@ -460,27 +525,44 @@ export class HtmlTokenizer {
 			);
 		const attributes = createHtmlAttributes();
 		let count = 0;
+		let duplicateAttribute = false;
+		let unsafeAttribute = false;
+		const complete = (selfClosing: boolean): HtmlToken => {
+			const token: HtmlToken = {
+				kind: endTag ? "end" : "start",
+				name,
+				attributes,
+				selfClosing,
+			};
+			if (name === "script") {
+				const entries = Object.entries(attributes);
+				for (const [attribute, value] of entries)
+					this.work += attribute.length + value.length;
+				scriptTokens.set(token, {
+					metadata: Object.freeze({
+						kind: endTag ? "end" : "start",
+						owner: this.scriptTokenOwner,
+						duplicateAttribute,
+						unsafeAttribute,
+						selfClosing,
+					}),
+					attributes,
+					entries,
+				});
+			}
+			return token;
+		};
 		while (this.offset < this.source.length) {
 			this.skipWhitespace();
 			if (this.source[this.offset] === ">") {
 				this.offset++;
-				return {
-					kind: endTag ? "end" : "start",
-					name,
-					attributes,
-					selfClosing: false,
-				};
+				return complete(false);
 			}
 			if (this.source[this.offset] === "/") {
 				this.offset++;
 				if (this.source[this.offset] === ">") {
 					this.offset++;
-					return {
-						kind: endTag ? "end" : "start",
-						name,
-						attributes,
-						selfClosing: true,
-					};
+					return complete(true);
 				}
 				this.issue("unexpected-solidus");
 				continue;
@@ -500,8 +582,9 @@ export class HtmlTokenizer {
 				else if (character === '"' || character === "'" || character === "<")
 					this.issue("unexpected-character-in-attribute-name");
 			}
+			const rawAttribute = this.source.slice(attributeStart, this.offset);
 			const attribute = htmlAttributeName(
-				this.source.slice(attributeStart, this.offset).replace(/\0/g, "\ufffd"),
+				rawAttribute.replace(/\0/g, "\ufffd"),
 			);
 			if (++count > 1024)
 				throw resourceLimitError(
@@ -511,6 +594,7 @@ export class HtmlTokenizer {
 					"HTML attributes per token limit exceeded",
 				);
 			const duplicate = Object.hasOwn(attributes, attribute);
+			duplicateAttribute ||= duplicate;
 			if (duplicate) this.issue("duplicate-attribute");
 			this.skipWhitespace();
 			let value = "";
@@ -538,6 +622,13 @@ export class HtmlTokenizer {
 				}
 			}
 			const decoded = decodeHtmlEntities(value, true, this.issue);
+			if (name === "script") {
+				this.work += rawAttribute.length + value.length + decoded.length;
+				unsafeAttribute ||=
+					/<script|<style/i.test(rawAttribute) ||
+					/<script|<style/i.test(value) ||
+					/<script|<style/i.test(decoded);
+			}
 			if (!duplicate) setHtmlAttribute(attributes, attribute, decoded);
 		}
 		this.issue("unterminated-tag");

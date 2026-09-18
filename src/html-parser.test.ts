@@ -4,8 +4,14 @@ import { DocumentTree } from "./document.js";
 import { mathmlNamespace, svgNamespace } from "./dom-namespaces.js";
 import { decodeHtmlEntities } from "./html-entities.js";
 import { htmlParseInfo } from "./html-info.js";
-import { parseHtmlDocument } from "./html-parser.js";
+import {
+	parseHtmlDocument,
+	parseHtmlDocumentAsync,
+	parseHtmlFragment,
+} from "./html-parser.js";
 import { type HtmlToken, HtmlTokenizer } from "./html-tokenizer.js";
+import * as tokenizerModule from "./html-tokenizer.js";
+import { scriptElementState } from "./script-element-state.js";
 import { DocumentQueries } from "./selectors.js";
 import { renderSnapshot, snapshotDocument } from "./snapshot.js";
 
@@ -303,4 +309,143 @@ it("tokenizes greater-than characters in quoted attributes and drops incomplete 
 		{ kind: "end", name: "a" },
 	]);
 	expect(issues).toContain("unterminated-tag");
+});
+
+it.each([
+	['<script nonce="synthetic">', false, false],
+	['<script nonce="synthetic" NONCE="other">', true, false],
+	['<script nonce="synthetic" title="safe" TITLE="<ScRiPt">', true, true],
+	['<script nonce="synthetic" data-<StYle="x">', false, true],
+	['<script nonce="synthetic" title="&lt;STYLE">', false, true],
+	['<script __proto__="one" __PROTO__="two">', true, false],
+])(
+	"retains private tokenizer evidence for %s without changing tokens",
+	(source, duplicateAttribute, unsafeAttribute) => {
+		const issues: string[] = [];
+		const tokenizer = new HtmlTokenizer(source, (code) => issues.push(code));
+		const token = tokenizer.next();
+		expect(token).toMatchObject({ kind: "start", name: "script" });
+		expect(Object.keys(token ?? {}).sort()).toEqual([
+			"attributes",
+			"kind",
+			"name",
+			"selfClosing",
+		]);
+		const consume = Reflect.get(tokenizerModule, "consumeHtmlScriptToken");
+		expect(typeof consume).toBe("function");
+		const evidence = consume(token);
+		expect(evidence).toMatchObject({
+			kind: "start",
+			duplicateAttribute,
+			unsafeAttribute,
+		});
+		expect(Object.isFrozen(evidence)).toBe(true);
+		expect(consume(token)).toBeUndefined();
+		expect(issues.includes("duplicate-attribute")).toBe(duplicateAttribute);
+	},
+);
+
+it("does not trust copied tokens, getters, proxies or mutated genuine attributes", () => {
+	const consume = Reflect.get(tokenizerModule, "consumeHtmlScriptToken");
+	expect(typeof consume).toBe("function");
+	const token = new HtmlTokenizer(
+		'<script nonce="synthetic">',
+		() => {},
+	).next();
+	const trap = vi.fn(() => {
+		throw new Error("guest access");
+	});
+	expect(consume({ ...token })).toBeUndefined();
+	expect(
+		consume(new Proxy({}, { get: trap, ownKeys: trap, getPrototypeOf: trap })),
+	).toBeUndefined();
+	expect(
+		consume(Object.defineProperty({}, "kind", { get: trap })),
+	).toBeUndefined();
+	expect(trap).not.toHaveBeenCalled();
+	if (token?.kind !== "start") throw new Error("Missing start token");
+	Object.defineProperty(token.attributes, "nonce", { get: trap });
+	expect(consume(token)).toBeUndefined();
+	expect(trap).not.toHaveBeenCalled();
+});
+
+it("brands only complete script tokens across input boundaries", () => {
+	const consume = Reflect.get(tokenizerModule, "consumeHtmlScriptToken");
+	expect(typeof consume).toBe("function");
+	const source = '<script nonce="synthetic" NONCE="discarded"></script>';
+	const input = new HtmlTokenizer(source, () => {});
+	input.setBoundary(34);
+	expect(input.next()).toBeUndefined();
+	input.setBoundary(undefined);
+	const start = consume(input.next());
+	const end = consume(input.next());
+	if (!start || !end) throw new Error("Missing complete script metadata");
+	expect(start).toMatchObject({ kind: "start", duplicateAttribute: true });
+	expect(end).toMatchObject({ kind: "end" });
+	expect(start.owner).toBe(end.owner);
+	expect(consume(new HtmlTokenizer("<div>", () => {}).next())).toBeUndefined();
+	expect(
+		consume(new HtmlTokenizer('<script nonce="unfinished', () => {}).next()),
+	).toBeUndefined();
+});
+
+it("records parser trust before script hooks but not before completion or for inert parsing", async () => {
+	const insertion: unknown[] = [];
+	const prepared: unknown[] = [];
+	const tree = await parseHtmlDocumentAsync(
+		'<script nonce="synthetic">text</script>',
+		"https://example.com",
+		{
+			initializeDocument(document) {
+				document.onMutation((record) => {
+					for (const id of record.addedNodes)
+						if (document.get(id).tagName === "script")
+							insertion.push(scriptElementState(document, id));
+				});
+			},
+		},
+		{
+			start() {},
+			async script(document, id) {
+				prepared.push(scriptElementState(document, id));
+			},
+			async finish() {},
+		},
+	);
+	expect(insertion).toMatchObject([
+		{
+			origin: "parser",
+			parserNonceEligibility: "pending",
+			alreadyStarted: false,
+			forceAsync: false,
+		},
+	]);
+	expect(prepared).toMatchObject([
+		{
+			origin: "parser",
+			parserNonceEligibility: "eligible",
+			alreadyStarted: false,
+			forceAsync: false,
+		},
+	]);
+	tree.close();
+	const inert = parseHtmlDocument(
+		'<script nonce="synthetic"></script>',
+		"https://example.com",
+	);
+	const fragment = parseHtmlFragment(
+		'<script nonce="synthetic"></script>',
+		"https://example.com",
+		{ tagName: "div" },
+	);
+	for (const document of [inert, fragment.tree]) {
+		for (const { node } of document.walk(
+			document === inert ? document.root : fragment.fragment,
+		))
+			if (node.tagName === "script")
+				expect(
+					scriptElementState(document, node.id).parserNonceEligibility,
+				).not.toBe("eligible");
+		document.close();
+	}
 });
