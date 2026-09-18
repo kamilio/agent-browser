@@ -251,6 +251,16 @@ live navigation. See reports/zoom-full-document-2026-09-18.md and the immutable
 private jKqVwS evidence. Runtime optimization and a meaningful replay are next;
 incoming media, recording, transcription and delivery remain open.
 
+September18, classic-runtime performance candidate: internally frozen empty
+module environments can reuse existing classic-global scope projections without
+skipping graph traversal, providers or reconciliation. ClrIn4 passes1570 tests
+in105 files plus strict types/build; parent verifies1946 candidate,684 build and
+18356 run pins. Depth4/8 classic fixtures improve15.62%/34.53%, but nonclassic
+realm/scope comparators regress11.85%/16.86%. Keep this an explicit experiment,
+not a default SDK upgrade or claimed Zoom speedup. The exact incremental patch
+is retained in contributions/safejs-classic-scope-sharing. Actual owned-browser
+qualification and the next meaningful live run remain separate acceptance gates.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,

@@ -1,0 +1,472 @@
+diff --git a/packages/safe-js/src/interp/empty-module-sharing.test.ts b/packages/safe-js/src/interp/empty-module-sharing.test.ts
+new file mode 100644
+index 0000000..a14fa49
+--- /dev/null
++++ b/packages/safe-js/src/interp/empty-module-sharing.test.ts
+@@ -0,0 +1,367 @@
++import { expect, it, vi } from "vitest";
++import { Budget, createRealm } from "../core.js";
++import { MAX_DATA_DEPTH } from "../graph-depth.js";
++import { Scope } from "./scope.js";
++import { createSandboxClosure, measureSandboxData, type SandboxObject } from "./values.js";
++import * as registry from "../modules/registry.js";
++import { immutableEmptyModuleEnvironments } from "../modules/empty-environment.js";
++import { createWeakCollection, setWeakEntry } from "./weak-collection.js";
++
++it("reuses whole-scope projections for eligible captures in an actual module-free classic realm", async () => {
++  const original = Scope.prototype.retainedDataRoots;
++  const scopes = new Set<Scope>();
++  Scope.prototype.retainedDataRoots = function () {
++    scopes.add(this);
++    return original.call(this);
++  };
++  const budget = new Budget();
++  const realm = createRealm({classicScripts: true, budget});
++  try {
++    expect(await realm.evaluate(`globalThis.read = (() => {
++      const shared = "abc";
++      return (() => { const inner = "def"; return () => shared + inner; })();
++    })(); read();`)).toMatchObject({ok: true, returnValue: "abcdef"});
++    Scope.prototype.retainedDataRoots = original;
++    const captured = [...scopes].filter(scope => scope.lookup("shared").found && scope.lookup("inner").found);
++    expect(captured.length).toBeGreaterThan(0);
++    for (const scope of captured) {
++      const before = scope.retainedDataRoots();
++      const after = scope.retainedDataRoots();
++      expect(before).toHaveLength(1);
++      expect(after[0]).toBe(before[0]);
++      expect(measureSandboxData(after)).toBe(measureSandboxData(before));
++    }
++  } finally {
++    Scope.prototype.retainedDataRoots = original;
++    await realm.close();
++  }
++  expect(budget.currentDataSize).toBe(0);
++});
++
++it("creates only truly immutable empty records and refuses wrapped content", () => {
++  const environment = registry.createImmutableEmptyModuleEnvironment({budget: new Budget()});
++  expect(immutableEmptyModuleEnvironments.has(environment)).toBe(true);
++  expect(Object.isFrozen(environment)).toBe(true);
++  expect(Object.isFrozen(environment.available)).toBe(true);
++  expect(Object.isFrozen(environment.namespaces)).toBe(true);
++  expect(Object.getPrototypeOf(environment.namespaces)).toBe(null);
++  expect(() => environment.available.push("late")).toThrow(TypeError);
++  expect(() => { environment.namespaces.late = {text: "hidden"}; }).toThrow(TypeError);
++  expect(() => { environment.namespaces = {}; }).toThrow(TypeError);
++  expect(() => registry.resolveModuleNamespace(environment, "missing"))
++    .toThrow("Unknown module 'missing'. No modules are registered.");
++  expect(() => registry.createImmutableEmptyModuleEnvironment({budget: new Budget(), wrappedModules: new Map([["wrapped", {text: "live"}]])}))
++    .toThrow("cannot contain wrapped modules");
++});
++
++it("does not infer stable emptiness from generic mutable or frozen environments", () => {
++  for (const frozen of [false, true]) {
++    const parent = new Scope({outer: "abc"}, undefined, undefined, {globalEnvironment: true});
++    const scope = parent.child({inner: "def"});
++    const environment = registry.createModuleEnvironment({}, {budget: new Budget()});
++    parent.moduleEnvironment = environment;
++    if (frozen) {
++      Object.freeze(environment.available);
++      Object.freeze(environment.namespaces);
++      Object.freeze(environment);
++    }
++    expect(immutableEmptyModuleEnvironments.has(environment)).toBe(false);
++    expect(scope.retainedDataRoots()).toHaveLength(2);
++    expect(scope.retainedDataRoots()).toHaveLength(2);
++    if (!frozen) {
++      environment.namespaces.late = {text: "later module"};
++      expect(measureSandboxData(scope.retainedDataRoots())).toBe(measureSandboxData(["abc", "def", environment.namespaces.late]));
++      environment.namespaces.late = "replaced";
++      expect(measureSandboxData(scope.retainedDataRoots())).toBe(14);
++      delete environment.namespaces.late;
++      expect(measureSandboxData(scope.retainedDataRoots())).toBe(6);
++    }
++  }
++});
++
++it("continues every getter-backed namespace read including exact provider errors", () => {
++  const parent = new Scope({outer: "abc"}, undefined, undefined, {globalEnvironment: true});
++  const scope = parent.child({inner: "def"});
++  let text = "first";
++  let failure: Error | undefined;
++  const getter = vi.fn(() => {
++    if (failure) throw failure;
++    return {module: {text}};
++  });
++  const environment = Object.freeze({available: [], get namespaces() {return getter();}});
++  parent.moduleEnvironment = environment;
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(measureSandboxData(["abc", "def", {text}]));
++  text = "much longer replacement";
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(measureSandboxData(["abc", "def", {text}]));
++  expect(getter).toHaveBeenCalledTimes(2);
++  failure = new Error("namespace provider failure");
++  expect(() => scope.retainedDataRoots()).toThrow(failure);
++  expect(getter).toHaveBeenCalledTimes(3);
++});
++
++it("revokes sharing when a source loader is attached without disabling imports", async () => {
++  const parent = new Scope({outer: "abc"}, undefined, undefined, {globalEnvironment: true});
++  const scope = parent.child({inner: "def"});
++  const environment = registry.createImmutableEmptyModuleEnvironment({budget: new Budget()});
++  parent.moduleEnvironment = environment;
++  expect(scope.retainedDataRoots()).toHaveLength(1);
++  const namespace = {text: "loaded"};
++  const loader = vi.fn(async () => namespace);
++  registry.attachSourceLoader(environment, loader);
++  expect(immutableEmptyModuleEnvironments.has(environment)).toBe(false);
++  expect(scope.retainedDataRoots()).toHaveLength(2);
++  expect(await registry.importModuleNamespace(environment, "source", "entry")).toBe(namespace);
++  namespace.text = "changed";
++  expect(await registry.importModuleNamespace(environment, "source", "entry")).toBe(namespace);
++  expect(loader.mock.calls).toEqual([[], []].map(() => ["source", "entry"]));
++});
++
++it("revokes an empty marker on runtime restoration or reattachment", () => {
++  const environment = registry.createImmutableEmptyModuleEnvironment({budget: new Budget()});
++  const parent = new Scope({outer: "abc"}, undefined, undefined, {globalEnvironment: true});
++  const scope = parent.child({inner: "def"});
++  parent.moduleEnvironment = environment;
++  expect(scope.retainedDataRoots()).toHaveLength(1);
++  expect(registry.createModuleEnvironment({}, {budget: new Budget()}, environment)).toBe(environment);
++  expect(immutableEmptyModuleEnvironments.has(environment)).toBe(false);
++  expect(scope.retainedDataRoots()).toHaveLength(2);
++});
++
++it.each(["registered", "wrapped", "restored"])("preserves %s namespaces and their live mutations", mode => {
++  const budget = new Budget();
++  const modules = {fixture: {text: "registered"}};
++  const wrapped = {text: "wrapped"};
++  const restored = {available: ["fixture"], namespaces: {fixture: {text: "restored"}}};
++  const environment = registry.createModuleEnvironment(modules,
++    {budget, ...(mode === "wrapped" ? {wrappedModules: new Map([["fixture", wrapped]])} : {})},
++    mode === "restored" ? restored : undefined);
++  const parent = new Scope({outer: "abc"}, undefined, undefined, {globalEnvironment: true});
++  const scope = parent.child({inner: "def"});
++  parent.moduleEnvironment = environment;
++  scope.retainedDataRoots();
++  expect(immutableEmptyModuleEnvironments.has(environment)).toBe(false);
++  expect(Object.isFrozen(environment)).toBe(false);
++  const namespace = registry.resolveModuleNamespace(environment, "fixture");
++  if (mode === "wrapped") expect(namespace).toBe(wrapped);
++  if (mode === "restored") expect(namespace).toBe(restored.namespaces.fixture);
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(measureSandboxData(["abc", "def", namespace]));
++  environment.namespaces.other = {payload: "later"};
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(measureSandboxData(["abc", "def", namespace, environment.namespaces.other]));
++  delete environment.namespaces.other;
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(measureSandboxData(["abc", "def", namespace]));
++});
++
++it("observes environment replacement and charged mutations in every ancestor", () => {
++  const parent = new Scope({}, undefined, undefined, {globalEnvironment: true});
++  parent.declare("outer", "let", "abc");
++  const scope = parent.child({inner: "def"});
++  parent.moduleEnvironment = registry.createImmutableEmptyModuleEnvironment({budget: new Budget()});
++  const before = scope.retainedDataRoots();
++  expect(before).toHaveLength(1);
++  parent.assign("outer", "longer");
++  expect(scope.retainedDataRoots()[0]).not.toBe(before[0]);
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(9);
++  parent.moduleEnvironment = {available: [], namespaces: {late: "module"}};
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(15);
++  parent.moduleEnvironment = registry.createImmutableEmptyModuleEnvironment({budget: new Budget()});
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(9);
++  parent.moduleEnvironment = undefined;
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(9);
++  parent.assign("outer", 0);
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(3);
++});
++
++it("keeps live capture providers, cycles and weak reachability behind shared groups", () => {
++  const parent = new Scope({}, undefined, undefined, {globalEnvironment: true});
++  const key: SandboxObject = {text: "abc"};
++  key.self = key;
++  const weak = createWeakCollection("map");
++  setWeakEntry(weak, key, "weak value");
++  const provider = vi.fn(() => [key]);
++  const closure = createSandboxClosure({call: () => undefined, retainedValues: provider});
++  parent.declare("closure", "let", closure);
++  parent.moduleEnvironment = registry.createImmutableEmptyModuleEnvironment({budget: new Budget()});
++  const scope = parent.child({text: "def"});
++  const roots = scope.retainedDataRoots();
++  const initial = measureSandboxData([...roots, weak]);
++  key.text = "longer";
++  expect(scope.retainedDataRoots()[0]).toBe(roots[0]);
++  expect(measureSandboxData([...scope.retainedDataRoots(), weak])).toBe(initial + 3);
++  expect(provider).toHaveBeenCalledTimes(2);
++  parent.assign("closure", 0);
++  expect(measureSandboxData([...scope.retainedDataRoots(), weak])).toBe(4);
++  expect(provider).toHaveBeenCalledTimes(2);
++});
++
++it("does not remove private, resource, with or import-meta disqualifiers", () => {
++  const parent = new Scope({outer: "abc"}, undefined, undefined, {globalEnvironment: true});
++  const scope = parent.child({inner: "def"});
++  parent.moduleEnvironment = registry.createImmutableEmptyModuleEnvironment({budget: new Budget()});
++  expect(scope.retainedDataRoots()).toHaveLength(1);
++  parent.declarePrivateName("first");
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(measureSandboxData(scope.retainedValues()));
++  parent.declarePrivateName("second");
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(measureSandboxData(scope.retainedValues()));
++  parent.resourceState = {resources: []};
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(measureSandboxData(scope.retainedValues()));
++  parent.resourceState.completion = {kind: "normal", hasValue: true, value: "held"};
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(measureSandboxData(scope.retainedValues()));
++  const withObject = {text: "object"};
++  const withScope = scope.withObject(withObject);
++  const before = measureSandboxData(withScope.retainedDataRoots());
++  withObject.text += "more";
++  expect(measureSandboxData(withScope.retainedDataRoots())).toBe(before + 4);
++  const meta = {url: "first"};
++  const moduleScope = new Scope({local: "value"}, scope, meta);
++  const metaBefore = measureSandboxData(moduleScope.retainedDataRoots());
++  meta.url += "more";
++  expect(measureSandboxData(moduleScope.retainedDataRoots())).toBe(metaBefore + 4);
++});
++
++it("retains exact depth and data-budget failures through immutable empty environments", () => {
++  const root: SandboxObject = {};
++  let tail = root;
++  for (let depth = 0; depth < MAX_DATA_DEPTH; depth++) {
++    const next: SandboxObject = {};
++    tail.next = next;
++    tail = next;
++  }
++  const parent = new Scope({root}, undefined, undefined, {globalEnvironment: true});
++  parent.moduleEnvironment = registry.createImmutableEmptyModuleEnvironment({budget: new Budget()});
++  const scope = parent.child({text: "abc"});
++  const usage = measureSandboxData(scope.retainedDataRoots());
++  expect(usage).toBe(4 + MAX_DATA_DEPTH * 6);
++  const budget = new Budget({dataSize: usage});
++  budget.reconcileDataUsage(usage);
++  root.extra = "x";
++  expect(() => budget.reconcileDataUsage(measureSandboxData(scope.retainedDataRoots())))
++    .toThrow(expect.objectContaining({code: "budgetExceeded", budget: "dataSize", current: usage + 7, limit: usage}));
++  tail.next = {};
++  expect(() => measureSandboxData(scope.retainedDataRoots()))
++    .toThrow(expect.objectContaining({code: "budgetExceeded", budget: "dataDepth", current: MAX_DATA_DEPTH + 1, limit: MAX_DATA_DEPTH}));
++});
++
++it("observes classic global and nested capture mutations after repeated sharing", async () => {
++  const budget = new Budget();
++  const realm = createRealm({classicScripts: true, budget});
++  try {
++    expect(await realm.evaluate(`var sharedGlobal = {text: "abc"};
++      let lexical = "def";
++      globalThis.reader = () => [sharedGlobal.text, lexical, globalThis.extra];
++      reader();`)).toMatchObject({ok: true, returnValue: ["abc", "def", undefined]});
++    expect(await realm.evaluate(`sharedGlobal.text = "longer"; lexical = "changed";
++      globalThis.extra = {data: "owned"}; reader();`))
++      .toMatchObject({ok: true, returnValue: ["longer", "changed", {data: "owned"}]});
++    expect(await realm.evaluate(`delete globalThis.extra; sharedGlobal = {text: "replacement"}; reader();`))
++      .toMatchObject({ok: true, returnValue: ["replacement", "changed", undefined]});
++    expect(await realm.evaluate(`Object.defineProperty(globalThis, "sharedGlobal", {value: {text: "descriptor"}}); reader();`))
++      .toMatchObject({ok: true, returnValue: ["descriptor", "changed", undefined]});
++  } finally {await realm.close();}
++  expect(budget.currentDataSize).toBe(0);
++  expect([...budget.retainedValues()]).toEqual([]);
++});
++
++it("keeps source and dynamic module loading live after classic scope sharing", async () => {
++  const requests: string[] = [];
++  const budget = new Budget();
++  const realm = createRealm({classicScripts: true, budget, sourceResolver: specifier => {
++    requests.push(specifier);
++    return specifier === "dep" ? {id: "dependency", source: "export function read(){return classicValue}"} : undefined;
++  }});
++  try {
++    expect(await realm.evaluate("var classicValue = 'first'; globalThis.readClassic = () => classicValue; readClassic();"))
++      .toMatchObject({ok: true, returnValue: "first"});
++    expect(await realm.evaluate("const namespace = await import('dep'); export const value = namespace.read();", {sourceType: "module", filename: "first-module"}))
++      .toMatchObject({ok: true, returnValue: {value: "first"}});
++    expect(await realm.evaluate("classicValue = 'second'; readClassic();"))
++      .toMatchObject({ok: true, returnValue: "second"});
++    expect(await realm.evaluate("import {read} from 'dep'; export const value = read();", {sourceType: "module", filename: "second-module"}))
++      .toMatchObject({ok: true, returnValue: {value: "second"}});
++    expect(requests).toEqual(["dep", "dep"]);
++  } finally {await realm.close();}
++  expect(budget.currentDataSize).toBe(0);
++});
++
++it("keeps registered host modules available across classic and explicit module evaluations", async () => {
++  const realm = createRealm({classicScripts: true, modules: {fixture: {read: () => "host"}}});
++  try {
++    expect(await realm.evaluate("globalThis.saved = () => 1; saved();")).toMatchObject({ok: true, returnValue: 1});
++    expect(await realm.evaluate("import {read} from 'fixture'; export const value = read();", {sourceType: "module"}))
++      .toMatchObject({ok: true, returnValue: {value: "host"}});
++    expect(await realm.evaluate("saved();")).toMatchObject({ok: true, returnValue: 1});
++  } finally {await realm.close();}
++});
++
++it("keeps old closures and held scope roots live through global deletion and redefinition across classic evaluations", async () => {
++  const original = Scope.prototype.retainedDataRoots;
++  const scopes = new Set<Scope>();
++  Scope.prototype.retainedDataRoots = function () {scopes.add(this); return original.call(this);};
++  const budget = new Budget();
++  const realm = createRealm({classicScripts: true, budget});
++  try {
++    expect(await realm.evaluate(`globalThis.subject = "first";
++      globalThis.readOld = (() => {
++        const captured = {text: "inside"};
++        globalThis.mutateOld = value => {captured.text = value;};
++        return () => [Object.hasOwn(globalThis, "subject"), globalThis.subject, captured.text];
++      })();
++      globalThis.original = readOld;
++      readOld();`)).toMatchObject({ok: true, returnValue: [true, "first", "inside"]});
++    Scope.prototype.retainedDataRoots = original;
++    const captured = [...scopes].filter(scope => scope.lookup("captured").found);
++    const held = captured.map(scope => ({scope, roots: scope.retainedDataRoots()}));
++    expect(held.length).toBeGreaterThan(0);
++    for (const entry of held) expect(entry.roots).toHaveLength(1);
++    const phases = [
++      {source: "delete globalThis.subject; readOld();", expected: [false, undefined, "inside"]},
++      {source: "Object.defineProperty(globalThis, 'subject', {value: {text: 'defined'}, writable: true, enumerable: true, configurable: true}); mutateOld('changed'); readOld();", expected: [true, {text: "defined"}, "changed"]},
++      {source: "Object.defineProperty(globalThis, 'subject', {get(){return 'getter-value'}, enumerable: true, configurable: true}); readOld();", expected: [true, "getter-value", "changed"]},
++      {source: "delete globalThis.subject; globalThis.subject = 'last'; readOld();", expected: [true, "last", "changed"]}
++    ];
++    for (const phase of phases) {
++      expect(await realm.evaluate(phase.source)).toMatchObject({ok: true, returnValue: phase.expected});
++      expect(await realm.evaluate("readOld === original")).toMatchObject({ok: true, returnValue: true});
++      for (const entry of held) expect(measureSandboxData(entry.roots)).toBe(measureSandboxData(entry.scope.retainedDataRoots()));
++    }
++  } finally {
++    Scope.prototype.retainedDataRoots = original;
++    await realm.close();
++  }
++  expect(budget.currentDataSize).toBe(0);
++  expect([...budget.retainedValues()]).toEqual([]);
++});
++
++it("switches empty to nonempty to empty while an old closure and cached roots remain held", () => {
++  const parent = new Scope({outer: "abc"}, undefined, undefined, {globalEnvironment: true});
++  const scope = parent.child({inner: "def"});
++  parent.moduleEnvironment = registry.createImmutableEmptyModuleEnvironment({budget: new Budget()});
++  const held = scope.retainedDataRoots();
++  const provider = vi.fn(() => scope.retainedDataRoots());
++  const closure = createSandboxClosure({call: () => undefined, retainedValues: provider});
++  expect(held).toHaveLength(1);
++  expect(measureSandboxData([closure])).toBe(7);
++  const mutable = {available: ["late"], namespaces: {late: "module"}};
++  parent.moduleEnvironment = mutable;
++  expect(measureSandboxData([closure])).toBe(13);
++  mutable.namespaces.late = "longer module";
++  expect(measureSandboxData([closure])).toBe(20);
++  parent.moduleEnvironment = registry.createImmutableEmptyModuleEnvironment({budget: new Budget()});
++  expect(measureSandboxData([closure])).toBe(7);
++  expect(measureSandboxData(held)).toBe(6);
++  expect(provider).toHaveBeenCalledTimes(4);
++});
++
++it("does not extend eligibility to nonclassic scopes, descriptor copies or native proxies", () => {
++  const environment = registry.createImmutableEmptyModuleEnvironment({budget: new Budget()});
++  const ordinary = new Scope({outer: "abc"});
++  ordinary.moduleEnvironment = environment;
++  expect(ordinary.child({inner: "def"}).retainedDataRoots()).toHaveLength(2);
++  const copy = Object.freeze(Object.create(Object.getPrototypeOf(environment), Object.getOwnPropertyDescriptors(environment))) as registry.ModuleEnvironment;
++  const proxy = new Proxy(environment, {});
++  for (const opaque of [copy, proxy]) {
++    const parent = new Scope({outer: "abc"}, undefined, undefined, {globalEnvironment: true});
++    parent.moduleEnvironment = opaque;
++    expect(immutableEmptyModuleEnvironments.has(opaque)).toBe(false);
++    expect(parent.child({inner: "def"}).retainedDataRoots()).toHaveLength(2);
++  }
++});
+diff --git a/packages/safe-js/src/interp/scope.ts b/packages/safe-js/src/interp/scope.ts
+index 7d59557..98f0973 100644
+--- a/packages/safe-js/src/interp/scope.ts
++++ b/packages/safe-js/src/interp/scope.ts
+@@ -7,6 +7,7 @@ import { getSandboxPropertyDescriptor } from "./object-model.js";
+ import type { SandboxObject } from "./values.js";
+ import type { ModuleEnvironment } from "../modules/registry.js";
+ import { scopeDataRoots } from "./scope-data-roots.js";
++import { immutableEmptyModuleEnvironments } from "../modules/empty-environment.js";
+ 
+ type ScopeBinding = {
+   kind: VariableDeclarationKind;
+@@ -289,7 +290,8 @@ export class Scope {
+     let scopes: Array<{ scope: Scope; revision: object }> | undefined = [];
+     let unchanged = captured !== undefined;
+     for (let scope: Scope | undefined = this; scope !== undefined; scope = scope.parent) {
+-      if (scope.moduleEnvironment !== undefined || scope.resourceState !== undefined ||
++      const moduleEnvironment = scope.moduleEnvironment;
++      if ((moduleEnvironment !== undefined && (scope.options.globalEnvironment !== true || !immutableEmptyModuleEnvironments.has(moduleEnvironment))) || scope.resourceState !== undefined ||
+           scope.privateNames !== undefined || scope.importMeta !== undefined || scope.withEnvironment) {
+         scopes = undefined;
+         break;
+diff --git a/packages/safe-js/src/modules/empty-environment.ts b/packages/safe-js/src/modules/empty-environment.ts
+new file mode 100644
+index 0000000..c7a2fe9
+--- /dev/null
++++ b/packages/safe-js/src/modules/empty-environment.ts
+@@ -0,0 +1,3 @@
++import type { ModuleEnvironment } from "./registry.js";
++
++export const immutableEmptyModuleEnvironments = new WeakSet<ModuleEnvironment>();
+diff --git a/packages/safe-js/src/modules/registry.ts b/packages/safe-js/src/modules/registry.ts
+index 5d7fba5..82b6b5d 100644
+--- a/packages/safe-js/src/modules/registry.ts
++++ b/packages/safe-js/src/modules/registry.ts
+@@ -20,6 +20,7 @@ import type {
+   SourceSpan
+ } from "../parse/parser.js";
+ import { registerPendingHostCallPolicy } from "../snapshot/policy.js";
++import { immutableEmptyModuleEnvironments } from "./empty-environment.js";
+ 
+ export type ModuleExports =
+   | ReadonlyMap<string, CallerInjectedBinding>
+@@ -57,10 +58,22 @@ export function createModuleEnvironment(modules: ModuleRegistry | undefined, opt
+     available: [...registry.keys()],
+     namespaces: createBindingRecord(Object.fromEntries(options.wrappedModules ?? []))
+   };
++  immutableEmptyModuleEnvironments.delete(environment);
+   moduleEnvironments.set(environment, {registry,options,prepared:new Set(),capabilities:new Map()});
+   return environment;
+ }
+ 
++export function createImmutableEmptyModuleEnvironment(options: ModuleEnvironmentOptions): ModuleEnvironment {
++  const environment = createModuleEnvironment(undefined, options);
++  if (Object.keys(environment.namespaces).length !== 0)
++    throw new TypeError("An immutable empty module environment cannot contain wrapped modules.");
++  Object.freeze(environment.available);
++  Object.freeze(environment.namespaces);
++  Object.freeze(environment);
++  immutableEmptyModuleEnvironments.add(environment);
++  return environment;
++}
++
+ export function resolveModuleNamespace(environment: ModuleEnvironment, moduleName: string, prepare = true): Record<string, SandboxValue> {
+   const backend = moduleEnvironments.get(environment);
+   if (backend === undefined) throw new TypeError("Module environment has not been attached to a runtime.");
+@@ -273,6 +286,7 @@ const sourceLoaders = new WeakMap<ModuleEnvironment, (specifier: string, referre
+ 
+ export function attachSourceLoader(environment: ModuleEnvironment,
+   loader: (specifier: string, referrer: string) => Promise<Record<string, SandboxValue>>): void {
++  immutableEmptyModuleEnvironments.delete(environment);
+   sourceLoaders.set(environment,loader);
+ }
+ 
+diff --git a/packages/safe-js/src/realm.ts b/packages/safe-js/src/realm.ts
+index 7707f11..50185ab 100644
+--- a/packages/safe-js/src/realm.ts
++++ b/packages/safe-js/src/realm.ts
+@@ -63,7 +63,7 @@ import {
+   type SafeJSExtension
+ } from "./extensions.js";
+ import {SourceModuleGraph, type SourceResolver} from "./modules/source-graph.js";
+-import { createModuleEnvironment, resolveModuleImports, type ModuleRegistry } from "./modules/registry.js";
++import { createImmutableEmptyModuleEnvironment, createModuleEnvironment, resolveModuleImports, type ModuleRegistry } from "./modules/registry.js";
+ import { parseExecutableModule } from "./parse/parser.js";
+ import { createEvalSource } from "./parse/dynamic-source.js";
+ import { createReplayableRandom } from "./random.js";
+@@ -869,7 +869,10 @@ class RealmState {
+       if (script) this.budget.chargeDataUsage(measureSandboxData([script.source]));
+       const module = script?.node ?? parseExecutableModule(source, filename, this.lease.owner);
+       this.initialize();
+-      const moduleEnvironment = createModuleEnvironment(this.modules, {...this.bridgeOptions(),wrappedModules:this.convertedModules});
++      const moduleOptions = {...this.bridgeOptions(),wrappedModules:this.convertedModules};
++      const moduleEnvironment = script && Object.keys(this.modules).length === 0 && this.convertedModules.size === 0
++        ? createImmutableEmptyModuleEnvironment(moduleOptions)
++        : createModuleEnvironment(this.modules, moduleOptions);
+       const imports = script ? {} : resolveModuleImports(module, this.modules, {
+         environment: moduleEnvironment,
+         ...this.bridgeOptions(),
