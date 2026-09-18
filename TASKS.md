@@ -6,6 +6,46 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Capture the real Zoom client and propose callback scheduling
+
+- Three native GETs cover two distinct private client URLs: an intentionally
+  forced-error302 probe, a separately scoped manual302 diagnostic repeat, then
+  the real app.zoom.us target200 with71193 HTML bytes at06:45:04.516UTC. Its48
+  Markdown bytes are only the JavaScript-required noscript message, not join UI.
+  Keep exact queries in host-resolved private constants, not process arguments.
+- Production transport already defaults to follow; the first probe's explicit
+  redirect-error policy is not a browser defect. The second probe now validates
+  an actual redacted manual302 Location handoff; preserve all original failures.
+- Static client-loader tracing proves five sequential script paths concatenated
+  with st1.zoom.us or backup us01st-cf.zoom.us, not the document origin. Ten public
+  candidate URLs, zero asset fetches/executions. Cached/detection/fallback branch
+  behavior and downstream client/media requirements remain execution-unverified.
+- Add an isolated public SafeJS callbackScheduling:"after-prefix" source proposal
+  with default denial retained, lifetime accounting and authored regressions.
+  Review found a missing discarded-rejection checkpoint; the correction and
+  original finding are preserved. No installed SDK or browser adapter changes.
+- Targeted revision-one semantic check: unmodified source0 errors, old source plus
+  new tests9 absent-new-API diagnostics, candidate0 across594 resolved files.
+  Follow-up review finds premature checking of another active source's rejection.
+  Revision two adds operation attribution and retained completed-owner checks;
+  after one test-only overload fix, candidate0 errors across9 roots/595 files,
+  baseline0 and old source plus new tests55 new-contract diagnostics. Preserve
+  the original finding, one-error candidate and revision-one evidence.
+  Further review finds resumed-generator attribution can retain an earlier
+  active resumer's owner. Revision three refreshes explicit resumptions while
+  preserving independent work/records: candidate0 errors across10 roots/595
+  files, baseline0 and old source plus new tests72 contract diagnostics. Patch
+  matches the exact candidate diff and checked roots; runtime remains untested.
+  This is no-emit static checking, not SDK/tests/full-build acceptance. Preserve
+  preliminary resolution/declaration failures; reused native817/0 is not rerun.
+- See reports/zoom-client-evaluation-2026-09-18.md/JSON and
+  contributions/safejs-browser-scheduling/QUALIFICATION.md. Next approve and run
+  isolated candidate SDK regressions, then explicit browser integration retaining
+  all19 core expectations. Historical ordinal12 failure and later10/7 gates stay
+  open. Actual client execution, native realtime media/decode, host admission,
+  recording/transcription/delivery, credentials/passkeys and broad goals remain
+  unproved. No meeting join, alternate engine, default runtime switch or push.
+
 ### Trace the real Zoom browser-client entry point
 
 - Native parsing/static AST inspection traces the captured launch shell's actual
