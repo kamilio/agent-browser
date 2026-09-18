@@ -47,6 +47,15 @@ missing SDK root, legacy-adapter configuration and reader-profile conflicts are
 rejected. These options do not install a compatible SDK or relax CSP/resource
 limits. Native mocked-process/CLI tests are not a real process or Zoom gate.
 
+A separate September 18 owned-process gate successfully imports a freshly
+compiled public SafeJS core, reports these exact runtime options, executes the
+capabilities command and emits three production heartbeats. It retains the
+256MiB child heap and restricted filesystem/process permissions. Only anonymous
+Unix-domain socketpairs for piped standard I/O were allowed by that isolated
+gate; network connections remained denied. Production close terminates the child
+with SIGKILL and leaves no pending commands. This proves startup and liveness,
+not page execution, scheduler behavior or a meeting join.
+
 ## Native integration
 
 - The guest's actual global object supplies `window`, `self`, `top` and `parent`
@@ -79,12 +88,14 @@ constructors, child browsing contexts and all web-platform descriptors are not
 promised.
 
 The captured React externals previously failed when assigning a host Window
-property. They now reach an SDK accounting/performance blocker and still exceed
-the native time limit. The explicit `after-prefix` scheduling option passes the
-controlled-event callback followed immediately by new source in the composed
-SDK/native fixture. Broader scheduler qualification still has separately tracked
-failures; this focused pass is not complete SDK qualification. No production
-timeout increase or publisher-source rewrite hides the remaining blockers.
+property. They now initialize under the separate explicit 120-second application
+profile, taking 118937ms in ASSETS26; the ordinary 16-second performance gate
+still fails. The explicit `after-prefix` scheduling option passes the controlled
+event callback followed immediately by new source in the composed SDK/native
+fixture. The combined accounting/scheduling/regex candidate passes 1113 selected
+SDK tests, not a full release qualification. Earlier scheduler and timeout
+failures remain recorded. See SCRIPT-BUDGET-PROFILES.md for the opt-in profile;
+publisher source and ordinary timeout defaults are unchanged.
 
 Native tests, captured-source execution and live HTTP acquisition are separate
 gates. No successful Zoom joining UI, meeting admission, incoming media decode,

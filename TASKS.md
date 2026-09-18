@@ -52,8 +52,12 @@ SCRIPT-CSP-POLICY.md. It does not yet permit the captured Zoom policy.
 Explicit classic-global/after-prefix options now flow through native CLI,
 runtime selection, SDK loading and process initialization/ready validation.
 Together with an opt-in large-source budget, parent native checks pass370 tests
-in13 files and build/types/format/lint. Actual process execution is still a
-separate gate. See CLASSIC-PAGE-GLOBALS.md and SCRIPT-BUDGET-PROFILES.md.
+in13 files and build/types/format/lint. A separate actual owned-process gate now
+imports a freshly compiled public core, verifies options/capabilities and three
+heartbeats, and closes with no pending commands. Its reviewed anonymous Unix
+stdio IPC allowance does not allow network connections; production child256Mi
+and permissions remain unchanged. It does not yet execute a page realm.
+See CLASSIC-PAGE-GLOBALS.md and SCRIPT-BUDGET-PROFILES.md.
 The budget profile preserves ordinary defaults and the16s/16MiB ceilings while
 allowing16M steps; it advances the2.7M vendor beyond parsing's old1.6M ceiling,
 then correctly stops at a separate SDK regex-source cap (one4143-unit literal).
