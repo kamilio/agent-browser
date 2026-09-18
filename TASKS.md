@@ -238,6 +238,19 @@ This is owned/public-protocol evidence, not real CLI startup, live Zoom loading,
 meeting admission or audio. Full-document Zoom and runtime performance remain
 the immediate work; keep the goal active.
 
+September18, full-document live Zoom attempt: actual core31/BqM3JX loads the
+158521-byte join document with its full CSP and normal script order. Thirteen
+real requests finish; ten scripts execute successfully. Script11 from
+file-paa.zoom.us,1497429 code units, hits the120s runtime limit after121737ms;
+subsequent script execution halts. Supervisor135.558s, no outer timeout/signals,
+all network/native owners closed, SDK finished with retained0/data0, processes
+absent. The parsed form is not a usable-client or meeting-admission success.
+Four import-only rehearsals remain preserved; qualified self-contained package
+reuse fixes their harness configuration, and rehearsal05 passes before the only
+live navigation. See reports/zoom-full-document-2026-09-18.md and the immutable
+private jKqVwS evidence. Runtime optimization and a meaningful replay are next;
+incoming media, recording, transcription and delivery remain open.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,
