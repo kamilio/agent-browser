@@ -12,13 +12,23 @@ allowance. Dynamically inserted inline scripts do not gain permission merely
 from strict-dynamic: they still need an applicable nonce or inline permission.
 
 `allowsScript` requires trusted native metadata: kind, nonce, parserInserted and
-nonceable. Never accept insertion provenance or nonceability from guest input.
+nonceable. External URL-source matching additionally requires both `url` and
+`redirectCount`, checked for each actual hop. HTTP(S) URLs must be absolute,
+bounded and credential-free. Never accept insertion provenance or nonceability
+from guest input. Existing four-field external metadata cannot obtain a URL-source
+allowance, but can still satisfy a valid nonce or strict-dynamic decision.
 `allowsBase` independently checks the supported empty/none/self base-uri subset.
 Report-only headers do not enforce restrictions; malformed or excessive enforced
 input denies admission without invoking property getters.
 
-Hashes, script URL sources, eval/wasm keywords and other security directives are
-currently unsupported and fail closed. This is not full Zoom CSP support. Real
+URL sources reuse the existing bounded native source matcher, with strict-dynamic
+taking precedence over URL allowlists. `stringCompilation` independently derives
+an immutable allow/deny decision from script-src or default-src, never
+script-src-elem. Multiple policies intersect; a nonce does not permit eval.
+Unsafe-eval grants JavaScript string compilation; wasm-unsafe-eval is recognized
+as element-inert metadata only. Blob source tokens are recognized, but blob
+requests and WASM execution remain unsupported. Hashes and other unsupported
+security directives fail closed. This is not full Zoom CSP support. Real
 integration still needs loader admission and all
 resource-destination enforcement; do not strip or ignore a publisher's policy
 to activate this evaluator.
@@ -88,3 +98,27 @@ calls. This gate verifies forwarding/refusal, not real guest eval enforcement.
 The SDK interpreter restriction, actual SDK qualification, eval/Function coverage
 and policy-to-document wiring remain separate requirements. No WASM support or
 publisher CSP admission is implied.
+
+## Actual SDK and per-page requirements
+
+The qualified private SDK now has actual native integration evidence for
+default/allow/deny, eval and Function constructor families, native event callbacks,
+page isolation, cancellation and owner cleanup: three tests and86 checks pass at
+`/tmp/agent-browser-native-string-policy-APzef5/stage02`. That gate predates the
+per-page forwarding change; it is not a new live browser or CSP admission pass.
+
+`PageRuntimeOptions.stringCompilation` adds an independent per-page requirement.
+The extension factory combines it with its immutable factory selection: deny
+wins, and a page cannot weaken a factory restriction. Each page snapshots its
+own requirement before SDK/module/window allocation, forwards the resulting
+constant and verifies the same immutable SDK echo before bootstrap. Absence of
+both requirements preserves old SDK compatibility. The legacy factory rejects
+explicit requirements before allocation; malformed, inherited or accessor-backed
+page settings reject without invoking getters.
+
+The focused per-page native suite passes412 tests in10 files, and source matching
+passes549 tests in5 files. Parent integration passes3074 in62 selected files,
+with build/types/format/lint passing. Original red, harness and formatting failures
+remain preserved. Document policy computation, PageScripts/loader forwarding and
+all active resource-destination checks remain separate work; the captured full
+Zoom policy still does not pass live admission.

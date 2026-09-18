@@ -5,11 +5,12 @@ import {
 	type PageNetworkModuleOptions,
 	PageNetworkModuleRegistry,
 } from "./page-network-modules.js";
-import type {
-	PageRuntimeError,
-	PageRuntimeEvaluationOptions,
-	PageRuntimeFactory,
-	PageRuntimeResult,
+import {
+	readPageStringCompilation,
+	type PageRuntimeError,
+	type PageRuntimeEvaluationOptions,
+	type PageRuntimeFactory,
+	type PageRuntimeResult,
 } from "./page-runtime.js";
 import {
 	type PageSourceModuleOptions,
@@ -139,6 +140,11 @@ export function extensionPageRuntime(
 				: undefined;
 	return {
 		createPageRuntime(options) {
+			const pageStringCompilation = readPageStringCompilation(options);
+			const effectiveStringCompilation =
+				stringCompilation === "deny" || pageStringCompilation === "deny"
+					? "deny"
+					: (pageStringCompilation ?? stringCompilation);
 			const windowGlobal = classicScripts
 				? new PageWindowGlobal(options.globals)
 				: undefined;
@@ -305,7 +311,9 @@ export function extensionPageRuntime(
 				realm = core.createRealm({
 					...(classicScripts ? { classicScripts: true } : {}),
 					...(callbackScheduling ? { callbackScheduling } : {}),
-					...(stringCompilation === undefined ? {} : { stringCompilation }),
+					...(effectiveStringCompilation === undefined
+						? {}
+						: { stringCompilation: effectiveStringCompilation }),
 					...(moduleScope
 						? {
 								sourceResolver: (specifier, referrer, resolution) => {
@@ -322,7 +330,7 @@ export function extensionPageRuntime(
 					sink: options.sink,
 					limits: extensionPageRuntimeLimits,
 				});
-				if (stringCompilation !== undefined) {
+				if (effectiveStringCompilation !== undefined) {
 					const policy = Object.getOwnPropertyDescriptor(
 						realm,
 						"stringCompilation",
@@ -330,7 +338,7 @@ export function extensionPageRuntime(
 					if (
 						!policy ||
 						!Object.hasOwn(policy, "value") ||
-						policy.value !== stringCompilation ||
+						policy.value !== effectiveStringCompilation ||
 						policy.writable ||
 						policy.configurable
 					)

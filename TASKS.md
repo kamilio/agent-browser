@@ -66,6 +66,16 @@ remain preserved. Native HOME/TMP are empty; quality-tool cache directories are
 retained, not claimed empty. Actual owned/live loading with the new selection is
 still an acceptance gate. See SCRIPT-BUDGET-PROFILES.md.
 
+September18,16:44UTC: script policy URL matching and its independent unsafe-eval
+decision now compose with a per-page runtime requirement that cannot weaken a
+factory deny setting. Parent union passes3074 native tests in62 files at
+`/tmp/agent-browser-policy-union-NsWVpH/candidate`, with all quality checks.
+The actual SDK policy gate separately passes3 tests/86 checks on the prior
+adapter at `/tmp/agent-browser-native-string-policy-APzef5/stage02`; it is not
+evidence for newly wired document CSP. Full Zoom policy admission and active
+resource enforcement remain open. These changes do not fix the observed jQuery
+host-object expando failure; its dedicated SDK implementation remains active.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,

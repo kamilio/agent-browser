@@ -74,6 +74,7 @@ export interface PageRuntime {
 }
 
 export interface PageRuntimeOptions {
+	stringCompilation?: "allow" | "deny";
 	regexSourceLength?: number;
 	regexCompileAllocations?: number;
 	initializationSource?: string;
@@ -88,6 +89,27 @@ export interface PageRuntimeOptions {
 
 export interface PageRuntimeFactory {
 	createPageRuntime(options: PageRuntimeOptions): PageRuntime;
+}
+
+export function readPageStringCompilation(
+	options: PageRuntimeOptions,
+): "allow" | "deny" | undefined {
+	const descriptor = Object.getOwnPropertyDescriptor(
+		options,
+		"stringCompilation",
+	);
+	if (
+		descriptor
+			? !Object.hasOwn(descriptor, "value") ||
+				!descriptor.enumerable ||
+				(descriptor.value !== "allow" && descriptor.value !== "deny")
+			: "stringCompilation" in options
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid per-page guest string compilation policy",
+		);
+	return descriptor?.value;
 }
 
 export function legacyPageRuntime(core: PageScriptCore): PageRuntimeFactory {
@@ -110,6 +132,11 @@ export function legacyPageRuntime(core: PageScriptCore): PageRuntimeFactory {
 		);
 	return {
 		createPageRuntime(options) {
+			if (readPageStringCompilation(options) !== undefined)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Per-page string compilation policy requires the extension runtime",
+				);
 			if (options.initializationSource !== undefined)
 				throw new AgentBrowserError(
 					"unsupported",

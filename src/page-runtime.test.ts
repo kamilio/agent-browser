@@ -4,13 +4,124 @@ import { BrowserEvent } from "./events.js";
 import { DocumentInteractions } from "./interactions.js";
 import type { PageBindingContext } from "./page-bindings.js";
 import { readPageConsole } from "./page-console.js";
-import type {
-	PageRuntime,
-	PageRuntimeFactory,
-	PageRuntimeOptions,
-	PageRuntimeResult,
+import {
+	legacyPageRuntime,
+	type PageRuntime,
+	type PageRuntimeFactory,
+	type PageRuntimeOptions,
+	type PageRuntimeResult,
+	type PageScriptCore,
 } from "./page-runtime.js";
 import { PageScripts } from "./page-scripts.js";
+import { scriptLimits } from "./safejs.js";
+
+function legacyPolicyFixture() {
+	const allocate = vi.fn();
+	class Budget {
+		stepsUsed = 0;
+		peakCallDepth = 0;
+		peakDataSize = 0;
+		constructor() {
+			allocate();
+		}
+	}
+	const realm = {
+		closed: false,
+		evaluate: vi.fn(async () => ({ returnValue: 42 })),
+		close: vi.fn(async () => {}),
+	};
+	const core: PageScriptCore = {
+		Budget,
+		SandboxError: class extends Error {
+			code = "script-error";
+		},
+		createRealm: vi.fn(() => realm),
+		createHostObject: () => ({}),
+		retainGuestArguments: (operation) => operation,
+		releaseGuestReference: () => true,
+		deepCopyFromSandbox: (value) => value,
+		startCallback: () => ({
+			synchronous: Promise.resolve(),
+			result: Promise.resolve(),
+		}),
+	};
+	const options: PageRuntimeOptions = {
+		limits: scriptLimits(),
+		signal: new AbortController().signal,
+		globals: [],
+		onClosed: vi.fn(),
+		setup: vi.fn(() => ({})),
+		sink: { log() {}, error() {} },
+	};
+	return { core, realm, allocate, options, factory: legacyPageRuntime(core) };
+}
+
+it.each(["allow", "deny"] as const)(
+	"legacy runtime refuses explicit per-page %s before allocation or setup",
+	(stringCompilation) => {
+		const test = legacyPolicyFixture();
+		Object.assign(test.options, { stringCompilation });
+		expect(() => test.factory.createPageRuntime(test.options)).toThrow(
+			expect.objectContaining({ code: "unsupported" }),
+		);
+		expect(test.allocate).not.toHaveBeenCalled();
+		expect(test.options.setup).not.toHaveBeenCalled();
+		expect(test.core.createRealm).not.toHaveBeenCalled();
+	},
+);
+
+it.each([undefined, null, false, 0, "DENY", {}, []])(
+	"legacy runtime rejects malformed per-page policy %j without allocation",
+	(stringCompilation) => {
+		const test = legacyPolicyFixture();
+		Object.assign(test.options, { stringCompilation });
+		expect(() => test.factory.createPageRuntime(test.options)).toThrow(
+			expect.objectContaining({ code: "invalid-input" }),
+		);
+		expect(test.allocate).not.toHaveBeenCalled();
+		expect(test.options.setup).not.toHaveBeenCalled();
+		expect(test.core.createRealm).not.toHaveBeenCalled();
+	},
+);
+
+it("legacy runtime rejects inherited and accessor page policies without invoking getters", () => {
+	const getter = vi.fn(() => "deny");
+	for (const inherited of [false, true]) {
+		const test = legacyPolicyFixture();
+		const target = inherited ? {} : test.options;
+		if (inherited) Object.setPrototypeOf(test.options, target);
+		Object.defineProperty(target, "stringCompilation", {
+			get: getter,
+			enumerable: true,
+		});
+		expect(() => test.factory.createPageRuntime(test.options)).toThrow(
+			expect.objectContaining({ code: "invalid-input" }),
+		);
+		expect(test.allocate).not.toHaveBeenCalled();
+		expect(test.options.setup).not.toHaveBeenCalled();
+		expect(test.core.createRealm).not.toHaveBeenCalled();
+	}
+	expect(getter).not.toHaveBeenCalled();
+});
+
+it("legacy runtime preserves omitted per-page policy compatibility", async () => {
+	const test = legacyPolicyFixture();
+	const runtime = test.factory.createPageRuntime(test.options);
+	try {
+		await runtime.initialize();
+		expect(
+			await runtime.evaluate("source", { signal: test.options.signal }),
+		).toEqual({ ok: true, returnValue: 42 });
+		expect(test.allocate).toHaveBeenCalledOnce();
+		expect(test.options.setup).toHaveBeenCalledOnce();
+		expect(
+			vi.mocked(test.core.createRealm).mock.calls[0][0],
+		).not.toHaveProperty("stringCompilation");
+	} finally {
+		await runtime.close();
+	}
+	expect(test.realm.close).toHaveBeenCalledOnce();
+});
 
 const owners: { scripts: PageScripts; tree: DocumentTree }[] = [];
 afterEach(async () => {

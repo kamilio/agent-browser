@@ -1,3 +1,5 @@
+import { ContentSecurityPolicy } from "./content-security-policy.js";
+
 export interface ScriptCspPolicyLimits {
 	readonly maxHeaderFields: number;
 	readonly maxHeaderValues: number;
@@ -27,6 +29,8 @@ export interface ScriptCspRequest {
 	readonly nonce: string;
 	readonly parserInserted: boolean;
 	readonly nonceable: boolean;
+	readonly url?: string;
+	readonly redirectCount?: number;
 }
 
 export interface ScriptCspIssue {
@@ -47,6 +51,7 @@ export interface ScriptCspPolicy {
 	readonly unsupported: boolean;
 	readonly issues: readonly ScriptCspIssue[];
 	readonly policyCount: number;
+	readonly stringCompilation: "allow" | "deny";
 	allowsScript(request: ScriptCspRequest): boolean;
 	allowsBase(absoluteUrl: string): boolean;
 }
@@ -55,17 +60,40 @@ interface ScriptSources {
 	readonly nonces: readonly string[];
 	readonly unsafeInline: boolean;
 	readonly strictDynamic: boolean;
+	readonly unsafeEval: boolean;
+	readonly urls?: ContentSecurityPolicy;
+	readonly urlCount: number;
+	readonly urlCost: number;
 }
 
 interface Policy {
 	readonly script?: ScriptSources;
 	readonly base?: "none" | "self";
+	readonly stringCompilation: "allow" | "deny";
+}
+
+interface ScriptRequestData extends ScriptCspRequest {
+	readonly target?: URL;
+	readonly redirectCount: number;
 }
 
 const enforcedHeader = "content-security-policy";
 const nonceValue = /^[a-zA-Z0-9+/_-]+={0,2}$/;
 const sourceDirectives = ["script-src-elem", "script-src", "default-src"];
 const requestKeys = ["kind", "nonce", "parserInserted", "nonceable"];
+const hostSource =
+	/^(?:(https?):\/\/)?(\*|(?:\*\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.?)(?::(\*|[0-9]+))?(\/[a-z0-9._~!$&'()*+=:@%/-]*)?$/i;
+
+function validUrlSource(expression: string): boolean {
+	if (expression.toLowerCase() === "'self'" || expression === "*") return true;
+	if (/^(?:https?|blob):$/i.test(expression)) return true;
+	const parts = hostSource.exec(expression);
+	if (!parts || /^(?:[0-9]+\.){3}[0-9]+\.?$/.test(parts[2])) return false;
+	if (parts[4] && /%(?![0-9a-f]{2})/i.test(parts[4])) return false;
+	return (
+		parts[3] === undefined || parts[3] === "*" || Number(parts[3]) <= 65535
+	);
+}
 
 class PolicyInputError extends Error {
 	constructor(readonly code: ScriptCspIssue["code"]) {
@@ -181,13 +209,12 @@ function headerValues(
 function requestData(
 	value: unknown,
 	limits: ScriptCspPolicyLimits,
-): ScriptCspRequest | undefined {
+): ScriptRequestData | undefined {
 	try {
-		if (
-			!plainRecord(value) ||
-			Object.getOwnPropertySymbols(value).length ||
-			Object.getOwnPropertyNames(value).length !== requestKeys.length
-		)
+		if (!plainRecord(value) || Object.getOwnPropertySymbols(value).length)
+			return undefined;
+		const count = Object.getOwnPropertyNames(value).length;
+		if (count !== requestKeys.length && count !== requestKeys.length + 2)
 			return undefined;
 		const kind = dataValue(value, "kind");
 		const nonce = dataValue(value, "nonce");
@@ -202,7 +229,22 @@ function requestData(
 			typeof nonceable !== "boolean"
 		)
 			return undefined;
-		return { kind, nonce, parserInserted, nonceable };
+		let target: URL | undefined;
+		let redirectCount = 0;
+		if (count !== requestKeys.length) {
+			if (kind !== "external") return undefined;
+			target = networkUrl(dataValue(value, "url"), limits.maxUrlCodeUnits);
+			const redirects = dataValue(value, "redirectCount");
+			if (
+				!target ||
+				typeof redirects !== "number" ||
+				!Number.isSafeInteger(redirects) ||
+				redirects < 0
+			)
+				return undefined;
+			redirectCount = redirects;
+		}
+		return { kind, nonce, parserInserted, nonceable, target, redirectCount };
 	} catch {
 		return undefined;
 	}
@@ -275,13 +317,18 @@ export function createScriptCspPolicy(
 						continue;
 					}
 					const nonces: string[] = [];
+					const urls: string[] = [];
+					let urlCost = 0;
 					let unsafeInline = false;
 					let strictDynamic = false;
+					let unsafeEval = false;
 					for (const expression of expressions) {
 						const folded = expression.toLowerCase();
-						if (folded === "'none'") continue;
+						if (folded === "'none'" || folded === "'wasm-unsafe-eval'")
+							continue;
 						if (folded === "'unsafe-inline'") unsafeInline = true;
 						else if (folded === "'strict-dynamic'") strictDynamic = true;
+						else if (folded === "'unsafe-eval'") unsafeEval = true;
 						else if (
 							folded.startsWith("'nonce-") &&
 							expression.endsWith("'") &&
@@ -291,6 +338,11 @@ export function createScriptCspPolicy(
 							if (nonce.length > limits.maxNonceCodeUnits)
 								throw new PolicyInputError("resource-limit");
 							nonces.push(nonce);
+						} else if (validUrlSource(expression)) {
+							if (expression.length > limits.maxUrlCodeUnits)
+								throw new PolicyInputError("resource-limit");
+							urls.push(expression);
+							urlCost += expression.length;
 						} else issue("unsupported-script-source", name);
 					}
 					scripts.set(
@@ -299,6 +351,16 @@ export function createScriptCspPolicy(
 							nonces: Object.freeze(nonces),
 							unsafeInline: unsafeInline && !nonces.length && !strictDynamic,
 							strictDynamic,
+							unsafeEval,
+							urls: urls.length
+								? new ContentSecurityPolicy(
+										document.href,
+										[`img-src ${urls.join(" ")}`],
+										"image",
+									)
+								: undefined,
+							urlCount: urls.length,
+							urlCost,
 						}),
 					);
 				}
@@ -309,6 +371,11 @@ export function createScriptCspPolicy(
 							scripts.get("script-src") ??
 							scripts.get("default-src"),
 						base,
+						stringCompilation:
+							(scripts.get("script-src") ?? scripts.get("default-src"))
+								?.unsafeEval === false
+								? "deny"
+								: "allow",
 					}),
 				);
 			}
@@ -323,6 +390,11 @@ export function createScriptCspPolicy(
 		unsupported,
 		issues: Object.freeze(issues),
 		policyCount: policies.length,
+		stringCompilation:
+			!unsupported &&
+			policies.every((policy) => policy.stringCompilation === "allow")
+				? ("allow" as const)
+				: ("deny" as const),
 		allowsScript: Object.freeze((input: ScriptCspRequest): boolean => {
 			if (unsupported) return false;
 			const request = requestData(input, limits);
@@ -342,16 +414,29 @@ export function createScriptCspPolicy(
 							break;
 						}
 					}
-				if (
-					!matchedNonce &&
-					!(
-						request.kind === "external" &&
-						sources.strictDynamic &&
-						!request.parserInserted
-					) &&
-					!(request.kind === "inline" && sources.unsafeInline)
-				)
+				if (matchedNonce) continue;
+				if (request.kind === "inline") {
+					if (!sources.unsafeInline) return false;
+					continue;
+				}
+				if (sources.strictDynamic) {
+					if (request.parserInserted) return false;
+					continue;
+				}
+				const target = request.target;
+				if (!target || !sources.urls) return false;
+				work +=
+					target.href.length +
+					sources.urlCost +
+					sources.urlCount *
+						(target.hostname.length + target.pathname.length + 1);
+				if (work > limits.maxMatchWork) return false;
+				try {
+					if (!sources.urls.allows(target.href, request.redirectCount))
+						return false;
+				} catch {
 					return false;
+				}
 			}
 			return true;
 		}),

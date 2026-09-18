@@ -8,8 +8,10 @@ import {
 import { DocumentInteractions } from "./interactions.js";
 import { pageBindingGlobalNames } from "./page-bindings.js";
 import { bindPageHistory } from "./page-history.js";
+import type { PageRuntime, PageRuntimeOptions } from "./page-runtime.js";
 import { PageScripts, type PageScriptOptions } from "./page-scripts.js";
 import { bindPageStorage } from "./page-storage.js";
+import { scriptLimits } from "./safejs.js";
 import type {
 	ReleasedContext,
 	ReleasedCore,
@@ -20,7 +22,9 @@ import type {
 type Definition = Parameters<ReleasedCore["defineExtension"]>[0];
 type RealmOptions = Parameters<ReleasedCore["createRealm"]>[0];
 const owners: { scripts: PageScripts; tree: DocumentTree }[] = [];
+const pageRuntimes: PageRuntime[] = [];
 afterEach(async () => {
+	for (const runtime of pageRuntimes.splice(0)) await runtime.close();
 	for (const { scripts, tree } of owners.splice(0)) {
 		await scripts.close().catch(() => undefined);
 		tree.close();
@@ -199,6 +203,226 @@ function fixture(
 		state: shared.realms[shared.realms.length - 1],
 	};
 }
+
+function policyPageOptions(
+	selection: Record<string, unknown> = {},
+): PageRuntimeOptions {
+	return Object.assign(
+		{
+			limits: scriptLimits(),
+			signal: new AbortController().signal,
+			globals: ["console"],
+			onClosed: vi.fn(),
+			setup: vi.fn((context: Parameters<PageRuntimeOptions["setup"]>[0]) => ({
+				console: context.createHostObject({ methods: {} }),
+			})),
+			sink: { log() {}, error() {} },
+		},
+		selection,
+	);
+}
+
+it.each([
+	[undefined, undefined, undefined],
+	[undefined, "allow", "allow"],
+	[undefined, "deny", "deny"],
+	["allow", undefined, "allow"],
+	["allow", "allow", "allow"],
+	["allow", "deny", "deny"],
+	["deny", undefined, "deny"],
+	["deny", "allow", "deny"],
+	["deny", "deny", "deny"],
+] as const)(
+	"intersects factory %s and per-page %s as %s",
+	async (factoryPolicy, pagePolicy, effective) => {
+		const shared = fakeCore(
+			effective === undefined ? undefined : { value: effective },
+		);
+		const factory = extensionPageRuntime(
+			shared.core,
+			factoryPolicy === undefined ? {} : { stringCompilation: factoryPolicy },
+		);
+		const options = policyPageOptions(
+			pagePolicy === undefined ? {} : { stringCompilation: pagePolicy },
+		);
+		const runtime = factory.createPageRuntime(options);
+		pageRuntimes.push(runtime);
+		if (effective === undefined)
+			expect(shared.realms[0].options).not.toHaveProperty("stringCompilation");
+		else expect(shared.realms[0].options.stringCompilation).toBe(effective);
+		expect(options.setup).not.toHaveBeenCalled();
+		await runtime.initialize();
+		expect(options.setup).toHaveBeenCalledOnce();
+	},
+);
+
+it("snapshots both selections before other page properties and lazy setup can mutate them", async () => {
+	const shared = fakeCore({ value: "deny" });
+	const configuration: ExtensionPageRuntimeOptions = {
+		stringCompilation: "allow",
+	};
+	const factory = extensionPageRuntime(shared.core, configuration);
+	configuration.stringCompilation = "deny";
+	const options = policyPageOptions({ stringCompilation: "deny" });
+	Object.defineProperty(options, "globals", {
+		get() {
+			Object.assign(options, { stringCompilation: "allow" });
+			return ["console"];
+		},
+	});
+	const runtime = factory.createPageRuntime(options);
+	pageRuntimes.push(runtime);
+	expect(shared.realms[0].options.stringCompilation).toBe("deny");
+	await runtime.initialize();
+	expect(shared.realms[0].options.stringCompilation).toBe("deny");
+	const second = extensionPageRuntime(shared.core, {
+		stringCompilation: "deny",
+	});
+	const allowed = policyPageOptions({ stringCompilation: "allow" });
+	pageRuntimes.push(second.createPageRuntime(allowed));
+	expect(shared.realms[1].options.stringCompilation).toBe("deny");
+});
+
+it("keeps distinct page selections and lifetimes in a shared factory", async () => {
+	const policy = { value: "deny" };
+	const shared = fakeCore(policy);
+	const configuration: ExtensionPageRuntimeOptions = {};
+	const factory = extensionPageRuntime(shared.core, configuration);
+	configuration.stringCompilation = "deny";
+	for (const selection of ["deny", "allow", undefined] as const) {
+		policy.value = selection ?? "allow";
+		const options = policyPageOptions(
+			selection === undefined ? {} : { stringCompilation: selection },
+		);
+		const runtime = factory.createPageRuntime(options);
+		pageRuntimes.push(runtime);
+		await runtime.initialize();
+	}
+	expect(shared.realms.map((state) => state.options.stringCompilation)).toEqual(
+		["deny", "allow", undefined],
+	);
+	expect(shared.realms[2].options).not.toHaveProperty("stringCompilation");
+	await pageRuntimes[0].close();
+	expect(pageRuntimes[1].closed).toBe(false);
+	expect(pageRuntimes[2].closed).toBe(false);
+	expect(shared.realms.map((state) => state.disposals)).toEqual([1, 0, 0]);
+});
+
+it.each([
+	undefined,
+	null,
+	false,
+	true,
+	0,
+	"",
+	"DENY",
+	"block",
+	{},
+	[],
+	new String("deny"),
+])(
+	"rejects malformed page selection %j before any SDK allocation even under factory deny",
+	(stringCompilation) => {
+		const shared = fakeCore({ value: "deny" });
+		const options = policyPageOptions({ stringCompilation });
+		expect(() =>
+			extensionPageRuntime(shared.core, {
+				stringCompilation: "deny",
+			}).createPageRuntime(options),
+		).toThrow(expect.objectContaining({ code: "invalid-input" }));
+		expect(shared.budgetOptions).toEqual([]);
+		expect(shared.defineExtension).not.toHaveBeenCalled();
+		expect(shared.createRealm).not.toHaveBeenCalled();
+		expect(options.setup).not.toHaveBeenCalled();
+	},
+);
+
+it("rejects inherited, accessor and hidden per-page policy descriptors without invoking them", () => {
+	const getter = vi.fn(() => "deny");
+	const setter = vi.fn();
+	const inherited = policyPageOptions();
+	Object.setPrototypeOf(
+		inherited,
+		Object.defineProperty({}, "stringCompilation", { get: getter }),
+	);
+	for (const options of [
+		inherited,
+		Object.setPrototypeOf(policyPageOptions(), { stringCompilation: "allow" }),
+		Object.defineProperty(policyPageOptions(), "stringCompilation", {
+			get: getter,
+			enumerable: true,
+		}),
+		Object.defineProperty(policyPageOptions(), "stringCompilation", {
+			set: setter,
+			enumerable: true,
+		}),
+		Object.defineProperty(policyPageOptions(), "stringCompilation", {
+			value: "deny",
+		}),
+	]) {
+		const shared = fakeCore();
+		expect(() =>
+			extensionPageRuntime(shared.core).createPageRuntime(options),
+		).toThrow(expect.objectContaining({ code: "invalid-input" }));
+		expect(shared.budgetOptions).toEqual([]);
+		expect(shared.defineExtension).not.toHaveBeenCalled();
+		expect(shared.createRealm).not.toHaveBeenCalled();
+		expect(options.setup).not.toHaveBeenCalled();
+	}
+	expect(getter).not.toHaveBeenCalled();
+	expect(setter).not.toHaveBeenCalled();
+});
+
+it.each([
+	["allow", undefined],
+	["deny", undefined],
+	["allow", { value: "deny" }],
+	["deny", { value: "allow" }],
+	["deny", { value: "deny", writable: true }],
+	["deny", { value: "deny", configurable: true }],
+	["deny", { value: new String("deny") }],
+] as const)(
+	"disposes an SDK with mismatched per-page %s echo %# before any bootstrap",
+	async (stringCompilation, descriptor) => {
+		const shared = fakeCore(descriptor);
+		const options = policyPageOptions({ stringCompilation });
+		options.initializationSource = "must not execute";
+		expect(() =>
+			extensionPageRuntime(shared.core).createPageRuntime(options),
+		).toThrow(expect.objectContaining({ code: "unsupported" }));
+		await Promise.resolve();
+		expect(shared.realms).toHaveLength(1);
+		expect(shared.realms[0].disposals).toBe(1);
+		expect(shared.realms[0].signal.signal.aborted).toBe(true);
+		expect(shared.realms[0].evaluate).not.toHaveBeenCalled();
+		expect(options.setup).not.toHaveBeenCalled();
+		expect(options.onClosed).toHaveBeenCalledOnce();
+	},
+);
+
+it("rejects a getter or inherited SDK echo for a page-only requirement", async () => {
+	const getter = vi.fn(() => "deny");
+	for (const inherited of [false, true]) {
+		const shared = fakeCore(inherited ? undefined : { get: getter });
+		if (inherited) {
+			const create = shared.createRealm.getMockImplementation();
+			if (!create) throw new Error("Missing realm fixture");
+			shared.createRealm.mockImplementation((options) =>
+				Object.setPrototypeOf(create(options), { stringCompilation: "deny" }),
+			);
+		}
+		const options = policyPageOptions({ stringCompilation: "deny" });
+		expect(() =>
+			extensionPageRuntime(shared.core).createPageRuntime(options),
+		).toThrow(expect.objectContaining({ code: "unsupported" }));
+		await Promise.resolve();
+		expect(shared.realms[0].disposals).toBe(1);
+		expect(shared.realms[0].evaluate).not.toHaveBeenCalled();
+		expect(options.setup).not.toHaveBeenCalled();
+		expect(options.onClosed).toHaveBeenCalledOnce();
+	}
+	expect(getter).not.toHaveBeenCalled();
+});
 
 it.each([undefined, "bounded-v1", "large-source-v1"] as const)(
 	"requests larger regex compilation only for explicit large-source profile %s",

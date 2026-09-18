@@ -1,4 +1,5 @@
 import { expect, it, vi } from "vitest";
+import { ContentSecurityPolicy } from "./content-security-policy.js";
 import {
 	type ScriptCspPolicyLimits,
 	type ScriptCspRequest,
@@ -26,6 +27,14 @@ function request(changes: Partial<ScriptCspRequest> = {}): ScriptCspRequest {
 
 function policy(value: string, limits?: Partial<ScriptCspPolicyLimits>) {
 	return createScriptCspPolicy(documentUrl, headers(value), limits);
+}
+
+function external(
+	url: string,
+	redirectCount = 0,
+	changes: Partial<ScriptCspRequest> = {},
+): ScriptCspRequest {
+	return request({ kind: "external", url, redirectCount, ...changes });
 }
 
 it("admits valid script metadata without enforced CSP and keeps report-only inert", () => {
@@ -207,6 +216,7 @@ it("requires every enforced policy to authorize a dynamic inline script independ
 it("suppresses unsafe-inline for nonces, hashes and strict-dynamic without granting eval", () => {
 	const inline = request();
 	expect(policy("script-src 'unsafe-inline'").allowsScript(inline)).toBe(true);
+	expect(policy("script-src 'unsafe-inline'").stringCompilation).toBe("deny");
 	expect(
 		policy("script-src 'unsafe-inline'").allowsScript(
 			request({ kind: "external" }),
@@ -216,11 +226,7 @@ it("suppresses unsafe-inline for nonces, hashes and strict-dynamic without grant
 		expect(
 			policy(`script-src 'unsafe-inline' ${expression}`).allowsScript(inline),
 		).toBe(false);
-	for (const expression of [
-		"'unsafe-eval'",
-		"'wasm-unsafe-eval'",
-		"'trusted-types-eval'",
-	]) {
+	for (const expression of ["'trusted-types-eval'"]) {
 		const result = policy(
 			`script-src ${source} 'strict-dynamic' ${expression}`,
 		);
@@ -297,7 +303,7 @@ it("uses the first case-insensitive duplicate directive even when a later value 
 		),
 	).toBe(false);
 	expect(policy(`script-src https:; script-src ${source}`).unsupported).toBe(
-		true,
+		false,
 	);
 });
 
@@ -380,10 +386,6 @@ it.each([
 );
 
 it.each([
-	"'self'",
-	"*",
-	"https:",
-	"https://example.com/",
 	"'sha256-YWJj'",
 	"'sha384-YWJj'",
 	"'sha512-YWJj'",
@@ -704,4 +706,447 @@ it("snapshots headers/limits and exposes a frozen capability with detached metho
 	expect(Object.isFrozen(unsupported.issues[0])).toBe(true);
 	expect(Reflect.set(unsupported, "unsupported", false)).toBe(false);
 	expect(Reflect.set(unsupported.issues[0], "code", "allowed")).toBe(false);
+});
+
+it.each([
+	["'self'", "https://example.com/app.js", true],
+	["'self'", "https://example.com:443/app.js", true],
+	["'self'", "https://sub.example.com/app.js", false],
+	["'self'", "https://example.com:444/app.js", false],
+	["'self'", "http://example.com/app.js", false],
+	["https:", "https://other.example/app.js", true],
+	["https:", "http://other.example/app.js", false],
+	["http:", "https://other.example/app.js", true],
+	["*", "https://other.example:8443/app.js", true],
+	["https://*.cdn.example", "https://a.cdn.example/app.js", true],
+	["https://*.cdn.example", "https://cdn.example/app.js", false],
+	["https://*.cdn.example", "https://notcdn.example/app.js", false],
+	["https://cdn.example:443", "https://cdn.example/app.js", true],
+	["http://cdn.example:80", "http://cdn.example/app.js", true],
+	["https://cdn.example:8443", "https://cdn.example/app.js", false],
+	["https://cdn.example:8443", "https://cdn.example:8443/app.js", true],
+	["https://cdn.example:*", "https://cdn.example:8443/app.js", true],
+	["cdn.example", "https://cdn.example/app.js", true],
+	["HTTP://CDN.EXAMPLE", "https://cdn.example/app.js", true],
+	["https://cdn.example/scripts/", "https://cdn.example/scripts/app.js", true],
+	[
+		"https://cdn.example/scripts/",
+		"https://cdn.example/scripts-other/app.js",
+		false,
+	],
+	[
+		"https://cdn.example/app.js",
+		"https://cdn.example/app.js?v=1#fragment",
+		true,
+	],
+	["https://cdn.example/app.js", "https://cdn.example/app.js/extra", false],
+	["https://cdn.example/app.js", "https://cdn.example/APP.js", false],
+	["https://cdn.example/%61pp.js", "https://cdn.example/app.js", true],
+	["https://cdn.example/a%2fb", "https://cdn.example/a/b", false],
+] as const)(
+	"matches bounded external source %s against %s",
+	(expression, url, allowed) => {
+		const result = policy(`script-src ${expression}`);
+		expect(result.unsupported).toBe(false);
+		expect(result.allowsScript(external(url))).toBe(allowed);
+		expect(result.allowsScript(request())).toBe(false);
+	},
+);
+
+it("reuses normalized self origins and scheme upgrades without dropping nondefault ports", () => {
+	for (const [document, url, allowed] of [
+		["http://example.com:80/doc", "https://example.com:443/app.js", true],
+		["http://example.com:8080/doc", "https://example.com:8080/app.js", true],
+		["http://example.com:8080/doc", "https://example.com:8081/app.js", false],
+		["https://example.com:443/doc", "http://example.com:80/app.js", false],
+	] as const) {
+		const result = createScriptCspPolicy(
+			document,
+			headers("script-src 'self'"),
+		);
+		expect(result.allowsScript(external(url))).toBe(allowed);
+	}
+});
+
+it("discards only path restrictions after redirects, retaining host, scheme and port checks", () => {
+	const result = policy("script-src https://cdn.example/scripts/");
+	const redirected = "https://cdn.example/elsewhere/app.js";
+	expect(result.allowsScript(external(redirected))).toBe(false);
+	for (const redirects of [1, 2, Number.MAX_SAFE_INTEGER]) {
+		expect(result.allowsScript(external(redirected, redirects))).toBe(true);
+		for (const url of [
+			"https://other.example/scripts/app.js",
+			"http://cdn.example/scripts/app.js",
+			"https://cdn.example:8443/scripts/app.js",
+		])
+			expect(result.allowsScript(external(url, redirects))).toBe(false);
+	}
+	expect(result.allowsScript(external(redirected))).toBe(false);
+});
+
+it("keeps nonce, unsafe-inline and external URL alternatives distinct", () => {
+	const url = "https://cdn.example/app.js";
+	const result = policy(
+		`script-src ${source} 'unsafe-inline' https://cdn.example`,
+	);
+	expect(result.allowsScript(request())).toBe(false);
+	expect(result.allowsScript(request({ nonce }))).toBe(true);
+	expect(result.allowsScript(external(url, 0, { nonce: "wrong" }))).toBe(true);
+	expect(
+		result.allowsScript(
+			external("https://other.example/app.js", 0, { nonce: "wrong" }),
+		),
+	).toBe(false);
+	expect(
+		result.allowsScript(external("https://other.example/app.js", 0, { nonce })),
+	).toBe(true);
+	expect(
+		result.allowsScript(
+			external("https://other.example/app.js", 0, { nonce, nonceable: false }),
+		),
+	).toBe(false);
+	const inline = policy("script-src 'unsafe-inline' https://cdn.example");
+	expect(inline.allowsScript(request())).toBe(true);
+	expect(inline.allowsScript(external("https://other.example/app.js"))).toBe(
+		false,
+	);
+});
+
+it("makes strict-dynamic external-only and discards URL and unsafe-inline allowances", () => {
+	const result = policy(
+		`script-src ${source} 'strict-dynamic' 'unsafe-inline' https: * 'self'`,
+	);
+	expect(result.unsupported).toBe(false);
+	expect(result.allowsScript(external(documentUrl))).toBe(false);
+	expect(
+		result.allowsScript(external(documentUrl, 0, { nonce: "wrong" })),
+	).toBe(false);
+	expect(result.allowsScript(external(documentUrl, 0, { nonce }))).toBe(true);
+	expect(
+		result.allowsScript(
+			external("https://other.example/app.js", 0, {
+				parserInserted: false,
+				nonceable: false,
+			}),
+		),
+	).toBe(true);
+	expect(result.allowsScript(request({ parserInserted: false }))).toBe(false);
+	expect(result.allowsScript(request({ nonce, parserInserted: false }))).toBe(
+		true,
+	);
+});
+
+it("uses element fallback without unioning lists and intersects independent nonce/URL policies", () => {
+	for (const directive of ["script-src-elem", "script-src", "default-src"])
+		expect(
+			policy(`${directive} 'self'`).allowsScript(external(documentUrl)),
+		).toBe(true);
+	for (const serialized of [
+		"default-src *; script-src 'none'",
+		"script-src *; script-src-elem 'none'",
+		"default-src *; script-src-elem",
+	])
+		expect(policy(serialized).allowsScript(external(documentUrl))).toBe(false);
+	const result = createScriptCspPolicy(
+		documentUrl,
+		headers(`script-src ${source}`, "script-src https://cdn.example"),
+	);
+	expect(
+		result.allowsScript(external("https://cdn.example/app.js", 0, { nonce })),
+	).toBe(true);
+	expect(result.allowsScript(external(documentUrl, 0, { nonce }))).toBe(false);
+	expect(
+		result.allowsScript(
+			external("https://cdn.example/app.js", 0, { nonce: "wrong" }),
+		),
+	).toBe(false);
+	expect(
+		policy("script-src https:, script-src 'none'").allowsScript(
+			external(documentUrl),
+		),
+	).toBe(false);
+});
+
+it("retains legacy metadata only when a decision does not require an external URL", () => {
+	const legacy = request({ kind: "external" });
+	expect(createScriptCspPolicy(documentUrl, {}).allowsScript(legacy)).toBe(
+		true,
+	);
+	expect(policy("script-src *").allowsScript(legacy)).toBe(false);
+	expect(
+		policy(`script-src ${source} *`).allowsScript({ ...legacy, nonce }),
+	).toBe(true);
+	expect(
+		policy("script-src 'strict-dynamic'").allowsScript({
+			...legacy,
+			parserInserted: false,
+		}),
+	).toBe(true);
+	expect(policy("script-src 'none'").allowsScript(legacy)).toBe(false);
+});
+
+it.each([
+	["", "allow"],
+	["base-uri 'none'", "allow"],
+	["script-src", "deny"],
+	["script-src 'none'", "deny"],
+	["script-src 'unsafe-inline'", "deny"],
+	[`script-src ${source}`, "deny"],
+	["script-src https:", "deny"],
+	["script-src 'unsafe-eval'", "allow"],
+	["script-src 'UNSAFE-EVAL' 'strict-dynamic'", "allow"],
+	["default-src 'unsafe-eval'", "allow"],
+	["default-src 'unsafe-eval'; script-src 'none'", "deny"],
+	["default-src 'none'; script-src 'unsafe-eval'", "allow"],
+	["script-src-elem 'none'", "allow"],
+	["script-src-elem 'unsafe-eval'; script-src 'none'", "deny"],
+	["script-src 'unsafe-eval'; script-src-elem 'none'", "allow"],
+	["default-src 'none'; script-src-elem 'unsafe-eval'", "deny"],
+	["default-src 'unsafe-eval'; script-src-elem 'none'", "allow"],
+	["script-src 'unsafe-eval'; SCRIPT-SRC 'none'", "allow"],
+] as const)(
+	"computes separate immutable string compilation for %s",
+	(serialized, expected) => {
+		const result = policy(serialized);
+		expect(result.unsupported).toBe(false);
+		expect(result.stringCompilation).toBe(expected);
+		expect(Reflect.set(result, "stringCompilation", "other")).toBe(false);
+	},
+);
+
+it("intersects eval independently without letting a valid nonce or elem list grant it", () => {
+	const result = createScriptCspPolicy(
+		documentUrl,
+		headers(`script-src 'unsafe-eval' ${source}`, `script-src ${source}`),
+	);
+	expect(result.allowsScript(request({ nonce }))).toBe(true);
+	expect(result.stringCompilation).toBe("deny");
+	expect(
+		policy("script-src 'unsafe-eval', default-src 'unsafe-eval'")
+			.stringCompilation,
+	).toBe("allow");
+	expect(policy("script-src 'unsafe-eval'").allowsScript(request())).toBe(
+		false,
+	);
+	const input = headers("default-src 'unsafe-eval'; script-src-elem 'none'");
+	const snapshot = createScriptCspPolicy(documentUrl, input);
+	input["content-security-policy"][0] = "script-src 'none'";
+	expect(snapshot.stringCompilation).toBe("allow");
+	expect(snapshot.allowsScript(request())).toBe(false);
+});
+
+it.each([
+	"https://cdn.example/é",
+	"https://cdn.example/\u00a0",
+	"https://cdn.example/%xx",
+	"https://cdn.example/app.js?query",
+	"https://cdn.example/app.js#fragment",
+	"https://user@cdn.example",
+	"https://cdn.example:65536",
+	"https://cdn.example:-1",
+	"https://127.0.0.1/app.js",
+	"https://[::1]/app.js",
+	"'sha256-YWJj'",
+	"'unknown'",
+	"'nonce-'",
+	"ftp:",
+	"data:",
+])(
+	"rejects unsupported or unsafe source tokens %s before synthesizing a matcher",
+	(expression) => {
+		const result = policy(
+			`script-src ${source} 'strict-dynamic' 'unsafe-eval' ${expression}`,
+		);
+		expect(result.unsupported).toBe(true);
+		expect(result.stringCompilation).toBe("deny");
+		expect(result.allowsScript(external(documentUrl, 0, { nonce }))).toBe(
+			false,
+		);
+		expect(result.allowsBase(documentUrl)).toBe(false);
+	},
+);
+
+it("does not ignore unknown resource directives or malformed policy boundaries", () => {
+	for (const serialized of [
+		"script-src 'unsafe-eval'; img-src *",
+		"script-src 'unsafe-eval'; connect-src *",
+		"script-src https:\n'unsafe-eval'",
+		"script-src https:\f'unsafe-eval'",
+		"script-src 'unsafe-eval'; bad/name *",
+	])
+		expect(policy(serialized).stringCompilation).toBe("deny");
+	expect(
+		createScriptCspPolicy(documentUrl, {
+			"content-security-policy": "script-src 'unsafe-eval'",
+		}).stringCompilation,
+	).toBe("deny");
+	expect(
+		createScriptCspPolicy(documentUrl, {
+			"content-security-policy-report-only": ["script-src 'none'"],
+		}).stringCompilation,
+	).toBe("allow");
+});
+
+it("rejects malformed extended metadata without reading getters or coercing inputs", () => {
+	const result = policy(`script-src ${source} * 'strict-dynamic'`);
+	const read = vi.fn(() => documentUrl);
+	const inputs: unknown[] = [
+		{ ...request({ kind: "external" }), url: documentUrl },
+		{ ...request({ kind: "external" }), redirectCount: 0 },
+		{ ...external(documentUrl), kind: "inline" },
+		{ ...external(documentUrl), extra: true },
+		{ ...external(documentUrl), [Symbol("url")]: documentUrl },
+		Object.create(external(documentUrl)),
+	];
+	for (const url of [
+		undefined,
+		null,
+		1,
+		{ toString: read },
+		"/app.js",
+		"data:text/javascript,1",
+		"file:///app.js",
+		"https://user:password@example.com/app.js",
+		"https://example.com/\napp.js",
+		"x".repeat(4097),
+	])
+		inputs.push({ ...external(documentUrl), url });
+	for (const redirectCount of [
+		undefined,
+		null,
+		-1,
+		0.5,
+		Number.NaN,
+		Number.POSITIVE_INFINITY,
+		Number.MAX_SAFE_INTEGER + 1,
+		"0",
+		{ valueOf: read },
+	])
+		inputs.push({ ...external(documentUrl), redirectCount });
+	for (const name of ["url", "redirectCount"])
+		inputs.push(
+			Object.defineProperty(external(documentUrl), name, { get: read }),
+		);
+	for (const input of inputs)
+		expect(result.allowsScript(input as ScriptCspRequest)).toBe(false);
+	expect(read).not.toHaveBeenCalled();
+});
+
+it("bounds total URL matching work across policies and resets it between admissions", () => {
+	const url = new URL(documentUrl);
+	const bound =
+		1 +
+		url.href.length +
+		"'self'".length +
+		url.hostname.length +
+		url.pathname.length +
+		1;
+	const one = policy("script-src 'self'", { maxMatchWork: bound });
+	const two = createScriptCspPolicy(
+		documentUrl,
+		headers("script-src 'self'", "script-src 'self'"),
+		{ maxMatchWork: bound * 2 - 1 },
+	);
+	for (let iteration = 0; iteration < 3; iteration++) {
+		expect(one.allowsScript(external(documentUrl))).toBe(true);
+		expect(two.allowsScript(external(documentUrl))).toBe(false);
+	}
+	const matcher = vi.spyOn(ContentSecurityPolicy.prototype, "allows");
+	try {
+		expect(
+			policy("script-src *", { maxMatchWork: 1 }).allowsScript(
+				external(documentUrl),
+			),
+		).toBe(false);
+		expect(matcher).not.toHaveBeenCalled();
+		matcher.mockImplementation(() => {
+			throw new Error("Matcher refused");
+		});
+		expect(one.allowsScript(external(documentUrl))).toBe(false);
+	} finally {
+		matcher.mockRestore();
+	}
+});
+
+it.each([
+	["script-src 'wasm-unsafe-eval'", "deny"],
+	["default-src 'wasm-unsafe-eval'", "deny"],
+	["script-src 'WASM-UNSAFE-EVAL' 'unsafe-eval'", "allow"],
+	["script-src 'wasm-unsafe-eval'; script-src-elem 'unsafe-eval'", "deny"],
+	["script-src 'unsafe-eval'; script-src-elem 'wasm-unsafe-eval'", "allow"],
+] as const)(
+	"recognizes the element-inert WASM keyword without granting JS eval in %s",
+	(serialized, expected) => {
+		const result = policy(serialized);
+		expect(result.unsupported).toBe(false);
+		expect(result.stringCompilation).toBe(expected);
+		expect(result.allowsScript(request())).toBe(false);
+		expect(result.allowsScript(external(documentUrl))).toBe(false);
+	},
+);
+
+it("does not turn the WASM keyword into an inline or external authorization", () => {
+	const result = policy("script-src 'unsafe-inline' 'wasm-unsafe-eval'");
+	expect(result.unsupported).toBe(false);
+	expect(result.allowsScript(request())).toBe(true);
+	expect(result.allowsScript(external(documentUrl))).toBe(false);
+	expect(result.stringCompilation).toBe("deny");
+	const intersected = createScriptCspPolicy(
+		documentUrl,
+		headers("script-src 'unsafe-eval'", "script-src 'wasm-unsafe-eval'"),
+	);
+	expect(intersected.stringCompilation).toBe("deny");
+});
+
+it("recognizes blob sources without admitting blob requests or HTTP URLs from them", () => {
+	const result = policy("script-src blob: 'unsafe-eval'");
+	expect(result.unsupported).toBe(false);
+	expect(result.stringCompilation).toBe("allow");
+	expect(result.allowsScript(request())).toBe(false);
+	expect(result.allowsScript(external(documentUrl))).toBe(false);
+	expect(
+		result.allowsScript(external("blob:https://example.com/native-test")),
+	).toBe(false);
+	expect(
+		policy("script-src blob: 'self'").allowsScript(external(documentUrl)),
+	).toBe(true);
+});
+
+it("recognizes the supplied script-policy shape while keeping eval, elements, base and resource directives separate", () => {
+	const serialized = `script-src 'self' 'wasm-unsafe-eval' 'strict-dynamic' ${source} blob: https: 'unsafe-eval'; base-uri 'none'`;
+	const result = policy(serialized);
+	expect(result.unsupported).toBe(false);
+	expect(result.stringCompilation).toBe("allow");
+	expect(result.allowsBase(documentUrl)).toBe(false);
+	expect(result.allowsScript(request({ nonce }))).toBe(true);
+	expect(
+		result.allowsScript(request({ nonce: "wrong", parserInserted: false })),
+	).toBe(false);
+	expect(result.allowsScript(external(documentUrl))).toBe(false);
+	expect(result.allowsScript(external(documentUrl, 0, { nonce }))).toBe(true);
+	expect(
+		result.allowsScript(external(documentUrl, 0, { parserInserted: false })),
+	).toBe(true);
+	expect(
+		result.allowsScript(
+			external("blob:https://example.com/native-test", 0, {
+				nonce,
+				parserInserted: false,
+			}),
+		),
+	).toBe(false);
+	expect(
+		policy(serialized.replace("'unsafe-eval'", "")).stringCompilation,
+	).toBe("deny");
+	for (const directive of [
+		"img-src *",
+		"connect-src *",
+		"style-src *",
+		"worker-src blob:",
+	]) {
+		const unsupported = policy(`${serialized}; ${directive}`);
+		expect(unsupported.unsupported).toBe(true);
+		expect(unsupported.stringCompilation).toBe("deny");
+		expect(unsupported.allowsScript(request({ nonce }))).toBe(false);
+	}
 });
