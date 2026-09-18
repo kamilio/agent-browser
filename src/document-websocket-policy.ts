@@ -1,4 +1,6 @@
 import { ContentSecurityPolicy } from "./content-security-policy.js";
+import { documentResourceCsp } from "./document-resource-csp.js";
+import { documentBaseUrl } from "./document-url.js";
 import type { DocumentChange, DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
@@ -102,6 +104,7 @@ export class DocumentWebSocketPolicy {
 				"HTTPS documents require secure WebSocket connections",
 			);
 		let allowed: boolean;
+		documentResourceCsp(this.tree)?.check("connect", url.href);
 		try {
 			allowed = this.policy?.allows(url.href) === true;
 		} catch (error) {
@@ -151,6 +154,8 @@ export class DocumentWebSocketPolicy {
 	}
 
 	private baseUrl(): string {
+		if (documentResourceCsp(this.tree))
+			return boundedUrl(documentBaseUrl(this.tree)).href;
 		try {
 			const fallback = boundedUrl(this.tree.url).href;
 			for (const { node } of this.tree.walk()) {

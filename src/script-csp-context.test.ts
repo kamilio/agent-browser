@@ -339,8 +339,7 @@ describe("native top-level execution CSP context with a fake script runner", () 
 		},
 	);
 
-	it.each<[string, NetworkResponse["headers"]]>([
-		["connect source", { "content-security-policy": ["connect-src 'none'"] }],
+	it.each<[string, NetworkResponse["headers"], boolean?]>([
 		["sandbox", { "content-security-policy": ["sandbox allow-scripts"] }],
 		[
 			"unknown directive",
@@ -357,6 +356,7 @@ describe("native top-level execution CSP context with a fake script runner", () 
 		[
 			"mixed values",
 			{ "content-security-policy": [recordedTargetPolicy, "default-src *"] },
+			true,
 		],
 		[
 			"mixed policy list",
@@ -378,7 +378,7 @@ describe("native top-level execution CSP context with a fake script runner", () 
 		],
 	])(
 		"blocks %s at the loader and all three session resource ports",
-		async (_name, headers) => {
+		async (_name, headers, rejectBeforeParse = false) => {
 			const test = fixture(headers, {
 				beforeLoad: async (context) => {
 					expect(context.topLevelDocument).toBe(true);
@@ -398,10 +398,16 @@ describe("native top-level execution CSP context with a fake script runner", () 
 					});
 				},
 			});
-			await test.session.navigate(test.tab, pageUrl);
+			if (rejectBeforeParse)
+				await expect(
+					test.session.navigate(test.tab, pageUrl),
+				).rejects.toMatchObject({ code: "policy-denied" });
+			else await test.session.navigate(test.tab, pageUrl);
 			await expect(
 				ports(test.contexts[0]).page({ url: dataUrl }),
-			).rejects.toMatchObject({ code: "policy-denied" });
+			).rejects.toMatchObject({
+				code: rejectBeforeParse ? "closed" : "policy-denied",
+			});
 			expect(test.seen).toEqual([]);
 			expect(test.requests.map(({ url }) => url)).toEqual([pageUrl]);
 			expect(
@@ -412,8 +418,19 @@ describe("native top-level execution CSP context with a fake script runner", () 
 				{ kind: "script", state: "blocked", error: "policy-denied" },
 				{ kind: "script", state: "blocked", error: "policy-denied" },
 				{ kind: "fetch", state: "blocked", error: "policy-denied" },
-				{ kind: "fetch", state: "blocked", error: "policy-denied" },
+				{
+					kind: "fetch",
+					state: rejectBeforeParse ? "failed" : "blocked",
+					error: rejectBeforeParse ? "closed" : "policy-denied",
+				},
 			]);
+			if (rejectBeforeParse) {
+				expect(test.session.metrics().requestQueue).toMatchObject({
+					active: 0,
+					pending: 0,
+				});
+				return;
+			}
 			const tree = test.session.page(test.tab).document;
 			expect(tree.textContent(tree.root)).toContain("Readable fixture");
 			expect(documentScriptState(tree)?.report).toMatchObject({

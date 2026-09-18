@@ -1,10 +1,11 @@
-import { documentBaseUrl } from "./document-url.js";
 import {
 	documentImageContentSecurityPolicy,
 	imageContentSecurityPolicyValues,
 } from "./document-image-content-security-policy.js";
-import { isHtmlElement } from "./dom-namespaces.js";
 import { documentImages } from "./document-images.js";
+import { documentResourceCsp } from "./document-resource-csp.js";
+import { documentBaseUrl } from "./document-url.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { htmlParseInfo, setHtmlParseInfo } from "./html-info.js";
 import { parseHtmlDocument, parseHtmlDocumentAsync } from "./html-parser.js";
@@ -19,9 +20,9 @@ import type { DocumentLoaderContext } from "./session.js";
 import { documentStyles } from "./styles.js";
 import type { StylesheetFetchPolicy } from "./stylesheet-fetch.js";
 import {
+	type StylesheetInput,
 	loadStylesheetImports,
 	stylesheetImportLimits,
-	type StylesheetInput,
 } from "./stylesheet-imports.js";
 import {
 	parseIntegrityMetadata,
@@ -169,7 +170,11 @@ export async function loadBrowserDocument(
 				),
 				fetch: async (url, parent) => {
 					contentSecurityPolicy.checkStylesheet(url);
-					if (inline && contentSecurityPolicyHeaders.length)
+					if (
+						inline &&
+						contentSecurityPolicyHeaders.length &&
+						!documentResourceCsp(tree)?.allowsInline("element")
+					)
 						throw new AgentBrowserError(
 							"policy-denied",
 							"Inline stylesheet CSP enforcement is not implemented",
@@ -209,6 +214,10 @@ export async function loadBrowserDocument(
 					node.attributes.type.trim().toLowerCase() === "text/css")
 			) {
 				try {
+					if (documentResourceCsp(tree)?.allowsInline("element") === false) {
+						styles.noteLoadIssue("inline-style-policy-denied");
+						continue;
+					}
 					const url = documentBaseUrl(tree);
 					await installImports(node.id, url, {
 						url,
@@ -281,7 +290,13 @@ export async function loadBrowserDocument(
 								? "include"
 								: "same-origin",
 					};
-					const result = await context.fetchStylesheetWithPolicy!(url, policy);
+					const fetch = context.fetchStylesheetWithPolicy;
+					if (!fetch)
+						throw new AgentBrowserError(
+							"policy-denied",
+							"Stylesheet policy transport is unavailable",
+						);
+					const result = await fetch(url, policy);
 					if (context.signal.aborted)
 						throw new AgentBrowserError(
 							"aborted",
@@ -303,7 +318,13 @@ export async function loadBrowserDocument(
 					sheet = result.response;
 					parseNetworkUrl(sheet.url);
 				} else {
-					sheet = await context.fetchStylesheet!(url);
+					const fetch = context.fetchStylesheet;
+					if (!fetch)
+						throw new AgentBrowserError(
+							"policy-denied",
+							"Stylesheet transport is unavailable",
+						);
+					sheet = await fetch(url);
 				}
 				const input = decodeStylesheet(sheet, decoded.encoding);
 				if (

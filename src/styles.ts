@@ -146,6 +146,7 @@ import {
 	isCssTextProperty,
 } from "./css-text.js";
 import { documentBaseUrl } from "./document-url.js";
+import { documentResourceCsp } from "./document-resource-csp.js";
 import { bitmapFont } from "./bitmap-font.js";
 import { nativeFontXHeight } from "./font-metrics.js";
 import { cssMediaLimits, type MediaViewport } from "./css-media.js";
@@ -1721,10 +1722,12 @@ export class DocumentStyles {
 		}
 		for (const node of nodes) {
 			let text: string | undefined;
+			if (documentResourceCsp(this.tree)?.active === false) continue;
 			let graph: Readonly<StylesheetSource> | undefined;
 			let baseUrl = documentBase;
 			if (
 				node.tagName === "style" &&
+				documentResourceCsp(this.tree)?.allowsInline("element") !== false &&
 				(isHtmlElement(node) || elementNamespace(node) === svgNamespace) &&
 				(!node.attributes.type ||
 					node.attributes.type.trim().toLowerCase() === "text/css")
@@ -1878,6 +1881,8 @@ export class DocumentStyles {
 		for (const node of nodes) {
 			if (node.kind !== "element") continue;
 			const owned = this.tree.getInlineDeclarations(node.id);
+			if (documentResourceCsp(this.tree)?.allowsInline("attribute") === false)
+				continue;
 			if (!node.attributes.style && !owned) continue;
 			const diagnostic: CssDiagnosticSink = (code, context) => {
 				const sample = diagnosticCollector.record(code, {

@@ -1,5 +1,58 @@
 # Script CSP policy foundation
 
+## Native resource-backed policy — September 18, 2026
+
+The native document owner now composes script/base admission with destination
+enforcement for image, stylesheet/import, fetch/preflight and WebSocket requests.
+It retains the complete response policies, checks actual targets and redirects,
+and refuses unsupported policies before activating a resource-backed document.
+The standalone `createScriptCspPolicy` factory cannot borrow these permissions;
+only a matching native-bound resource owner enables the composed evaluator.
+
+Inline style elements and attributes have separate intersected permissions,
+including `default-src` fallback when no resource directive is present. Dynamic
+style insertion, attribute mutation and owner invalidation use the same guards;
+closure removes cached author presentation and aborts pending resource work.
+Effective style nonce/hash restrictions remain unsupported and fail closed.
+Generic fetch never gains script nonce/trust, and CORS, origin, credential,
+mixed-content and resource-budget restrictions still apply independently.
+
+`upgrade-insecure-requests` uses an explicitly stricter subset: native requests
+must already be HTTPS/WSS. HTTP URLs are rejected, not rewritten. Navigation
+redirects are currently refused even when both URLs are HTTPS; this remains a
+compatibility limitation, not standards-equivalent upgrade support. Data/blob
+and custom-scheme resources are unavailable even when their scheme-only source
+expressions are valid. Recognizing that syntax does not add a protocol handler.
+
+Font, media, frame and object destinations remain inactive: no native font URL
+loader, audio/video receive/decode, child runtime, object execution, WebAssembly
+or guest `window.open` is introduced. Only `object-src 'none'` is accepted as an
+explicit object directive. Any future destination capability must gain its own
+owner checks before it can activate. Unknown execution directives still refuse.
+
+The focused native worker passes1733 tests in35 files, with strict build/types,
+format and lint. The unchanged captured Zoom header separately passes offline
+native classification at
+`/tmp/agent-browser-resource-policy-september18-U6aa44/static-policy04`; no
+captured source, SDK or website runs in that check. The first scheme-recognizer
+failure and default-only-style regression runs remain preserved.
+
+Parent integration passes4115 native tests in90 files at
+`/tmp/agent-browser-resource-csp-union01-Ojz8V9/candidate`,44.112s, with strict
+build/types/format/lint passing. Actual-SDK integration separately passes6/6
+controls at `/tmp/agent-browser-native-resource-csp-sdk-control-asH0eH/stage02`,
+7.516s. These use real native session/loader/PageScripts and unchanged BqM3JX SDK,
+with synthetic eleven-directive policies and transport only. They verify nonce
+and eval-policy behavior, external script redirects, real guest fetch allow/deny
+and removal of dynamic inline presentation on owner closure. All six SDK realms
+finish with zero retained values/data; native owners/transports and processes
+close. Stage01's5/6 result is preserved: its harness omitted the fetch binding;
+stage02 supplies the production context.fetch binding, without production edits.
+No publisher executes and no Zoom admission or incoming audio is claimed.
+
+The earlier loader/foundation milestones below retain their original evidence
+and describe the support available at those points.
+
 ## Native loader integration — September 18, 2026
 
 The native loader now activates the already-supported script/base policy subset

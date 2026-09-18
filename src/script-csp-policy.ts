@@ -1,4 +1,9 @@
 import { ContentSecurityPolicy } from "./content-security-policy.js";
+import {
+	type DocumentResourceCsp,
+	documentResourceCsp,
+} from "./document-resource-csp.js";
+import type { DocumentTree } from "./document.js";
 
 export interface ScriptCspPolicyLimits {
 	readonly maxHeaderFields: number;
@@ -255,6 +260,28 @@ export function createScriptCspPolicy(
 	headers: unknown,
 	limitOverrides: Partial<ScriptCspPolicyLimits> = {},
 ): ScriptCspPolicy {
+	return compileScriptCspPolicy(documentUrl, headers, limitOverrides);
+}
+
+export function createNativeDocumentScriptCspPolicy(
+	tree: DocumentTree,
+	headers: unknown,
+): ScriptCspPolicy {
+	const resource = documentResourceCsp(tree);
+	return compileScriptCspPolicy(
+		tree.url,
+		headers,
+		{},
+		resource?.matches(headers) ? resource : undefined,
+	);
+}
+
+function compileScriptCspPolicy(
+	documentUrl: string,
+	headers: unknown,
+	limitOverrides: Partial<ScriptCspPolicyLimits>,
+	resource?: DocumentResourceCsp,
+): ScriptCspPolicy {
 	const issues: ScriptCspIssue[] = [];
 	const policies: Policy[] = [];
 	let limits = scriptCspPolicyLimits;
@@ -313,6 +340,7 @@ export function createScriptCspPolicy(
 						continue;
 					}
 					if (!sourceDirectives.includes(name)) {
+						if (resource?.supportsDirective(name)) continue;
 						issue("unsupported-directive", name);
 						continue;
 					}
@@ -396,9 +424,16 @@ export function createScriptCspPolicy(
 				? ("allow" as const)
 				: ("deny" as const),
 		allowsScript: Object.freeze((input: ScriptCspRequest): boolean => {
-			if (unsupported) return false;
+			if (unsupported || (resource && !resource.active)) return false;
 			const request = requestData(input, limits);
 			if (!request) return false;
+			if (resource && request.target) {
+				try {
+					resource.check("script", request.target.href, request.redirectCount);
+				} catch {
+					return false;
+				}
+			}
 			let work = 0;
 			for (const policy of policies) {
 				if (++work > limits.maxMatchWork) return false;
@@ -441,7 +476,7 @@ export function createScriptCspPolicy(
 			return true;
 		}),
 		allowsBase: Object.freeze((absoluteUrl: string): boolean => {
-			if (unsupported) return false;
+			if (unsupported || (resource && !resource.active)) return false;
 			const base = networkUrl(absoluteUrl, limits.maxUrlCodeUnits);
 			if (!base) return false;
 			let work = 0;

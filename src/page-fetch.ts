@@ -8,6 +8,7 @@ import {
 	needsPreflight,
 	unsafeCorsHeaders,
 } from "./cors.js";
+import { documentResourceCsp } from "./document-resource-csp.js";
 import { documentBaseUrl } from "./document-url.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
@@ -34,6 +35,7 @@ import type {
 } from "./script-dom.js";
 
 export interface PageFetchRequestContext {
+	redirectCount?: number;
 	cors?: boolean;
 	preflight?: boolean;
 	observeCorsResult?: ObserveCorsResult;
@@ -264,6 +266,11 @@ export class PageFetch {
 		this.origin = new URL(tree.url).origin;
 		this.preflightCache = new CorsPreflightCache(options.preflightClock);
 		this.unregisterClose = tree.onClose(() => this.close());
+		documentResourceCsp(tree)?.signal.addEventListener(
+			"abort",
+			() => this.close(),
+			{ once: true },
+		);
 	}
 
 	metrics() {
@@ -513,7 +520,13 @@ export class PageFetch {
 							},
 						},
 						controller.signal,
-						{ cors: true, preflight: true },
+						{
+							cors: true,
+							preflight: true,
+							...(documentResourceCsp(this.tree)
+								? { redirectCount: hops }
+								: {}),
+						},
 						(response, headers) => {
 							grants = checkPreflight(
 								response.status,
@@ -557,7 +570,10 @@ export class PageFetch {
 						},
 					},
 					controller.signal,
-					{ cors: corsTainted },
+					{
+						cors: corsTainted,
+						...(documentResourceCsp(this.tree) ? { redirectCount: hops } : {}),
+					},
 					corsTainted
 						? (_response, headers) =>
 								checkCors(headers, requestOrigin, credentialMode)
@@ -679,6 +695,11 @@ export class PageFetch {
 		});
 		const work = Promise.resolve().then(() => {
 			if (signal.aborted) throw signal.reason;
+			documentResourceCsp(this.tree)?.check(
+				"connect",
+				input.url,
+				context?.redirectCount ?? 0,
+			);
 			this.checkByteBudget();
 			lease = accounting.createLease();
 			let pending: Promise<NetworkResponse>;
@@ -706,6 +727,11 @@ export class PageFetch {
 		});
 		try {
 			const { response, allowed } = await Promise.race([work, stopped]);
+			documentResourceCsp(this.tree)?.check(
+				"connect",
+				response.url,
+				context?.redirectCount ?? 0,
+			);
 			const headers = this.inspectResponse(response, input.url);
 			if (!allowed)
 				throw new AgentBrowserError(

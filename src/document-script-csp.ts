@@ -6,6 +6,7 @@ import { hasUnsupportedExecutionCsp } from "./execution-content-security-policy.
 import type { NetworkResponse } from "./network.js";
 import {
 	type ScriptCspPolicy,
+	createNativeDocumentScriptCspPolicy,
 	createScriptCspPolicy,
 	scriptCspPolicyLimits,
 } from "./script-csp-policy.js";
@@ -143,7 +144,7 @@ export function initializeDocumentScriptCsp(
 			);
 		return existing;
 	}
-	const parsed = createScriptCspPolicy(tree.url, snapshot);
+	const parsed = createNativeDocumentScriptCspPolicy(tree, snapshot);
 	const enforced = hasUnsupportedExecutionCsp(
 		snapshot as NetworkResponse["headers"],
 		topLevelDocument,

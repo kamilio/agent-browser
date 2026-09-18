@@ -161,19 +161,28 @@ it("binds nonce policy before owner creation and admits only the authorized sour
 	expect(script.attributes.nonce).toBe("");
 });
 
-it.each([
-	"script-src 'none'",
-	"script-src 'nonce-native'; img-src *",
-	"script-src 'sha256-YWJj'",
-])("never fetches or executes rejected scripts for %s", async (policy) => {
+it.each(["script-src 'none'", "script-src 'sha256-YWJj'"])(
+	"never fetches or executes rejected scripts for %s",
+	async (policy) => {
+		const test = fixture(
+			'<script nonce="native">inline</script><script nonce="native" src="/blocked.js"></script>',
+			policy,
+		);
+		await test.load();
+		expect(test.requests).toHaveLength(1);
+		expect(test.evaluated).toEqual([]);
+		if (policy !== "script-src 'none'") expect(test.creation).toEqual([]);
+	},
+);
+
+it("admits nonce-bearing scripts with native-backed image restrictions", async () => {
 	const test = fixture(
-		'<script nonce="native">inline</script><script nonce="native" src="/blocked.js"></script>',
-		policy,
+		'<script nonce="native">inline</script><script nonce="native" src="/admitted.js"></script>',
+		"script-src 'nonce-native'; img-src *",
 	);
 	await test.load();
-	expect(test.requests).toHaveLength(1);
-	expect(test.evaluated).toEqual([]);
-	if (policy !== "script-src 'none'") expect(test.creation).toEqual([]);
+	expect(test.evaluated).toEqual(["inline", "/admitted.js"]);
+	expect(test.creation).toEqual(["deny"]);
 });
 
 it("applies actual redirect counts, ignores redirected paths only, and blocks the next host before fetching", async () => {

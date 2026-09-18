@@ -26,7 +26,7 @@ it.each([
 	{ header: "enforcing", policies: ["style-src 'self'"], admitted: false },
 	{ header: "absent", policies: null, admitted: true },
 ])(
-	"separates unsupported inline-parent CSP denial from no-header imports ($header header)",
+	"enforces inline-parent CSP separately from no-header imports ($header header)",
 	async ({ policies, admitted }) => {
 		const test = nativeFixture(
 			async (request) => response(request.url, childCss),
@@ -52,7 +52,7 @@ it.each([
 		});
 		if (!admitted)
 			expect(
-				documentStyles(tree).metrics().issues["css-import-policy-denied"],
+				documentStyles(tree).metrics().issues["inline-style-policy-denied"],
 			).toBe(1);
 		expectSettled(tree);
 	},

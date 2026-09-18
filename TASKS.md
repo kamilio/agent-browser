@@ -178,6 +178,24 @@ reinterpret shorter failed duration as successful execution or meeting progress.
 Full-policy integration, usable join UI, admission, audio, recording, transcript
 and delivery remain open; the goal is active.
 
+September18,18:33UTC: native resource-backed CSP now preserves and enforces the
+captured policy's supported destination restrictions rather than dropping them.
+Parent integration passes4115 tests in90 files at
+`/tmp/agent-browser-resource-csp-union01-Ojz8V9/candidate`,44.112s, with all quality
+checks. Default-only style fallback and valid scheme-only syntax regressions are
+fixed; exact captured headers pass a separate offline native classification.
+Actual-SDK controls pass6/6 at
+`/tmp/agent-browser-native-resource-csp-sdk-control-asH0eH/stage02`,7.516s:
+synthetic full policies, nonce/eval intersection, native mutation, script redirect
+rejection, guest fetch allow/deny and style invalidation. All native/SDK owners
+close with zero retained SDK data and absent processes. The initial5/6 control
+is preserved; only its omitted harness fetch binding needed correction.
+UIR currently rejects insecure requests instead of upgrading, and also rejects
+secure navigation redirects; resolving that conservative redirect limitation is
+next. Font/media/frame/object and WebAssembly remain unavailable. Full Zoom
+dependency execution still fails the prior120s gate; no meeting/audio/notetaking
+success follows from these policy controls. Keep the complete goal active.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,

@@ -1,4 +1,5 @@
 [
+	"src/native-resource-csp.test.ts",
 	"src/script-loader-csp-integration.test.ts",
 	"src/script-node-expandos.test.ts",
 	"src/script-loading-options.test.ts",

@@ -1,5 +1,6 @@
-import type { DocumentChange, DocumentTree } from "./document.js";
 import { ContentSecurityPolicy } from "./content-security-policy.js";
+import { documentResourceCsp } from "./document-resource-csp.js";
+import type { DocumentChange, DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { ImageContentSecurityPolicy } from "./image-content-security-policy.js";
@@ -74,6 +75,7 @@ export class DocumentImageContentSecurityPolicy {
 
 	check(url: string, redirectCount = 0): void {
 		this.ensureOpen();
+		documentResourceCsp(this.tree)?.check("image", url, redirectCount);
 		if (this.failure) throw this.failure;
 		if (this.metaBlocked)
 			throw new AgentBrowserError(
@@ -89,6 +91,7 @@ export class DocumentImageContentSecurityPolicy {
 
 	checkStylesheet(url: string, redirectCount = 0): void {
 		this.ensureOpen();
+		documentResourceCsp(this.tree)?.check("style", url, redirectCount);
 		if (this.failure) throw this.failure;
 		if (this.metaBlocked)
 			throw new AgentBrowserError(

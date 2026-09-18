@@ -1,5 +1,6 @@
-import type { DocumentTree } from "./document.js";
+import { documentResourceCsp } from "./document-resource-csp.js";
 import { DocumentWebSocketPolicy } from "./document-websocket-policy.js";
+import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { validateWebSocketProtocols } from "./websocket-protocols.js";
 import type {
@@ -83,6 +84,11 @@ export class DocumentWebSockets {
 				"Invalid document WebSocket timeout",
 			);
 		this.policy = new DocumentWebSocketPolicy(tree, options.headerValues);
+		documentResourceCsp(tree)?.signal.addEventListener(
+			"abort",
+			() => this.close(),
+			{ once: true },
+		);
 		try {
 			this.unregisterClose = tree.onClose(() => this.close());
 		} catch (error) {
@@ -154,6 +160,7 @@ export class DocumentWebSockets {
 							"WebSocket connection aborted",
 						);
 					lease.dispatched = true;
+					this.policy.resolve(target.url);
 					return this.transport.connect(target.url, {
 						origin: target.origin,
 						protocols,

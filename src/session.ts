@@ -22,6 +22,11 @@ import { bindDocumentIdentity } from "./document-identity.js";
 import { documentImageContentSecurityPolicy } from "./document-image-content-security-policy.js";
 import type { ImageFetch } from "./document-images.js";
 import {
+	type DocumentResourceCsp,
+	bindDocumentResourceCsp,
+	documentResourceCsp,
+} from "./document-resource-csp.js";
+import {
 	type DocumentScriptAdmission,
 	documentScriptCsp,
 	initializeDocumentScriptCsp,
@@ -1638,6 +1643,8 @@ export class BrowserSession {
 		const tab = job.tab;
 		const signal = job.controller.signal;
 		const previous = tab.page;
+		const initiatingPolicy = previous && documentResourceCsp(previous.document);
+		if (initiatingPolicy?.secureOnly) initiatingPolicy.checkSecure(url.href);
 		const checkHistory = () => {
 			if (
 				history &&
@@ -1694,6 +1701,9 @@ export class BrowserSession {
 					this.fetchNetwork({
 						...request,
 						url: url.href,
+						...(initiatingPolicy?.secureOnly
+							? { redirect: "error" as const }
+							: {}),
 						signal,
 						cookieContext: {
 							siteUrl: previous?.document.url ?? tab.openerUrl,
@@ -1706,6 +1716,17 @@ export class BrowserSession {
 		);
 		this.assertCurrent(job);
 		const responseUrl = parseNetworkUrl(response.url).href;
+		if (initiatingPolicy?.secureOnly) {
+			initiatingPolicy.checkSecure(responseUrl);
+			if (
+				response.redirects.length ||
+				[301, 302, 303, 307, 308].includes(response.status)
+			)
+				throw new AgentBrowserError(
+					"policy-denied",
+					"Redirected navigation under secure-only CSP is not implemented",
+				);
+		}
 		if ([204, 205].includes(response.status))
 			return this.result("no-content", tab, response);
 		checkHistory();
@@ -1738,6 +1759,7 @@ export class BrowserSession {
 		let resources = 0;
 		let scriptResources = 0;
 		let fetchResources = 0;
+		let resourcePolicy: DocumentResourceCsp | undefined;
 		const fetchLifetime = new AbortController();
 		const bootstrapLifetime = new AbortController();
 		const bootstrapSignal = AbortSignal.any([
@@ -1790,6 +1812,7 @@ export class BrowserSession {
 			"style",
 		);
 		const checkStylesheetCsp = (url: string, redirectCount: number) => {
+			resourcePolicy?.check("style", url, redirectCount);
 			if (candidate)
 				documentImageContentSecurityPolicy(candidate).checkStylesheet(
 					url,
@@ -1802,6 +1825,7 @@ export class BrowserSession {
 				);
 		};
 		const checkImageCsp = (url: string, redirectCount: number) => {
+			resourcePolicy?.check("image", url, redirectCount);
 			if (candidate)
 				documentImageContentSecurityPolicy(candidate).check(url, redirectCount);
 			else if (!imageCsp.allows(url, redirectCount))
@@ -1848,7 +1872,30 @@ export class BrowserSession {
 						"Loaded document URL must match the final response URL",
 					);
 				bindDocumentIdentity(document, this.identity);
-				initializeDocumentScriptCsp(document, scriptHeaders, true);
+				resourcePolicy = bindDocumentResourceCsp(document, scriptHeaders);
+				if (resourcePolicy && !resourcePolicy.supported)
+					throw new AgentBrowserError(
+						"policy-denied",
+						"Native resource CSP cannot enforce this policy, including inline styles",
+					);
+				const scriptPolicy = initializeDocumentScriptCsp(
+					document,
+					scriptHeaders,
+					true,
+				);
+				if (resourcePolicy) {
+					if (!scriptPolicy || scriptPolicy.unsupported)
+						throw new AgentBrowserError(
+							"policy-denied",
+							"Native document policy is unsupported",
+						);
+					resourcePolicy.attach(scriptPolicy);
+					resourcePolicy.signal.addEventListener(
+						"abort",
+						() => fetchLifetime.abort(resourcePolicy?.signal.reason),
+						{ once: true },
+					);
+				}
 				documentImageContentSecurityPolicy(document, imageCspHeaders);
 				if (this.webSocketTransport)
 					bindDocumentWebSockets(document, this.webSocketTransport, {
@@ -2053,13 +2100,18 @@ export class BrowserSession {
 							"Mixed-content document fetch is not allowed",
 						);
 					if (
-						fetchCspBlocked ||
+						(fetchCspBlocked && !resourcePolicy) ||
 						(candidate && documentScriptCsp(candidate)?.unsupported)
 					)
 						throw new AgentBrowserError(
 							"policy-denied",
 							"Fetch CSP enforcement is not implemented",
 						);
+					resourcePolicy?.check(
+						"connect",
+						target.href,
+						context?.redirectCount ?? 0,
+					);
 					const controller = new AbortController();
 					const abortInput = () =>
 						controller.abort(
@@ -2098,6 +2150,19 @@ export class BrowserSession {
 							controller.signal,
 						);
 						assertOwner();
+						resourcePolicy?.check(
+							"connect",
+							result.url,
+							context?.redirectCount ?? 0,
+						);
+						if (
+							resourcePolicy &&
+							(result.redirects.length || result.url !== target.href)
+						)
+							throw new AgentBrowserError(
+								"policy-denied",
+								"Resource fetch adapter must not follow redirects",
+							);
 						return result;
 					} finally {
 						input.signal?.removeEventListener("abort", abortInput);
@@ -2176,6 +2241,14 @@ export class BrowserSession {
 							controller.signal,
 						);
 						assertOwner();
+						if (
+							resourcePolicy &&
+							(image.redirects.length || image.url !== target.href)
+						)
+							throw new AgentBrowserError(
+								"policy-denied",
+								"Image adapter must not follow redirects",
+							);
 						checkImageCsp(image.url, redirects.length);
 						encodedBytes += image.encodedBytes;
 						if (![301, 302, 303, 307, 308].includes(image.status))
@@ -2298,6 +2371,7 @@ export class BrowserSession {
 										signal: policySignal,
 										maxRedirects: this.transport.limits?.maxRedirects ?? 10,
 										checkContentSecurityPolicy: (url, redirectCount) => {
+											resourcePolicy?.check("script", url, redirectCount);
 											const owner = candidate
 												? documentScriptCsp(candidate)
 												: undefined;
