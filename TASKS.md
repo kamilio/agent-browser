@@ -12,6 +12,29 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September18,16:18UTC: the actual owned native process now passes21 public commands,
+including initialization of unchanged captured Zoom React/ReactDOM source in
+80713.828ms. Verified exports include ReactDOM.createRoot and native URL globals.
+The bounded synthetic-page guest-eval gate is recorded at
+`/tmp/agent-browser-owned-react-deadline-september18-0ZTS0l/RESULT.md`; it is not
+external-script loading or a policy-preserving Zoom page. Explicit120s script,
+180s parent and child command deadlines, idle-only heartbeat policy and256MiB
+child heap were selected. The child requires its own public `--timeout=180000`;
+raising the parent ceiling alone left the independent30s child default active.
+Supervisor exit0,83.426s, process/group absent and empty private HOME/TMP are
+verified; production child close uses SIGKILL, not graceful disposal. Prior
+failures and the ordinary16s performance failure remain unchanged.
+
+The source-derived final iframe route uses `from=pwa`, not the intermediate
+`fromPWA=1`. Fresh native navigation on September18 at16:11:19UTC reaches a
+different158521-byte join document after one redirect, with47 script elements
+and19 external references. Report:
+`/tmp/agent-browser-zoom-final-iframe-Egx03l/HANDOFF.md`. It uses fresh native
+cookies and no script execution, form submission or credentials. The immediate
+next target is that document's actual join entry and dependencies. Successful
+HTTP responses and runtime prerequisites do not establish usable meeting UI,
+admission, audio reception, recording, transcript or delivery; all remain open.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,

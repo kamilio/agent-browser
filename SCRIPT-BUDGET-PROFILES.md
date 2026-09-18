@@ -63,7 +63,9 @@ are verified; this is not combined application startup or meeting admission.
 The ordinary 16s performance gate remains failed. Owned processes still
 have independent command/startup/heartbeat/heap limits: selecting this profile
 does not silently increase them. A command that needs longer than the default
-30000ms must also explicitly select an appropriate finite `commandTimeoutMs`.
+30000ms must also explicitly select an appropriate finite `commandTimeoutMs`
+and request a sufficient public command `--timeout`. The parent ceiling does
+not replace the child CommandHost's independent default30000ms timeout.
 
 ## CLI selection
 
@@ -112,4 +114,18 @@ Parent native/mock checks pass2344 tests in51 files, with build/types/format/lin
 passing. Tests retain the default busy-heartbeat rejection and prove idle restart,
 multiple pending commands, unextendable hard deadline, invalid sequence and abort
 cleanup. The unchanged-production red gate retains22 failures. A separate actual
-owned Zoom replay is required to establish behavior with this new selection.
+owned Zoom replay now passes21 public commands, including one80713.828ms indirect
+guest eval of the unchanged337218-byte captured React/ReactDOM bundle. React,
+ReactDOM.createRoot and native URL globals are verified in that owned process.
+The replay explicitly selects `application-v1`, `idle-only`, a180000ms parent
+ceiling, `--timeout=180000` for that long command, and a256MiB child heap; default
+limits remain unchanged. Its supervisor exits0 in83.426s, and the owned child
+is absent after production `close()` sends SIGKILL; this is not graceful disposal.
+
+Evidence: `/tmp/agent-browser-owned-react-deadline-september18-0ZTS0l/RESULT.md`.
+Source arrived through eleven bounded public eval appends on a synthetic page,
+then one ordinary guest indirect eval, with no publisher-source modification.
+This proves that narrow owned-runtime capability, not external-script loading,
+policy-preserving live navigation, meeting admission or audio. The previous
+oversized-route, heartbeat and separate child-timeout failures remain preserved.
+Ordinary16s performance remains unpassed.
