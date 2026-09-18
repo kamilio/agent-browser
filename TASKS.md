@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Explicit loader-limit replay and bounded content reading
+
+- Add --recover-loader-limit for complete pinned default-profile HTML captures
+  whose original reader failed at loader/resource-limit. Ordinary replay remains
+  evidence-only; preserve original failure, query redaction and captured policies.
+  No network retry, raised limit, challenge bypass or page-runtime change.
+- Native1277/0 in14 files plus222/0 in3 disjoint reader-policy files;190 new
+  cases. Build/types/format/lint pass. Preserve initial1275-case6-failure run,
+  its type/lint failures, the subsequent1276/1 escaped-Markdown fixture failure,
+  and a separate offline harness syntax error before the corrected replay.
+- Real captured HN response605306 bytes now works through the explicit CLI:
+  136318 bytes of indented source text,127383/127383 source code units retained,
+  truncatedfalse, zero requests. Exact text matches prior source-verified output;
+  link destinations/Markdown structure are not retained by text-prefix fallback.
+- Three additional one-GET native reads: GitHub Bonsai-demo200/76825 Markdown
+  bytes, arXiv2105.00272 200/9352 bytes, docs.prismml.com308 stopped before load.
+  Original docs wrapper incorrectly rejected its null finalUrl; preserve failure
+  and independent review. Canonical target staged offline only, not fetched.
+- See reports/loader-limit-replay-2026-09-18.md/JSON. Zoom has not been joined;
+  native client execution/admission and real decoded audio remain critical-path
+  gaps. No credentials/devices/recording/delivery, runtime default change or push.
+  Overall browser goal, broad coverage and original research remain open.
+
 ### Source-linked research and bounded formatting-marker reuse
 
 - Three anonymous native GETs on September18: OpenAI Astra article403 barrier,

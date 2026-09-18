@@ -1,4 +1,6 @@
 [
+	"src/research-loader-limit-admission.test.ts",
+	"src/research-loader-limit-replay.test.ts",
 	"src/pcm-capture.test.ts",
 	"src/markdown-source-links-escaped.test.ts",
 	"src/page-fetch-binary.test.ts",

@@ -15,6 +15,7 @@ import {
 	extractResearchStrategyReplayJson,
 	outlineResearchOutputLimitCapture,
 	recoverResearchEmptyOutlineSelector,
+	recoverResearchLoaderLimit,
 	recoverResearchOutputLimitContentFocus,
 	recoverResearchOutputLimitSection,
 	recoverResearchOutputLimitSelector,
@@ -29,7 +30,7 @@ export const researchReplayCliLimits = Object.freeze({
 
 const usage =
 	"Explicit strategy replay: --expected-document-strategy native-reader-fallback-v1 requires the default profile and an ordinary HTML selector, section, content-focus or links selection; recovery and interpretation overrides are unsupported.\n" +
-	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--content-focus main-content-v1|main-content-v2|main-content-v3 | --selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--source-link-label-policy source-aria-label-v1] [--reader-mime-policy markdown-html-document-v1] [--output-limit-policy text-prefix-v1] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit | --recover-empty-outline] < receipt.jsonl\nSource link-label policy requires default-profile ordinary selector/section/content-focus HTML Markdown replay, without recovery or text-prefix output; it records a current interpretation without changing captured policy or outcome. Output-limit recovery requires the default profile and one explicit --selector, --section, --content-focus or --headings. Empty-outline recovery requires long-v1 and one explicit --selector. Recovery flags are mutually exclusive. Content focus requires an ordinary complete capture or explicit output-limit recovery of a complete failed capture; it cannot use empty-outline recovery. Reader MIME policy requires default-profile ordinary selector/section/content-focus replay of a complete text/markdown capture with a recognized HTML document prefix and no captured MIME policy or interpretation; it never rewrites capture metadata or admits genuine Markdown as HTML. Text-prefix output requires ordinary selector/section/content-focus Markdown replay; it never admits incomplete bodies. Markdown requires selector/section/content-focus extraction without table metadata or literal --lines extraction. Table rows and compact tables require explicit Markdown selector/section/content-focus extraction and may be combined. Headings require output-limit recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
+	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--content-focus main-content-v1|main-content-v2|main-content-v3 | --selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--source-link-label-policy source-aria-label-v1] [--reader-mime-policy markdown-html-document-v1] [--output-limit-policy text-prefix-v1] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit | --recover-empty-outline | --recover-loader-limit] < receipt.jsonl\nSource link-label policy requires default-profile ordinary selector/section/content-focus HTML Markdown replay, without recovery or text-prefix output; it records a current interpretation without changing captured policy or outcome. Output-limit recovery requires the default profile and one explicit --selector, --section, --content-focus or --headings. Empty-outline recovery requires long-v1 and one explicit --selector. Recovery flags are mutually exclusive. Loader-limit recovery requires a complete pinned default-profile text/html capture that failed at loader resource limits, and one selector, section or content-focus; it retries parsing locally under current bounds, never the original request. Content focus requires an ordinary complete capture or explicit output-limit/loader-limit recovery of a complete failed capture; it cannot use empty-outline recovery. Reader MIME policy requires default-profile ordinary selector/section/content-focus replay of a complete text/markdown capture with a recognized HTML document prefix and no captured MIME policy or interpretation; it never rewrites capture metadata or admits genuine Markdown as HTML. Text-prefix output requires ordinary or explicit loader-limit selector/section/content-focus Markdown replay; it never admits incomplete bodies. Markdown requires selector/section/content-focus extraction without table metadata or literal --lines extraction. Table rows and compact tables require explicit Markdown selector/section/content-focus extraction and may be combined. Headings require output-limit recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
 
 function invalidArguments(): never {
 	throw new AgentBrowserError(
@@ -43,6 +44,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	selection: ResearchJsonReplaySelection | { headings: true };
 	recoverOutputLimit?: true;
 	recoverEmptyOutline?: true;
+	recoverLoaderLimit?: true;
 	format?: ResearchReplayFormat;
 } {
 	if (
@@ -58,6 +60,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	let compactTables = false;
 	let recoverOutputLimit = false;
 	let recoverEmptyOutline = false;
+	let recoverLoaderLimit = false;
 	let headings = false;
 	const valueFlags = new Set([
 		"--expected-profile",
@@ -96,6 +99,10 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		}
 		if (flag === "--recover-empty-outline" && !recoverEmptyOutline) {
 			recoverEmptyOutline = true;
+			continue;
+		}
+		if (flag === "--recover-loader-limit" && !recoverLoaderLimit) {
+			recoverLoaderLimit = true;
 			continue;
 		}
 		if (flag === "--headings" && !headings) {
@@ -150,6 +157,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 			profile !== "default" ||
 			recoverOutputLimit ||
 			recoverEmptyOutline ||
+			recoverLoaderLimit ||
 			headings ||
 			readerMimePolicy !== undefined ||
 			outputLimitPolicy !== undefined ||
@@ -165,6 +173,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 			format !== "markdown" ||
 			recoverOutputLimit ||
 			recoverEmptyOutline ||
+			recoverLoaderLimit ||
 			outputLimitPolicy !== undefined ||
 			!["--selector", "--section", "--content-focus"].includes(modes[0]))
 	)
@@ -175,6 +184,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 			profile !== "default" ||
 			recoverOutputLimit ||
 			recoverEmptyOutline ||
+			recoverLoaderLimit ||
 			!["--selector", "--section", "--content-focus"].includes(modes[0]))
 	)
 		invalidArguments();
@@ -189,7 +199,19 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		invalidArguments();
 	if (
 		recoverEmptyOutline &&
-		(recoverOutputLimit || profile !== "long-v1" || modes[0] !== "--selector")
+		(recoverOutputLimit ||
+			recoverLoaderLimit ||
+			profile !== "long-v1" ||
+			modes[0] !== "--selector")
+	)
+		invalidArguments();
+	if (
+		recoverLoaderLimit &&
+		(recoverOutputLimit ||
+			recoverEmptyOutline ||
+			profile !== "default" ||
+			headings ||
+			!["--selector", "--section", "--content-focus"].includes(modes[0]))
 	)
 		invalidArguments();
 	if (
@@ -296,6 +318,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		...(format === undefined ? {} : { format }),
 		...(recoverOutputLimit ? { recoverOutputLimit: true as const } : {}),
 		...(recoverEmptyOutline ? { recoverEmptyOutline: true as const } : {}),
+		...(recoverLoaderLimit ? { recoverLoaderLimit: true as const } : {}),
 		trusted,
 		selection:
 			mode === "--content-focus"
@@ -488,6 +511,14 @@ export async function runResearchReplayCli(
 				receipt,
 				options.trusted,
 				controller.signal,
+			);
+		} else if (options.recoverLoaderLimit) {
+			result = recoverResearchLoaderLimit(
+				receipt,
+				options.trusted,
+				options.selection,
+				controller.signal,
+				options.format ?? "json",
 			);
 		} else if (options.recoverOutputLimit || options.recoverEmptyOutline) {
 			const metadata = {

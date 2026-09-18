@@ -8,6 +8,7 @@ import type {
 	ResearchDocumentStrategyInfo,
 } from "../src/research-fallback-loader.js";
 import {
+	type ResourceLimitDiagnostic,
 	type ResourceLimitKind,
 	resourceLimitDiagnostic,
 	resourceLimitError,
@@ -165,6 +166,23 @@ export type ResearchOutputLimitSectionAdmission = Extract<
 	ResearchReplayAdmission,
 	{ kind: "validated-capture" }
 > & { readonly recovery: ResearchOutputLimitSectionRecovery };
+
+export interface ResearchLoaderLimitRecovery {
+	readonly kind: "captured-loader-limit";
+	readonly originalOutcome: "failure";
+	readonly originalContentSuccess: false;
+	readonly originalFailure: {
+		readonly category: "resource-limit";
+		readonly stage: "loader";
+		readonly resourceLimit?: Readonly<ResourceLimitDiagnostic>;
+	};
+	readonly originalRequestRetried: false;
+}
+
+export type ResearchLoaderLimitAdmission = Extract<
+	ResearchReplayAdmission,
+	{ kind: "validated-capture" }
+> & { readonly recovery: ResearchLoaderLimitRecovery };
 
 export interface ResearchEmptyOutlineRecovery {
 	readonly kind: "captured-empty-outline-selector";
@@ -1594,6 +1612,112 @@ export function validateResearchOutputLimitSectionAdmission(
 		originalContentSuccess: false,
 		originalFailure:
 			failure as unknown as ResearchOutputLimitSectionRecovery["originalFailure"],
+		originalRequestRetried: false,
+	});
+	return Object.freeze({
+		...validatedCapture(report, authority, metadata),
+		recovery,
+	});
+}
+
+export function validateResearchLoaderLimitAdmission(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+): ResearchLoaderLimitAdmission {
+	const { report, authority, metadata } = replayEvidence(rawReceipt, trusted);
+	const classification = record(report.classification);
+	const failure = record(report.failure);
+	const metrics = record(report.metrics);
+	const primary = primaryProjection(report.primaryResponse);
+	if (
+		metadata.selectedProfile !== "default" ||
+		report.outcome !== "failure" ||
+		report.partial !== true ||
+		report.contentSuccess !== false ||
+		report.profile !== "native-semantic-reader-v1" ||
+		[
+			"rateLimit",
+			"serviceBackoff",
+			"outputLimit",
+			"navigation",
+			"reader",
+			"extraction",
+			"headings",
+			"textLines",
+			"links",
+		].some((field) => Object.hasOwn(report, field)) ||
+		classification.classifier !== "browser-challenges" ||
+		classification.barrier !== null ||
+		classification.diagnostic !== null ||
+		failure.category !== "resource-limit" ||
+		failure.stage !== "loader" ||
+		Object.keys(failure).some(
+			(key) => !["category", "stage", "resourceLimit"].includes(key),
+		) ||
+		metrics.active !== 0 ||
+		metrics.closed !== true ||
+		primary === null ||
+		authority.expectedBody === undefined
+	)
+		invalidEvidence();
+	if (Object.hasOwn(failure, "resourceLimit")) {
+		const diagnostic = record(failure.resourceLimit);
+		if (
+			Object.keys(diagnostic).length !== 4 ||
+			!integer(diagnostic.limit) ||
+			!integer(diagnostic.observed) ||
+			typeof diagnostic.kind !== "string"
+		)
+			invalidEvidence();
+		const expected = resourceLimitDiagnostic(
+			resourceLimitError(
+				diagnostic.kind as ResourceLimitKind,
+				diagnostic.limit,
+				diagnostic.observed,
+				"Loader recovery resource diagnostic",
+			),
+		);
+		if (!expected || !sameCanonical(diagnostic, expected)) invalidEvidence();
+	}
+	if (Object.hasOwn(report, "selection")) {
+		const selection = record(report.selection);
+		const fields = Object.keys(selection).length;
+		if (
+			!(
+				((selection.method === "css-selector" ||
+					selection.method === "heading-section") &&
+					selection.matches === null &&
+					fields === 2) ||
+				((selection.method === "heading-outline" ||
+					selection.method === "text-line-discovery") &&
+					fields === 1) ||
+				(selection.method === "text-lines" &&
+					integer(selection.start) &&
+					selection.start >= 1 &&
+					integer(selection.end) &&
+					selection.end >= selection.start &&
+					fields === 3) ||
+				(selection.method === "json-pointer" &&
+					boundedString(selection.pointer, 4096, true) &&
+					fields === 2)
+			)
+		)
+			invalidEvidence();
+	}
+	const contentType = record(primary.headers)["content-type"];
+	if (
+		!Array.isArray(contentType) ||
+		contentType.length !== 1 ||
+		typeof contentType[0] !== "string" ||
+		contentType[0].split(";", 1)[0].trim().toLowerCase() !== "text/html"
+	)
+		invalidEvidence();
+	const recovery: ResearchLoaderLimitRecovery = Object.freeze({
+		kind: "captured-loader-limit",
+		originalOutcome: "failure",
+		originalContentSuccess: false,
+		originalFailure:
+			failure as unknown as ResearchLoaderLimitRecovery["originalFailure"],
 		originalRequestRetried: false,
 	});
 	return Object.freeze({

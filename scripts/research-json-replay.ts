@@ -57,10 +57,12 @@ import {
 import {
 	type ResearchBodyPin,
 	type ResearchEmptyOutlineRecovery,
+	type ResearchLoaderLimitRecovery,
 	type ResearchOutputLimitSectionRecovery,
 	type ResearchReplayAdmission,
 	type TrustedResearchReplayAdmission,
 	validateResearchEmptyOutlineAdmission,
+	validateResearchLoaderLimitAdmission,
 	validateResearchOutputLimitSectionAdmission,
 	validateResearchReplayAdmission,
 } from "./research-admission-evidence.js";
@@ -249,6 +251,7 @@ export interface ResearchJsonReplayReport<
 	textLines?: DocumentTextLineDiscovery;
 	recovery?:
 		| ResearchEmptyOutlineRecovery
+		| ResearchLoaderLimitRecovery
 		| ResearchOutputLimitSectionRecovery
 		| ResearchOutputLimitSelectorRecovery
 		| ResearchOutputLimitContentFocusRecovery
@@ -268,6 +271,14 @@ export interface ResearchOutputLimitSectionExtraction<
 > extends ResearchJsonReplayExtraction<Format> {
 	report: ResearchJsonReplayReport<Format> & {
 		recovery: ResearchOutputLimitSectionRecovery;
+	};
+}
+
+export interface ResearchLoaderLimitExtraction<
+	Format extends ResearchReplayFormat = "json",
+> extends ResearchJsonReplayExtraction<Format> {
+	report: ResearchJsonReplayReport<Format> & {
+		recovery: ResearchLoaderLimitRecovery;
 	};
 }
 
@@ -574,6 +585,7 @@ function replayRawPolicy(
 
 function replaySourceHeadingPolicy(
 	metadata: Readonly<Record<string, unknown>>,
+	allowUnobservedReader = false,
 ): SourceHeadingPolicy | undefined {
 	const topDeclared = Object.hasOwn(metadata, "sourceHeadingPolicy");
 	const reader = metadata.reader;
@@ -586,6 +598,13 @@ function replaySourceHeadingPolicy(
 		Object.hasOwn(readerRecord, "sourceHeadingPolicy");
 	if (!topDeclared && !readerDeclared) return undefined;
 	const selected = validateSourceHeadingPolicy(metadata.sourceHeadingPolicy);
+	if (
+		allowUnobservedReader &&
+		!Object.hasOwn(metadata, "reader") &&
+		topDeclared &&
+		selected !== undefined
+	)
+		return selected;
 	if (
 		!topDeclared ||
 		!readerDeclared ||
@@ -601,6 +620,7 @@ function replaySourceHeadingPolicy(
 
 function replayFallbackEncoding(
 	metadata: Readonly<Record<string, unknown>>,
+	allowUnobservedReader = false,
 ): ResearchReaderFallbackEncoding | undefined {
 	const topDeclared = Object.hasOwn(metadata, "readerFallbackEncoding");
 	const reader = metadata.reader;
@@ -615,6 +635,13 @@ function replayFallbackEncoding(
 	const selected = validateResearchReaderFallbackEncoding(
 		metadata.readerFallbackEncoding,
 	);
+	if (
+		allowUnobservedReader &&
+		!Object.hasOwn(metadata, "reader") &&
+		topDeclared &&
+		selected !== undefined
+	)
+		return selected;
 	if (
 		!topDeclared ||
 		!readerDeclared ||
@@ -825,6 +852,53 @@ export function extractResearchReplayJson(
 		signal,
 		{},
 		selectedFormat,
+	);
+}
+
+export function recoverResearchLoaderLimit<Format extends ResearchReplayFormat>(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchJsonReplaySelection,
+	signal: AbortSignal | undefined,
+	format: Format,
+): ResearchLoaderLimitExtraction<Format>;
+export function recoverResearchLoaderLimit(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchJsonReplaySelection,
+	signal?: AbortSignal,
+): ResearchLoaderLimitExtraction;
+export function recoverResearchLoaderLimit(
+	rawReceipt: Uint8Array,
+	trusted: TrustedResearchReplayAdmission,
+	selection: ResearchJsonReplaySelection,
+	signal?: AbortSignal,
+	format: ResearchReplayFormat = "json",
+): ResearchLoaderLimitExtraction<ResearchReplayFormat> {
+	const checkpoint = replayCheckpoint(signal);
+	checkpoint();
+	const selected = selectionSnapshot(selection);
+	if (
+		(selected.method !== "css-selector" &&
+			selected.method !== "heading-section" &&
+			selected.method !== "content-focus") ||
+		selected.sourceLinkLabelPolicy !== undefined ||
+		selected.readerMimePolicy !== undefined
+	)
+		invalidSelection();
+	const selectedFormat = validateReplayFormat(format, selected);
+	checkpoint();
+	const admission = validateResearchLoaderLimitAdmission(rawReceipt, trusted);
+	return extractValidatedReplayJson(
+		admission,
+		selected,
+		checkpoint,
+		signal,
+		{ recovery: admission.recovery },
+		selectedFormat,
+		false,
+		undefined,
+		admission.recovery,
 	);
 }
 
@@ -1203,6 +1277,7 @@ function extractValidatedReplayJson<
 		tree: DocumentTree;
 		strategy: Readonly<ResearchDocumentStrategyInfo>;
 	},
+	loaderRecovery?: ResearchLoaderLimitRecovery,
 ): ResearchJsonReplayExtraction<Format> & {
 	report: ResearchJsonReplayReport<Format> & Extra;
 } {
@@ -1217,6 +1292,7 @@ function extractValidatedReplayJson<
 			);
 		const sourceHeadingPolicy = replaySourceHeadingPolicy(
 			admission.originalMetadata,
+			loaderRecovery !== undefined,
 		);
 		const sourceLinkLabelPolicy =
 			"sourceLinkLabelPolicy" in selected
@@ -1234,7 +1310,10 @@ function extractValidatedReplayJson<
 				"Source link-label replay requires a default-profile HTML capture",
 			);
 		const rawPolicy = replayRawPolicy(admission.originalMetadata);
-		const fallbackEncoding = replayFallbackEncoding(admission.originalMetadata);
+		const fallbackEncoding = replayFallbackEncoding(
+			admission.originalMetadata,
+			loaderRecovery !== undefined,
+		);
 		const visibilityPolicy = replayVisibilityPolicy(admission.originalMetadata);
 		const { policy: capturedMimePolicy, interpretation: mimeInterpretation } =
 			replayMimePolicy(admission.originalMetadata);
@@ -1466,7 +1545,8 @@ function extractValidatedReplayJson<
 		if (
 			(fallbackEncoding !== undefined &&
 				(reader?.fallbackEncoding !== fallbackEncoding ||
-					originalReader?.encoding !== reader?.encoding)) ||
+					(loaderRecovery === undefined &&
+						originalReader?.encoding !== reader?.encoding))) ||
 			(replayMimePolicyOverride !== undefined &&
 				originalReader !== undefined &&
 				originalReader.encoding !== reader?.encoding)
@@ -1543,7 +1623,8 @@ function extractValidatedReplayJson<
 				...(sourceHeadingPolicy === undefined ? {} : { sourceHeadingPolicy }),
 				...(sourceLinkLabelPolicy === undefined &&
 				capturedSourceLinkLabelPolicy === undefined &&
-				sourceHeadingPolicy === undefined
+				sourceHeadingPolicy === undefined &&
+				loaderRecovery === undefined
 					? {}
 					: {
 							capturedOutcome: admission.originalMetadata
