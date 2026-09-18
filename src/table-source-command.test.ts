@@ -2,7 +2,11 @@ import { afterEach, expect, it } from "vitest";
 import { parseInvocation } from "./cli-parser.js";
 import { BrowserCommandHost } from "./command-host.js";
 import { DocumentTree } from "./document.js";
-import type { DocumentExtraction, ExtractedNode } from "./extraction.js";
+import {
+	type DocumentExtraction,
+	type ExtractedNode,
+	extractDocument,
+} from "./extraction.js";
 import type { NetworkTransport } from "./network.js";
 import { BrowserSession } from "./session.js";
 
@@ -123,6 +127,171 @@ function extractedNodes(data: unknown): ExtractedNode[] {
 afterEach(() => {
 	for (const host of hosts.splice(0)) host.close();
 });
+
+const markdownTableFlags = ["table-rows", "compact-tables"] as const;
+
+it.each(
+	markdownTableFlags.flatMap((name) =>
+		[
+			{ suffix: "", value: true },
+			{ suffix: "=true", value: true },
+			{ suffix: "=false", value: false },
+		].map((option) => ({ name, ...option })),
+	),
+)("parses ordinary extract --$name$suffix", ({ name, suffix, value }) => {
+	expect(
+		parseInvocation(["extract", "#selected", `--${name}${suffix}`]),
+	).toMatchObject({
+		command: "extract",
+		arguments: ["#selected"],
+		options: { [name]: value },
+	});
+});
+
+it.each(
+	markdownTableFlags.flatMap((name) =>
+		["", "TRUE", "False", "1", "0", "yes", "null", "undefined"].map(
+			(value) => ({ name, value }),
+		),
+	),
+)("rejects ordinary extract --$name=$value", ({ name, value }) => {
+	expect(() => parseInvocation(["extract", `--${name}=${value}`])).toThrow(
+		expect.objectContaining({ code: "invalid-input" }),
+	);
+});
+
+it.each(
+	markdownTableFlags.flatMap((name) =>
+		["snapshot", "html", "dom"].map((command) => ({ name, command })),
+	),
+)("does not add --$name to $command", ({ name, command }) => {
+	expect(() => parseInvocation([command, `--${name}`])).toThrow(
+		expect.objectContaining({ code: "invalid-input" }),
+	);
+});
+
+it.each(["markdown", "json"] as const)(
+	"preserves ordinary extract defaults and false table flags for %s",
+	async (format) => {
+		const { host, tree, requests } = await fixture();
+		const args = ["extract", `--format=${format}`];
+		const original = (await host.execute(args)).data;
+		expect(original).toEqual(extractDocument(tree, { format }));
+		for (const name of markdownTableFlags) {
+			expect(parseInvocation(args).options).not.toHaveProperty(name);
+			expect((await host.execute([...args, `--${name}=false`])).data).toEqual(
+				original,
+			);
+		}
+		expect(
+			(
+				await host.execute([
+					...args,
+					"--table-rows=false",
+					"--compact-tables=false",
+				])
+			).data,
+		).toEqual(original);
+		expect(requests).toEqual([url]);
+	},
+);
+
+const markdownTableModes = [
+	{ tableRows: true, compactTables: false },
+	{ tableRows: false, compactTables: true },
+	{ tableRows: true, compactTables: true },
+] as const;
+
+it.each(
+	markdownTableModes.flatMap((mode) =>
+		["document", "selector", "reference", "focus"].map((scope) => ({
+			...mode,
+			scope,
+		})),
+	),
+)(
+	"matches library table extraction for $scope rows=$tableRows compact=$compactTables",
+	async ({ scope, tableRows, compactTables }) => {
+		const { host, tree, table, cell, requests } = await fixture();
+		const main = tree.createElement("main");
+		tree.append(tree.root, main);
+		tree.append(main, table);
+		const link = tree.createElement("a", {
+			href: "/linked?value=one&next=two",
+		});
+		tree.setTextContent(link, "Linked | value 日本語");
+		tree.append(cell, link);
+		const args = [
+			"extract",
+			...(scope === "selector"
+				? ["#selected"]
+				: scope === "reference"
+					? [tree.reference(table)]
+					: scope === "focus"
+						? ["--content-focus=main-content-v1"]
+						: []),
+			`--table-rows=${tableRows}`,
+			`--compact-tables=${compactTables}`,
+		];
+		const options = {
+			tableRows,
+			compactTables,
+			...(scope === "selector" || scope === "reference"
+				? { root: tree.reference(table) }
+				: scope === "focus"
+					? { contentFocus: "main-content-v1" as const }
+					: {}),
+		};
+		const revision = tree.revision;
+		const result = (await host.execute(args)).data as DocumentExtraction;
+		expect(result).toEqual(extractDocument(tree, options));
+		expect(result.format).toBe("markdown");
+		expect(result.content).toContain("Heading");
+		expect(result.content).not.toContain("Hidden");
+		if (scope !== "document") expect(result.content).not.toContain("Outside");
+		expect(tree.revision).toBe(revision);
+		tree.setTextContent(cell, "Changed cell");
+		expect((await host.execute(args)).data).toEqual(
+			extractDocument(tree, options),
+		);
+		expect(requests).toEqual([url]);
+	},
+);
+
+it.each(markdownTableModes)(
+	"keeps table preferences Markdown-only rows=$tableRows compact=$compactTables",
+	async ({ tableRows, compactTables }) => {
+		const { host, requests } = await fixture();
+		await expect(
+			host.execute([
+				"extract",
+				"--format=json",
+				`--table-rows=${tableRows}`,
+				`--compact-tables=${compactTables}`,
+			]),
+		).rejects.toMatchObject({ code: "invalid-input" });
+		expect(requests).toEqual([url]);
+	},
+);
+
+it.each(markdownTableFlags)(
+	"enforces output limits and recovers without refetch for --%s",
+	async (name) => {
+		const { host, tree, cell, requests } = await fixture();
+		tree.setTextContent(cell, "Bounded 日本語 cell ".repeat(100));
+		const args = ["extract", "#selected", `--${name}`];
+		await expect(
+			host.execute([...args, "--max-bytes=1024"]),
+		).rejects.toMatchObject({ code: "resource-limit" });
+		const result = (await host.execute([...args, "--max-bytes=16384"]))
+			.data as DocumentExtraction;
+		expect(
+			new TextEncoder().encode(JSON.stringify(result)).length,
+		).toBeLessThanOrEqual(16384);
+		expect(result.content).toContain("Bounded 日本語 cell");
+		expect(requests).toEqual([url]);
+	},
+);
 
 it.each([
 	{ flag: "--table-metadata", value: true },

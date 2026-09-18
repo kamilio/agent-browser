@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Expose ordinary native table extraction and read an explicit public API
+
+- Add --table-rows/--compact-tables to native extract parsing, option validation
+  and library forwarding. Default/false output, JSON restrictions, selectors,
+  focus and resource caps remain unchanged; no network behavior changes.
+- Native775/0 across16 explicit files, including47 added command cases; all
+  quality checks pass. Same new tests on old production:53 pass/22 fail.
+- The unchanged Tokio inspector that previously rejected --compact-tables now
+  passes on the new runtime:23 source headings/5 code blocks,23992 focused
+  Markdown bytes. No site refetch. Saved README native extraction matches the
+  library and prior verified Markdown exactly:53917→37618 bytes, retaining42
+  headings,29 code blocks,79 content links and71 rows/204 cells.
+- One separate anonymous native Stack Exchange API request on September18 at
+  11:00:41.394UTC returns200/application-json:1560 bytes/1569 fenced Markdown
+  bytes. Question20001229 body is763 decoded bytes; no answers/comments fetched.
+  Receipt reports quota299, no backoff/error and has_morefalse; no next request.
+- Admitted offline JSON-pointer API replay returns the exact773-unit source
+  string,782 Markdown bytes and2447-byte provenance JSONL. HTML stays literal,
+  not rendered/executed. The envelope is not an output-size saving for this small
+  response. Original Stack Overflow403 challenge remains blocked and unchanged.
+- Preserve two API-preparation failures (patch argument limit, fence assertion),
+  corrected proof and all original pins. No SDK, challenge solver, credentials,
+  device, Zoom join/recording/transcription/delivery or overall completion claim.
+- See reports/native-table-options-2026-09-18.md/JSON and TABLE-ROWS.md. API access
+  is an explicit different public source, never a silent challenge fallback.
+
 ### Avoid repeated base-URL scans and check two more websites
 
 - Profile three pinned source replays; HN repeatedly scans its whole document

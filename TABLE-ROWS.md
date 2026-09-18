@@ -1,9 +1,10 @@
 # Readable native table rows
 
-Opt in to `tableRows: true` with `extractDocument`, or `--table-rows` in the
-research browser and captured-HTML replay CLI. The default Markdown and JSON
-formats stay unchanged. The preference is disclosed as `tableRows: true` in the
-extraction metadata, even when the selected content has no convertible table.
+Opt in to `tableRows: true` with `extractDocument`, or `--table-rows` in native
+`extract`/`extract-page`, the research browser and captured-HTML replay CLI. The
+default Markdown and JSON formats stay unchanged. The preference is disclosed as
+`tableRows: true` in the extraction metadata, even when the selected content has
+no convertible table.
 
 ## Output contract
 
@@ -45,6 +46,21 @@ intermediate and output budgets remain in force: no truncation or wider caps.
 
 ## Live and captured reading
 
+For an already loaded native document, ordinary extraction supports both table
+preferences with a selector, reference or automatic content focus:
+
+```text
+extract #main-content --table-rows --compact-tables
+extract --content-focus=main-content-v1 --table-rows
+```
+
+The native command defaults to Markdown. Its flags accept an omitted value,
+`=true` or `=false`; explicit false preserves the original output, including in
+JSON mode. Enabling either preference requires Markdown. `--table-metadata`
+continues to require JSON, so it cannot be combined with an enabled Markdown
+table preference. The existing output/node/depth caps still apply. Extraction
+uses the loaded document without requesting the website again.
+
 The live research CLI defaults to Markdown, so `--reader --table-rows` is enough
 to request the format. A unique article `--selector` can remove unrelated page
 chrome. `ResearchExecutionOptions.tableRows` forwards the same preference through
@@ -59,9 +75,9 @@ recovery accepts `tableRows`; the existing explicit Markdown format argument
 is also required. Admitted local replay makes no HTTP requests.
 
 JSON extraction, link/headings discovery and table-source metadata cannot use
-the row-list preference. CLI flags are unique and take no boolean value;
-invalid combinations fail before replay input is consumed. API values must be
-booleans. `false` preserves the existing extraction behavior; replay link
+the enabled row-list preference. Research/replay CLI flags are unique and take no
+boolean value; invalid combinations fail before replay input is consumed. API
+values must be booleans. `false` preserves the existing extraction behavior; replay link
 discovery rejects even an explicitly false `tableRows` property.
 Long-profile HTML captures
 can be selected offline with this preference; long-profile live acquisition

@@ -258,6 +258,8 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 		"format",
 		"content-focus",
 		"table-metadata",
+		"table-rows",
+		"compact-tables",
 		"max-bytes",
 		"max-nodes",
 		"depth",
@@ -1899,6 +1901,12 @@ export class BrowserCommandHost {
 				...(options["table-metadata"] === undefined
 					? {}
 					: { tableMetadata: options["table-metadata"] as boolean }),
+				...(options["table-rows"] === undefined
+					? {}
+					: { tableRows: options["table-rows"] as boolean }),
+				...(options["compact-tables"] === undefined
+					? {}
+					: { compactTables: options["compact-tables"] as boolean }),
 				...(args[0] === undefined
 					? {}
 					: { root: this.target(browser, tabId, args[0]) }),

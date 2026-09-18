@@ -244,6 +244,8 @@ const definitions: CommandDefinition[] = [
 			format: stringOption,
 			"content-focus": stringOption,
 			"table-metadata": booleanOption,
+			"table-rows": booleanOption,
+			"compact-tables": booleanOption,
 			"max-bytes": { ...positiveInteger, minimum: 256, maximum: 1_048_576 },
 			"max-nodes": { ...positiveInteger, maximum: 50_000 },
 			depth: { ...positiveInteger, minimum: 0, maximum: 1024 },
