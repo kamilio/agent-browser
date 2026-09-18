@@ -88,6 +88,7 @@ export interface PageRuntimeOptions {
 }
 
 export interface PageRuntimeFactory {
+	readonly supportsPageInitialization?: boolean;
 	createPageRuntime(options: PageRuntimeOptions): PageRuntime;
 }
 

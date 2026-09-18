@@ -2,6 +2,8 @@ import { AgentBrowserError } from "./errors.js";
 import { existingDocumentWebSockets } from "./document-websocket-owner.js";
 import { PageWebSockets, type PageWebSocketLimits } from "./page-websockets.js";
 import { pageWebSocketBootstrapGlobal } from "./page-websocket-bootstrap.js";
+import { PageXmlHttpRequests } from "./page-xml-http-requests.js";
+import { pageXmlHttpRequestBootstrapGlobal } from "./page-xml-http-request-bootstrap.js";
 import type { PageAbortSignals } from "./page-abort-signals.js";
 import { documentIdentity } from "./document-identity.js";
 import { PagePasskeys, type PagePasskeyContext } from "./page-passkeys.js";
@@ -76,6 +78,7 @@ export interface PageBindingLifecycle extends ScriptCallbackRuntime {
 export function pageBindingGlobalNames(
 	document: SessionPage["document"],
 	options: PageBindingOptions = {},
+	enableXmlHttpRequests = true,
 ): readonly string[] {
 	return Object.freeze([
 		...(existingDocumentWebSockets(document)
@@ -87,7 +90,14 @@ export function pageBindingGlobalNames(
 		...(pageStoragePort(document) ? ["localStorage", "sessionStorage"] : []),
 		...(pageHistoryPort(document) ? ["history"] : []),
 		"location",
-		...(options.fetch !== undefined ? ["fetch"] : []),
+		...(options.fetch !== undefined
+			? [
+					"fetch",
+					...(!enableXmlHttpRequests
+						? []
+						: [pageXmlHttpRequestBootstrapGlobal]),
+				]
+			: []),
 		"setTimeout",
 		"setInterval",
 		"clearTimeout",
@@ -124,6 +134,7 @@ export class PageBindings {
 	readonly scrolling: PageScroll;
 	readonly focus: PageFocus;
 	readonly network?: PageFetch;
+	readonly xmlHttpRequests?: PageXmlHttpRequests;
 	readonly passkeys?: PagePasskeys;
 	readonly webSockets?: PageWebSockets;
 	readonly navigator: object;
@@ -141,6 +152,7 @@ export class PageBindings {
 		private readonly lifecycle: PageBindingLifecycle,
 		options: PageBindingOptions = {},
 		private readonly clock = new PageClock(),
+		enableXmlHttpRequests = true,
 	) {
 		if (
 			!context ||
@@ -282,6 +294,12 @@ export class PageBindings {
 					limits: options.fetchLimits,
 					signals: options.fetchSignals,
 				});
+				if (context.nestedOperation && enableXmlHttpRequests)
+					this.xmlHttpRequests = new PageXmlHttpRequests(
+						page.document,
+						context,
+						this.network,
+					);
 			}
 			this.timers = new PageTimers(
 				{
@@ -330,6 +348,16 @@ export class PageBindings {
 			);
 			this.window = context.createHostObject({
 				properties: {
+					...(this.xmlHttpRequests
+						? {
+								XMLHttpRequest: {
+									get: () => {
+										this.ensureOpen();
+										return this.xmlHttpRequests?.constructorValue;
+									},
+								},
+							}
+						: {}),
 					...(this.webSockets
 						? {
 								WebSocket: {
@@ -570,6 +598,12 @@ export class PageBindings {
 				(error) => lifecycle.fail(error),
 			);
 			this.globals = {
+				...(this.xmlHttpRequests
+					? {
+							[pageXmlHttpRequestBootstrapGlobal]:
+								this.xmlHttpRequests.bootstrap,
+						}
+					: {}),
 				...(this.webSockets
 					? { [pageWebSocketBootstrapGlobal]: this.webSockets.bootstrap }
 					: {}),
@@ -613,6 +647,7 @@ export class PageBindings {
 		if (this.closedValue) return;
 		this.closedValue = true;
 		this.webSockets?.close();
+		this.xmlHttpRequests?.close();
 		this.passkeys?.close();
 		this.focus?.close();
 		this.timers?.close();

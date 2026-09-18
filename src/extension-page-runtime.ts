@@ -153,6 +153,7 @@ export function extensionPageRuntime(
 				? new PageNetworkModuleRegistry(networkModuleOptions)
 				: undefined;
 	return {
+		supportsPageInitialization: true,
 		createPageRuntime(options) {
 			const pageStringCompilation = readPageStringCompilation(options);
 			const effectiveStringCompilation =

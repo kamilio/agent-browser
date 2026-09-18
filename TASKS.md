@@ -12,7 +12,18 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
-September18,20:20UTC: the separately filtered core33/ClrIn4 full-document trial
+September18: native text XMLHttpRequest now passes4 actual SafeJS scenarios,
+including synchronous CSRF-style prototype middleware, correct timer ordering,
+async events/errors, reentrant abort/open and closing pending work. Core37 passes
+4954 native tests across114 explicit files; build/types/format pass. Scoped lint
+retains one independently reproduced, pre-existing ScriptDom.ranges finding.
+Native fetch leases share existing CORS/CSP/cookie/redirect/cancellation budgets;
+document.domain is read-only. Historical failed bootstrap/reentrancy runs remain
+preserved. See `XML-HTTP-REQUEST.md`. A new fresh filtered Zoom load is the next
+gate; usable join UI, legitimate admission, incoming audio, permitted recording,
+transcription and verified delivery are still OPEN. No meeting success is claimed.
+
+September18,20:19UTC: the separately filtered core33/ClrIn4 full-document trial
 continues past the explicitly blocked experimentation origin, executes10scripts,
 then fails on a different15722-byte source after115.829ms. Static inspection finds
 mandatory synchronous XMLHttpRequest during CSRF setup; native XHR is absent.

@@ -25,6 +25,7 @@ import {
 	legacyPageRuntime,
 } from "./page-runtime.js";
 import { pageWebSocketBootstrapSource } from "./page-websocket-bootstrap.js";
+import { pageXmlHttpRequestBootstrapSource } from "./page-xml-http-request-bootstrap.js";
 import {
 	type ScriptBudgetProfile,
 	type ScriptEvaluation,
@@ -86,6 +87,9 @@ export class PageScripts {
 				"invalid-input",
 				"Invalid page script options",
 			);
+		const xmlHttpRequests =
+			factory.supportsPageInitialization === true &&
+			options.fetch !== undefined;
 		this.scriptPolicy = documentScriptCsp(page.document);
 		if (this.scriptPolicy?.unsupported)
 			throw new AgentBrowserError(
@@ -155,13 +159,23 @@ export class PageScripts {
 				budgetProfile === "application-v1"
 					? { regexSourceLength: 8192, regexCompileAllocations: 32768 }
 					: {}),
-				...(existingDocumentWebSockets(page.document)
-					? { initializationSource: pageWebSocketBootstrapSource }
+				...(existingDocumentWebSockets(page.document) || xmlHttpRequests
+					? {
+							initializationSource:
+								(existingDocumentWebSockets(page.document)
+									? pageWebSocketBootstrapSource
+									: "") +
+								(xmlHttpRequests ? pageXmlHttpRequestBootstrapSource : ""),
+						}
 					: {}),
 				...(networkSourceModules !== undefined ? { networkSourceModules } : {}),
 				limits: this.limits,
 				signal: this.lifetime.signal,
-				globals: pageBindingGlobalNames(page.document, options),
+				globals: pageBindingGlobalNames(
+					page.document,
+					options,
+					xmlHttpRequests,
+				),
 				onClosed: () => {
 					if (!this.active) void this.close().catch(() => undefined);
 				},
@@ -191,6 +205,7 @@ export class PageScripts {
 						},
 						options,
 						this.clock,
+						xmlHttpRequests,
 					);
 					return this.bindings.globals;
 				},

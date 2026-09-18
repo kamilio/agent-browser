@@ -1,4 +1,6 @@
 [
+	"src/page-xml-http-requests.test.ts",
+	"src/page-xml-http-request-bootstrap.test.ts",
 	"src/page-fetch-native-text.test.ts",
 	"src/network-blocked-origins.test.ts",
 	"src/secure-navigation-csp.test.ts",

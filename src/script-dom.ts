@@ -663,6 +663,12 @@ export class ScriptDom {
 						return this.tree.url;
 					},
 				},
+				domain: {
+					get: () => {
+						this.read(id);
+						return new URL(this.tree.url).hostname;
+					},
+				},
 				body: {
 					get: () => {
 						this.read(id);

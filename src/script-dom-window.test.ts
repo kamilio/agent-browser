@@ -31,6 +31,24 @@ function fixture(withWindow = true) {
 	return { tree, dom, window };
 }
 
+it.each([
+	["https://app.example.com/join", "app.example.com"],
+	["https://Example.COM:8443/join?query=fixture", "example.com"],
+	["https://xn--bcher-kva.example/", "xn--bcher-kva.example"],
+	["http://127.0.0.1:8080/", "127.0.0.1"],
+])("exposes a read-only document hostname for %s", (url, hostname) => {
+	const tree = new DocumentTree(url);
+	const dom = new ScriptDom(tree, factory);
+	try {
+		expect(Reflect.get(dom.document, "domain")).toBe(hostname);
+		expect(Reflect.set(dom.document, "domain", "example.com")).toBe(false);
+		expect(Reflect.get(dom.document, "domain")).toBe(hostname);
+	} finally {
+		tree.close();
+	}
+	expect(() => Reflect.get(dom.document, "domain")).toThrow();
+});
+
 it("exposes the browsing context's stable readonly defaultView", () => {
 	const { tree, dom, window } = fixture();
 	try {
