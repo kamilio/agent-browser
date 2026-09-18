@@ -1,3 +1,4 @@
+import { types as nodeTypes } from "node:util";
 import { cookieSameSite } from "./cookies.js";
 import { CorsPreflightCache } from "./cors-preflight-cache.js";
 import {
@@ -45,6 +46,15 @@ export type PageFetchTransport = (
 	context?: PageFetchRequestContext,
 ) => Promise<NetworkResponse>;
 
+export interface PageFetchTextResponse {
+	readonly url: string;
+	readonly status: number;
+	readonly statusText: string;
+	readonly headers: Readonly<Record<string, string>>;
+	readonly text: string;
+	release(): void;
+}
+
 export interface PageFetchLimits {
 	maxRequests: number;
 	maxPending: number;
@@ -69,6 +79,50 @@ const defaults: Readonly<PageFetchLimits> = {
 	timeoutMs: 5000,
 };
 const encoder = new TextEncoder();
+const nativeAborted = Object.getOwnPropertyDescriptor(
+	AbortSignal.prototype,
+	"aborted",
+)?.get;
+const nativeReason = Object.getOwnPropertyDescriptor(
+	AbortSignal.prototype,
+	"reason",
+)?.get;
+const addAbortListener = EventTarget.prototype.addEventListener;
+const removeAbortListener = EventTarget.prototype.removeEventListener;
+
+function nativeSignalView(signal: AbortSignal): PageAbortSignal {
+	if (
+		!signal ||
+		typeof signal !== "object" ||
+		nodeTypes.isProxy(signal) ||
+		!nativeAborted ||
+		!nativeReason
+	)
+		throw new TypeError("Invalid native fetch AbortSignal");
+	const aborted = () => Reflect.apply(nativeAborted, signal, []) as boolean;
+	const reason = () => Reflect.apply(nativeReason, signal, []);
+	aborted();
+	reason();
+	return {
+		get aborted() {
+			return aborted();
+		},
+		get reason() {
+			return reason();
+		},
+		subscribe(listener) {
+			const notify = () => listener(reason());
+			Reflect.apply(addAbortListener, signal, [
+				"abort",
+				notify,
+				{ once: true },
+			]);
+			if (aborted()) notify();
+			return () =>
+				Reflect.apply(removeAbortListener, signal, ["abort", notify]);
+		},
+	};
+}
 const token = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
 const forbiddenHeaders = new Set([
 	"accept-charset",
@@ -170,6 +224,7 @@ interface BodyRecord {
 	used: boolean;
 	ready: boolean;
 	revoked: boolean;
+	onRevoke?: () => void;
 }
 
 interface FetchCancellation {
@@ -205,7 +260,9 @@ function settleProviderOutcome(
 export class PageFetch {
 	readonly limits: Readonly<PageFetchLimits>;
 	readonly fetch = async (input: unknown, init?: unknown): Promise<object> =>
-		this.perform(input, init);
+		this.perform(input, init, (metadata, body, group) =>
+			this.response(metadata, body, group),
+		);
 	private readonly active = new Set<AbortController>();
 	private readonly bodies = new Set<BodyRecord>();
 	private capabilities = new WeakSet<object>();
@@ -270,6 +327,19 @@ export class PageFetch {
 			"abort",
 			() => this.close(),
 			{ once: true },
+		);
+	}
+
+	async requestText(
+		input: unknown,
+		init?: unknown,
+		signal?: AbortSignal,
+	): Promise<PageFetchTextResponse> {
+		return this.perform(
+			input,
+			init,
+			(metadata, body, group) => this.textResponse(metadata, body, group),
+			signal === undefined ? undefined : nativeSignalView(signal),
 		);
 	}
 
@@ -351,7 +421,16 @@ export class PageFetch {
 			);
 	}
 
-	private async perform(input: unknown, init?: unknown): Promise<object> {
+	private async perform<Result>(
+		input: unknown,
+		init: unknown,
+		consume: (
+			metadata: ResponseMetadata,
+			body: Uint8Array | null,
+			group: FetchCancellation,
+		) => Result,
+		nativeSignal?: PageAbortSignal,
+	): Promise<Result> {
 		this.checkPolicy();
 		if (typeof input !== "string")
 			throw new TypeError("Fetch currently requires a URL string");
@@ -439,7 +518,10 @@ export class PageFetch {
 		if (typeof body === "string" && !Object.hasOwn(headers, "content-type"))
 			headers["content-type"] = "text/plain;charset=UTF-8";
 		let url = this.target(input, documentBaseUrl(this.tree));
-		if (signal?.aborted) throw signal.reason;
+		const signals = [signal, nativeSignal].filter(
+			(value): value is PageAbortSignal => value !== undefined,
+		);
+		for (const entry of signals) if (entry.aborted) throw entry.reason;
 		const credentialMode = credentials as FetchCredentials;
 		const mode = values.mode ?? "cors";
 		let corsTainted = false;
@@ -471,11 +553,17 @@ export class PageFetch {
 			this.limits.timeoutMs,
 		);
 		try {
-			if (signal)
-				group.unsubscribe = signal.subscribe((reason) => {
-					controller.abort(reason);
-					for (const body of [...group.bodies]) this.abortBody(body, reason);
-				});
+			const unsubscribe: (() => void)[] = [];
+			group.unsubscribe = () => {
+				for (const remove of unsubscribe) remove();
+			};
+			for (const entry of signals)
+				unsubscribe.push(
+					entry.subscribe((reason) => {
+						controller.abort(reason);
+						for (const body of [...group.bodies]) this.abortBody(body, reason);
+					}),
+				);
 			for (let hops = 0; ; hops++) {
 				this.checkPolicy();
 				if (mode === "same-origin" && url.origin !== this.origin)
@@ -583,7 +671,7 @@ export class PageFetch {
 					if (redirect === "error")
 						throw new TypeError("Fetch redirect is not allowed");
 					if (redirect === "manual")
-						return this.response(
+						return consume(
 							{
 								url: "",
 								status: 0,
@@ -620,7 +708,7 @@ export class PageFetch {
 						continue;
 					}
 				}
-				return this.response(
+				return consume(
 					{
 						url: url.href,
 						status: response.status,
@@ -784,12 +872,11 @@ export class PageFetch {
 		return Object.freeze(result);
 	}
 
-	private response(
-		metadata: ResponseMetadata,
+	private retainBody(
 		input: Uint8Array | null,
 		group: FetchCancellation,
 		previous?: BodyRecord,
-	): object {
+	): BodyRecord {
 		this.ensureOpen();
 		if (
 			this.responses >= this.limits.maxResponses ||
@@ -814,6 +901,64 @@ export class PageFetch {
 		this.bodies.add(body);
 		this.retainedBytes += body.bytes?.byteLength ?? 0;
 		if (body.hasBody && !body.aborted) group.bodies.add(body);
+		return body;
+	}
+
+	private textResponse(
+		metadata: ResponseMetadata,
+		input: Uint8Array | null,
+		group: FetchCancellation,
+	): PageFetchTextResponse {
+		const body = this.retainBody(input, group);
+		const headers = Proxy.revocable(Object.freeze(metadata.headers), {});
+		body.onRevoke = headers.revoke;
+		group.bodies.add(body);
+		const read = () => {
+			this.ensureOpen();
+			if (body.revoked)
+				throw new AgentBrowserError("closed", "Fetch response is revoked");
+		};
+		try {
+			const result = Object.freeze({
+				get url() {
+					read();
+					return metadata.url;
+				},
+				get status() {
+					read();
+					return metadata.status;
+				},
+				get statusText() {
+					read();
+					return "";
+				},
+				get headers() {
+					read();
+					return headers.proxy;
+				},
+				get text() {
+					read();
+					return new TextDecoder().decode(body.bytes ?? new Uint8Array());
+				},
+				release: () => this.revokeResponse(body),
+			});
+			body.ready = true;
+			if (group.controller?.signal.aborted)
+				throw group.controller.signal.reason;
+			return result;
+		} catch (error) {
+			this.revokeResponse(body);
+			throw error;
+		}
+	}
+
+	private response(
+		metadata: ResponseMetadata,
+		input: Uint8Array | null,
+		group: FetchCancellation,
+		previous?: BodyRecord,
+	): object {
+		const body = this.retainBody(input, group, previous);
 		const read = () => {
 			this.ensureOpen();
 			if (body.revoked)
@@ -921,12 +1066,18 @@ export class PageFetch {
 		this.retainedBytes -= body.bytes?.byteLength ?? 0;
 		body.bytes = null;
 		body.abortReason = undefined;
+		body.onRevoke?.();
+		body.onRevoke = undefined;
 		body.group.bodies.delete(body);
 		this.releaseCancellation(body.group);
 		this.bodies.delete(body);
 	}
 
 	private abortBody(body: BodyRecord, reason: unknown) {
+		if (body.onRevoke) {
+			this.revokeResponse(body);
+			return;
+		}
 		if (body.revoked || body.used || !body.hasBody || body.aborted) return;
 		body.aborted = true;
 		body.abortReason = reason;

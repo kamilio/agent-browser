@@ -1,4 +1,5 @@
 [
+	"src/page-fetch-native-text.test.ts",
 	"src/network-blocked-origins.test.ts",
 	"src/secure-navigation-csp.test.ts",
 	"src/secure-navigation-fetch.test.ts",
