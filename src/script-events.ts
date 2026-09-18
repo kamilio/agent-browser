@@ -1,3 +1,4 @@
+import { BrowserDetailsToggleEvent } from "./details-toggle.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import {
@@ -13,6 +14,7 @@ import { BrowserSubmitEvent } from "./form-actions.js";
 import { BrowserHashChangeEvent, BrowserPopStateEvent } from "./history.js";
 import { BrowserInputEvent } from "./input-events.js";
 import { BrowserKeyboardEvent } from "./keyboard.js";
+import { BrowserMediaQueryListEvent } from "./media-query-event.js";
 import {
 	BrowserMouseEvent,
 	BrowserPointerActivationEvent,
@@ -23,8 +25,6 @@ import type {
 	ScriptHostObjectFactory,
 } from "./script-dom.js";
 import { BrowserStorageEvent } from "./storage-events.js";
-import { BrowserMediaQueryListEvent } from "./media-query-event.js";
-import { BrowserDetailsToggleEvent } from "./details-toggle.js";
 
 export interface ScriptCallbackRuntime {
 	startCallback(
@@ -59,13 +59,17 @@ export class ScriptEventBindings {
 	private records = new Set<ScriptListener>();
 	private readonly independentTargets = new Map<number, object>();
 	private capabilities = new WeakMap<BrowserEvent, object>();
+	private capabilityIdentities = new WeakSet<object>();
+	private guestEvents = new WeakMap<BrowserEvent, object>();
+	private revokedEvents = new WeakSet<BrowserEvent>();
+	private creatingEvents = new WeakSet<BrowserEvent>();
 	private errors: BrowserListenerError[] = [];
 	private droppedErrors = 0;
 	private closed = false;
 	private interrupted = new Set<(error: AgentBrowserError) => void>();
 
 	constructor(
-		tree: DocumentTree,
+		private readonly tree: DocumentTree,
 		private readonly factory: ScriptHostObjectFactory,
 		private readonly node: (target: number) => object,
 		private readonly options: ScriptEventOptions,
@@ -216,23 +220,29 @@ export class ScriptEventBindings {
 	close() {
 		if (this.closed) return;
 		this.closed = true;
+		const records = [...this.records];
+		this.records.clear();
+		this.independentTargets.clear();
+		this.capabilities = new WeakMap();
+		this.capabilityIdentities = new WeakSet();
+		this.guestEvents = new WeakMap();
 		const error = new AgentBrowserError(
 			"closed",
 			"Script event bindings are closed",
 		);
 		for (const reject of this.interrupted) reject(error);
 		this.interrupted.clear();
-		if (!this.options.events.metrics().closed)
-			for (const record of this.records)
+		if (
+			!this.tree.mutationMetrics().closed &&
+			!this.options.events.metrics().closed
+		)
+			for (const record of records)
 				this.options.events.removeEventListener(
 					record.target,
 					record.type,
 					record.listener,
 					record.capture,
 				);
-		this.records.clear();
-		this.independentTargets.clear();
-		this.capabilities = new WeakMap();
 	}
 
 	private invoke(callback: unknown, target: number, event: BrowserEvent) {
@@ -241,7 +251,7 @@ export class ScriptEventBindings {
 		try {
 			invocation = this.options.callbacks.startCallback(
 				callback,
-				[this.event(event)],
+				[this.guestEvents.get(event) ?? this.nativeEvent(event)],
 				{ thisValue: this.target(target) },
 			);
 		} catch (error) {
@@ -288,9 +298,44 @@ export class ScriptEventBindings {
 		return prefix;
 	}
 
-	private event(event: BrowserEvent): object {
+	bindGuestEvent(event: BrowserEvent, receiver: object) {
+		this.ensureEventOpen(event);
+		if (
+			!receiver ||
+			(typeof receiver !== "object" && typeof receiver !== "function") ||
+			this.guestEvents.has(event)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid guest event binding",
+			);
+		this.guestEvents.set(event, receiver);
+	}
+
+	unbindGuestEvent(event: BrowserEvent) {
+		if (!this.guestEvents.delete(event)) return;
+		this.revokedEvents.add(event);
+		this.capabilities.delete(event);
+	}
+
+	private ensureEventOpen(event: BrowserEvent) {
+		this.ensureOpen();
+		if (this.revokedEvents.has(event))
+			throw new AgentBrowserError(
+				"closed",
+				"Constructed event facade is revoked",
+			);
+	}
+
+	nativeEvent(event: BrowserEvent): object {
+		this.ensureEventOpen(event);
 		const existing = this.capabilities.get(event);
 		if (existing) return existing;
+		if (this.creatingEvents.has(event))
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Event facade creation is already active",
+			);
 		const properties: NonNullable<ScriptHostObjectDefinition["properties"]> =
 			{};
 		for (const name of [
@@ -305,14 +350,14 @@ export class ScriptEventBindings {
 		] as const)
 			properties[name] = {
 				get: () => {
-					this.ensureOpen();
+					this.ensureEventOpen(event);
 					return event[name];
 				},
 			};
 		for (const name of ["target", "currentTarget"] as const)
 			properties[name] = {
 				get: () => {
-					this.ensureOpen();
+					this.ensureEventOpen(event);
 					const target = event[name];
 					return target === null ? null : this.target(target);
 				},
@@ -320,11 +365,11 @@ export class ScriptEventBindings {
 		for (const name of ["cancelBubble", "returnValue"] as const)
 			properties[name] = {
 				get: () => {
-					this.ensureOpen();
+					this.ensureEventOpen(event);
 					return event[name];
 				},
 				set: (value) => {
-					this.ensureOpen();
+					this.ensureEventOpen(event);
 					event[name] = Boolean(value);
 				},
 			};
@@ -332,7 +377,7 @@ export class ScriptEventBindings {
 			for (const name of ["media", "matches"] as const)
 				properties[name] = {
 					get: () => {
-						this.ensureOpen();
+						this.ensureEventOpen(event);
 						return event[name];
 					},
 				};
@@ -340,14 +385,14 @@ export class ScriptEventBindings {
 			for (const name of ["oldState", "newState", "source"] as const)
 				properties[name] = {
 					get: () => {
-						this.ensureOpen();
+						this.ensureEventOpen(event);
 						return event[name];
 					},
 				};
 		if (event instanceof BrowserPopStateEvent)
 			properties.state = {
 				get: () => {
-					this.ensureOpen();
+					this.ensureEventOpen(event);
 					return event.state;
 				},
 			};
@@ -355,7 +400,7 @@ export class ScriptEventBindings {
 			for (const name of ["oldURL", "newURL"] as const)
 				properties[name] = {
 					get: () => {
-						this.ensureOpen();
+						this.ensureEventOpen(event);
 						return event[name];
 					},
 				};
@@ -363,13 +408,13 @@ export class ScriptEventBindings {
 			for (const name of ["key", "oldValue", "newValue", "url"] as const)
 				properties[name] = {
 					get: () => {
-						this.ensureOpen();
+						this.ensureEventOpen(event);
 						return event[name];
 					},
 				};
 			properties.storageArea = {
 				get: () => {
-					this.ensureOpen();
+					this.ensureEventOpen(event);
 					return this.options.storageArea?.(event.storageKind) ?? null;
 				},
 			};
@@ -378,7 +423,7 @@ export class ScriptEventBindings {
 			for (const name of ["data", "inputType", "isComposing"] as const)
 				properties[name] = {
 					get: () => {
-						this.ensureOpen();
+						this.ensureEventOpen(event);
 						return event[name];
 					},
 				};
@@ -396,7 +441,7 @@ export class ScriptEventBindings {
 			] as const)
 				properties[name] = {
 					get: () => {
-						this.ensureOpen();
+						this.ensureEventOpen(event);
 						return event[name];
 					},
 				};
@@ -404,7 +449,7 @@ export class ScriptEventBindings {
 			for (const name of ["deltaX", "deltaY", "deltaZ", "deltaMode"] as const)
 				properties[name] = {
 					get: () => {
-						this.ensureOpen();
+						this.ensureEventOpen(event);
 						return event[name];
 					},
 				};
@@ -428,13 +473,13 @@ export class ScriptEventBindings {
 			] as const)
 				properties[name] = {
 					get: () => {
-						this.ensureOpen();
+						this.ensureEventOpen(event);
 						return event[name];
 					},
 				};
 			properties.view = {
 				get: () => {
-					this.ensureOpen();
+					this.ensureEventOpen(event);
 					return this.options.window ?? null;
 				},
 			};
@@ -457,7 +502,7 @@ export class ScriptEventBindings {
 			] as const)
 				properties[name] = {
 					get: () => {
-						this.ensureOpen();
+						this.ensureEventOpen(event);
 						return event[name];
 					},
 				};
@@ -467,7 +512,7 @@ export class ScriptEventBindings {
 		)
 			properties.relatedTarget = {
 				get: () => {
-					this.ensureOpen();
+					this.ensureEventOpen(event);
 					return event.relatedTarget === null
 						? null
 						: this.target(event.relatedTarget);
@@ -476,19 +521,24 @@ export class ScriptEventBindings {
 		if (event instanceof BrowserSubmitEvent)
 			properties.submitter = {
 				get: () => {
-					this.ensureOpen();
+					this.ensureEventOpen(event);
 					return event.submitter === null ? null : this.target(event.submitter);
 				},
 			};
 		const methods: NonNullable<ScriptHostObjectDefinition["methods"]> = {
 			composedPath: () => {
-				this.ensureOpen();
-				return event.composedPath().map((target) => this.target(target));
+				this.ensureEventOpen(event);
+				return event.composedPath().map((target) => {
+					const value = this.target(target);
+					return this.factory.eventTargetValue
+						? this.factory.eventTargetValue(value)
+						: value;
+				});
 			},
 		};
 		if (event instanceof BrowserMouseEvent)
 			methods.getModifierState = (key) => {
-				this.ensureOpen();
+				this.ensureEventOpen(event);
 				return event.getModifierState(String(key));
 			};
 		for (const name of [
@@ -497,12 +547,28 @@ export class ScriptEventBindings {
 			"stopImmediatePropagation",
 		] as const)
 			methods[name] = () => {
-				this.ensureOpen();
+				this.ensureEventOpen(event);
 				event[name]();
 			};
-		const capability = this.factory.createHostObject({ properties, methods });
-		this.capabilities.set(event, capability);
-		return capability;
+		this.creatingEvents.add(event);
+		try {
+			const capability = this.factory.createHostObject({ properties, methods });
+			this.ensureEventOpen(event);
+			if (
+				!capability ||
+				typeof capability !== "object" ||
+				this.capabilityIdentities.has(capability)
+			)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Invalid event facade capability",
+				);
+			this.capabilityIdentities.add(capability);
+			this.capabilities.set(event, capability);
+			return capability;
+		} finally {
+			this.creatingEvents.delete(event);
+		}
 	}
 
 	private target(target: number): object {

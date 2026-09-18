@@ -10,6 +10,7 @@ import {
 import type { HtmlModuleRequest } from "./html-module.js";
 import { documentInteractions } from "./interactions.js";
 import type { NetworkResponse } from "./network.js";
+import { pageEventBootstrapSource } from "./page-event-bootstrap.js";
 import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 import {
 	legacyPageRuntime,
@@ -99,6 +100,12 @@ function fakeCore(
 						ReleasedCore["defineExtension"]
 					>[0];
 					setup(definition.setup(context));
+				}
+				if (source === pageEventBootstrapSource) {
+					expect(evaluation).toEqual({
+						filename: "agent-browser:page-bootstrap",
+					});
+					return { ok: true };
 				}
 				await onEvaluate?.(source, evaluation, options);
 				return { ok: true, returnValue: { contract: "fake-sdk" } };
@@ -231,7 +238,7 @@ it.each([inlineSource, ""])(
 			}),
 		).resolves.toMatchObject({ ok: true, value: { contract: "fake-sdk" } });
 		expect(test.realm.evaluate.mock.calls).toEqual([
-			["", {}],
+			[pageEventBootstrapSource, { filename: "agent-browser:page-bootstrap" }],
 			[source, { sourceType: "module", filename: inlineId }],
 		]);
 		expect(test.modules.fetchWithPolicy).not.toHaveBeenCalled();
@@ -255,7 +262,9 @@ it.each(["unregistered", "changed-source", "changed-identity"])(
 				},
 			),
 		).rejects.toMatchObject({ code: "invalid-input" });
-		expect(test.realm.evaluate.mock.calls).toEqual([["", {}]]);
+		expect(test.realm.evaluate.mock.calls).toEqual([
+			[pageEventBootstrapSource, { filename: "agent-browser:page-bootstrap" }],
+		]);
 	},
 );
 
@@ -706,7 +715,7 @@ it("routes synthetic HTML modules through the loader and PageScripts using fake 
 	);
 	if (!inline) throw new Error("Missing inline script node");
 	expect(test.realms[0].evaluate.mock.calls).toEqual([
-		["", {}],
+		[pageEventBootstrapSource, { filename: "agent-browser:page-bootstrap" }],
 		[
 			inlineSource,
 			{

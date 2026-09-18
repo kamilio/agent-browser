@@ -11,6 +11,10 @@ import {
 	PageBindings,
 	pageBindingGlobalNames,
 } from "./page-bindings.js";
+import {
+	pageEventBootstrapGlobal,
+	pageEventBootstrapSource,
+} from "./page-event-bootstrap.js";
 import { PageFocus, type PageFocusOperation } from "./page-focus.js";
 import type { PageRuntime } from "./page-runtime.js";
 import { PageScripts } from "./page-scripts.js";
@@ -141,7 +145,7 @@ function publicCoreFixture() {
 				evaluateNested,
 			};
 			return {
-				async evaluate(source) {
+				async evaluate(source, evaluation) {
 					if (!globals) {
 						setup = true;
 						try {
@@ -150,10 +154,18 @@ function publicCoreFixture() {
 							setup = false;
 						}
 					}
+					if (source === pageEventBootstrapSource) {
+						expect(evaluation).toEqual({
+							filename: "agent-browser:page-bootstrap",
+						});
+						expect(globals?.[pageEventBootstrapGlobal]).toBeTypeOf("function");
+						return { ok: true };
+					}
 					if (source !== "")
 						throw new Error(
 							"This native fixture does not execute guest source",
 						);
+					expect(evaluation).toEqual({});
 					return { ok: true };
 				},
 				startCallback,

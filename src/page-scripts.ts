@@ -26,6 +26,7 @@ import {
 } from "./page-runtime.js";
 import { pageWebSocketBootstrapSource } from "./page-websocket-bootstrap.js";
 import { pageXmlHttpRequestBootstrapSource } from "./page-xml-http-request-bootstrap.js";
+import { pageEventBootstrapSource } from "./page-event-bootstrap.js";
 import {
 	type ScriptBudgetProfile,
 	type ScriptEvaluation,
@@ -87,6 +88,7 @@ export class PageScripts {
 				"invalid-input",
 				"Invalid page script options",
 			);
+		const eventConstructors = factory.supportsPageInitialization === true;
 		const xmlHttpRequests =
 			factory.supportsPageInitialization === true &&
 			options.fetch !== undefined;
@@ -159,9 +161,12 @@ export class PageScripts {
 				budgetProfile === "application-v1"
 					? { regexSourceLength: 8192, regexCompileAllocations: 32768 }
 					: {}),
-				...(existingDocumentWebSockets(page.document) || xmlHttpRequests
+				...(existingDocumentWebSockets(page.document) ||
+				xmlHttpRequests ||
+				eventConstructors
 					? {
 							initializationSource:
+								(eventConstructors ? pageEventBootstrapSource : "") +
 								(existingDocumentWebSockets(page.document)
 									? pageWebSocketBootstrapSource
 									: "") +
@@ -175,6 +180,7 @@ export class PageScripts {
 					page.document,
 					options,
 					xmlHttpRequests,
+					eventConstructors,
 				),
 				onClosed: () => {
 					if (!this.active) void this.close().catch(() => undefined);
@@ -206,6 +212,7 @@ export class PageScripts {
 						options,
 						this.clock,
 						xmlHttpRequests,
+						eventConstructors,
 					);
 					return this.bindings.globals;
 				},

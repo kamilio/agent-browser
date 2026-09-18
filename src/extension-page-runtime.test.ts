@@ -7,6 +7,10 @@ import {
 } from "./extension-page-runtime.js";
 import { DocumentInteractions } from "./interactions.js";
 import { pageBindingGlobalNames } from "./page-bindings.js";
+import {
+	pageEventBootstrapGlobal,
+	pageEventBootstrapSource,
+} from "./page-event-bootstrap.js";
 import { bindPageHistory } from "./page-history.js";
 import type { PageRuntime, PageRuntimeOptions } from "./page-runtime.js";
 import { PageScripts, type PageScriptOptions } from "./page-scripts.js";
@@ -113,6 +117,12 @@ function fakeCore(stringPolicy?: PropertyDescriptor) {
 						}
 					}
 					if (!source) return { ok: true };
+					if (source === pageEventBootstrapSource) {
+						expect(_options).toEqual({
+							filename: "agent-browser:page-bootstrap",
+						});
+						return { ok: true };
+					}
 					if (state.failure) {
 						await state.close();
 						throw state.failure;
@@ -768,7 +778,7 @@ it("declares owned console, retention, and focus await-result grants before lazy
 	const test = fixture();
 	expect(test.defineExtension.mock.calls[0][0].manifest).toMatchObject({
 		name: "agent-browser-page",
-		globals: pageBindingGlobalNames(test.tree),
+		globals: [pageEventBootstrapGlobal, ...pageBindingGlobalNames(test.tree)],
 		capabilities: ["guest:retain", "source:nested"],
 	});
 	expect(test.state.options).toMatchObject({
@@ -790,22 +800,28 @@ it("bootstraps once, shares owned aliases and forwards only supported public eva
 	).toMatchObject({ ok: true, value: { answer: 42 } });
 	await test.scripts.evaluate("second");
 	expect(test.state.evaluate.mock.calls.map(([source]) => source)).toEqual([
-		"",
+		pageEventBootstrapSource,
 		"first",
 		"second",
 	]);
+	expect(test.state.evaluate.mock.calls[0][1]).toEqual({
+		filename: "agent-browser:page-bootstrap",
+	});
 	expect(test.state.evaluate.mock.calls[1][1]).toEqual({ filename: "app.js" });
 	expect(test.state.globals?.console).toBe(
 		(test.scripts.window as { console: object }).console,
 	);
 	expect(test.state.globals?.self).toBe(test.state.globals?.window);
 	expect(test.state.globals?.document).toBe(test.scripts.dom.document);
-	expect(test.state.context.retainGuestArguments).toHaveBeenCalledTimes(2);
+	const retainedArgumentStarts = [4, 0, 2, 2];
+	expect(test.state.context.retainGuestArguments).toHaveBeenCalledTimes(
+		retainedArgumentStarts.length,
+	);
 	expect(
 		vi
 			.mocked(test.state.context.retainGuestArguments)
 			.mock.calls.map(([, from]) => from),
-	).toEqual([2, 2]);
+	).toEqual(retainedArgumentStarts);
 });
 
 it("passes lifetime work/data limits without imposing a fixed lifetime deadline", async () => {
@@ -1092,8 +1108,11 @@ it("fails closed if a selected core ignores extension setup", async () => {
 	});
 	expect(test.scripts.closed).toBe(true);
 	expect(test.state.evaluate.mock.calls.map(([source]) => source)).toEqual([
-		"",
+		pageEventBootstrapSource,
 	]);
+	expect(test.state.evaluate.mock.calls[0][1]).toEqual({
+		filename: "agent-browser:page-bootstrap",
+	});
 });
 
 it("does not accept an old untagged evaluation result as success", async () => {

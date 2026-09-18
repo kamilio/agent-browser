@@ -12,6 +12,26 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September18: native Event/CustomEvent and host-capability dispatch now pass5059
+tests across121 explicit native files (core44); build/types/format pass, with only
+the independently reproduced pre-existing ranges lint finding. Three actual SDK
+scenarios pass including closure and Window/path identity. The fourth fails with
+SDK reentry on immediate callback reuse; the final two do not run. A narrow SDK
+public-API reproduction/correction is in progress; no gate is relabeled PASS.
+The next live Zoom run remains held behind that gate. See `EVENT-CONSTRUCTORS.md`.
+Usable Zoom UI, admission, incoming audio, recording, transcription and verified
+delivery remain OPEN. The latest actual website result is still15 scripts plus
+the native CSRF POST200, not a joined meeting.
+
+September18,21:38UTC: native Event/CustomEvent ownership and registered dispatch
+integration now pass5046 tests across121 explicit native files. A genuine node
+publication wrapper bug was found and corrected without bypassing publication
+guards; strict legacy initialization mocks were updated to the exact bootstrap.
+Build/types/format pass; scoped lint retains the pre-existing ranges finding.
+The separate actual-SDK Event gate is released for core39; the next live Zoom
+load stays held until that gate passes. See `EVENT-CONSTRUCTORS.md`. Native test
+success is not meeting UI, admission, audio, recording or notetaker success.
+
 September18,21:17UTC verification: the new filtered core37 live run executes15
 scripts and completes the formerly failing synchronous CSRF request, native POST
 HTTP200. Script16 now fails; static inspection identifies missing Event/CustomEvent

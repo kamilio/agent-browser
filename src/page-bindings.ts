@@ -4,6 +4,8 @@ import { PageWebSockets, type PageWebSocketLimits } from "./page-websockets.js";
 import { pageWebSocketBootstrapGlobal } from "./page-websocket-bootstrap.js";
 import { PageXmlHttpRequests } from "./page-xml-http-requests.js";
 import { pageXmlHttpRequestBootstrapGlobal } from "./page-xml-http-request-bootstrap.js";
+import { PageEventConstructors } from "./page-event-constructors.js";
+import { pageEventBootstrapGlobal } from "./page-event-bootstrap.js";
 import type { PageAbortSignals } from "./page-abort-signals.js";
 import { documentIdentity } from "./document-identity.js";
 import { PagePasskeys, type PagePasskeyContext } from "./page-passkeys.js";
@@ -79,8 +81,10 @@ export function pageBindingGlobalNames(
 	document: SessionPage["document"],
 	options: PageBindingOptions = {},
 	enableXmlHttpRequests = true,
+	enableEventConstructors = false,
 ): readonly string[] {
 	return Object.freeze([
+		...(enableEventConstructors ? [pageEventBootstrapGlobal] : []),
 		...(existingDocumentWebSockets(document)
 			? [pageWebSocketBootstrapGlobal]
 			: []),
@@ -135,6 +139,7 @@ export class PageBindings {
 	readonly focus: PageFocus;
 	readonly network?: PageFetch;
 	readonly xmlHttpRequests?: PageXmlHttpRequests;
+	readonly eventConstructors?: PageEventConstructors;
 	readonly passkeys?: PagePasskeys;
 	readonly webSockets?: PageWebSockets;
 	readonly navigator: object;
@@ -153,6 +158,7 @@ export class PageBindings {
 		options: PageBindingOptions = {},
 		private readonly clock = new PageClock(),
 		enableXmlHttpRequests = true,
+		enableEventConstructors = false,
 	) {
 		if (
 			!context ||
@@ -200,6 +206,13 @@ export class PageBindings {
 		this.ensureOpen();
 		this.unregisterClose = page.document.onClose(() => this.close());
 		try {
+			if (enableEventConstructors)
+				this.eventConstructors = new PageEventConstructors(
+					page.document,
+					context,
+					events,
+					() => this.dom?.eventBindings,
+				);
 			const socketOwner = existingDocumentWebSockets(page.document);
 			if (socketOwner)
 				this.webSockets = new PageWebSockets(
@@ -507,6 +520,20 @@ export class PageBindings {
 					self: { get: () => this.window },
 					top: { get: () => this.window },
 					parent: { get: () => this.window },
+					...(this.eventConstructors
+						? {
+								Event: {
+									get: () => this.eventConstructors?.eventConstructorValue,
+								},
+								CustomEvent: {
+									get: () =>
+										this.eventConstructors?.customEventConstructorValue,
+								},
+								dispatchEvent: {
+									get: () => this.eventConstructors?.dispatchEventValue,
+								},
+							}
+						: {}),
 				},
 				methods: {
 					...this.animationFrames.methods,
@@ -537,6 +564,7 @@ export class PageBindings {
 					},
 				},
 			});
+			this.eventConstructors?.registerTarget(windowTarget, this.window);
 			const registerFocus = context.nestedOperation?.bind(context);
 			this.focus = new PageFocus(
 				page.interactions.focus,
@@ -578,6 +606,7 @@ export class PageBindings {
 					void this.scrolling.requestPosition(position);
 				},
 				this.focus.synchronousPageMethods ? this.focus : undefined,
+				this.eventConstructors,
 			);
 			this.console = new PageConsole(page.document, context, {
 				limits: options.consoleLimits,
@@ -598,6 +627,9 @@ export class PageBindings {
 				(error) => lifecycle.fail(error),
 			);
 			this.globals = {
+				...(this.eventConstructors
+					? { [pageEventBootstrapGlobal]: this.eventConstructors.bootstrap }
+					: {}),
 				...(this.xmlHttpRequests
 					? {
 							[pageXmlHttpRequestBootstrapGlobal]:
@@ -646,6 +678,7 @@ export class PageBindings {
 	close() {
 		if (this.closedValue) return;
 		this.closedValue = true;
+		this.eventConstructors?.close();
 		this.webSockets?.close();
 		this.xmlHttpRequests?.close();
 		this.passkeys?.close();

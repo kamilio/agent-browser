@@ -4,6 +4,7 @@ import {
 	htmlDocumentFamily,
 } from "./html-document-family.js";
 import { DocumentEvents } from "./events.js";
+import type { PageEventConstructors } from "./page-event-constructors.js";
 import { documentMode } from "./document-mode.js";
 import type { ObservedDocumentMutation } from "./document-observers.js";
 import { ScriptMutationRecords } from "./script-mutation-records.js";
@@ -121,6 +122,7 @@ export interface ScriptHostObjectDefinition {
 
 export interface ScriptHostObjectFactory {
 	readonly domExpandos?: "bounded-v1";
+	eventTargetValue?(target: object): unknown;
 	createHostObject(definition: ScriptHostObjectDefinition): object;
 }
 
@@ -170,8 +172,10 @@ export class ScriptDom {
 		private readonly storage?: ScriptStorage,
 		scrollRequest?: RootScrollRequest,
 		private readonly pageFocus?: PageFocus,
+		private readonly eventConstructors?: PageEventConstructors,
 	) {
 		pageFocus?.assertDocument(tree);
+		eventConstructors?.assertDocument(tree);
 		this.inheritedFamily = htmlDocumentFamily(tree);
 		this.inert =
 			this.inheritedFamily !== undefined || tree.isTemplateContentsDocument;
@@ -227,6 +231,7 @@ export class ScriptDom {
 	node(id: number): object {
 		const initial = this.read(id);
 		const pageFocus = this.pageFocus;
+		const eventConstructors = this.eventConstructors;
 		const existing = this.capabilities.get(id);
 		if (existing) return existing;
 		const definition: Required<
@@ -392,6 +397,10 @@ export class ScriptDom {
 					this.read(id);
 					eventBindings.setHandler(id, "toggle", value);
 				},
+			};
+		if (eventBindings && eventConstructors && !this.inert)
+			definition.properties.dispatchEvent = {
+				get: () => eventConstructors.dispatchEventValue,
 			};
 		if (eventBindings)
 			Object.assign(definition.methods, {
@@ -1144,6 +1153,10 @@ export class ScriptDom {
 			},
 			pageFocus && !this.inert && initial.kind === "element"
 				? (methods) => pageFocus.bindMethods(methods)
+				: undefined,
+			eventConstructors && eventBindings && !this.inert
+				? (capability, assertActive) =>
+						eventConstructors.registerTarget(id, capability, assertActive)
 				: undefined,
 		);
 	}

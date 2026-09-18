@@ -62,6 +62,7 @@ export class ScriptNodePublications {
 		definition: ScriptHostObjectDefinition,
 		commit: (capability: object) => void,
 		focusMethods?: (operations: PageFocusMethods) => PageFocusMethods,
+		eventTarget?: (capability: object, assertActive: () => void) => void,
 	): object {
 		this.ensureOpen();
 		const active = this.active[kind];
@@ -193,6 +194,8 @@ export class ScriptNodePublications {
 					"Script capability identity was already published",
 				);
 			usedCapabilities.add(capability);
+			this.ensureOpen();
+			eventTarget?.(capability, read);
 			this.ensureOpen();
 			commit(capability);
 			this.ensureOpen();

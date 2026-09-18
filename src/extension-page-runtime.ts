@@ -295,6 +295,10 @@ export function extensionPageRuntime(
 						ensureOpen();
 					}
 					const pageContext: Parameters<typeof options.setup>[0] = {
+						eventTargetValue: (target) => {
+							ensureOpen();
+							return windowGlobal ? windowGlobal.map(target) : target;
+						},
 						nestedOperation: (operation) => {
 							ensureOpen();
 							if (setupComplete || typeof owner.nestedOperation !== "function")

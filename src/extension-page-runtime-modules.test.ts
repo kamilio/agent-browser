@@ -2,6 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { DocumentTree } from "./document.js";
 import { extensionPageRuntime } from "./extension-page-runtime.js";
 import { DocumentInteractions } from "./interactions.js";
+import { pageEventBootstrapSource } from "./page-event-bootstrap.js";
 import {
 	legacyPageRuntime,
 	type PageRuntime,
@@ -81,6 +82,7 @@ function fakeCore() {
 			evaluate: vi.fn<ReleasedRealm["evaluate"]>(
 				async (
 					source,
+					evaluation,
 				): Promise<Awaited<ReturnType<ReleasedRealm["evaluate"]>>> => {
 					if (!initialized) {
 						initialized = true;
@@ -88,6 +90,12 @@ function fakeCore() {
 							ReleasedCore["defineExtension"]
 						>[0];
 						definition.setup(context);
+					}
+					if (source === pageEventBootstrapSource) {
+						expect(evaluation).toEqual({
+							filename: "agent-browser:page-bootstrap",
+						});
+						return { ok: true };
 					}
 					return source
 						? { ok: true, returnValue: state.result }
@@ -146,7 +154,7 @@ it("keeps default runtime selection classic and does not install a resolver", as
 	expect(test.realm.options).not.toHaveProperty("sourceResolver");
 	await test.scripts.evaluate("42", { filename: "classic.js" });
 	expect(test.realm.evaluate.mock.calls).toEqual([
-		["", {}],
+		[pageEventBootstrapSource, { filename: "agent-browser:page-bootstrap" }],
 		["42", { filename: "classic.js" }],
 	]);
 });
@@ -176,7 +184,7 @@ it("forwards explicit module mode and exact identity after classic initializatio
 		}),
 	).toMatchObject({ ok: true, value: { answer: 42 } });
 	expect(test.realm.evaluate.mock.calls).toEqual([
-		["", {}],
+		[pageEventBootstrapSource, { filename: "agent-browser:page-bootstrap" }],
 		[entry.source, { filename: entry.id, sourceType: "module" }],
 	]);
 	expect(test.scripts.metrics()).toMatchObject({
@@ -207,9 +215,16 @@ it.each([
 	await expect(
 		test.scripts.evaluate(entry.source, { sourceType: "module", filename }),
 	).rejects.toMatchObject({ code });
-	expect(
-		test.realm.evaluate.mock.calls.every(([source]) => source === ""),
-	).toBe(true);
+	expect(test.realm.evaluate.mock.calls).toEqual(
+		filename
+			? [
+					[
+						pageEventBootstrapSource,
+						{ filename: "agent-browser:page-bootstrap" },
+					],
+				]
+			: [],
+	);
 });
 
 it("does not admit changed source under a previously declared identity", async () => {
@@ -220,9 +235,9 @@ it("does not admit changed source under a previously declared identity", async (
 			filename: entry.id,
 		}),
 	).rejects.toMatchObject({ code: "invalid-input" });
-	expect(
-		test.realm.evaluate.mock.calls.every(([source]) => source === ""),
-	).toBe(true);
+	expect(test.realm.evaluate.mock.calls).toEqual([
+		[pageEventBootstrapSource, { filename: "agent-browser:page-bootstrap" }],
+	]);
 	expect(test.scripts.closed).toBe(false);
 });
 

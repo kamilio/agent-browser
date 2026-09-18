@@ -1085,5 +1085,9 @@
   "src/execution-content-security-policy.test.ts",
   "src/script-csp-context.test.ts",
   "src/svg-empty-color.test.ts",
-  "src/safejs-gate-launcher.test.ts"
+  "src/safejs-gate-launcher.test.ts",
+  "src/page-event-bootstrap.test.ts",
+  "src/page-event-bindings.test.ts",
+  "src/page-event-constructors.test.ts",
+  "src/script-event-construction.test.ts"
 ]
