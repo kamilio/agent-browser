@@ -27,6 +27,12 @@ SameSite, prefix rules, insecure overwrite protection, capacity and cleanup rema
 enforced. With the policy, same-site checks use scheme and registrable site;
 same-origin credentials remain a separate, narrower restriction.
 
+`CookieJar.sameSite(url, siteUrl)` uses that jar's selected policy and rejects a
+closed jar. Native redirect handling uses this operation for both sides of each
+hop. Same-site siblings do not acquire cross-site taint with the selected PSL;
+scheme changes, private-tenant boundaries and cross-site-and-back chains remain
+tainted. Origin-based credential restrictions are never widened by this policy.
+
 State schema 1 retains old host-only records unchanged. Domain records explicitly
 add `hostOnly: false`; absence never becomes domain scope. Importing domain scope
 requires the trusted snapshot and repeats scope validation. Older consumers that
@@ -41,8 +47,11 @@ routes, not real sockets, saved state or credentials. Session tests verify fresh
 state, sibling-domain delivery, unrelated-host isolation, HttpOnly hiding and
 complete cleanup.
 
+The redirect integration preserves all 783 cases and adds 19 synthetic controls:
+802 tests in 11 native files pass, with build, types, formatting and lint passing.
+The initial missing-operation and sibling-redirect failures remain recorded.
+
 The September 18, 2026 Zoom metadata request observed 14 Domain-cookie rejections
 in the older immutable core. That establishes a compatibility gap, not the cause
 of its meeting-client redirect. This new policy has not been live-tested against
-Zoom. CLI/owned-process policy selection and PSL-aware redirect-taint handling
-remain separate integration work; current redirect handling remains conservative.
+Zoom. CLI/owned-process policy selection remains separate integration work.

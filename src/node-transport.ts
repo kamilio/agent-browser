@@ -37,7 +37,6 @@ import {
 } from "./network.js";
 import { OriginRequestPacer } from "./origin-request-pacer.js";
 import { resourceLimitError } from "./resource-limit.js";
-import { type RetryAfterAdvice, parseRetryAfter } from "./retry-after.js";
 import {
 	ResourceReuseCache,
 	type ResourceReuseCacheOptions,
@@ -48,6 +47,7 @@ import {
 	claimResponseAccounting,
 	validateResponseAccountingLease,
 } from "./response-byte-accounting.js";
+import { type RetryAfterAdvice, parseRetryAfter } from "./retry-after.js";
 
 export type AddressResolver = (
 	hostname: string,
@@ -675,6 +675,8 @@ export class NodeNetworkTransport implements NetworkTransport {
 		const cookieOrigin = cookieContext?.siteUrl
 			? new URL(cookieContext.siteUrl).origin
 			: null;
+		const sameSite =
+			this.cookieJar?.sameSite.bind(this.cookieJar) ?? cookieSameSite;
 		let originTainted = cookieOrigin !== url.origin;
 		let siteTainted = cookieContext?.crossSiteRedirect ?? false;
 		const unsafeMethod = !["GET", "HEAD", "OPTIONS"].includes(method);
@@ -953,8 +955,8 @@ export class NodeNetworkTransport implements NetworkTransport {
 				originTainted ||= next.origin !== cookieOrigin;
 				if (cookieContext)
 					siteTainted ||=
-						!cookieSameSite(url.href, cookieContext.siteUrl) ||
-						!cookieSameSite(next.href, cookieContext.siteUrl);
+						!sameSite(url.href, cookieContext.siteUrl) ||
+						!sameSite(next.href, cookieContext.siteUrl);
 				url = next;
 			}
 		} catch (error) {

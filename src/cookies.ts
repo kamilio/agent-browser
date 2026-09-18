@@ -345,6 +345,11 @@ export class CookieJar {
 			);
 	}
 
+	sameSite(url: string, siteUrl: string | null): boolean {
+		this.assertOpen();
+		return cookieSameSite(url, siteUrl, this.#publicSuffixSnapshot);
+	}
+
 	setCookie(
 		url: string,
 		header: string,

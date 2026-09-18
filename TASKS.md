@@ -83,9 +83,11 @@ selected immutable core, establishing a compatibility gap, not the cause of the
 child302. Explicit pinned-PSL domain-cookie support and native session wiring now
 pass783 tests in10 native files with all quality checks passing. Domain state is
 explicit and old host-only state is not widened; private-suffix boundaries,
-HttpOnly/Secure/SameSite and cleanup remain enforced. CLI/process selection and
-PSL-aware redirect-taint integration remain outstanding; no live cookie-policy
-retry is claimed. See DOMAIN-COOKIES.md. The observed
+HttpOnly/Secure/SameSite and cleanup remain enforced. PSL-aware redirect-taint
+integration now passes802 tests in11 native files with all quality checks;
+same-origin credentials and cross-site-and-back restrictions remain unchanged.
+CLI/process selection remains outstanding; no live cookie-policy retry is
+claimed. See DOMAIN-COOKIES.md. The observed
 Referrer-Policy is strict-origin-when-cross-origin; conservative cookie-echo
 redaction withheld CSP values. No response body or cookie values were persisted.
 

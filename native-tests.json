@@ -1,4 +1,5 @@
 [
+	"src/node-cookie-redirect-policy.test.ts",
 	"src/script-image-properties.test.ts",
 	"src/session-domain-cookies.test.ts",
 	"src/cli-classic-globals.test.ts",
