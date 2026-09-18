@@ -1,5 +1,37 @@
 # Agent browser implementation tasks
 
+## Current priority: make native Zoom notetaking work
+
+The user's September18 direction is explicit: get this browser to the level
+where it can handle the supplied Zoom meeting. Do not substitute unrelated
+website extraction features, static proposals or small prerequisites for that
+outcome. The broader backlog below is deferred behind the Zoom execution path.
+
+Acceptance requires actual native/SafeJS client execution and usable meeting
+UI, legitimate admission, native incoming audio reception and decoding,
+permitted recording, notetaker transcription/summary and verified delivery.
+Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
+
+The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
+source copy. Native window integration has219 passing tests in11 files. Actual
+captured Zoom chunk execution, shared global aliases, cross-script exports,
+document.defaultView and idle timer identity now have runtime evidence.
+This is not a meeting join or a complete SDK/browser gate. Captured React
+externals still exceed the native deadline; a CPU profile identifies retained
+graph accounting as the dominant cost. Immediate source after a controlled
+event callback still hits SDK re-entry. Scheduler-only tests have157 passes and
+4 failures; combined SDK repairs and sound accounting optimization are active.
+
+The native browser fetched the missing main.js on September18 at12:14:14.901UTC:
+HTTP200,843255 JavaScript bytes. The vendors request stopped at the existing
+2000000-byte decoded limit; retain that failure and use only a separately proved,
+explicit larger admission for any next request. Dynamic script loading and the
+actual loader's async=false/property-reflection path are being implemented.
+See CLASSIC-PAGE-GLOBALS.md. Preserve all failed harness/runtime attempts,
+including the initial missing-root-tsconfig failure and the separate longer
+diagnostic that did not complete React initialization. JSON command work stays
+uncommitted/unqualified and paused, with its existing evidence untouched.
+
 Current objective: improve native-browser performance, speed and functionality
 across varied websites, including actively reducing avoidable crawler blocks and
 CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement

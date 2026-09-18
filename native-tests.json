@@ -1,4 +1,6 @@
 [
+	"src/script-dom-window.test.ts",
+	"src/page-window-global.test.ts",
 	"src/extraction-page.test.ts",
 	"src/command-extraction-page.test.ts",
 	"src/extraction-code-whitespace.test.ts",

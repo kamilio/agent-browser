@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { DocumentTree } from "./document.js";
 import {
+	type ExtensionPageRuntimeOptions,
 	extensionPageRuntime,
 	extensionPageRuntimeLimits,
 } from "./extension-page-runtime.js";
@@ -170,12 +171,16 @@ function fakeCore() {
 	return { core, realms, defineExtension, createRealm, budgetOptions };
 }
 
-function fixture(shared = fakeCore(), timeoutMs = 1000) {
+function fixture(
+	shared = fakeCore(),
+	timeoutMs = 1000,
+	configuration: ExtensionPageRuntimeOptions = {},
+) {
 	const tree = new DocumentTree("https://example.com/");
 	const interactions = new DocumentInteractions(tree);
 	const scripts = new PageScripts(
 		{ document: tree, interactions },
-		extensionPageRuntime(shared.core),
+		extensionPageRuntime(shared.core, configuration),
 		{ limits: { timeoutMs } },
 	);
 	owners.push({ scripts, tree });
@@ -187,6 +192,52 @@ function fixture(shared = fakeCore(), timeoutMs = 1000) {
 		state: shared.realms[shared.realms.length - 1],
 	};
 }
+
+it.each([null, 0, "true", [], {}])(
+	"rejects a non-boolean classic Script option (%j)",
+	(classicScripts) => {
+		expect(() =>
+			extensionPageRuntime(fakeCore().core, {
+				classicScripts: classicScripts as boolean,
+			}),
+		).toThrow("Invalid classic Script option");
+	},
+);
+
+it("opts into classic Scripts and fails closed if the SDK skips the window bootstrap", async () => {
+	const test = fixture(fakeCore(), 1000, { classicScripts: true });
+	expect(test.state.options.classicScripts).toBe(true);
+	const names = test.defineExtension.mock.calls[0][0].manifest.globals;
+	expect(names).not.toContain("window");
+	expect(names).not.toContain("self");
+	expect(names).toContain("__agentBrowserWindowGlobal");
+	await expect(test.scripts.evaluate("publisher source")).rejects.toThrow(
+		"SafeJS did not initialize page extension bindings",
+	);
+	expect(test.state.evaluate).toHaveBeenCalledTimes(1);
+	expect(test.state.evaluate.mock.calls[0][0]).toContain(
+		"bridge.bind(globalThis)",
+	);
+	expect(test.state.disposals).toBe(1);
+});
+
+it("counts its native window bootstrap against the configured source limit", () => {
+	const shared = fakeCore();
+	const tree = new DocumentTree("https://example.com/");
+	try {
+		expect(
+			() =>
+				new PageScripts(
+					{ document: tree, interactions: new DocumentInteractions(tree) },
+					extensionPageRuntime(shared.core, { classicScripts: true }),
+					{ limits: { maxSourceCodeUnits: 1 } },
+				),
+		).toThrow("Page initialization source is too large");
+		expect(shared.createRealm).not.toHaveBeenCalled();
+	} finally {
+		tree.close();
+	}
+});
 
 it("declares owned console, retention, and focus await-result grants before lazy setup", async () => {
 	const test = fixture();

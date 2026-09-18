@@ -142,6 +142,7 @@ export class ScriptDom {
 	private templateBinding?: { dom: ScriptDom; events?: DocumentEvents };
 	private publishingTemplate = false;
 	private readonly callbacks?: ScriptCallbackRuntime;
+	private readonly window?: object;
 	private mutationRecordOwner?: ScriptMutationRecords;
 	private rangeBindings?: ScriptRanges;
 	private mutationObserverOwner?: {
@@ -166,6 +167,7 @@ export class ScriptDom {
 		this.inert =
 			this.inheritedFamily !== undefined || tree.isTemplateContentsDocument;
 		this.callbacks = events?.callbacks;
+		this.window = this.inert ? undefined : events?.window;
 		if (typeof factory?.createHostObject !== "function")
 			throw new AgentBrowserError(
 				"unsupported",
@@ -491,6 +493,12 @@ export class ScriptDom {
 			};
 		}
 		if (initial.kind === "document") {
+			definition.properties.defaultView = {
+				get: () => {
+					this.read(id);
+					return this.window ?? null;
+				},
+			};
 			definition.methods.getElementsByName = (...args) => {
 				this.read(id);
 				if (args.length === 0)

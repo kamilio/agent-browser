@@ -89,6 +89,7 @@ export interface ReleasedCore {
 		setup(context: ReleasedContext): { globals: Record<string, unknown> };
 	}): unknown;
 	createRealm(options: {
+		classicScripts?: boolean;
 		sourceResolver?: ReleasedSourceResolver;
 		extensions: readonly unknown[];
 		builtinOverrides?: { console?: string };

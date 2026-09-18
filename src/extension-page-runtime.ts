@@ -1,4 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
+import { PageWindowGlobal } from "./page-window-global.js";
 import type { HtmlModuleRequest } from "./html-module.js";
 import {
 	type PageNetworkModuleOptions,
@@ -31,6 +32,7 @@ export const extensionPageRuntimeLimits = Object.freeze({
 const extensionName = "agent-browser-page";
 
 export interface ExtensionPageRuntimeOptions {
+	classicScripts?: boolean;
 	sourceModules?: PageSourceModuleOptions;
 	networkSourceModules?: PageNetworkModuleOptions;
 }
@@ -82,6 +84,15 @@ export function extensionPageRuntime(
 			"Invalid extension page runtime options",
 		);
 	const moduleOptions = configuration.sourceModules;
+	if (
+		configuration.classicScripts !== undefined &&
+		typeof configuration.classicScripts !== "boolean"
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid classic Script option",
+		);
+	const classicScripts = configuration.classicScripts === true;
 	const networkModuleOptions = configuration.networkSourceModules;
 	if (moduleOptions !== undefined && networkModuleOptions !== undefined)
 		throw new AgentBrowserError(
@@ -96,6 +107,9 @@ export function extensionPageRuntime(
 				: undefined;
 	return {
 		createPageRuntime(options) {
+			const windowGlobal = classicScripts
+				? new PageWindowGlobal(options.globals)
+				: undefined;
 			const initializationSource = options.initializationSource;
 			if (
 				initializationSource !== undefined &&
@@ -109,6 +123,13 @@ export function extensionPageRuntime(
 				initializationSource !== undefined &&
 				initializationSource.length > options.limits.maxSourceCodeUnits
 			)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Page initialization source is too large",
+				);
+			const bootstrapSource =
+				(windowGlobal?.source ?? "") + (initializationSource ?? "");
+			if (bootstrapSource.length > options.limits.maxSourceCodeUnits)
 				throw new AgentBrowserError(
 					"resource-limit",
 					"Page initialization source is too large",
@@ -194,7 +215,7 @@ export function extensionPageRuntime(
 				manifest: {
 					version: 1,
 					name: extensionName,
-					globals: options.globals,
+					globals: windowGlobal?.names ?? options.globals,
 					capabilities: ["guest:retain", "source:nested"],
 				},
 				setup(owner) {
@@ -226,7 +247,9 @@ export function extensionPageRuntime(
 						},
 						createHostObject: (definition) => {
 							ensureOpen();
-							return owner.createHostObject(definition);
+							return windowGlobal
+								? windowGlobal.createHostObject(owner, definition)
+								: owner.createHostObject(definition);
 						},
 						retainGuestArguments: (operation, from) => {
 							ensureOpen();
@@ -237,11 +260,12 @@ export function extensionPageRuntime(
 						},
 					});
 					setupComplete = true;
-					return { globals };
+					return { globals: windowGlobal?.install(owner, globals) ?? globals };
 				},
 			});
 			try {
 				realm = core.createRealm({
+					...(classicScripts ? { classicScripts: true } : {}),
 					...(moduleScope
 						? {
 								sourceResolver: (specifier, referrer, resolution) => {
@@ -345,8 +369,8 @@ export function extensionPageRuntime(
 					ensureOpen();
 					initialized ??= (async () => {
 						const result = await evaluate(
-							initializationSource ?? "",
-							initializationSource === undefined
+							bootstrapSource,
+							initializationSource === undefined && !windowGlobal
 								? {}
 								: { filename: "agent-browser:page-bootstrap" },
 						);
@@ -355,7 +379,7 @@ export function extensionPageRuntime(
 								new Error("Page extension initialization failed"),
 								result.error,
 							);
-						if (!setupComplete) {
+						if (!setupComplete || (windowGlobal && !windowGlobal.initialized)) {
 							await close();
 							throw new AgentBrowserError(
 								"unsupported",
@@ -375,8 +399,12 @@ export function extensionPageRuntime(
 							"Page extension callbacks are unavailable",
 						);
 					return realm.startCallback(callback, {
-						args,
-						thisValue: receiver.thisValue,
+						args: windowGlobal
+							? args.map((value) => windowGlobal.map(value))
+							: args,
+						thisValue: windowGlobal
+							? windowGlobal.map(receiver.thisValue)
+							: receiver.thisValue,
 					});
 				},
 				errorDetails,
