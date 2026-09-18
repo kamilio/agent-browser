@@ -6,6 +6,24 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Revalidate the public llama.cpp build guide
+
+- One fresh native GET at09:10:09.751UTC returns200/text/html,642230 complete
+  bytes and54535 Markdown bytes with explicit inert raw/source-hidden policies.
+  No prefix fallback, redirect, HTTP retry, credentials, SDK or page execution.
+  TLS/request/socket/session/document/process cleanup pass; no challenge observed.
+- On the same pinned body, article.markdown-body yields43811 Markdown bytes.
+  Native source/reader comparisons match66 heading and56 code-block texts; an
+  actual offline research replay CLI returns identical article Markdown with
+  zero IO. The pagination API returns all56 code scopes in6 bounded pages.
+- Preserve September15's unsupported-reader failure and later offline recovery;
+  current article text matches between old/fresh captures, not full HTML bytes.
+  Reuse433/0 native + green quality, not a rerun or full-suite/SDK gate. See
+  reports/llama-build-revalidation-2026-09-18.md/JSON and its source/CLI evidence.
+- Paging small entries repeats metadata: use one article selection when it fits;
+  document the measured tradeoff without claiming token/engine speedups. Broader
+  website/crawler/research and Zoom execution/media/notetaking gates remain open.
+
 ### Retrieve repeated content through bounded extraction pages
 
 - Add extract-page and the exported extractDocumentPage API: DOM-order selector

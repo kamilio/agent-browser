@@ -33,6 +33,13 @@ structured extraction inside those entries, not a different pagination protocol.
 
 ## Limits
 
+Prefer one ordinary `extract` selection when the desired article already fits
+its output budget. Pagination is for bounded windows of repeated content, not
+automatic output compression: each entry retains its own extraction metadata.
+Across many small entries, that metadata can outweigh the content. The build-guide
+revalidation in `reports/llama-build-revalidation-2026-09-18.md` demonstrates this
+tradeoff. A per-page cap does not cap the aggregate bytes of every page.
+
 | Option | Default | Allowed range |
 | --- | ---: | ---: |
 | `--limit` | 20 entries | 1–100 |
