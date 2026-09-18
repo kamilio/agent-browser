@@ -89,6 +89,17 @@ retry is claimed. See DOMAIN-COOKIES.md. The observed
 Referrer-Policy is strict-origin-when-cross-origin; conservative cookie-echo
 redaction withheld CSP values. No response body or cookie values were persisted.
 
+Native classic Image construction now passes342 native tests in12 files plus
+the actual-SDK synthetic lifecycle check (ASSETS27). Build/types/format pass;
+only the previously documented unchanged ScriptDom.ranges lint offense remains.
+Native image decode/events/CSP/cancellation are reused, with explicit prototype
+and IDL limitations. The source-linkedCDN PNG andvbPreload are captured200 at
+14:22:02.441/14:22:03.283UTC,149/1388bytes. ASSETS28 retains an incorrect classic-
+fetch fixture failure; correctedASSETS29 reaches the externals script request,
+but not its combinedimage assertion. It confirms missingURL/URLSearchParams
+globals. These are the next startup APIs; originalCSPrefusal remains unchanged.
+See NATIVE-IMAGE-CONSTRUCTOR.md. No meeting/audio/notetaking success yet.
+
 The native browser fetched the missing main.js on September18 at12:14:14.901UTC:
 HTTP200,843255 JavaScript bytes. The vendors request stopped at the existing
 2000000-byte decoded limit; retain that failure and use only a separately proved,

@@ -1,4 +1,14 @@
-import { expect, it, vi } from "vitest";
+import { createContext, runInContext } from "node:vm";
+import { afterEach, expect, it, vi } from "vitest";
+import {
+	documentImages,
+	type DocumentImageOptions,
+} from "./document-images.js";
+import { parseHtmlDocument } from "./html-parser.js";
+import { documentInteractions } from "./interactions.js";
+import { encodePng } from "./png.js";
+import { createRaster } from "./raster.js";
+import { ScriptDom } from "./script-dom.js";
 import { AgentBrowserError } from "./errors.js";
 import { PageWindowGlobal } from "./page-window-global.js";
 import type {
@@ -8,6 +18,339 @@ import type {
 
 const bridgeName = "__agentBrowserWindowGlobal";
 const aliases = ["window", "self", "top", "parent"];
+
+const imageCleanups: (() => Promise<void>)[] = [];
+afterEach(async () => {
+	for (const cleanup of imageCleanups.splice(0).reverse()) await cleanup();
+});
+
+function imageFixture(options: DocumentImageOptions = {}) {
+	const owner = fakeOwner();
+	const tree = parseHtmlDocument(
+		"<body></body>",
+		"https://fixture.invalid/page",
+	);
+	const fetch = vi.fn(async (url: string) => {
+		const body = encodePng(createRaster(3, 2, [20, 40, 60, 255]));
+		return {
+			url,
+			status: 200,
+			headers: { "content-type": ["image/png"] },
+			body,
+			encodedBytes: body.length,
+			redirects: [],
+			elapsedMs: 0,
+		};
+	});
+	const images = documentImages(tree, { fetch, ...options });
+	const windowGlobal = new PageWindowGlobal([...aliases, "document"]);
+	const dom = new ScriptDom(
+		tree,
+		{
+			createHostObject: (definition) =>
+				windowGlobal.createHostObject(owner.context, definition),
+		},
+		{
+			events: documentInteractions(tree).events,
+			callbacks: {
+				isClosed: () => owner.context.signal.aborted,
+				startCallback: (callback, args, receiver) => {
+					const result = Promise.resolve(
+						Reflect.apply(
+							callback as (...args: unknown[]) => unknown,
+							receiver.thisValue,
+							args,
+						),
+					);
+					return { synchronous: Promise.resolve(), result };
+				},
+			},
+		},
+	);
+	const window = windowGlobal.createHostObject(owner.context, {
+		properties: { document: { get: () => dom.document } },
+	});
+	const context = createContext(
+		windowGlobal.install(owner.context, {
+			window,
+			self: window,
+			document: dom.document,
+		}),
+	);
+	const evaluate = (source: string) => runInContext(source, context);
+	evaluate(windowGlobal.source);
+	imageCleanups.push(async () => {
+		tree.close();
+		await owner.close();
+	});
+	return { ...owner, tree, dom, images, fetch, evaluate, windowGlobal };
+}
+
+it("bootstraps a constructible guest Image returning the native detached img wrapper", () => {
+	const test = imageFixture();
+	expect(
+		test.evaluate(`
+		var image = new Image();
+		[Image === window.Image, Image === self.Image, Image.length, image.tagName,
+		 image.nodeType, image.ownerDocument === document, image.parentNode,
+		 image.complete, image.currentSrc, image.naturalWidth, image.naturalHeight,
+		 image.width, image.height, image.getAttribute('width'), image.getAttribute('height')]
+	`),
+	).toEqual([
+		true,
+		true,
+		0,
+		"IMG",
+		1,
+		true,
+		null,
+		true,
+		"",
+		0,
+		0,
+		0,
+		0,
+		null,
+		null,
+	]);
+	expect(
+		test.evaluate(
+			`document.body.appendChild(image) === image && document.querySelector('img') === image`,
+		),
+	).toBe(true);
+	expect(
+		test.evaluate(
+			`Object.getPrototypeOf(image) === Object.getPrototypeOf(document.createElement('img'))`,
+		),
+	).toBe(true);
+	expect(() => test.evaluate("Image()")).toThrow();
+});
+
+it.each([
+	["", null, null],
+	["undefined", null, null],
+	["undefined, 4", null, "4"],
+	["null, true", "0", "1"],
+	["-1, 4294967298.9", "4294967295", "2"],
+	["NaN, Infinity", "0", "0"],
+	["-Infinity, -0", "0", "0"],
+	["'12.9', -2.9", "12", "4294967294"],
+	["{valueOf() { return 7; }}, 8", "7", "8"],
+])(
+	"converts Image(%s) optional unsigned-long dimensions before native reflection",
+	(args, width, height) => {
+		const test = imageFixture();
+		expect(
+			test.evaluate(
+				`var image = new Image(${args}); [image.getAttribute('width'), image.getAttribute('height')]`,
+			),
+		).toEqual([width, height]);
+	},
+);
+
+it.each([
+	"1n",
+	"Symbol('width')",
+	"{valueOf() {throw new Error('conversion');}}",
+])("rejects Image(%s) before allocating a native image", (value) => {
+	const test = imageFixture();
+	expect(() => test.evaluate(`new Image(4, ${value})`)).toThrow();
+	expect(test.images.metrics().elements).toBe(0);
+	expect(test.fetch).not.toHaveBeenCalled();
+});
+
+it("loads and decodes retained detached images through bounded shared native ownership", async () => {
+	const test = imageFixture();
+	test.evaluate(`
+		var RetainedImage = Image, loads = [], errors = [];
+		var first = new Image(), second = new RetainedImage(5, 6);
+		first.onload = function(event) { loads.push(this === first && event.target === first); };
+		second.addEventListener('load', function(event) { loads.push(this === second && event.target === second); });
+		first.onerror = function() { errors.push('first'); };
+		first.src = '/pixel.png'; second.src = '/pixel.png';
+	`);
+	expect(
+		test.evaluate("[first.complete, first.currentSrc, first.naturalWidth]"),
+	).toEqual([false, "https://fixture.invalid/pixel.png", 0]);
+	await test.evaluate("first.decode()");
+	await test.images.settle();
+	expect(
+		test.evaluate(
+			"[loads, errors, first.complete, first.naturalWidth, first.naturalHeight, first.width, first.height, second.width, second.height, first.parentNode]",
+		),
+	).toEqual([[true, true], [], true, 3, 2, 3, 2, 5, 6, null]);
+	expect(test.fetch).toHaveBeenCalledTimes(1);
+	expect(test.images.metrics()).toMatchObject({
+		elements: 2,
+		requests: 1,
+		waiters: 0,
+	});
+	test.evaluate(
+		"Image = function PublisherImage() {}; var third = new RetainedImage();",
+	);
+	expect(test.evaluate("[Image.name, third.tagName, third === first]")).toEqual(
+		["PublisherImage", "IMG", false],
+	);
+	expect(() => test.evaluate(test.windowGlobal.source)).toThrow(
+		/already initialized/,
+	);
+	expect(test.evaluate("Image.name")).toBe("PublisherImage");
+	await test.close();
+	expect(() => test.evaluate("new RetainedImage()")).toThrow();
+});
+
+it("preserves image CSP rejection and error delivery rather than fabricating a load", async () => {
+	const test = imageFixture({ contentSecurityPolicy: ["img-src 'none'"] });
+	test.evaluate(
+		`var image = new Image(), events = []; image.onload = function() { events.push('load'); }; image.onerror = function() { events.push('error'); }; image.src = '/blocked.png';`,
+	);
+	await expect(test.evaluate("image.decode()")).rejects.toThrow();
+	await test.images.settle();
+	expect(
+		test.evaluate(
+			"[events, image.complete, image.naturalWidth, image.naturalHeight]",
+		),
+	).toEqual([["error"], true, 0, 0]);
+	expect(test.fetch).not.toHaveBeenCalled();
+});
+
+it("keeps constructor allocation under the existing native image element limit", () => {
+	const test = imageFixture({ limits: { maxElements: 2 } });
+	test.evaluate("var RetainedImage = Image; new Image(); new RetainedImage();");
+	expect(() => test.evaluate("new RetainedImage()")).toThrow(/limit/i);
+	expect(test.images.metrics().elements).toBe(2);
+});
+
+it("rejects empty and malformed image decodes without claiming natural dimensions", async () => {
+	const test = imageFixture({
+		fetch: async (url) => ({
+			url,
+			status: 200,
+			headers: { "content-type": ["image/png"] },
+			body: new Uint8Array([0, 1]),
+			encodedBytes: 2,
+			redirects: [],
+			elapsedMs: 0,
+		}),
+	});
+	test.evaluate(
+		"var image = new Image(), events = []; image.onerror = function() { events.push('error'); }; image.onload = function() { events.push('load'); };",
+	);
+	await expect(test.evaluate("image.decode()")).rejects.toThrow();
+	test.evaluate("image.src = '/malformed.png'");
+	await expect(test.evaluate("image.decode()")).rejects.toThrow();
+	await test.images.settle();
+	expect(
+		test.evaluate(
+			"[events, image.complete, image.naturalWidth, image.naturalHeight]",
+		),
+	).toEqual([["error"], true, 0, 0]);
+});
+
+it("revokes retained constructor, pending decode and native image properties on tree closure", async () => {
+	let finish!: (
+		value: Awaited<ReturnType<NonNullable<DocumentImageOptions["fetch"]>>>,
+	) => void;
+	let pendingSignal: AbortSignal | undefined;
+	const test = imageFixture({
+		fetch: (_url, signal) => {
+			pendingSignal = signal;
+			return new Promise((resolve) => {
+				finish = resolve;
+			});
+		},
+	});
+	test.evaluate(
+		"var RetainedImage = Image, image = new Image(), events = []; image.onload = function() { events.push('load'); }; image.onerror = function() { events.push('error'); }; image.src = '/pending.png';",
+	);
+	const decoded = expect(test.evaluate("image.decode()")).rejects.toMatchObject(
+		{ code: "closed" },
+	);
+	expect(pendingSignal?.aborted).toBe(false);
+	test.tree.close();
+	await decoded;
+	expect(pendingSignal?.aborted).toBe(true);
+	for (const source of [
+		"new RetainedImage()",
+		"image.width",
+		"image.height = 1",
+		"image.src",
+		"image.src = '/late.png'",
+		"image.complete",
+		"image.currentSrc",
+		"image.naturalWidth",
+		"image.naturalHeight",
+		"image.onload",
+		"image.onerror = null",
+		"image.decode()",
+	])
+		expect(() => test.evaluate(source)).toThrow();
+	finish(await test.fetch("https://fixture.invalid/pending.png"));
+	await Promise.resolve();
+	expect(test.evaluate("events")).toEqual([]);
+	expect(test.images.metrics()).toMatchObject({
+		closed: true,
+		elements: 0,
+		resources: 0,
+		decodedBytes: 0,
+		waiters: 0,
+	});
+});
+
+it("rejects replaced-source decodes and suppresses stale detached-image completion", async () => {
+	let finish!: (
+		value: Awaited<ReturnType<NonNullable<DocumentImageOptions["fetch"]>>>,
+	) => void;
+	let pendingSignal: AbortSignal | undefined;
+	const body = encodePng(createRaster(4, 1, [20, 40, 60, 255]));
+	const response = (url: string) => ({
+		url,
+		status: 200,
+		headers: { "content-type": ["image/png"] },
+		body,
+		encodedBytes: body.length,
+		redirects: [],
+		elapsedMs: 0,
+	});
+	const test = imageFixture({
+		fetch: async (url, signal) => {
+			if (url.endsWith("old.png")) {
+				pendingSignal = signal;
+				return new Promise((resolve) => {
+					finish = resolve;
+				});
+			}
+			return response(url);
+		},
+	});
+	test.evaluate(
+		"var image = new Image(), events = []; image.onload = function() { events.push(image.currentSrc); }; image.onerror = function() { events.push('error'); }; image.src = '/old.png';",
+	);
+	const oldDecode = expect(test.evaluate("image.decode()")).rejects.toThrow();
+	test.evaluate("image.src = '/new.png'");
+	await test.evaluate("image.decode()");
+	await oldDecode;
+	expect(pendingSignal?.aborted).toBe(true);
+	finish(response("https://fixture.invalid/old.png"));
+	await test.images.settle();
+	expect(
+		test.evaluate(
+			"[events, image.currentSrc, image.naturalWidth, image.naturalHeight]",
+		),
+	).toEqual([
+		["https://fixture.invalid/new.png"],
+		"https://fixture.invalid/new.png",
+		4,
+		1,
+	]);
+});
+
+it("does not install Image without a tracked native document createElement binding", () => {
+	const test = fixture();
+	const context = createContext(test.installed);
+	runInContext(test.windowGlobal.source, context);
+	expect(runInContext("typeof Image", context)).toBe("undefined");
+});
 
 function fakeOwner() {
 	const controller = new AbortController();

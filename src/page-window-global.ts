@@ -27,6 +27,22 @@ export class PageWindowGlobal {
 				value: globalThis, writable: true, configurable: true, enumerable: true
 			});
 		}
+		if (bridge.hasNativeDocument) {
+			const createImage = bridge.createImage;
+			class Image {
+				constructor(width = undefined, height = undefined) {
+					if (width !== undefined) width = +width >>> 0;
+					if (height !== undefined) height = +height >>> 0;
+					const image = createImage();
+					if (width !== undefined) image.width = width;
+					if (height !== undefined) image.height = height;
+					return image;
+				}
+			}
+			Object.defineProperty(globalThis, "Image", {
+				value: Image, writable: true, configurable: true, enumerable: false
+			});
+		}
 	})();`;
 	private readonly definitions = new WeakMap<object, ReleasedHostDefinition>();
 	private window?: object;
@@ -95,6 +111,11 @@ export class PageWindowGlobal {
 			);
 		this.window = window;
 		this.installed = true;
+		const document = globals.document;
+		const createElement =
+			document && typeof document === "object"
+				? this.definitions.get(document)?.methods?.createElement
+				: undefined;
 		const names = [
 			...Object.keys(definition.properties ?? {}),
 			...Object.keys(definition.methods ?? {}),
@@ -124,6 +145,7 @@ export class PageWindowGlobal {
 			),
 			[bridgeName]: owner.createHostObject({
 				properties: {
+					hasNativeDocument: { get: () => createElement !== undefined },
 					window: { get: () => window },
 					names: { get: () => names },
 					aliases: { get: () => aliases },
@@ -131,6 +153,19 @@ export class PageWindowGlobal {
 					methods: { get: () => Object.keys(definition.methods ?? {}) },
 				},
 				methods: {
+					createImage: () => {
+						if (!this.bound || owner.signal.aborted)
+							throw new AgentBrowserError(
+								"closed",
+								"Image constructor is closed",
+							);
+						if (!createElement)
+							throw new AgentBrowserError(
+								"unsupported",
+								"Native document required",
+							);
+						return createElement("img");
+					},
 					bind,
 					read: (name) => {
 						if (

@@ -81,6 +81,7 @@ import { scriptSelectBindings } from "./script-select.js";
 import type { ScriptStorage } from "./script-storage.js";
 import { scriptUrlProperties } from "./script-urls.js";
 import { scriptElementProperties } from "./script-element-properties.js";
+import { scriptImageProperties } from "./script-image-properties.js";
 import { initializeScriptElement } from "./script-element-state.js";
 import { DocumentQueries } from "./selectors.js";
 import { documentHitTesting, type DocumentHitTesting } from "./hit-testing.js";
@@ -797,6 +798,10 @@ export class ScriptDom {
 			if (isHtmlElement(initial, "img")) {
 				const images = documentImages(this.tree);
 				images.get(id);
+				Object.assign(
+					definition.properties,
+					scriptImageProperties(this.tree, id, () => this.read(id), images),
+				);
 				for (const name of [
 					"complete",
 					"currentSrc",
