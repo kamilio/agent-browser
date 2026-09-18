@@ -271,6 +271,16 @@ See NETWORK-ORIGIN-BLOCKING.md. The native fake-runner/fake-socket gate is not
 actual SDK or live evidence. A separately labeled filtered Zoom experiment is
 next; the existing unfiltered timeout, admission and media gates remain open.
 
+September18, experimental SDK live follow-up: ClrIn4 passes the unchanged21-command
+owned core31 gate in2.117s, but a fresh unfiltered full Zoom load still fails at
+the same evaluation11 source after120498.560ms; total134.202s. Ten scripts pass,
+13 real requests close, native owners and SDK retained values/data close cleanly.
+Different inline sources/fresh state and two timeouts do not prove a speedup.
+Both unfiltered failures remain unchanged. See
+reports/zoom-optimized-full-document-2026-09-18.md. A separately labeled filtered
+trial and one offline CPU-versus-wait diagnosis are active; no meeting, incoming
+audio or completed notetaking is claimed.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,
