@@ -1,6 +1,9 @@
 import { Buffer } from "node:buffer";
 import { createHash, randomBytes } from "node:crypto";
 import { AgentBrowserError } from "./errors.js";
+import { validateWebSocketProtocols } from "./websocket-protocols.js";
+
+export { validateWebSocketProtocols } from "./websocket-protocols.js";
 
 const webSocketGuid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 const invalidTokenCharacter = /[^!#$%&'*+\-.^_`|~0-9A-Za-z]/;
@@ -23,34 +26,6 @@ function headerLimit(): never {
 		"resource-limit",
 		"WebSocket handshake response header limit exceeded",
 	);
-}
-
-export function validateWebSocketProtocols(
-	input?: readonly string[],
-): readonly string[] {
-	if (input === undefined) return Object.freeze([]);
-	if (!Array.isArray(input) || input.length > 32)
-		throw new AgentBrowserError(
-			"invalid-input",
-			"WebSocket protocols must be an array of at most 32 tokens",
-		);
-	const protocols: string[] = [];
-	const seen = new Set<string>();
-	for (const protocol of input) {
-		if (
-			typeof protocol !== "string" ||
-			protocol.length > 256 ||
-			!isToken(protocol) ||
-			seen.has(protocol)
-		)
-			throw new AgentBrowserError(
-				"invalid-input",
-				"WebSocket protocols must be distinct ASCII HTTP tokens of at most 256 characters",
-			);
-		seen.add(protocol);
-		protocols.push(protocol);
-	}
-	return Object.freeze(protocols);
 }
 
 export function createWebSocketKey(): string {

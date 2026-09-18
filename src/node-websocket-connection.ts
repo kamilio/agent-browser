@@ -2,6 +2,16 @@ import { Buffer } from "node:buffer";
 import { randomBytes } from "node:crypto";
 import type { Duplex } from "node:stream";
 import { AgentBrowserError } from "./errors.js";
+import type {
+	NativeWebSocketMessage,
+	WebSocketCloseResult,
+	WebSocketConnection,
+} from "./websocket-transport.js";
+
+export type {
+	NativeWebSocketMessage,
+	WebSocketCloseResult,
+} from "./websocket-transport.js";
 import { encodeNativeWebSocketClientFrame } from "./websocket-frames.js";
 import {
 	WebSocketReceiver,
@@ -19,22 +29,12 @@ export interface WebSocketConnectionLimits extends WebSocketReceiverLimits {
 	closeTimeoutMs: number;
 }
 
-export interface WebSocketCloseResult {
-	readonly code: number;
-	readonly reason: string;
-	readonly wasClean: boolean;
-}
-
-export interface NativeWebSocketMessage {
-	readonly data: string | Uint8Array;
-}
-
 interface PendingRead {
 	resolve: (message: NativeWebSocketMessage | undefined) => void;
 	reject: (error: AgentBrowserError) => void;
 }
 
-export class NodeWebSocketConnection {
+export class NodeWebSocketConnection implements WebSocketConnection {
 	readonly closed: Promise<WebSocketCloseResult>;
 	private readonly receiver: WebSocketReceiver;
 	private readonly messages: NativeWebSocketMessage[] = [];

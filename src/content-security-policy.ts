@@ -100,16 +100,22 @@ function schemeMatches(source: string, target: string): boolean {
 
 export class ContentSecurityPolicy {
 	readonly policyCount: number;
+	readonly #destination: "image" | "style" | "connect";
 	readonly #origin: Origin | undefined;
 	readonly #policies: readonly (readonly Source[])[];
 
 	constructor(
 		documentUrl: string,
 		headerValues: readonly string[],
-		destination: "image" | "style",
+		destination: "image" | "style" | "connect",
 	) {
-		if (destination !== "image" && destination !== "style")
+		if (
+			destination !== "image" &&
+			destination !== "style" &&
+			destination !== "connect"
+		)
 			throw new AgentBrowserError("invalid-input", "Invalid CSP destination");
+		this.#destination = destination;
 		const document = parseUrl(documentUrl);
 		if (!Array.isArray(headerValues))
 			throw new AgentBrowserError(
@@ -158,7 +164,11 @@ export class ContentSecurityPolicy {
 					if (names.has(name)) continue;
 					names.add(name);
 					const primaryName =
-						destination === "image" ? "img-src" : "style-src-elem";
+						destination === "image"
+							? "img-src"
+							: destination === "style"
+								? "style-src-elem"
+								: "connect-src";
 					if (
 						name !== primaryName &&
 						!(destination === "style" && name === "style-src") &&
@@ -192,7 +202,15 @@ export class ContentSecurityPolicy {
 			);
 		const target = parseUrl(url);
 		const scheme = target.protocol.slice(0, -1);
-		if (scheme !== "http" && scheme !== "https") return false;
+		if (
+			scheme !== "http" &&
+			scheme !== "https" &&
+			!(
+				this.#destination === "connect" &&
+				(scheme === "ws" || scheme === "wss")
+			)
+		)
+			return false;
 		const origin = this.#origin;
 		const domain =
 			!target.hostname.startsWith("[") &&
@@ -233,7 +251,10 @@ export class ContentSecurityPolicy {
 				if (
 					source.port !== "*" &&
 					source.port !== port &&
-					!(port === null && source.port === (scheme === "https" ? 443 : 80))
+					!(
+						port === null &&
+						source.port === (scheme === "https" || scheme === "wss" ? 443 : 80)
+					)
 				)
 					return false;
 				if (redirectCount !== 0 || source.pathLength === 0) return true;

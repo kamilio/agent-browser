@@ -1,5 +1,7 @@
 import { CookieJar, type CookieLimits } from "./cookies.js";
 import { ContentSecurityPolicy } from "./content-security-policy.js";
+import { DocumentWebSockets } from "./document-websockets.js";
+import type { WebSocketTransport } from "./websocket-transport.js";
 import { hasUnsupportedExecutionCsp } from "./execution-content-security-policy.js";
 import { NetworkRequestQueue } from "./network-request-queue.js";
 import {
@@ -136,6 +138,7 @@ export interface SessionLimits {
 }
 
 export interface BrowserSessionOptions {
+	webSocketTransport?: WebSocketTransport;
 	resourceCredentials?: "default" | "omit";
 	createTransport: (cookies: CookieJar) => NetworkTransport;
 	loadDocument: DocumentLoader;
@@ -148,6 +151,7 @@ export interface BrowserSessionOptions {
 }
 
 export interface SessionPage {
+	readonly webSockets?: DocumentWebSockets;
 	readonly fetch?: PageFetchTransport;
 	readonly document: DocumentTree;
 	readonly interactions: DocumentInteractions;
@@ -295,6 +299,7 @@ export class BrowserSession {
 	readonly routes = new NetworkRoutes();
 	private readonly storageEvents = new PageStorageEvents();
 	private readonly transport: NetworkTransport;
+	private readonly webSocketTransport?: WebSocketTransport;
 	private readonly resourceCredentials: "default" | "omit";
 	private readonly networkQueue?: NetworkRequestQueue;
 	private readonly loadDocument: DocumentLoader;
@@ -319,6 +324,16 @@ export class BrowserSession {
 				"invalid-input",
 				"A session requires explicit transport and document loader adapters",
 			);
+		if (
+			options.webSocketTransport !== undefined &&
+			(!options.webSocketTransport ||
+				typeof options.webSocketTransport.connect !== "function")
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid session WebSocket transport",
+			);
+		this.webSocketTransport = options.webSocketTransport;
 		this.resourceCredentials =
 			options.resourceCredentials === undefined
 				? "default"
@@ -2337,6 +2352,19 @@ export class BrowserSession {
 			);
 			const page = Object.freeze({
 				fetch,
+				...(this.webSocketTransport
+					? {
+							webSockets: new DocumentWebSockets(
+								candidate,
+								this.webSocketTransport,
+								{
+									headerValues: imageContentSecurityPolicyValues(
+										response.headers,
+									),
+								},
+							),
+						}
+					: {}),
 				document: candidate,
 				styles,
 				interactions,

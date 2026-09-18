@@ -5,6 +5,18 @@ import { request as httpsRequest } from "node:https";
 import type { Duplex } from "node:stream";
 import { checkServerIdentity } from "node:tls";
 import { AgentBrowserError } from "./errors.js";
+import type { WebSocketTransport } from "./websocket-transport.js";
+
+export { DocumentWebSockets } from "./document-websockets.js";
+export type {
+	DocumentWebSocketConnectOptions,
+	DocumentWebSocketLimits,
+	DocumentWebSocketOptions,
+} from "./document-websockets.js";
+export type {
+	WebSocketConnection,
+	WebSocketTransport,
+} from "./websocket-transport.js";
 import {
 	NetworkPolicy,
 	type NetworkPolicyOptions,
@@ -175,7 +187,7 @@ async function resolveAddresses(
 	}
 }
 
-export class NodeWebSocketTransport {
+export class NodeWebSocketTransport implements WebSocketTransport {
 	readonly limits: Readonly<NodeWebSocketLimits>;
 	private readonly policy: NetworkPolicy;
 	private readonly resolver: NonNullable<

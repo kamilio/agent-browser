@@ -1,0 +1,66 @@
+{
+  "at": "2026-09-18T02:14:13.867Z",
+  "baseline": "3cd716a3d74eb06de05068380a6033897c15afe2",
+  "scope": "Opt-in host-side document WebSocket ownership; not a page JS constructor or Zoom join",
+  "native": {
+    "passed": 1287,
+    "failed": 0,
+    "files": 17,
+    "newTests": 213,
+    "elapsedSeconds": 6.630502777174115
+  },
+  "quality": {
+    "build": 0,
+    "types": 0,
+    "format": 0,
+    "lint": 1,
+    "baselineLintErrors": 1,
+    "allProcessesClosed": true
+  },
+  "runtime": {
+    "root": "/tmp/agent-browser-document-websocket-9kDnFS/candidate",
+    "sourcePins": 1673,
+    "compiledPins": 2480
+  },
+  "manifest": {
+    "entries": 1047,
+    "missing": [
+      "src/borders.test.ts",
+      "src/css-flex.test.ts",
+      "src/css-flow.test.ts",
+      "src/css-math.test.ts",
+      "src/css-variables.test.ts",
+      "src/flex-column-wrap.test.ts",
+      "src/flex-column.test.ts",
+      "src/flex-document.test.ts",
+      "src/flex-nested.test.ts",
+      "src/font-relative-box.test.ts",
+      "src/inline-block.test.ts",
+      "src/inline-borders.test.ts",
+      "src/inline-flex.test.ts",
+      "src/page-base64.test.ts",
+      "src/portable-boundary.test.ts",
+      "src/reference-images.test.ts",
+      "src/reference-renderer.test.ts",
+      "src/relative-positioning.test.ts",
+      "src/response-archive.test.ts",
+      "src/select-keyboard.test.ts",
+      "src/select-typeahead.test.ts",
+      "src/stacking-order.test.ts"
+    ]
+  },
+  "evidence": "node_modules/.cache/native-validation/document-websocket-september18",
+  "previousRun": [
+    "core01: native1279/0 and build/format0; new-test type error and four new lint findings subsequently corrected; unchanged baseline lint retained",
+    "core02: native1279/0 and build/types/format0; follow-up review identified two malformed-adapter cleanup paths; eight additional cases qualify the fixes in core03"
+  ],
+  "limitations": [
+    "Host API only: no page WebSocket constructor or events/binary SDK bridge",
+    "Conservative CSP subset; meta fails closed and HTTP(S) self aliases do not authorize WS(S)",
+    "No real sockets, SDK retry, websites, credential access, devices, Zoom admission, audio capture, transcription or delivery",
+    "Custom adapter cancellation is cooperative; unresolved resources retain bounded ownership slots",
+    "No full native-suite or full-lint-green claim; 22 manifest paths still absent",
+    "No default runtime switch or push"
+  ],
+  "quarantine": "Resource-bearing malformed results without observable closure retain a slot; abort is requested at most once, including throwing completion getters."
+}

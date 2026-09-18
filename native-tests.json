@@ -1,4 +1,8 @@
 [
+	"src/document-websockets.test.ts",
+	"src/document-websocket-policy.test.ts",
+	"src/connect-content-security-policy.test.ts",
+	"src/session-websocket.test.ts",
 	"src/style-selector-cache.test.ts",
 	"src/style-selector-reuse.test.ts",
 	"src/node-safejs-gate-process.test.ts",

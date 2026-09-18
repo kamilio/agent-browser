@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Document-owned WebSockets: host API, not a page global
+
+- Opt in through BrowserSessionOptions.webSocketTransport; each committed page
+  owns connections under its original origin, current base URL, response CSP and
+  mixed-content rules. No default adapter, cookie handshake or automatic connect.
+- Cancel with document replacement, tab/session close or caller abort. Retain
+  dispatched pending/closing slots until settlement; quarantine malformed results
+  without observable closure, and observe asynchronous abort failures. Preserve
+  fragment/failed-navigation ownership. Native text/binary framing uses memory
+  streams only; four concurrent/sixteen lifetime connections are defaults.
+- Final selected native1287/0 in17 files, including213 new cases. Build/types/
+  format pass. Lint has one unchanged shared-CSP error, reproduced on baseline;
+  do not claim a full-lint or full-suite pass.1673 source/2480 compiled pins match.
+  Preserve all three runs and pre-follow-up reports; manifest1047 retains22 gaps.
+- See DOCUMENT-WEBSOCKETS.md and reports/document-websockets-2026-09-18.md/JSON.
+  This is host-side only: public SafeJS constructor/binary/event bridge, failed
+  callback/source scheduling contract, actual sockets and native Zoom/WebRTC/audio,
+  capture/transcription/delivery remain open. No SDK retry, website/device or
+  credential access, default-runtime switch or push. Overall goal stays active.
+
 ### Actual SafeJS0.1.640 gate: core compatibility failure
 
 - Approved staged acquisition is complete:15 packages,2710 files and19 contained
