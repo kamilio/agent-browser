@@ -1,0 +1,349 @@
+{
+  "phaseOpened": "2026-09-17",
+  "auditedAt": "2026-09-18T00:02:12.137Z",
+  "status": "host-transport-qualified-with-mocks; native-Zoom-not-supported",
+  "meetingJoined": false,
+  "audioReceived": false,
+  "recordingStarted": false,
+  "transcriptProduced": false,
+  "summaryDelivered": false,
+  "newRuntimeDependencies": [],
+  "runtime": {
+    "at": "2026-09-18T00:02:12.137Z",
+    "root": "/tmp/agent-browser-native-websocket-NudlFW/candidate",
+    "baseline": "b0212a4ae8e47f4673d38272768141675269407a",
+    "qualifiedOwnedOverlays": [
+      "src/websocket-frames.ts",
+      "src/websocket-frames.test.ts",
+      "src/websocket-receiver.ts",
+      "src/websocket-receiver.test.ts",
+      "src/node-websocket-handshake.ts",
+      "src/node-websocket-handshake.test.ts",
+      "src/node-websocket-connection.ts",
+      "src/node-websocket-connection.test.ts",
+      "src/node-websocket-transport.ts",
+      "src/node-websocket-transport.test.ts",
+      "native-tests.json",
+      "package.json"
+    ],
+    "manifests": {
+      "SOURCE": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/websocket-connections-september17/SOURCE-core04.json",
+        "base": "/tmp/agent-browser-native-websocket-NudlFW/candidate",
+        "count": 1649,
+        "sha256": "94347cc09e87fa2f45b1ac797bd5ef65a89be9b970bc9b86837c45409549f349"
+      },
+      "COMPILED": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/websocket-connections-september17/COMPILED-core04.json",
+        "base": "/tmp/agent-browser-native-websocket-NudlFW/candidate/dist",
+        "count": 2440,
+        "sha256": "ade978d11dc7916a90a8cb00275943f256e2bc1d9e4d4531541504e86da57a2d"
+      }
+    },
+    "native": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/websocket-connections-september17/native-core04/EXECUTION.json",
+    "quality": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/websocket-connections-september17/CHECK-core04.json",
+    "unchangedCanonicalPins": 1637,
+    "priorZoomRuntimePreserved": true,
+    "priorSelectorSourcePinsPreserved": 1642,
+    "preservedTracked": 42,
+    "preservedUntracked": 700,
+    "realSockets": false,
+    "meetingJoined": false
+  },
+  "qualification": {
+    "native": {
+      "label": "core04",
+      "pid": 2500509,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 3.978112231940031,
+      "passedTests": 680,
+      "failedTests": 0,
+      "files": 7,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "quality": {
+      "label": "core04",
+      "executions": [
+        {
+          "name": "build",
+          "pid": 2500627,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 7.179388703778386
+        },
+        {
+          "name": "types",
+          "pid": 2500739,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.9654513001441956
+        },
+        {
+          "name": "format",
+          "pid": 2500756,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.03220896050333977
+        },
+        {
+          "name": "lint",
+          "pid": 2500779,
+          "exitCode": 0,
+          "timedOut": false,
+          "signals": [],
+          "childAbsent": true,
+          "groupAbsent": true,
+          "elapsedSeconds": 0.03170211985707283
+        }
+      ],
+      "checks": {
+        "build": 0,
+        "types": 0,
+        "format": 0,
+        "lint": 0
+      },
+      "allProcessesClosed": true,
+      "homeEntries": [
+        ".cache"
+      ],
+      "tmpEntries": [
+        "node-compile-cache"
+      ]
+    },
+    "files": [
+      {
+        "file": "network-policy-diagnostic.test.ts",
+        "passed": 62,
+        "failed": 0
+      },
+      {
+        "file": "network.test.ts",
+        "passed": 80,
+        "failed": 0
+      },
+      {
+        "file": "node-websocket-connection.test.ts",
+        "passed": 59,
+        "failed": 0
+      },
+      {
+        "file": "node-websocket-handshake.test.ts",
+        "passed": 52,
+        "failed": 0
+      },
+      {
+        "file": "node-websocket-transport.test.ts",
+        "passed": 152,
+        "failed": 0
+      },
+      {
+        "file": "websocket-frames.test.ts",
+        "passed": 153,
+        "failed": 0
+      },
+      {
+        "file": "websocket-receiver.test.ts",
+        "passed": 122,
+        "failed": 0
+      }
+    ],
+    "manifestEntries": 1033,
+    "absentCommittedPaths": [
+      "src/borders.test.ts",
+      "src/css-flex.test.ts",
+      "src/css-flow.test.ts",
+      "src/css-math.test.ts",
+      "src/css-variables.test.ts",
+      "src/flex-column-wrap.test.ts",
+      "src/flex-column.test.ts",
+      "src/flex-document.test.ts",
+      "src/flex-nested.test.ts",
+      "src/font-relative-box.test.ts",
+      "src/inline-block.test.ts",
+      "src/inline-borders.test.ts",
+      "src/inline-flex.test.ts",
+      "src/page-base64.test.ts",
+      "src/portable-boundary.test.ts",
+      "src/reference-images.test.ts",
+      "src/reference-renderer.test.ts",
+      "src/relative-positioning.test.ts",
+      "src/response-archive.test.ts",
+      "src/select-keyboard.test.ts",
+      "src/select-typeahead.test.ts",
+      "src/stacking-order.test.ts"
+    ]
+  },
+  "negatives": [
+    {
+      "label": "red01",
+      "execution": {
+        "label": "red01",
+        "pid": 2485812,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.4648667983710766,
+        "passedTests": 55,
+        "failedTests": 2,
+        "files": 1,
+        "homeEntries": [],
+        "tmpEntries": []
+      },
+      "overlay": {
+        "root": "/tmp/agent-browser-websocket-negative-YktcYE/candidate",
+        "privateRoot": "/tmp/agent-browser-websocket-negative-YktcYE",
+        "environment": "/tmp/agent-browser-websocket-negative-YktcYE/environment",
+        "selected": [
+          "src/node-websocket-connection.test.ts"
+        ],
+        "negativeControl": "Qualified core01 connection before early oversized-string rejection, plus the final new test file",
+        "unchangedConnectionSha256": "373257e581c35ece5e7bc885d7862de52556c3f779148c568745b20803753ce7",
+        "testSha256": "18cccd46e1f0c361308daa576e3f315f2f50e11493cbfc92bfba389940050380"
+      },
+      "failures": [
+        {
+          "file": "node-websocket-connection.test.ts",
+          "name": "native WebSocket resource bounds rejects oversized text before scanning its UTF-8 byte length",
+          "reason": "AssertionError: expected true to be false // Object.is equality"
+        },
+        {
+          "file": "node-websocket-connection.test.ts",
+          "name": "native WebSocket resource bounds rejects oversized close text before scanning its UTF-8 byte length",
+          "reason": "AssertionError: expected true to be false // Object.is equality"
+        }
+      ]
+    },
+    {
+      "label": "red02",
+      "execution": {
+        "label": "red02",
+        "pid": 2501713,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.7152572926133871,
+        "passedTests": 0,
+        "failedTests": 7,
+        "files": 2,
+        "homeEntries": [],
+        "tmpEntries": []
+      },
+      "overlay": {
+        "root": "/tmp/agent-browser-websocket-review-negative-l4dmzQ/candidate",
+        "privateRoot": "/tmp/agent-browser-websocket-review-negative-l4dmzQ",
+        "environment": "/tmp/agent-browser-websocket-review-negative-l4dmzQ/environment",
+        "selected": [
+          "src/node-websocket-connection.test.ts",
+          "src/node-websocket-transport.test.ts"
+        ],
+        "testNamePattern": "bounds pending write tasks|bounds tiny pong tasks|disables header extraction truncation|rejects a trailing",
+        "negativeControl": "Frozen core02 production before P1/P2 fixes, with final core04 test files; run only the seven new review regression cases",
+        "testHashes": {
+          "src/node-websocket-connection.test.ts": "fdb02f242aac1e7fb1c367bb114abfadc8b07bd5996f08bd74ed3ea442074bb3",
+          "src/node-websocket-transport.test.ts": "9c0fc347d08c67ebb09393ebf1eabed5a2488552a920b2c144afa34a3eef33b7"
+        }
+      },
+      "failures": [
+        {
+          "file": "node-websocket-connection.test.ts",
+          "name": "native WebSocket resource bounds bounds pending write tasks independently of their wire bytes",
+          "reason": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 0 times"
+        },
+        {
+          "file": "node-websocket-connection.test.ts",
+          "name": "native WebSocket resource bounds bounds tiny pong tasks across pushes and settles all work on overflow",
+          "reason": "AssertionError: expected { state: 'open', …(5) } to match object { state: 'open', …(2) }"
+        },
+        {
+          "file": "node-websocket-transport.test.ts",
+          "name": "mocked WebSocket HTTP upgrade disables header extraction truncation before ending the request to ws://chat.example/room",
+          "reason": "AssertionError: expected null to be +0 // Object.is equality"
+        },
+        {
+          "file": "node-websocket-transport.test.ts",
+          "name": "mocked WebSocket HTTP upgrade disables header extraction truncation before ending the request to wss://chat.example/room",
+          "reason": "AssertionError: expected null to be +0 // Object.is equality"
+        },
+        {
+          "file": "node-websocket-transport.test.ts",
+          "name": "upgrade rejection and request cleanup rejects a trailing extension after many short headers with modeled count extraction",
+          "reason": "Error: promise resolved \"NodeWebSocketConnection{ …(26) }\" instead of rejecting"
+        },
+        {
+          "file": "node-websocket-transport.test.ts",
+          "name": "upgrade rejection and request cleanup rejects a trailing unoffered protocol after many short headers with modeled count extraction",
+          "reason": "Error: promise resolved \"NodeWebSocketConnection{ …(26) }\" instead of rejecting"
+        },
+        {
+          "file": "node-websocket-transport.test.ts",
+          "name": "upgrade rejection and request cleanup rejects a trailing duplicate accept after many short headers with modeled count extraction",
+          "reason": "Error: promise resolved \"NodeWebSocketConnection{ …(26) }\" instead of rejecting"
+        }
+      ]
+    }
+  ],
+  "preservedFailedQualification": {
+    "label": "core03",
+    "pid": 2498835,
+    "exitCode": 1,
+    "timedOut": false,
+    "signals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 4.1220978535711765,
+    "passedTests": 679,
+    "failedTests": 1,
+    "files": 7,
+    "homeEntries": [],
+    "tmpEntries": []
+  },
+  "originalReview": {
+    "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/websocket-connections-september17/REVIEW.md",
+    "sha256": "13211e3b0df3f0706722268866b585bc8edefbccfa45bc66cfcfa1d97bb13de5"
+  },
+  "installedNodeSourceInspection": {
+    "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/websocket-connections-september17/NODE-HEADER-SOURCE.json",
+    "sha256": "eafcc2c58232da45fc0f36e9764ca18b0046fec6443f14e99ae0c96c9a54cd93",
+    "scope": "Source inspection only; no HTTP parser execution"
+  },
+  "historicalZoomLanding": {
+    "report": "reports/native-zoom-foundation-2026-09-17.json",
+    "sha256": "1e3ee6d41c72c4a7593a9c87b6ef1ee449552b57e296aba07f553bd8f127494d",
+    "repeated": false
+  },
+  "unqualified": [
+    "actual TCP/TLS and HTTP parser boundaries",
+    "public-server WebSocket interoperability",
+    "page WebSocket events, document origin/CSP, binary ownership/retention",
+    "actual SafeJS runtime",
+    "HTML module execution",
+    "native media transport/decode/PCM",
+    "Zoom meeting admission and sustained audio",
+    "durable recording, transcript, summary and verified requested delivery"
+  ],
+  "evidenceLane": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/websocket-connections-september17",
+  "pushed": false,
+  "reviewFollowup": {
+    "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/websocket-connections-september17/REVIEW-FOLLOWUP.md",
+    "sha256": "f4d72c7b32f5192a5c1ea4e2456d5c7c821bdb6ede91346e132b0ab8f51a8eeb",
+    "disposition": "Both original findings addressed; no new blocking issue in the scoped static review; core04 production bytes identical to inspected core03"
+  }
+}

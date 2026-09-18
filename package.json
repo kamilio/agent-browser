@@ -12,6 +12,10 @@
 			"types": "./dist/src/node-transport.d.ts",
 			"import": "./dist/src/node-transport.js"
 		},
+		"./node-websocket": {
+			"types": "./dist/src/node-websocket-transport.d.ts",
+			"import": "./dist/src/node-websocket-transport.js"
+		},
 		"./node-secrets": {
 			"types": "./dist/src/node-secret-providers.d.ts",
 			"import": "./dist/src/node-secret-providers.js"

@@ -13,6 +13,13 @@ export interface DecodedNativeWebSocketFrame {
 	readonly bytesConsumed: number;
 }
 
+export interface NativeWebSocketServerFrameHeader {
+	readonly fin: boolean;
+	readonly opcode: NativeWebSocketOpcode;
+	readonly payloadLength: number;
+	readonly headerLength: number;
+}
+
 function validateBound(maxFramePayloadBytes: number): void {
 	if (!Number.isSafeInteger(maxFramePayloadBytes) || maxFramePayloadBytes < 1)
 		throw new AgentBrowserError(
@@ -57,10 +64,10 @@ function payloadLimit(): never {
 	);
 }
 
-export function decodeNativeWebSocketServerFrame(
+export function inspectNativeWebSocketServerFrameHeader(
 	input: Uint8Array,
 	maxFramePayloadBytes: number,
-): DecodedNativeWebSocketFrame | undefined {
+): NativeWebSocketServerFrameHeader | undefined {
 	validateBound(maxFramePayloadBytes);
 	if (!(input instanceof Uint8Array))
 		throw new AgentBrowserError("invalid-input", "Expected WebSocket bytes");
@@ -113,6 +120,19 @@ export function decodeNativeWebSocketServerFrame(
 		payloadLength = Number(declaredLength);
 	}
 	if (payloadLength > maxFramePayloadBytes) payloadLimit();
+	return { fin, opcode, payloadLength, headerLength };
+}
+
+export function decodeNativeWebSocketServerFrame(
+	input: Uint8Array,
+	maxFramePayloadBytes: number,
+): DecodedNativeWebSocketFrame | undefined {
+	const header = inspectNativeWebSocketServerFrameHeader(
+		input,
+		maxFramePayloadBytes,
+	);
+	if (!header) return undefined;
+	const { fin, opcode, payloadLength, headerLength } = header;
 	if (payloadLength > input.length - headerLength) return undefined;
 	const bytesConsumed = headerLength + payloadLength;
 	const payload = new Uint8Array(payloadLength);

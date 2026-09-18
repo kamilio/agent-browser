@@ -6,6 +6,7 @@ import {
 	type NativeWebSocketOpcode,
 	decodeNativeWebSocketServerFrame,
 	encodeNativeWebSocketClientFrame,
+	inspectNativeWebSocketServerFrameHeader,
 } from "./websocket-frames.js";
 
 const maskingKey = new Uint8Array([0x37, 0xfa, 0x21, 0x3d]);
@@ -34,6 +35,117 @@ function serverBytes(header: number[], payload: Uint8Array): Uint8Array {
 	bytes.set(payload, header.length);
 	return bytes;
 }
+
+describe("native no-extensions server frame header inspection", () => {
+	it.each(transitions)(
+		"admits a $length-byte payload from its header alone",
+		({ length, header }) => {
+			const bytes = new Uint8Array(header);
+			for (let end = 0; end < bytes.length; end++)
+				expect(
+					inspectNativeWebSocketServerFrameHeader(
+						bytes.subarray(0, end),
+						Math.max(1, length),
+					),
+				).toBeUndefined();
+			expect(
+				inspectNativeWebSocketServerFrameHeader(bytes, Math.max(1, length)),
+			).toEqual({
+				fin: true,
+				opcode: 2,
+				payloadLength: length,
+				headerLength: header.length,
+			});
+			expect(Array.from(bytes)).toEqual(header);
+		},
+	);
+
+	it("inspects a header without consuming or validating the body", () => {
+		const bytes = new Uint8Array([0x01, 2, 255, 255, 0xff]);
+		expect(inspectNativeWebSocketServerFrameHeader(bytes, 2)).toEqual({
+			fin: false,
+			opcode: 1,
+			payloadLength: 2,
+			headerLength: 2,
+		});
+	});
+
+	it.each([
+		{ header: [0xc1] },
+		{ header: [0x83] },
+		{ header: [0x09] },
+		{ header: [0x81, 0x80] },
+		{ header: [0x88, 1] },
+		{ header: [0x89, 126] },
+		{ header: [0x8a, 127] },
+		{ header: [0x82, 126, 0, 125] },
+		{ header: [0x82, 127, 0x80] },
+		{ header: [0x82, 127, 0, 0, 0, 0, 0, 0, 255, 255] },
+	])("preserves early header errors: $header", ({ header }) => {
+		expectCode(
+			() =>
+				inspectNativeWebSocketServerFrameHeader(new Uint8Array(header), 65536),
+			"network-error",
+		);
+	});
+
+	it.each(transitions.filter(({ length }) => length > 1))(
+		"rejects an over-bound $length-byte declaration without a body",
+		({ length, header }) => {
+			expectCode(
+				() =>
+					inspectNativeWebSocketServerFrameHeader(
+						new Uint8Array(header),
+						length - 1,
+					),
+				"resource-limit",
+			);
+		},
+	);
+
+	it("returns a maximum-safe payload length without allocating its body", () => {
+		const bytes = new Uint8Array([
+			0x82, 127, 0, 0x1f, 255, 255, 255, 255, 255, 255,
+		]);
+		expect(
+			inspectNativeWebSocketServerFrameHeader(bytes, Number.MAX_SAFE_INTEGER),
+		).toEqual({
+			fin: true,
+			opcode: 2,
+			payloadLength: Number.MAX_SAFE_INTEGER,
+			headerLength: 10,
+		});
+		expectCode(
+			() =>
+				inspectNativeWebSocketServerFrameHeader(
+					new Uint8Array([0x82, 127, 0, 0x20, 0, 0, 0, 0, 0, 0]),
+					Number.MAX_SAFE_INTEGER,
+				),
+			"resource-limit",
+		);
+	});
+
+	it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, 2 ** 53])(
+		"rejects invalid inspection bound %s",
+		(bound) => {
+			expectCode(
+				() => inspectNativeWebSocketServerFrameHeader(new Uint8Array(), bound),
+				"invalid-input",
+			);
+		},
+	);
+
+	it("requires byte input", () => {
+		expectCode(
+			() =>
+				inspectNativeWebSocketServerFrameHeader(
+					[0x82, 0] as unknown as Uint8Array,
+					1,
+				),
+			"invalid-input",
+		);
+	});
+});
 
 describe("native no-extensions server frame decoding", () => {
 	it.each(transitions)(

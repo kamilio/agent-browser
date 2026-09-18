@@ -6,6 +6,31 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Native WebSocket host connections: prerequisite, not Zoom completion
+
+- Implement a no-new-dependency Node host transport, strict opening handshake,
+  incremental receive/message assembly, masked/fragmented sends, bounded queues,
+  ping/pong, close/abort and deadlines. Export agent-browser/node-websocket.
+- Review fixes separately bound pending write tasks and retain all response
+  headers within the byte cap before validating extensions/protocol/accept.
+  Preserve the original review and negative regressions, not just green flags.
+- Isolated native qualification uses in-memory streams, mocked HTTP(S), injected
+  DNS and fake timers: final680/0 in7 files; build/types/format/lint pass. All7
+  review regressions fail against the prior implementation and pass finally.
+  This does not qualify actual sockets, TLS or HTTP parser
+  integration. Source inspection is not execution of the parser boundary.
+- Next integrate the page event/binary/retention bridge with document-owned
+  origin/CSP, then separately qualify actual SafeJS and socket interoperability.
+  Keep module execution and receive-media/decode/PCM work explicit. A host
+  transport alone cannot admit a Zoom participant or produce a recording.
+- Actual Zoom join, permitted sustained audio, durable recording, transcript,
+  summary and verified requested delivery remain unimplemented/unverified.
+  No additional live request or meeting/audio/credential/device action occurs
+  in this phase. Critically low disk space remains a recording blocker.
+- Preserve unrelated CSS selector work, historical website evidence and open
+  research/credentials/passkey gates. See NATIVE-WEBSOCKET.md and
+  reports/native-websocket-connections-2026-09-17.md/JSON for exact qualification.
+
 ### Build native Zoom participation and notetaking, not a browser fallback
 
 - User requests the Zoom workflow performed by ~/automations. Keep the full

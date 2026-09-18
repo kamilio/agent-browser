@@ -1,4 +1,8 @@
 [
+	"src/websocket-receiver.test.ts",
+	"src/node-websocket-handshake.test.ts",
+	"src/node-websocket-connection.test.ts",
+	"src/node-websocket-transport.test.ts",
 	"src/websocket-frames.test.ts",
 	"src/css-variable-resolution-cache.test.ts",
 	"src/css-variable-retention.test.ts",
