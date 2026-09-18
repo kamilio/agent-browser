@@ -36,6 +36,7 @@ export interface ExtensionPageRuntimeOptions {
 	classicScripts?: boolean;
 	callbackScheduling?: "after-prefix";
 	stringCompilation?: "allow" | "deny";
+	domExpandos?: "bounded-v1";
 	sourceModules?: PageSourceModuleOptions;
 	networkSourceModules?: PageNetworkModuleOptions;
 }
@@ -86,6 +87,19 @@ export function extensionPageRuntime(
 			"invalid-input",
 			"Invalid extension page runtime options",
 		);
+	const expandoDescriptor = Object.getOwnPropertyDescriptor(
+		configuration,
+		"domExpandos",
+	);
+	if (
+		expandoDescriptor
+			? !Object.hasOwn(expandoDescriptor, "value") ||
+				!expandoDescriptor.enumerable ||
+				expandoDescriptor.value !== "bounded-v1"
+			: "domExpandos" in configuration
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid DOM expando policy");
+	const domExpandos = expandoDescriptor ? "bounded-v1" : undefined;
 	const stringPolicyDescriptor = Object.getOwnPropertyDescriptor(
 		configuration,
 		"stringCompilation",
@@ -279,7 +293,7 @@ export function extensionPageRuntime(
 						notifyClosed();
 						ensureOpen();
 					}
-					const globals = options.setup({
+					const pageContext: Parameters<typeof options.setup>[0] = {
 						nestedOperation: (operation) => {
 							ensureOpen();
 							if (setupComplete || typeof owner.nestedOperation !== "function")
@@ -302,7 +316,13 @@ export function extensionPageRuntime(
 						releaseGuestReference: (reference) => {
 							if (!closed) owner.releaseGuestReference(reference);
 						},
-					});
+					};
+					if (domExpandos)
+						Object.defineProperty(pageContext, "domExpandos", {
+							value: domExpandos,
+							enumerable: true,
+						});
+					const globals = options.setup(pageContext);
 					setupComplete = true;
 					return { globals: windowGlobal?.install(owner, globals) ?? globals };
 				},

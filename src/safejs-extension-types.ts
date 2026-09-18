@@ -20,6 +20,11 @@ export interface ReleasedInvocation {
 }
 
 export interface ReleasedHostDefinition {
+	expandos?: {
+		maxKeys: number;
+		maxKeyCodeUnits: number;
+		assertActive?: () => void;
+	};
 	properties?: Record<
 		string,
 		{ get?: () => unknown; set?: (value: unknown) => void }

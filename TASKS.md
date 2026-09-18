@@ -76,6 +76,22 @@ evidence for newly wired document CSP. Full Zoom policy admission and active
 resource enforcement remain open. These changes do not fix the observed jQuery
 host-object expando failure; its dedicated SDK implementation remains active.
 
+September18,17:13UTC: bounded native DOM expandos are qualified as an explicit
+extension runtime opt-in, not a default or installed SDK upgrade. Only published
+native node capabilities receive64 guest keys/4096 aggregate key units, guarded
+by actual publication/owner lifetime. Guest values and retention accounting stay
+inside SafeJS. Parent native union passes3150 tests in65 files at
+`/tmp/agent-browser-dom-expandos-union01-b8ncDG/candidate`,33.740348s. Build/types/
+format pass; touched-file lint retains one independently reproduced pre-existing
+script-dom.ts noAssignInExpressions finding. The matching private SDK candidate
+at `/tmp/agent-browser-sdk-dom-expandos-BqM3JX` passes1516 tests in102 files and
+strict core/node build; it is not an upstream package installation. See
+DOM-EXPANDOS.md. The combined original captured join bootstrap/dependency replay
+is active at `/tmp/agent-browser-zoom-join-dependency-recovery-xtNvCr/stage01`.
+Its harness types pass after correcting type discovery and module mode; the two
+earlier compiler failures are preserved. No publisher recovery or join success
+is claimed before that actual runtime gate completes.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,

@@ -93,6 +93,11 @@ function reflectedTagName(node: Readonly<DocumentNode>): string {
 }
 
 export interface ScriptHostObjectDefinition {
+	expandos?: {
+		maxKeys: number;
+		maxKeyCodeUnits: number;
+		assertActive?: () => void;
+	};
 	named?: {
 		maxKeys: number;
 		maxKeyCodeUnits: number;
@@ -115,6 +120,7 @@ export interface ScriptHostObjectDefinition {
 }
 
 export interface ScriptHostObjectFactory {
+	readonly domExpandos?: "bounded-v1";
 	createHostObject(definition: ScriptHostObjectDefinition): object;
 }
 

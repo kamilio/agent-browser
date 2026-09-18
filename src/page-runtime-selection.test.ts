@@ -18,6 +18,84 @@ class Budget {
 	peakDataSize = 0;
 }
 
+it("snapshots explicit DOM expandos without forwarding a realm option", async () => {
+	const test = extensionFixture();
+	const requested = { domExpandos: "bounded-v1" as const };
+	const selected = selectPageRuntime(test.core, "extension", requested);
+	expect(selected.runtimeOptions).toEqual({ domExpandos: "bounded-v1" });
+	expect(Object.isFrozen(selected.runtimeOptions)).toBe(true);
+	Object.assign(requested, { domExpandos: "changed" });
+	const setup = vi.fn((context: Parameters<PageRuntimeOptions["setup"]>[0]) => {
+		expect(Object.getOwnPropertyDescriptor(context, "domExpandos")).toEqual({
+			value: "bounded-v1",
+			writable: false,
+			configurable: false,
+			enumerable: true,
+		});
+		return { console: context.createHostObject({ methods: {} }) };
+	});
+	const runtime = selected.factory.createPageRuntime({ ...options(), setup });
+	try {
+		await runtime.initialize();
+		expect(setup).toHaveBeenCalledOnce();
+		expect(test.core.createRealm.mock.calls[0][0]).not.toHaveProperty(
+			"domExpandos",
+		);
+	} finally {
+		await runtime.close();
+	}
+});
+
+it.each([
+	undefined,
+	null,
+	true,
+	false,
+	1,
+	"",
+	"allow",
+	{},
+	[],
+	new String("bounded-v1"),
+])(
+	"rejects malformed serialized DOM expando selection %j before reading the core",
+	(domExpandos) => {
+		const getter = vi.fn();
+		const core = Object.defineProperty({}, "Budget", { get: getter });
+		expect(() =>
+			selectPageRuntime(core, "extension", {
+				domExpandos,
+			} as PageRuntimeConfiguration),
+		).toThrow(/runtime/);
+		expect(getter).not.toHaveBeenCalled();
+	},
+);
+
+it("rejects inherited, accessor and hidden DOM expando configuration without getters", () => {
+	const getter = vi.fn(() => "bounded-v1");
+	for (const configuration of [
+		Object.create({ domExpandos: "bounded-v1" }),
+		Object.create(Object.defineProperty({}, "domExpandos", { get: getter })),
+		Object.defineProperty({}, "domExpandos", { get: getter, enumerable: true }),
+		Object.defineProperty({}, "domExpandos", { value: "bounded-v1" }),
+	]) {
+		const core = Object.defineProperty({}, "Budget", { get: getter });
+		expect(() => selectPageRuntime(core, "extension", configuration)).toThrow(
+			/runtime/,
+		);
+	}
+	expect(getter).not.toHaveBeenCalled();
+});
+
+it("refuses legacy DOM expando selection before reading or allocating a core", () => {
+	const getter = vi.fn();
+	const core = Object.defineProperty({}, "Budget", { get: getter });
+	expect(() =>
+		selectPageRuntime(core, "legacy", { domExpandos: "bounded-v1" }),
+	).toThrow(/extension/);
+	expect(getter).not.toHaveBeenCalled();
+});
+
 it.each([
 	{ classicScripts: true },
 	{ classicScripts: false },

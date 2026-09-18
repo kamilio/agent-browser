@@ -222,6 +222,151 @@ function policyPageOptions(
 	);
 }
 
+it.each([undefined, "bounded-v1"] as const)(
+	"snapshots factory DOM expandos %s as an immutable internal marker",
+	async (domExpandos) => {
+		const shared = fakeCore();
+		const configuration: ExtensionPageRuntimeOptions = domExpandos
+			? { domExpandos }
+			: {};
+		const factory = extensionPageRuntime(shared.core, configuration);
+		Object.assign(configuration, {
+			domExpandos: domExpandos ? undefined : "bounded-v1",
+		});
+		const setup = vi.fn(
+			(context: Parameters<PageRuntimeOptions["setup"]>[0]) => {
+				if (domExpandos)
+					expect(
+						Object.getOwnPropertyDescriptor(context, "domExpandos"),
+					).toEqual({
+						value: "bounded-v1",
+						enumerable: true,
+						writable: false,
+						configurable: false,
+					});
+				else expect(Object.hasOwn(context, "domExpandos")).toBe(false);
+				return { console: context.createHostObject({ methods: {} }) };
+			},
+		);
+		const runtime = factory.createPageRuntime({
+			...policyPageOptions(),
+			setup,
+		});
+		pageRuntimes.push(runtime);
+		await runtime.initialize();
+		expect(setup).toHaveBeenCalledOnce();
+		expect(shared.realms[0].options).not.toHaveProperty("domExpandos");
+	},
+);
+
+it.each([
+	undefined,
+	null,
+	true,
+	false,
+	1,
+	"",
+	"allow",
+	{},
+	[],
+	new String("bounded-v1"),
+])(
+	"rejects explicit malformed factory DOM expandos %j without SDK allocation",
+	(domExpandos) => {
+		const shared = fakeCore();
+		expect(() =>
+			extensionPageRuntime(shared.core, {
+				domExpandos,
+			} as ExtensionPageRuntimeOptions),
+		).toThrow(/expando/i);
+		expect(shared.budgetOptions).toEqual([]);
+		expect(shared.defineExtension).not.toHaveBeenCalled();
+		expect(shared.createRealm).not.toHaveBeenCalled();
+	},
+);
+
+it("rejects inherited, accessor and hidden factory DOM expandos without getters", () => {
+	const getter = vi.fn(() => "bounded-v1");
+	const shared = fakeCore();
+	for (const configuration of [
+		Object.create({ domExpandos: "bounded-v1" }),
+		Object.create(Object.defineProperty({}, "domExpandos", { get: getter })),
+		Object.defineProperty({}, "domExpandos", { get: getter, enumerable: true }),
+		Object.defineProperty({}, "domExpandos", { value: "bounded-v1" }),
+	])
+		expect(() => extensionPageRuntime(shared.core, configuration)).toThrow(
+			/expando/i,
+		);
+	expect(getter).not.toHaveBeenCalled();
+	expect(shared.budgetOptions).toEqual([]);
+	expect(shared.defineExtension).not.toHaveBeenCalled();
+	expect(shared.createRealm).not.toHaveBeenCalled();
+});
+
+it.each([undefined, "bounded-v1"] as const)(
+	"forwards node-only DOM metadata for %s and keeps other capabilities fixed",
+	async (domExpandos) => {
+		const test = fixture(fakeCore(), 1000, domExpandos ? { domExpandos } : {});
+		const create = vi.spyOn(test.state.context, "createHostObject");
+		await test.scripts.evaluate("initialize");
+		const definitions = create.mock.calls.map(([definition]) => definition);
+		const nodes = definitions.filter(
+			(definition) => definition.properties?.nodeType,
+		);
+		const fixed = definitions.filter(
+			(definition) => !definition.properties?.nodeType,
+		);
+		expect(nodes.length).toBeGreaterThan(0);
+		expect(fixed.length).toBeGreaterThan(0);
+		for (const definition of nodes) {
+			if (domExpandos) {
+				expect(definition.expandos).toEqual({
+					maxKeys: 64,
+					maxKeyCodeUnits: 4096,
+					assertActive: expect.any(Function),
+				});
+				expect(definition.expandos?.assertActive?.()).toBeUndefined();
+			} else expect(Object.hasOwn(definition, "expandos")).toBe(false);
+		}
+		for (const definition of fixed)
+			expect(Object.hasOwn(definition, "expandos")).toBe(false);
+		await test.scripts.close();
+		if (domExpandos)
+			for (const definition of nodes)
+				expect(() => definition.expandos?.assertActive?.()).toThrow();
+		expect(test.state.objectCount).toBe(0);
+		expect(test.state.disposals).toBe(1);
+	},
+);
+
+it("closes without fallback when the SDK mock rejects requested node expandos", async () => {
+	const test = fixture(fakeCore(), 1000, { domExpandos: "bounded-v1" });
+	const create = test.state.context.createHostObject;
+	const rejected: Parameters<ReleasedContext["createHostObject"]>[0][] = [];
+	vi.spyOn(test.state.context, "createHostObject").mockImplementation(
+		(definition) => {
+			if (Object.hasOwn(definition, "expandos")) {
+				rejected.push(definition);
+				throw new Error("Unknown host definition field: expandos");
+			}
+			return create(definition);
+		},
+	);
+	await expect(test.scripts.evaluate("must not start")).resolves.toMatchObject({
+		ok: false,
+		error: { code: "script-error" },
+	});
+	expect(rejected).toHaveLength(1);
+	expect(() => rejected[0].expandos?.assertActive?.()).toThrow();
+	expect(test.createRealm).toHaveBeenCalledOnce();
+	expect(test.state.evaluate).toHaveBeenCalledOnce();
+	expect(test.state.objectCount).toBe(0);
+	expect(test.state.disposals).toBe(1);
+	expect(test.scripts.metrics().active).toBe(false);
+	await test.scripts.close();
+	expect(test.state.disposals).toBe(1);
+});
+
 it.each([
 	[undefined, undefined, undefined],
 	[undefined, "allow", "allow"],

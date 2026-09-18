@@ -22,6 +22,7 @@ export class ScriptNodePublications {
 	private closed = false;
 	private published = 0;
 	private failed = 0;
+	private readonly domExpandos: boolean;
 
 	constructor(
 		private readonly factory: ScriptHostObjectFactory,
@@ -35,6 +36,7 @@ export class ScriptNodePublications {
 				"invalid-input",
 				"Invalid script publication provider",
 			);
+		this.domExpandos = factory.domExpandos === "bounded-v1";
 	}
 
 	pending(kind: PublicationKind) {
@@ -102,6 +104,17 @@ export class ScriptNodePublications {
 			};
 		try {
 			const guarded: ScriptHostObjectDefinition = {
+				...(this.domExpandos && kind === "node"
+					? {
+							expandos: {
+								maxKeys: 64,
+								maxKeyCodeUnits: 4096,
+								assertActive: () => {
+									read();
+								},
+							},
+						}
+					: {}),
 				...(definition.properties
 					? {
 							properties: Object.fromEntries(

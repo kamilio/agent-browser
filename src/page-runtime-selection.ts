@@ -13,6 +13,7 @@ export interface PageRuntimeConfiguration {
 	classicScripts?: boolean;
 	callbackScheduling?: "after-prefix";
 	stringCompilation?: "allow" | "deny";
+	domExpandos?: "bounded-v1";
 }
 
 export interface PageRuntimeSelection {
@@ -66,7 +67,8 @@ export function pageRuntimeConfiguration(
 		if (
 			key !== "classicScripts" &&
 			key !== "callbackScheduling" &&
-			key !== "stringCompilation"
+			key !== "stringCompilation" &&
+			key !== "domExpandos"
 		)
 			throw invalid();
 		const descriptor = descriptors[key];
@@ -77,11 +79,13 @@ export function pageRuntimeConfiguration(
 			(key === "callbackScheduling" && descriptor.value !== "after-prefix") ||
 			(key === "stringCompilation" &&
 				descriptor.value !== "allow" &&
-				descriptor.value !== "deny")
+				descriptor.value !== "deny") ||
+			(key === "domExpandos" && descriptor.value !== "bounded-v1")
 		)
 			throw invalid();
 	}
 	const runtimeOptions: PageRuntimeConfiguration = {
+		...(descriptors.domExpandos ? { domExpandos: "bounded-v1" as const } : {}),
 		...(descriptors.classicScripts
 			? { classicScripts: descriptors.classicScripts.value as boolean }
 			: {}),

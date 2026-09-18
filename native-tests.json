@@ -1,4 +1,5 @@
 [
+	"src/script-node-expandos.test.ts",
 	"src/script-loading-options.test.ts",
 	"src/node-script-profile.test.ts",
 	"src/page-urls.test.ts",
