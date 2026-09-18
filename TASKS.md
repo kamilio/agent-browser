@@ -6,6 +6,32 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Avoid repeated base-URL scans and check two more websites
+
+- Profile three pinned source replays; HN repeatedly scans its whole document
+  for an absent base href. Cache one result per weak document key, invalidating
+  on revision and mutation-notification changes. Preserve first-base rules,
+  synchronous mutation callback observations, closed errors and failed scans;
+  add no subscriptions, dependencies, resource-limit changes or network behavior.
+- Final native578/0 in13 explicit files, including37 added cases; build/types/
+  format/lint pass. Old production with identical final tests:27 passes/30
+  expected cache-contract failures. Preserve the initial native578/0 plus test
+  lint failure and two parent invocation errors before any child was spawned.
+- Twelve sequential zero-network benchmark children,10 measured warm samples
+  per fixture/flavor: HN842.93→163.56ms, GitHub28.57→13.56ms,
+  Python45.63→19.91ms median repeated pagination. Full page output is identical;
+  no network/cold-start/universal-speedup or statistical-significance claim.
+- Two one-shot native reads September18: docs.rs Tokio200/60566 body bytes/
+  31761 Markdown bytes; Stack Overflow403 with confirmed cf-mitigated challenge,
+  zero content, stopped without retries or solving. Access friction remains open.
+- Captured Tokio inspection verifies23 source headings and5 code blocks;
+  #main-content yields23992 Markdown bytes, retaining every code block. Baseline
+  and candidate focused artifacts are byte-identical. Preserve the initial
+  inspection's unsupported native CLI flag error; no publisher refetch.
+- See reports/base-url-cache-2026-09-18.md/JSON. Selected immutable qualification
+  does not establish full-worktree/SDK/Zoom/media/credential/passkey acceptance.
+  No meeting join, recording, transcription or delivery; overall goal remains open.
+
 ### Share reader provenance once per extraction page
 
 - Add opt-in `extract-page --reader-metadata=page` and library

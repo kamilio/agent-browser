@@ -1,6 +1,11 @@
 import type { DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 
+const baseUrlCache = new WeakMap<
+	DocumentTree,
+	{ revision: number; notifications: number; url: string }
+>();
+
 export function canRewriteDocumentUrl(current: URL, target: URL) {
 	if (
 		(["protocol", "username", "password", "hostname", "port"] as const).some(
@@ -51,19 +56,28 @@ export function selectDocumentFragmentTarget(
 }
 
 export function documentBaseUrl(tree: DocumentTree) {
+	tree.get(tree.root);
+	const revision = tree.revision;
+	const notifications = tree.mutationMetrics().notifications;
+	const cached = baseUrlCache.get(tree);
+	if (cached?.revision === revision && cached.notifications === notifications)
+		return cached.url;
+	let baseUrl = tree.url;
 	for (const { node } of tree.walk()) {
 		if (!isHtmlElement(node, "base") || !Object.hasOwn(node.attributes, "href"))
 			continue;
 		try {
 			const url = new URL(node.attributes.href, tree.url);
-			return ["data:", "javascript:"].includes(url.protocol)
+			baseUrl = ["data:", "javascript:"].includes(url.protocol)
 				? tree.url
 				: url.href;
 		} catch {
-			return tree.url;
+			baseUrl = tree.url;
 		}
+		break;
 	}
-	return tree.url;
+	baseUrlCache.set(tree, { revision, notifications, url: baseUrl });
+	return baseUrl;
 }
 
 export function documentBaseTarget(tree: DocumentTree) {
