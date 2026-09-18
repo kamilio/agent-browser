@@ -4,6 +4,10 @@ const runtime = vi.hoisted(() => ({
 	connection: undefined as object | undefined,
 	configured: vi.fn(),
 	closed: vi.fn(async () => {}),
+	secrets: vi.fn(async () => undefined),
+	load: vi.fn(() => {
+		throw new Error("Unexpected SDK import");
+	}),
 	request: vi.fn(() => {
 		throw new Error("Unexpected network request");
 	}),
@@ -15,6 +19,10 @@ const runtime = vi.hoisted(() => ({
 	}),
 }));
 vi.mock("node:child_process", () => ({ spawn: runtime.spawn }));
+vi.mock("./node-secret-config.js", () => ({
+	loadSecretConfig: runtime.secrets,
+}));
+vi.mock("./node-page-core.js", () => ({ loadPageRuntime: runtime.load }));
 vi.mock("./node-command-client.js", () => ({
 	requestCommand: runtime.request,
 	approvePlayground: vi.fn(),
@@ -50,6 +58,9 @@ beforeEach(() => {
 	runtime.connection = undefined;
 	for (const name of [
 		"AGENT_BROWSER_SAFEJS_ROOT",
+		"AGENT_BROWSER_SCRIPT_BUDGET_PROFILE",
+		"AGENT_BROWSER_COMMAND_TIMEOUT_MS",
+		"AGENT_BROWSER_COOKIE_POLICY",
 		"AGENT_BROWSER_PAGE_RUNTIME",
 		"AGENT_BROWSER_PAGE_SCRIPTS",
 		"AGENT_BROWSER_PAGE_GLOBALS",
@@ -73,6 +84,7 @@ afterEach(() => {
 	expect(runtime.request).not.toHaveBeenCalled();
 	expect(runtime.listen).not.toHaveBeenCalled();
 	expect(runtime.spawn).not.toHaveBeenCalled();
+	expect(runtime.load).not.toHaveBeenCalled();
 });
 
 async function invoke() {
@@ -235,4 +247,201 @@ it.each([
 		},
 	});
 	expect(runtime.configured).not.toHaveBeenCalled();
+});
+
+it.each(["bounded-v1", "large-source-v1", "application-v1"])(
+	"forwards explicit CLI budget %s without implicitly enabling scripts or larger watchdogs",
+	async (budgetProfile) => {
+		vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", "/trusted/fixture");
+		vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", "extension");
+		vi.stubEnv("AGENT_BROWSER_SCRIPT_BUDGET_PROFILE", budgetProfile);
+		const { error } = await invoke();
+		expect(error).not.toHaveBeenCalled();
+		expect(runtime.configured).toHaveBeenCalledExactlyOnceWith({
+			process: {
+				packageRoot: "/trusted/fixture",
+				runtimeAdapter: "extension",
+				websiteScripts: undefined,
+				identity: { languages: ["en-US"] },
+				scripts: { budgetProfile },
+			},
+		});
+	},
+);
+
+it.each([undefined, "legacy", "extension"])(
+	"forwards an independently selected CLI command timeout with adapter %s",
+	async (adapter) => {
+		vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", "/trusted/fixture");
+		vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", adapter);
+		vi.stubEnv("AGENT_BROWSER_COMMAND_TIMEOUT_MS", "120000");
+		const { error } = await invoke();
+		expect(error).not.toHaveBeenCalled();
+		expect(runtime.configured).toHaveBeenCalledExactlyOnceWith({
+			process: {
+				packageRoot: "/trusted/fixture",
+				runtimeAdapter: adapter ?? "legacy",
+				websiteScripts: undefined,
+				identity: { languages: ["en-US"] },
+				commandTimeoutMs: 120000,
+			},
+		});
+	},
+);
+
+it("composes explicit profiles, timeout, website scripting, runtime semantics and cookie selector", async () => {
+	for (const [key, value] of Object.entries({
+		AGENT_BROWSER_SAFEJS_ROOT: "/trusted/fixture",
+		AGENT_BROWSER_PAGE_RUNTIME: "extension",
+		AGENT_BROWSER_SCRIPT_BUDGET_PROFILE: "application-v1",
+		AGENT_BROWSER_COMMAND_TIMEOUT_MS: "120000",
+		AGENT_BROWSER_PAGE_SCRIPTS: "classic",
+		AGENT_BROWSER_PAGE_GLOBALS: "classic",
+		AGENT_BROWSER_CALLBACK_SCHEDULING: "after-prefix",
+		AGENT_BROWSER_COOKIE_POLICY: "pinned-psl-v1",
+	}))
+		vi.stubEnv(key, value);
+	const { error } = await invoke();
+	expect(error).not.toHaveBeenCalled();
+	expect(runtime.configured).toHaveBeenCalledExactlyOnceWith({
+		process: {
+			packageRoot: "/trusted/fixture",
+			runtimeAdapter: "extension",
+			websiteScripts: "classic",
+			identity: { languages: ["en-US"] },
+			scripts: { budgetProfile: "application-v1" },
+			commandTimeoutMs: 120000,
+			runtimeOptions: {
+				classicScripts: true,
+				callbackScheduling: "after-prefix",
+			},
+			cookiePolicy: "pinned-psl-v1",
+		},
+	});
+});
+
+it.each([
+	["AGENT_BROWSER_SCRIPT_BUDGET_PROFILE", ""],
+	["AGENT_BROWSER_SCRIPT_BUDGET_PROFILE", "auto"],
+	["AGENT_BROWSER_SCRIPT_BUDGET_PROFILE", "application-v1 "],
+	["AGENT_BROWSER_COMMAND_TIMEOUT_MS", ""],
+	["AGENT_BROWSER_COMMAND_TIMEOUT_MS", "19"],
+	["AGENT_BROWSER_COMMAND_TIMEOUT_MS", "300001"],
+	["AGENT_BROWSER_COMMAND_TIMEOUT_MS", "Infinity"],
+	["AGENT_BROWSER_COMMAND_TIMEOUT_MS", "20.0"],
+	["AGENT_BROWSER_COMMAND_TIMEOUT_MS", "2e1"],
+])(
+	"rejects malformed CLI %s=%j before secrets, connection reuse, or process allocation",
+	async (key, value) => {
+		vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", "/trusted/fixture");
+		vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", "extension");
+		vi.stubEnv(key, value);
+		runtime.connection = {};
+		const { error } = await invoke();
+		expect(JSON.parse(error.mock.calls[0][0])).toMatchObject({
+			error: { code: "invalid-input", message: expect.stringContaining(key) },
+		});
+		expect(runtime.secrets).not.toHaveBeenCalled();
+		expect(runtime.configured).not.toHaveBeenCalled();
+	},
+);
+
+it.each([
+	"AGENT_BROWSER_SCRIPT_BUDGET_PROFILE",
+	"AGENT_BROWSER_COMMAND_TIMEOUT_MS",
+])("requires an explicit CLI SDK root for %s", async (key) => {
+	vi.stubEnv(key, key.includes("TIMEOUT") ? "20" : "application-v1");
+	const { error } = await invoke();
+	expect(JSON.parse(error.mock.calls[0][0])).toMatchObject({
+		error: {
+			code: "invalid-input",
+			message: expect.stringContaining("explicit SafeJS package root"),
+		},
+	});
+	expect(runtime.secrets).not.toHaveBeenCalled();
+	expect(runtime.configured).not.toHaveBeenCalled();
+});
+
+it.each([undefined, "legacy"])(
+	"requires explicit CLI extension adapter for profiles (%s)",
+	async (adapter) => {
+		vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", "/trusted/fixture");
+		vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", adapter);
+		vi.stubEnv("AGENT_BROWSER_SCRIPT_BUDGET_PROFILE", "application-v1");
+		const { error } = await invoke();
+		expect(JSON.parse(error.mock.calls[0][0])).toMatchObject({
+			error: {
+				code: "unsupported",
+				message: expect.stringContaining("extension"),
+			},
+		});
+		expect(runtime.secrets).not.toHaveBeenCalled();
+		expect(runtime.configured).not.toHaveBeenCalled();
+	},
+);
+
+it("rejects CLI reader budget-profile conflict before secrets or allocation", async () => {
+	vi.stubEnv("AGENT_BROWSER_DOCUMENT_PROFILE", "reader");
+	vi.stubEnv("AGENT_BROWSER_SCRIPT_BUDGET_PROFILE", "application-v1");
+	const { error } = await invoke();
+	expect(JSON.parse(error.mock.calls[0][0])).toMatchObject({
+		error: {
+			code: "invalid-input",
+			message: expect.stringContaining("Reader document profile"),
+		},
+	});
+	expect(runtime.secrets).not.toHaveBeenCalled();
+	expect(runtime.configured).not.toHaveBeenCalled();
+});
+
+it.each([
+	"AGENT_BROWSER_SCRIPT_BUDGET_PROFILE",
+	"AGENT_BROWSER_COMMAND_TIMEOUT_MS",
+	"AGENT_BROWSER_SAFEJS_ROOT",
+	"AGENT_BROWSER_PAGE_RUNTIME",
+	"AGENT_BROWSER_DOCUMENT_PROFILE",
+])(
+	"rejects accessor CLI %s before invoking it or loading secrets",
+	async (key) => {
+		const original = process.env;
+		const environment = {
+			...original,
+			AGENT_BROWSER_SAFEJS_ROOT: "/trusted/fixture",
+			AGENT_BROWSER_PAGE_RUNTIME: "extension",
+			AGENT_BROWSER_SCRIPT_BUDGET_PROFILE: "application-v1",
+			AGENT_BROWSER_COMMAND_TIMEOUT_MS: "120000",
+		};
+		const getter = vi.fn(() => "unused");
+		Object.defineProperty(environment, key, { get: getter, enumerable: true });
+		process.env = environment;
+		try {
+			const { error } = await invoke();
+			expect(JSON.parse(error.mock.calls[0][0])).toMatchObject({
+				error: { code: "invalid-input" },
+			});
+			expect(getter).not.toHaveBeenCalled();
+			expect(runtime.secrets).not.toHaveBeenCalled();
+			expect(runtime.configured).not.toHaveBeenCalled();
+		} finally {
+			process.env = original;
+		}
+	},
+);
+
+it("snapshots CLI selections before asynchronous secret configuration", async () => {
+	vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", "/trusted/fixture");
+	vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", "extension");
+	vi.stubEnv("AGENT_BROWSER_SCRIPT_BUDGET_PROFILE", "application-v1");
+	vi.stubEnv("AGENT_BROWSER_COMMAND_TIMEOUT_MS", "120000");
+	runtime.secrets.mockImplementationOnce(async () => {
+		vi.stubEnv("AGENT_BROWSER_SCRIPT_BUDGET_PROFILE", "bounded-v1");
+		vi.stubEnv("AGENT_BROWSER_COMMAND_TIMEOUT_MS", "20");
+		return undefined;
+	});
+	const { error } = await invoke();
+	expect(error).not.toHaveBeenCalled();
+	expect(runtime.configured.mock.calls[0][0].process).toMatchObject({
+		scripts: { budgetProfile: "application-v1" },
+		commandTimeoutMs: 120000,
+	});
 });

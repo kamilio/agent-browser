@@ -34,8 +34,7 @@ const scripts = new PageScripts(page, runtime, {
 });
 ```
 
-An owned process can receive the same option under `scripts`. There is no new
-CLI budget environment option in this change. Invalid profile names and
+An owned process can receive the same option under `scripts`. Invalid profile names and
 nonpositive/noninteger/excessive limits reject before page runtime allocation.
 The SDK, process heap/watchdog, network and loader retain their separate limits.
 
@@ -65,3 +64,23 @@ The ordinary 16s performance gate remains failed. Owned processes still
 have independent command/startup/heartbeat/heap limits: selecting this profile
 does not silently increase them. A command that needs longer than the default
 30000ms must also explicitly select an appropriate finite `commandTimeoutMs`.
+
+## CLI selection
+
+`AGENT_BROWSER_SCRIPT_BUDGET_PROFILE` accepts `bounded-v1`, `large-source-v1`
+or `application-v1`. It requires an explicit `AGENT_BROWSER_SAFEJS_ROOT` and
+`AGENT_BROWSER_PAGE_RUNTIME=extension`; it does not enable website scripting.
+Reader mode conflicts with explicit script profile or command-timeout selection.
+
+`AGENT_BROWSER_COMMAND_TIMEOUT_MS` independently selects a canonical decimal
+integer from20 through300000 for the owned-process command deadline. It requires
+an explicit SDK root, but does not select a script profile or runtime adapter.
+Neither variable silently changes heap, startup or heartbeat limits. With both
+absent, existing behavior is unchanged.
+
+Configuration rejects inherited, accessor-backed and non-string entries before
+credential configuration or SDK imports. Selected values are copied into an
+immutable native configuration and forwarded through the existing process options.
+Source and compiled mocked checks each pass310 tests across7 selected files.
+Actual CLI process startup with these variables remains a separate acceptance
+gate; this is not a successful Zoom navigation.

@@ -21,6 +21,7 @@ import {
 	readCommandConnection,
 	writeCommandConnection,
 } from "./node-runtime.js";
+import { scriptProfileFromEnvironment } from "./node-script-profile.js";
 import { loadSecretConfig } from "./node-secret-config.js";
 import { SessionProcessHost } from "./node-session-host.js";
 import { runStateFileCommand } from "./node-state-client.js";
@@ -40,6 +41,7 @@ import {
 import { type SemanticSnapshot, renderSnapshot } from "./snapshot.js";
 
 function runtimeConfiguration() {
+	const scriptProfile = scriptProfileFromEnvironment(process.env);
 	const cookiePolicy = cookiePolicySelection(
 		process.env,
 		"AGENT_BROWSER_COOKIE_POLICY",
@@ -126,6 +128,7 @@ function runtimeConfiguration() {
 			"Website scripts require an explicit SafeJS process runtime",
 		);
 	return {
+		scriptProfile,
 		cookiePolicy,
 		packageRoot,
 		runtimeAdapter,
@@ -140,6 +143,7 @@ function runtimeConfiguration() {
 
 async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 	const {
+		scriptProfile,
 		cookiePolicy,
 		packageRoot,
 		runtimeAdapter,
@@ -161,6 +165,7 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 		return new SessionProcessHost({
 			process: {
 				packageRoot,
+				...scriptProfile,
 				...(cookiePolicy ? { cookiePolicy } : {}),
 				websiteScripts,
 				runtimeAdapter,

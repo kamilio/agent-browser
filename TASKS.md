@@ -69,6 +69,12 @@ tailrelease andrequestaudit allpass. Fourheartbeats andpending0/PIDclosure are
 verified. Earlierprivate text-command-shape failure remainsrecorded; this is
 syntheticpageexecution, notZoomnavigation or admission.
 See CLASSIC-PAGE-GLOBALS.md and SCRIPT-BUDGET-PROFILES.md.
+Explicit CLI script-profile and independent command-timeout selection now forward
+through the existing owned-process options, without enabling scripts or changing
+default heap/heartbeat/startup limits. Source/compiled mocked lanes each pass310
+tests in7 files; the parent combined integration passes2187 in49 files with build,
+types, format and lint. Actual selected CLI process execution remains a separate
+gate. Invalid/inherited/accessor configuration rejects before secrets or imports.
 The budget profile preserves ordinary defaults and the16s/16MiB ceilings while
 allowing16M steps; it advances the2.7M vendor beyond parsing's old1.6M ceiling,
 then correctly stops at a separate SDK regex-source cap (one4143-unit literal).
@@ -136,6 +142,18 @@ are not120s/16s performance passes. The fixture is offline and sanitized, with
 uncaptured resources refused; it does not establish full navigation or meeting
 readiness. URL globals are now implemented; performance and remaining execution
 gates persist.
+
+The corrected combined pipeline ASSETS33 reaches actual main.js evaluation after
+externals, pwa-webim and vendors finish, then stops with execution-timeout.
+Main runs135273.8ms wall time; totalprocess297.858s, with clean owner/process
+closure. ASSETS32's earlier immediate main assertion remains a fixture failure:
+loader completion does not imply the publisher's delayed startup has completed.
+The unchanged-source ASSETS34 diagnostic records a main-only CPU profile without
+a debugging listener. Main again times out (138750.8ms,301.776s totalprocess).
+It advances from3665570 to4553541 cumulative steps, with5316083 peak logical data
+units and clean closure. Repeated retained-data graph traversal and allocation
+are the measured optimization targets; no main completion or meeting UI is
+claimed. Preserve both failures and the ordinary16s failed performance gate.
 
 The native browser fetched the missing main.js on September18 at12:14:14.901UTC:
 HTTP200,843255 JavaScript bytes. The vendors request stopped at the existing
