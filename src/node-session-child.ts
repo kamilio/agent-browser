@@ -5,6 +5,7 @@ import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { documentInteractions } from "./interactions.js";
 import type { NetworkPolicyOptions } from "./network.js";
+import { cookiePolicyFromInitialize } from "./node-cookie-policy.js";
 import { sessionIdentityOptions } from "./node-identity-config.js";
 import { loadPageRuntime } from "./node-page-core.js";
 import { processPermissions } from "./node-process-boundary.js";
@@ -97,6 +98,7 @@ async function receive(raw: unknown) {
 				"Module website scripts require the extension page runtime",
 			);
 		const identity = sessionIdentityOptions(message.identity);
+		const cookiePolicy = await cookiePolicyFromInitialize(message);
 		const sdk = await loadPageRuntime(message.packageRoot, {
 			adapter: runtimeAdapter,
 			...(runtimeOptions ? { runtimeOptions } : {}),
@@ -143,6 +145,7 @@ async function receive(raw: unknown) {
 			createSession: () =>
 				new BrowserSession({
 					identity,
+					...(cookiePolicy ? { cookiePolicy: cookiePolicy.options } : {}),
 					createTransport: (cookieJar) =>
 						new NodeNetworkTransport({
 							...(message.network as NetworkPolicyOptions | undefined),
@@ -191,6 +194,7 @@ async function receive(raw: unknown) {
 		await send({
 			schemaVersion: 1,
 			type: "ready",
+			...(cookiePolicy ? { cookiePolicy: cookiePolicy.cookiePolicy } : {}),
 			pid: process.pid,
 			session,
 			version: sdk.version,

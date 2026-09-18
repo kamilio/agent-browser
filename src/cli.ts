@@ -9,6 +9,10 @@ import type { GeneratedLocator } from "./locator-generation.js";
 import { saveCapture } from "./node-capture.js";
 import { approvePlayground, requestCommand } from "./node-command-client.js";
 import { listenCommandServer } from "./node-command-server.js";
+import {
+	cookiePolicySelection,
+	loadNodeCookiePolicy,
+} from "./node-cookie-policy.js";
 import { documentProfileFromEnvironment } from "./node-document-profile.js";
 import { identityFromEnvironment } from "./node-identity-config.js";
 import { loadPlaygroundAssets } from "./node-playground-assets.js";
@@ -36,6 +40,10 @@ import {
 import { type SemanticSnapshot, renderSnapshot } from "./snapshot.js";
 
 function runtimeConfiguration() {
+	const cookiePolicy = cookiePolicySelection(
+		process.env,
+		"AGENT_BROWSER_COOKIE_POLICY",
+	);
 	const packageRoot = process.env.AGENT_BROWSER_SAFEJS_ROOT;
 	const configuredAdapter = process.env.AGENT_BROWSER_PAGE_RUNTIME;
 	const secretConfig = process.env.AGENT_BROWSER_SECRET_CONFIG;
@@ -118,6 +126,7 @@ function runtimeConfiguration() {
 			"Website scripts require an explicit SafeJS process runtime",
 		);
 	return {
+		cookiePolicy,
 		packageRoot,
 		runtimeAdapter,
 		runtimeOptions,
@@ -131,6 +140,7 @@ function runtimeConfiguration() {
 
 async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 	const {
+		cookiePolicy,
 		packageRoot,
 		runtimeAdapter,
 		runtimeOptions,
@@ -140,6 +150,10 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 		websiteScripts,
 		resourceCache,
 	} = configuration;
+	const nativeCookiePolicy =
+		packageRoot === undefined
+			? await loadNodeCookiePolicy(cookiePolicy)
+			: undefined;
 	const secrets = await loadSecretConfig(secretConfig, {
 		processRuntime: packageRoot !== undefined,
 	});
@@ -147,6 +161,7 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 		return new SessionProcessHost({
 			process: {
 				packageRoot,
+				...(cookiePolicy ? { cookiePolicy } : {}),
 				websiteScripts,
 				runtimeAdapter,
 				identity,
@@ -172,6 +187,9 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 		createSession: () =>
 			new BrowserSession({
 				identity,
+				...(nativeCookiePolicy
+					? { cookiePolicy: nativeCookiePolicy.options }
+					: {}),
 				...(resourceCache ? { resourceCredentials: "omit" as const } : {}),
 				createTransport: (cookieJar) =>
 					new NodeNetworkTransport({

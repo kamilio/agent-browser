@@ -1,4 +1,5 @@
 [
+	"src/node-cookie-policy.test.ts",
 	"src/document-script-csp.test.ts",
 	"src/document-nonce.test.ts",
 	"src/node-cookie-redirect-policy.test.ts",

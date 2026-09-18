@@ -96,8 +96,11 @@ explicit and old host-only state is not widened; private-suffix boundaries,
 HttpOnly/Secure/SameSite and cleanup remain enforced. PSL-aware redirect-taint
 integration now passes802 tests in11 native files with all quality checks;
 same-origin credentials and cross-site-and-back restrictions remain unchanged.
-CLI/process selection remains outstanding; no live cookie-policy retry is
-claimed. See DOMAIN-COOKIES.md. The observed
+Explicit CLI/process policy selection now verifies a bounded fixed public PSL
+read, child revalidation and ready-policy identity. Its source/compiled mocked
+lanes each pass352 tests; parent URL/CSP/DOM/redirect integration passes1558 in41
+files with all quality checks. Actual owned selection and live policy behavior
+remain separate gates; no live retry is claimed. See DOMAIN-COOKIES.md. The observed
 Referrer-Policy is strict-origin-when-cross-origin; conservative cookie-echo
 redaction withheld CSP values. No response body or cookie values were persisted.
 

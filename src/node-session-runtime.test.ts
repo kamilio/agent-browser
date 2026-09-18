@@ -49,6 +49,9 @@ class FakeChild extends EventEmitter {
 								packageName: "@poe-platform/safe-js",
 								runtimeAdapter: message.runtimeAdapter,
 								runtimeValidation: "contract-shape-only",
+								...(message.cookiePolicy
+									? { cookiePolicy: message.cookiePolicy }
+									: {}),
 								...(message.runtimeOptions
 									? { runtimeOptions: message.runtimeOptions }
 									: {}),
@@ -394,4 +397,101 @@ it("does not spawn for invalid website-script configuration", async () => {
 		} as unknown as SessionProcessOptions),
 	).rejects.toMatchObject({ code: "invalid-input" });
 	expect(boundary.spawn).not.toHaveBeenCalled();
+});
+
+it.each([null, "", "auto", {}, false])(
+	"rejects invalid cookie selection %j before root access or spawn",
+	async (cookiePolicy) => {
+		await expect(
+			BrowserSessionProcess.create({
+				packageRoot: "/unused",
+				cookiePolicy,
+			} as SessionProcessOptions),
+		).rejects.toMatchObject({ code: "invalid-input" });
+		expect(boundary.readRoot).not.toHaveBeenCalled();
+		expect(boundary.spawn).not.toHaveBeenCalled();
+	},
+);
+
+it("rejects accessor and inherited cookie selection without invoking getters", async () => {
+	const getter = vi.fn(() => "pinned-psl-v1");
+	for (const options of [
+		Object.defineProperty({ packageRoot: "/unused" }, "cookiePolicy", {
+			get: getter,
+			enumerable: true,
+		}),
+		Object.assign(Object.create({ cookiePolicy: "pinned-psl-v1" }), {
+			packageRoot: "/unused",
+		}),
+	]) {
+		await expect(BrowserSessionProcess.create(options)).rejects.toMatchObject({
+			code: "invalid-input",
+		});
+	}
+	expect(getter).not.toHaveBeenCalled();
+	expect(boundary.readRoot).not.toHaveBeenCalled();
+	expect(boundary.spawn).not.toHaveBeenCalled();
+});
+
+it("snapshots the explicit cookie policy before asynchronous root validation without expanding permissions", async () => {
+	const options: SessionProcessOptions = {
+		packageRoot: "/trusted/fixture",
+		cookiePolicy: "pinned-psl-v1",
+		runtimeAdapter: "extension",
+		runtimeOptions: { classicScripts: true },
+	};
+	boundary.readRoot.mockImplementationOnce(async () => {
+		options.cookiePolicy = undefined;
+		return "/trusted/fixture";
+	});
+	const child = new FakeChild();
+	boundary.spawn.mockReturnValue(child);
+	const actor = await BrowserSessionProcess.create(options);
+	actors.push(actor);
+	expect(child.frames[0]).toMatchObject({
+		cookiePolicy: "pinned-psl-v1",
+		cookiePolicySource: expect.any(String),
+		packageRoot: "/trusted/fixture",
+		runtimeAdapter: "extension",
+		runtimeOptions: { classicScripts: true },
+	});
+	expect(Buffer.byteLength(child.frames[0].cookiePolicySource as string)).toBe(
+		335592,
+	);
+	expect(Buffer.byteLength(JSON.stringify(child.frames[0]))).toBeLessThan(
+		2 * 1024 * 1024,
+	);
+	expect(actor.info()).toMatchObject({ cookiePolicy: "pinned-psl-v1" });
+	expect(actor.info()).not.toHaveProperty("cookiePolicySource");
+	const args = boundary.spawn.mock.calls[0][1] as string[];
+	expect(args.filter((arg) => arg.startsWith("--allow-fs-read="))).toHaveLength(
+		3,
+	);
+	expect(
+		args.some((arg) =>
+			/vendor|public.suffix|allow-child|allow-worker|allow-addons/.test(arg),
+		),
+	).toBe(false);
+	expect(args).toContain("--max-old-space-size=128");
+	expect(args).toContain("--disallow-code-generation-from-strings");
+});
+
+it.each([undefined, null, "other"])(
+	"rejects missing or mismatched selected policy ready identity %j",
+	async (cookiePolicy) => {
+		await expect(
+			fixture({ cookiePolicy: "pinned-psl-v1" }, { cookiePolicy }),
+		).rejects.toMatchObject({ code: "invalid-input" });
+		expect(boundary.spawn).toHaveBeenCalledOnce();
+	},
+);
+
+it("rejects unsolicited cookie activation and leaves legacy initialize unchanged", async () => {
+	const { actor, child } = await fixture();
+	expect(child.frames[0]).not.toHaveProperty("cookiePolicy");
+	expect(child.frames[0]).not.toHaveProperty("cookiePolicySource");
+	expect(actor.info()).not.toHaveProperty("cookiePolicy");
+	await expect(
+		fixture({}, { cookiePolicy: "pinned-psl-v1" }),
+	).rejects.toMatchObject({ code: "invalid-input" });
 });

@@ -38,6 +38,21 @@ add `hostOnly: false`; absence never becomes domain scope. Importing domain scop
 requires the trusted snapshot and repeats scope validation. Older consumers that
 cannot enforce the added field reject it instead of widening old state.
 
+## CLI and owned processes
+
+Set `AGENT_BROWSER_COOKIE_POLICY=pinned-psl-v1` to select this policy in the
+native CLI, or pass `cookiePolicy: "pinned-psl-v1"` to `BrowserSessionProcess`.
+Absence preserves the old host-only behavior and does not read a PSL asset.
+Invalid, inherited or accessor configuration rejects before runtime startup.
+
+The fixed vendored public PSL is read with a bounded allocation and EOF check,
+regular-file and symlink checks, before/after identity checks, and the existing
+exact pinned hash verification. File handles close on errors. No configurable
+path, network download, credential file or filesystem permission expansion is
+introduced. The parent sends verified public PSL text in the bounded initialize
+frame; the child revalidates it before SDK loading and echoes the selected policy
+in ready metadata, which the parent checks.
+
 ## Validation and limits
 
 The isolated cookie/PSL/state worker gate passes 714 tests. Parent session and
@@ -54,4 +69,7 @@ The initial missing-operation and sibling-redirect failures remain recorded.
 The September 18, 2026 Zoom metadata request observed 14 Domain-cookie rejections
 in the older immutable core. That establishes a compatibility gap, not the cause
 of its meeting-client redirect. This new policy has not been live-tested against
-Zoom. CLI/owned-process policy selection remains separate integration work.
+Zoom. CLI/process source and compiled mocked-runtime lanes each pass 352 tests.
+Parent integration with URL, CSP, DOM and redirect changes passes 1558 tests in
+41 native files, plus build, selected-test types, formatting and lint. Actual
+owned-process startup with the cookie policy selected remains a separate gate.

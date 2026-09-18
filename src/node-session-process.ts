@@ -5,6 +5,11 @@ import { parseInvocation } from "./cli-parser.js";
 import type { CommandRequestOptions, CommandResult } from "./command-host.js";
 import { AgentBrowserError, type ErrorCode } from "./errors.js";
 import type { NetworkPolicyOptions } from "./network.js";
+import {
+	type CookiePolicySelector,
+	cookiePolicySelection,
+	loadNodeCookiePolicy,
+} from "./node-cookie-policy.js";
 import { sessionIdentityOptions } from "./node-identity-config.js";
 import {
 	hasRestrictedPermissions,
@@ -23,6 +28,7 @@ import type { PageScriptOptions } from "./page-scripts.js";
 
 export interface SessionProcessOptions {
 	packageRoot: string;
+	cookiePolicy?: CookiePolicySelector;
 	identity?: BrowserIdentityOptions;
 	runtimeAdapter?: PageRuntimeAdapter;
 	runtimeOptions?: Readonly<PageRuntimeConfiguration>;
@@ -39,6 +45,7 @@ export interface SessionProcessOptions {
 
 export interface SessionProcessInfo {
 	pid: number;
+	cookiePolicy?: CookiePolicySelector;
 	session: string;
 	version: string;
 	packageName: string;
@@ -83,6 +90,7 @@ export class BrowserSessionProcess {
 	private readonly maxPending: number;
 	private readonly runtimeAdapter: PageRuntimeAdapter;
 	private readonly runtimeOptions?: Readonly<PageRuntimeConfiguration>;
+	private readonly cookiePolicy?: CookiePolicySelector;
 	private resolveReady!: () => void;
 	private rejectReady!: (error: Error) => void;
 	private resolveExited!: () => void;
@@ -100,7 +108,9 @@ export class BrowserSessionProcess {
 		options: SessionProcessOptions,
 		identity: Readonly<BrowserIdentityOptions>,
 		runtime: ReturnType<typeof pageRuntimeRequest>,
+		cookiePolicy: Awaited<ReturnType<typeof loadNodeCookiePolicy>>,
 	) {
+		this.cookiePolicy = cookiePolicy?.cookiePolicy;
 		this.runtimeAdapter = runtime.adapter;
 		this.runtimeOptions = runtime.runtimeOptions;
 		if (
@@ -149,6 +159,12 @@ export class BrowserSessionProcess {
 			type: "initialize",
 			packageRoot: root,
 			identity,
+			...(cookiePolicy
+				? {
+						cookiePolicy: cookiePolicy.cookiePolicy,
+						cookiePolicySource: cookiePolicy.cookiePolicySource,
+					}
+				: {}),
 			runtimeAdapter: this.runtimeAdapter,
 			...(this.runtimeOptions ? { runtimeOptions: this.runtimeOptions } : {}),
 			session: this.session,
@@ -247,6 +263,7 @@ export class BrowserSessionProcess {
 	}
 
 	static async create(options: SessionProcessOptions) {
+		const selectedCookiePolicy = cookiePolicySelection(options);
 		const runtime = pageRuntimeRequest(options, "runtimeAdapter");
 		const runtimeAdapter = runtime.adapter;
 		if (
@@ -265,7 +282,14 @@ export class BrowserSessionProcess {
 			);
 		const identity = sessionIdentityOptions(options?.identity);
 		const root = await processReadRoot(options?.packageRoot);
-		const actor = new BrowserSessionProcess(root, options, identity, runtime);
+		const cookiePolicy = await loadNodeCookiePolicy(selectedCookiePolicy);
+		const actor = new BrowserSessionProcess(
+			root,
+			options,
+			identity,
+			runtime,
+			cookiePolicy,
+		);
 		try {
 			await actor.ready;
 			return actor;
@@ -419,12 +443,14 @@ export class BrowserSessionProcess {
 		}
 		if (message.type === "ready" && !this.information) {
 			const info = message as unknown as SessionProcessInfo;
+			const cookiePolicy = cookiePolicySelection(message);
 			const runtimeOptions = pageRuntimeConfiguration(
 				info.runtimeOptions,
 				"extension",
 			);
 			if (
 				info.pid !== this.child.pid ||
+				cookiePolicy !== this.cookiePolicy ||
 				info.session !== this.session ||
 				typeof info.version !== "string" ||
 				!/^[0-9][0-9A-Za-z.+-]{0,63}$/.test(info.version) ||
@@ -442,6 +468,7 @@ export class BrowserSessionProcess {
 				throw new Error("Invalid process information");
 			this.information = {
 				pid: info.pid,
+				...(cookiePolicy ? { cookiePolicy } : {}),
 				session: info.session,
 				version: info.version,
 				packageName: info.packageName,

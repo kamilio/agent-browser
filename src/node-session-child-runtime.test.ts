@@ -1,5 +1,7 @@
 import { EventEmitter } from "node:events";
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import type { CookieJar } from "./cookies.js";
 import type { PageBindingContext } from "./page-bindings.js";
 import type { PageRuntimeFactory, PageRuntimeOptions } from "./page-runtime.js";
 
@@ -9,6 +11,7 @@ const fixtureState = vi.hoisted(() => ({
 		throw new Error("Unexpected subprocess");
 	}),
 	requests: vi.fn(),
+	jars: [] as CookieJar[],
 }));
 vi.mock("node:child_process", () => ({ spawn: fixtureState.spawn }));
 vi.mock("./node-page-core.js", () => ({ loadPageRuntime: fixtureState.load }));
@@ -25,6 +28,9 @@ vi.mock("./node-process-boundary.js", () => ({
 }));
 vi.mock("./node-transport.js", () => ({
 	NodeNetworkTransport: class {
+		constructor(options: { cookieJar: CookieJar }) {
+			fixtureState.jars.push(options.cookieJar);
+		}
 		async request(input: { url: string }) {
 			fixtureState.requests(input);
 			const body = new TextEncoder().encode("<p>Native transport fixture</p>");
@@ -74,6 +80,7 @@ beforeEach(() => {
 	vi.resetModules();
 	vi.clearAllMocks();
 	fixtureState.load.mockReset();
+	fixtureState.jars.length = 0;
 	messages.length = 0;
 	input = new EventEmitter();
 	const output = Object.assign(new EventEmitter(), {
@@ -343,3 +350,57 @@ it("does not emit ready or fall back when explicit runtime loading fails", async
 	expect(fixtureState.load).toHaveBeenCalledOnce();
 	expect(messages.some((message) => message.type === "ready")).toBe(false);
 });
+
+it("revalidates public PSL source before SDK loading and echoes the selected policy", async () => {
+	const cookiePolicySource = readFileSync(
+		new URL("../vendor/public-suffix/public_suffix_list.dat", import.meta.url),
+		"utf8",
+	);
+	const { factory } = await initialize({
+		cookiePolicy: "pinned-psl-v1",
+		cookiePolicySource,
+		runtimeAdapter: "extension",
+		runtimeOptions: { classicScripts: true },
+	});
+	expect(await waitMessage("ready")).toMatchObject({
+		cookiePolicy: "pinned-psl-v1",
+		runtimeOptions: { classicScripts: true },
+	});
+	expect(fixtureState.load).toHaveBeenCalledExactlyOnceWith(
+		"/trusted/fixture",
+		{ adapter: "extension", runtimeOptions: { classicScripts: true } },
+	);
+	expect(factory.createPageRuntime).not.toHaveBeenCalled();
+	expect(fixtureState.requests).not.toHaveBeenCalled();
+	send({ type: "command", id: 1, argv: ["open", "https://fixture.invalid/"] });
+	await waitMessage("result", 1);
+	expect(fixtureState.jars).toHaveLength(1);
+	const cookies = fixtureState.jars[0];
+	cookies.setCookie(
+		"https://app.zoom.us/",
+		"shared=yes; Domain=zoom.us; Secure; SameSite=None",
+		{ siteUrl: "https://app.zoom.us/" },
+	);
+	expect(
+		cookies.cookieHeader("https://other.zoom.us/", {
+			siteUrl: "https://other.zoom.us/",
+		}),
+	).toBe("shared=yes");
+});
+
+it.each([
+	{ cookiePolicy: "pinned-psl-v1" },
+	{ cookiePolicy: "pinned-psl-v1", cookiePolicySource: "x".repeat(335592) },
+	{ cookiePolicy: "auto", cookiePolicySource: "untrusted" },
+	{ cookiePolicySource: "unsolicited" },
+	{ cookiePolicy: { match: "untrusted serialized matcher" } },
+])(
+	"rejects malformed cookie initialization before SDK import or ready %#",
+	async (options) => {
+		await initialize(options);
+		expect(await waitMessage("fatal")).toMatchObject({ code: "invalid-input" });
+		expect(fixtureState.load).not.toHaveBeenCalled();
+		expect(fixtureState.requests).not.toHaveBeenCalled();
+		expect(messages.some((message) => message.type === "ready")).toBe(false);
+	},
+);
