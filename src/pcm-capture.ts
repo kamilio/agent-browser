@@ -13,6 +13,7 @@ export interface PcmCaptureChunk {
 	readonly sequence: number;
 	readonly startFrame: number;
 	readonly startMs: number;
+	readonly sourceEndFrame: number;
 	readonly frames: number;
 	readonly pcm: Uint8Array;
 }
@@ -34,6 +35,7 @@ export class PcmCapture {
 	private chunks = 0;
 	private buffer: Uint8Array | undefined;
 	private bufferedFrames = 0;
+	private bufferedSourceEndFrame = 0;
 
 	constructor(
 		options: PcmCaptureOptions,
@@ -142,6 +144,8 @@ export class PcmCapture {
 				this.buffer.set(owned.subarray(offset, offset + copied), usedBytes);
 				this.bufferedFrames += copied / this.frameBytes;
 				offset += copied;
+				this.bufferedSourceEndFrame =
+					sourceStartFrame + offset / this.frameBytes;
 				if (this.bufferedFrames === this.options.chunkFrames) this.flush();
 			}
 		} catch (error) {
@@ -216,16 +220,19 @@ export class PcmCapture {
 				"PCM capture chunk limit exceeded",
 			);
 		const frames = this.bufferedFrames;
+		const sourceEndFrame = this.bufferedSourceEndFrame;
 		const pcm =
 			frames === this.options.chunkFrames
 				? this.buffer
 				: this.buffer.slice(0, frames * this.frameBytes);
 		this.buffer = undefined;
 		this.bufferedFrames = 0;
+		this.bufferedSourceEndFrame = 0;
 		const chunk = Object.freeze({
 			sequence: this.chunks,
 			startFrame: this.savedFrames,
 			startMs: (this.savedFrames / this.options.sampleRate) * 1000,
+			sourceEndFrame,
 			frames,
 			pcm,
 		});
@@ -250,12 +257,14 @@ export class PcmCapture {
 		this.discardedFrames += this.bufferedFrames;
 		this.buffer = undefined;
 		this.bufferedFrames = 0;
+		this.bufferedSourceEndFrame = 0;
 	}
 
 	private fail(): void {
 		this.state = "failed";
 		this.buffer = undefined;
 		this.bufferedFrames = 0;
+		this.bufferedSourceEndFrame = 0;
 		this.discardedFrames = this.acceptedFrames - this.savedFrames;
 	}
 

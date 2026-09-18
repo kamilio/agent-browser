@@ -895,3 +895,339 @@ describe("PCM capture sink failures and reentrancy", () => {
 		);
 	});
 });
+
+describe.each([1, 2] as const)(
+	"PCM source endpoints with %i channels",
+	(channels) => {
+		const frameBytes = channels * 2;
+
+		it("tracks each emission within one nonzero-offset push", () => {
+			const { capture, chunks } = recording({ channels });
+			const input = pcm(11, channels);
+			capture.push(input, 9);
+			expect(capture.metrics().sourceFrames).toBe(20);
+			expect(chunks.map((chunk) => chunk.sourceEndFrame)).toEqual([13, 17]);
+			capture.finish();
+			capture.finish();
+			expect(chunks.map((chunk) => chunk.sourceEndFrame)).toEqual([13, 17, 20]);
+			expect(chunks.map((chunk) => chunk.startFrame)).toEqual([0, 4, 8]);
+			expect(chunks.map((chunk) => chunk.frames)).toEqual([4, 4, 3]);
+			expect(chunks.flatMap((chunk) => Array.from(chunk.pcm))).toEqual(
+				Array.from(input),
+			);
+			expectTerminal(capture);
+		});
+
+		it("preserves final sample endpoints across initial and internal gaps", () => {
+			const { capture, chunks } = recording({ channels });
+			const input = pcm(6, channels);
+			capture.push(input.subarray(0, 2 * frameBytes), 3);
+			capture.push(input.subarray(2 * frameBytes, 5 * frameBytes), 11);
+			capture.push(input.subarray(5 * frameBytes), 23);
+			capture.finish();
+			expect(chunks.map((chunk) => chunk.sourceEndFrame)).toEqual([13, 24]);
+			expect(chunks.map((chunk) => chunk.startFrame)).toEqual([0, 4]);
+			expect(chunks.map((chunk) => chunk.frames)).toEqual([4, 2]);
+			expect(chunks.flatMap((chunk) => Array.from(chunk.pcm))).toEqual(
+				Array.from(input),
+			);
+			expect(capture.metrics()).toMatchObject({
+				gapFrames: 18,
+				savedFrames: 6,
+			});
+			expectReleased(capture);
+		});
+
+		it("discards paused tails and resumes with retained source endpoints", () => {
+			const { capture, chunks } = recording({ channels });
+			const before = pcm(6, channels);
+			const after = pcm(5, channels);
+			capture.push(before, 5);
+			capture.setPaused(true);
+			capture.push(pcm(3, channels), 17);
+			capture.setPaused(false);
+			capture.push(after, 27);
+			capture.finish();
+			expect(chunks.map((chunk) => chunk.sourceEndFrame)).toEqual([9, 31, 32]);
+			expect(chunks.map((chunk) => chunk.startFrame)).toEqual([0, 4, 8]);
+			expect(chunks.map((chunk) => chunk.frames)).toEqual([4, 4, 1]);
+			expect(chunks.flatMap((chunk) => Array.from(chunk.pcm))).toEqual([
+				...before.subarray(0, 4 * frameBytes),
+				...after,
+			]);
+			expect(capture.metrics()).toMatchObject({
+				pausedFrames: 9,
+				discardedFrames: 2,
+				savedFrames: 9,
+			});
+			expectTerminal(capture);
+		});
+
+		it.each(["close", "paused finish"])(
+			"does not emit a discarded endpoint on %s",
+			(operation) => {
+				const { capture, chunks } = recording({ channels });
+				const input = pcm(6, channels);
+				capture.push(input, 7);
+				if (operation === "close") {
+					capture.close();
+				} else {
+					capture.setPaused(true);
+					capture.push(pcm(2, channels), 30);
+					capture.finish();
+					capture.finish();
+				}
+				expect(chunks).toHaveLength(1);
+				expect(chunks[0]).toMatchObject({
+					startFrame: 0,
+					frames: 4,
+					sourceEndFrame: 11,
+				});
+				expect(chunks[0].pcm).toEqual(input.subarray(0, 4 * frameBytes));
+				expectTerminal(capture);
+			},
+		);
+
+		it("uses exclusive source endpoints for single-frame chunks", () => {
+			const { capture, chunks } = recording({ channels, chunkFrames: 1 });
+			const input = pcm(4, channels);
+			capture.push(input.subarray(0, 3 * frameBytes), 4);
+			capture.push(input.subarray(3 * frameBytes), 12);
+			capture.finish();
+			expect(chunks.map((chunk) => chunk.sourceEndFrame)).toEqual([
+				5, 6, 7, 13,
+			]);
+			expect(chunks.map((chunk) => chunk.startFrame)).toEqual([0, 1, 2, 3]);
+			expect(chunks.map((chunk) => chunk.frames)).toEqual([1, 1, 1, 1]);
+			expect(chunks.flatMap((chunk) => Array.from(chunk.pcm))).toEqual(
+				Array.from(input),
+			);
+		});
+
+		it("freezes endpoint metadata independently of later input and cleanup", () => {
+			const { capture, chunks } = recording({ channels });
+			const input = pcm(4, channels);
+			capture.push(input, 6);
+			const first = chunks[0];
+			expect(Object.isFrozen(first)).toBe(true);
+			expect(Reflect.set(first, "sourceEndFrame", 99)).toBe(false);
+			expect(Object.getOwnPropertyDescriptor(first, "sourceEndFrame")).toEqual({
+				value: 10,
+				writable: false,
+				enumerable: true,
+				configurable: false,
+			});
+			capture.push(pcm(1, channels), 25);
+			capture.close();
+			expect(first).toMatchObject({
+				startFrame: 0,
+				frames: 4,
+				sourceEndFrame: 10,
+			});
+			expect(first.pcm).toEqual(input);
+			expect(chunks).toHaveLength(1);
+			expectReleased(capture);
+		});
+
+		it.each(["overlap", "unaligned", "limit"])(
+			"keeps a buffered endpoint after rejected %s input",
+			(kind) => {
+				const { capture, chunks } = recording({ channels });
+				const input = pcm(2, channels);
+				capture.push(input, 10);
+				const snapshot = capture.metrics();
+				if (kind === "overlap") {
+					expectCode(() => capture.push(pcm(1, channels), 11), "invalid-input");
+				} else if (kind === "unaligned") {
+					expectCode(
+						() => capture.push(new Uint8Array(1), 25),
+						"invalid-input",
+					);
+				} else {
+					expectCode(
+						() => capture.push(pcm(1, channels), 128),
+						"resource-limit",
+					);
+				}
+				expect(capture.metrics()).toEqual(snapshot);
+				capture.finish();
+				expect(chunks).toHaveLength(1);
+				expect(chunks[0]).toMatchObject({
+					startFrame: 0,
+					frames: 2,
+					sourceEndFrame: 12,
+				});
+				expect(chunks[0].pcm).toEqual(input);
+				expectReleased(capture);
+			},
+		);
+
+		it("reaches the largest byte-safe source duration with a small input", () => {
+			const maxDurationFrames = Math.floor(
+				Number.MAX_SAFE_INTEGER / frameBytes,
+			);
+			const { capture, chunks } = recording({ channels, maxDurationFrames });
+			const input = pcm(5, channels);
+			capture.push(input, maxDurationFrames - 5);
+			capture.finish();
+			expect(chunks.map((chunk) => chunk.sourceEndFrame)).toEqual([
+				maxDurationFrames - 1,
+				maxDurationFrames,
+			]);
+			expect(chunks.map((chunk) => chunk.startFrame)).toEqual([0, 4]);
+			expect(chunks.map((chunk) => chunk.frames)).toEqual([4, 1]);
+			expect(
+				chunks.every((chunk) => Number.isSafeInteger(chunk.sourceEndFrame)),
+			).toBe(true);
+			expect(chunks.flatMap((chunk) => Array.from(chunk.pcm))).toEqual(
+				Array.from(input),
+			);
+			expect(capture.metrics().sourceFrames).toBe(maxDurationFrames);
+			expectReleased(capture);
+		});
+
+		it.each(["push", "finish"])(
+			"preserves handed-off endpoints when the sink fails during %s",
+			(operation) => {
+				const failure = new Error("Synthetic endpoint sink failure");
+				const handed: PcmCaptureChunk[] = [];
+				const capture = new PcmCapture(options({ channels }), (chunk) => {
+					handed.push(chunk);
+					if (handed.length === 2) throw failure;
+				});
+				const input = pcm(operation === "push" ? 9 : 6, channels);
+				if (operation === "push") {
+					expect(thrownBy(() => capture.push(input, 7))).toBe(failure);
+				} else {
+					capture.push(input, 7);
+					expect(thrownBy(() => capture.finish())).toBe(failure);
+				}
+				expect(handed.map((chunk) => chunk.sourceEndFrame)).toEqual([
+					11,
+					operation === "push" ? 15 : 13,
+				]);
+				expect(handed.map((chunk) => chunk.startFrame)).toEqual([0, 4]);
+				expect(handed.map((chunk) => chunk.frames)).toEqual([
+					4,
+					operation === "push" ? 4 : 2,
+				]);
+				expect(handed.flatMap((chunk) => Array.from(chunk.pcm))).toEqual(
+					Array.from(input.subarray(0, 8 * frameBytes)),
+				);
+				expect(capture.metrics()).toMatchObject({
+					state: "failed",
+					savedFrames: 4,
+					chunks: 1,
+				});
+				expectCode(() => capture.finish(), "closed");
+				expectTerminal(capture);
+				expect(handed).toHaveLength(2);
+			},
+		);
+
+		describe.each([1, 4, 7])("%i-frame reference chunks", (chunkFrames) => {
+			it.each([1, 2, 5, 64])(
+				"matches a per-frame oracle with packets bounded by %i frames",
+				(packetFrames) => {
+					const { capture, chunks } = recording({ channels, chunkFrames });
+					const expected: PcmCaptureChunk[] = [];
+					let pending: { bytes: number[]; sourceEndFrame: number }[] = [];
+					let retainedFrames = 0;
+					const emitExpected = () => {
+						if (pending.length === 0) return;
+						expected.push({
+							sequence: expected.length,
+							startFrame: retainedFrames,
+							startMs: (retainedFrames * 1_000) / 8_000,
+							sourceEndFrame: pending[pending.length - 1].sourceEndFrame,
+							frames: pending.length,
+							pcm: Uint8Array.from(pending.flatMap((frame) => frame.bytes)),
+						});
+						retainedFrames += pending.length;
+						pending = [];
+					};
+					const segments = [
+						{ sourceStartFrame: 3, frames: 6, paused: false },
+						{ sourceStartFrame: 12, frames: 3, paused: false },
+						{ sourceStartFrame: 18, frames: 2, paused: true },
+						{ sourceStartFrame: 24, frames: 5, paused: false },
+						{ sourceStartFrame: 34, frames: 4, paused: false },
+					];
+					const input = pcm(20, channels);
+					let inputFrame = 0;
+					for (const segment of segments) {
+						capture.setPaused(segment.paused);
+						if (segment.paused) pending = [];
+						const bytes = input.subarray(
+							inputFrame * frameBytes,
+							(inputFrame + segment.frames) * frameBytes,
+						);
+						if (!segment.paused) {
+							for (let frame = 0; frame < segment.frames; frame++) {
+								pending.push({
+									bytes: Array.from(
+										bytes.subarray(
+											frame * frameBytes,
+											(frame + 1) * frameBytes,
+										),
+									),
+									sourceEndFrame: segment.sourceStartFrame + frame + 1,
+								});
+								if (pending.length === chunkFrames) emitExpected();
+							}
+						}
+						for (let frame = 0; frame < segment.frames; frame += packetFrames) {
+							capture.push(
+								bytes.subarray(
+									frame * frameBytes,
+									Math.min(segment.frames, frame + packetFrames) * frameBytes,
+								),
+								segment.sourceStartFrame + frame,
+							);
+						}
+						inputFrame += segment.frames;
+					}
+					emitExpected();
+					capture.finish();
+					expect(chunks).toEqual(expected);
+					expect(capture.metrics().savedFrames).toBe(retainedFrames);
+					expectTerminal(capture);
+				},
+			);
+		});
+	},
+);
+
+it("pairs retained and source endpoints for synthetic 16 kHz mono chunks", () => {
+	const { capture, chunks } = recording({
+		sampleRate: 16_000,
+		channels: 1,
+		chunkFrames: 16_000,
+		maxInputFrames: 16_001,
+		maxDurationFrames: 64_001,
+	});
+	const input = pcm(16_001);
+	capture.push(input, 48_000);
+	expect(capture.metrics().sourceFrames).toBe(64_001);
+	expect(chunks).toHaveLength(1);
+	expect(chunks[0]).toMatchObject({
+		startFrame: 0,
+		startMs: 0,
+		frames: 16_000,
+		sourceEndFrame: 64_000,
+	});
+	expect((chunks[0].startFrame + chunks[0].frames) / 16).toBe(1_000);
+	expect(chunks[0].sourceEndFrame / 16).toBe(4_000);
+	capture.finish();
+	expect(chunks.map((chunk) => chunk.sourceEndFrame)).toEqual([64_000, 64_001]);
+	expect(chunks.map((chunk) => chunk.startFrame)).toEqual([0, 16_000]);
+	expect(chunks.map((chunk) => chunk.startMs)).toEqual([0, 1_000]);
+	expect(chunks.map((chunk) => chunk.frames)).toEqual([16_000, 1]);
+	expect(chunks.map((chunk) => (chunk.startFrame + chunk.frames) / 16)).toEqual(
+		[1_000, 1_000.0625],
+	);
+	expect(chunks.flatMap((chunk) => Array.from(chunk.pcm))).toEqual(
+		Array.from(input),
+	);
+	expectTerminal(capture);
+});

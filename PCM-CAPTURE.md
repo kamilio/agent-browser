@@ -52,6 +52,37 @@ remain valid. Resume starts at the next retained frame, without a silent gap.
 no-ops. Empty capture fails rather than reporting a successful recording.
 `close()` discards any unfinished tail without calling the sink.
 
+## Source-clock endpoints
+
+Each emitted chunk also includes `sourceEndFrame`: the exclusive source-frame
+endpoint of its **last retained sample**. It is computed for that particular
+chunk, including when one input emits several chunks. It is not the end of the
+whole input, the callback time, or a wall-clock timestamp. `startFrame`,
+`startMs`, sample bytes, sequence numbers and compact retained timing are
+unchanged. The additional required, readonly field is part of `PcmCaptureChunk`;
+code constructing that type directly must supply it.
+
+For example, with four-frame chunks, two frames at source offset 10 followed by
+six frames at offset 20 emit endpoints 22 and 26, with retained starts 0 and 4.
+The first chunk crosses a source gap: its source start **cannot** be recovered
+by subtracting `frames` from `sourceEndFrame`. This field is an endpoint anchor,
+not an interval map. No silence or discarded audio is represented by it.
+
+The existing automations speaker observer pairs retained chunk-end time with a
+page-clock timestamp after the recording writer successfully appends the chunk.
+A future native driver can obtain retained end milliseconds as
+`((chunk.startFrame + chunk.frames) / sampleRate) * 1000`, and use
+`sourceEndFrame` with a separately established source-to-page clock relationship.
+The driver must not substitute callback arrival time, publish an anchor before
+successful storage, or infer such a relationship from this metadata alone.
+Pause/resume and discontinuities still require speaker-observer gap handling.
+
+Paused inputs and discarded tails never emit anchors. A final retained tail uses
+its own last source endpoint. Close or failure clears pending endpoint state;
+already handed-off metadata remains frozen. As with PCM bytes, delivery to a
+throwing sink is not proof of a successful write. Endpoint tracking retains one
+number, not a per-frame history, and does not change admission or memory limits.
+
 ## Bounds, ownership and failure
 
 All limits are explicit positive safe integers. Chunk/input buffers are each

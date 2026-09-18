@@ -6,6 +6,22 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Preserve native notetaker source-clock endpoints
+
+- Add sourceEndFrame to each PcmCaptureChunk: the exclusive source position of
+  its last retained sample, calculated separately for every emitted chunk.
+  Preserve PCM bytes, compact retained timing, counters, bounds and sink rules.
+- Local automations review confirms chunk-end anchors are used after append;
+  a real source-to-page clock relationship remains the future driver's duty.
+  Gaps prevent deriving source intervals from the endpoint alone.
+- Native975/0 across17 explicit files, including51 new endpoint cases; old
+  production fails all51 while retaining149 PCM passes. Build/types/format/lint
+  pass. Preserve the first formatting failure and corrected syntax-proof audit.
+- See PCM-CAPTURE.md and reports/native-pcm-source-clock-2026-09-18.md/JSON.
+  No SDK, website, socket, device, credential, meeting or daemon action. Native
+  client execution, media receive/decode, admission, permitted recording,
+  calibrated speaker clocks, transcription and verified delivery remain open.
+
 ### Expose ordinary native table extraction and read an explicit public API
 
 - Add --table-rows/--compact-tables to native extract parsing, option validation
