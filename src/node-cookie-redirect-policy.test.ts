@@ -346,7 +346,7 @@ it("preserves following mocked redirects without a cookie jar or context", async
 	let visits = 0;
 	const response = await transport.requestWithRoutes(
 		{ url: first },
-		(request) => {
+		(request): NetworkResponse => {
 			expect(request.url).toBe(urls[visits]);
 			const index = visits++;
 			return {
