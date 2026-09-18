@@ -1,4 +1,5 @@
 [
+	"src/cli-classic-globals.test.ts",
 	"src/script-csp-policy.test.ts",
 	"src/script-loader-dynamic.test.ts",
 	"src/script-element-state.test.ts",

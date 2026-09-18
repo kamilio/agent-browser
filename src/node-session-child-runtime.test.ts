@@ -171,6 +171,9 @@ async function initialize(overrides: Record<string, unknown> = {}) {
 		version: "0.1.40-fixture",
 		publicExport: "./core",
 		validation: "contract-shape-only",
+		...(options.runtimeOptions
+			? { runtimeOptions: options.runtimeOptions }
+			: {}),
 	}));
 	await import("./node-session-child.js");
 	send({
@@ -254,6 +257,73 @@ it("rejects invalid website script mode before module loading", async () => {
 	await initialize({ runtimeAdapter: "extension", websiteScripts: "modules" });
 	expect(await waitMessage("fatal")).toMatchObject({ code: "invalid-input" });
 	expect(fixtureState.load).not.toHaveBeenCalled();
+});
+
+it("forwards explicit runtime semantics and reports the loaded configuration without automatic scripting", async () => {
+	const runtimeOptions = {
+		classicScripts: true,
+		callbackScheduling: "after-prefix",
+	};
+	const { factory } = await initialize({
+		runtimeAdapter: "extension",
+		runtimeOptions,
+	});
+	expect(await waitMessage("ready")).toMatchObject({
+		runtimeAdapter: "extension",
+		runtimeOptions,
+		runtimeValidation: "contract-shape-only",
+	});
+	expect(fixtureState.load).toHaveBeenCalledExactlyOnceWith(
+		"/trusted/fixture",
+		{ adapter: "extension", runtimeOptions },
+	);
+	expect(factory.createPageRuntime).not.toHaveBeenCalled();
+	expect(fixtureState.requests).not.toHaveBeenCalled();
+});
+
+it.each([
+	[],
+	null,
+	{ classicScripts: "true" },
+	{ callbackScheduling: "immediate" },
+	{ networkModuleOptions: {} },
+])(
+	"rejects malformed initialization configuration before SDK loading %#",
+	async (runtimeOptions) => {
+		await initialize({ runtimeAdapter: "extension", runtimeOptions });
+		expect(await waitMessage("fatal")).toMatchObject({ code: "invalid-input" });
+		expect(fixtureState.load).not.toHaveBeenCalled();
+	},
+);
+
+it("rejects legacy initialization configuration before SDK loading", async () => {
+	await initialize({ runtimeOptions: { classicScripts: true } });
+	expect(await waitMessage("fatal")).toMatchObject({ code: "unsupported" });
+	expect(fixtureState.load).not.toHaveBeenCalled();
+});
+
+it.each([
+	{ classicScripts: false },
+	{ callbackScheduling: "after-prefix" },
+] as const)(
+	"forwards and echoes individual runtime options %#",
+	async (runtimeOptions) => {
+		await initialize({ runtimeAdapter: "extension", runtimeOptions });
+		expect(await waitMessage("ready")).toMatchObject({ runtimeOptions });
+		expect(fixtureState.load).toHaveBeenCalledExactlyOnceWith(
+			"/trusted/fixture",
+			{ adapter: "extension", runtimeOptions },
+		);
+	},
+);
+
+it("omits configuration from default child load options and ready metadata", async () => {
+	await initialize();
+	expect(await waitMessage("ready")).not.toHaveProperty("runtimeOptions");
+	expect(fixtureState.load).toHaveBeenCalledExactlyOnceWith(
+		"/trusted/fixture",
+		{ adapter: "legacy" },
+	);
 });
 
 it("does not emit ready or fall back when explicit runtime loading fails", async () => {

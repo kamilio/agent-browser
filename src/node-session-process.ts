@@ -15,7 +15,9 @@ import {
 import { ScriptFrameDecoder, scriptFrame } from "./node-script-protocol.js";
 import {
 	type PageRuntimeAdapter,
-	pageRuntimeAdapter,
+	type PageRuntimeConfiguration,
+	pageRuntimeConfiguration,
+	pageRuntimeRequest,
 } from "./page-runtime-selection.js";
 import type { PageScriptOptions } from "./page-scripts.js";
 
@@ -23,6 +25,7 @@ export interface SessionProcessOptions {
 	packageRoot: string;
 	identity?: BrowserIdentityOptions;
 	runtimeAdapter?: PageRuntimeAdapter;
+	runtimeOptions?: Readonly<PageRuntimeConfiguration>;
 	session?: string;
 	commandTimeoutMs?: number;
 	startupTimeoutMs?: number;
@@ -41,6 +44,7 @@ export interface SessionProcessInfo {
 	packageName: string;
 	runtimeAdapter: PageRuntimeAdapter;
 	runtimeValidation: "contract-shape-only";
+	runtimeOptions?: Readonly<PageRuntimeConfiguration>;
 	publicExport: "./safe-js" | "./core";
 	permissions: ReturnType<typeof processPermissions>;
 }
@@ -78,6 +82,7 @@ export class BrowserSessionProcess {
 	private readonly heartbeatTimeout: number;
 	private readonly maxPending: number;
 	private readonly runtimeAdapter: PageRuntimeAdapter;
+	private readonly runtimeOptions?: Readonly<PageRuntimeConfiguration>;
 	private resolveReady!: () => void;
 	private rejectReady!: (error: Error) => void;
 	private resolveExited!: () => void;
@@ -94,8 +99,10 @@ export class BrowserSessionProcess {
 		root: string,
 		options: SessionProcessOptions,
 		identity: Readonly<BrowserIdentityOptions>,
+		runtime: ReturnType<typeof pageRuntimeRequest>,
 	) {
-		this.runtimeAdapter = pageRuntimeAdapter(options.runtimeAdapter);
+		this.runtimeAdapter = runtime.adapter;
+		this.runtimeOptions = runtime.runtimeOptions;
 		if (
 			options.websiteScripts !== undefined &&
 			options.websiteScripts !== "classic" &&
@@ -143,6 +150,7 @@ export class BrowserSessionProcess {
 			packageRoot: root,
 			identity,
 			runtimeAdapter: this.runtimeAdapter,
+			...(this.runtimeOptions ? { runtimeOptions: this.runtimeOptions } : {}),
 			session: this.session,
 			heartbeatMs: Math.max(
 				25,
@@ -239,7 +247,8 @@ export class BrowserSessionProcess {
 	}
 
 	static async create(options: SessionProcessOptions) {
-		const runtimeAdapter = pageRuntimeAdapter(options?.runtimeAdapter);
+		const runtime = pageRuntimeRequest(options, "runtimeAdapter");
+		const runtimeAdapter = runtime.adapter;
 		if (
 			options?.websiteScripts !== undefined &&
 			options.websiteScripts !== "classic" &&
@@ -256,7 +265,7 @@ export class BrowserSessionProcess {
 			);
 		const identity = sessionIdentityOptions(options?.identity);
 		const root = await processReadRoot(options?.packageRoot);
-		const actor = new BrowserSessionProcess(root, options, identity);
+		const actor = new BrowserSessionProcess(root, options, identity, runtime);
 		try {
 			await actor.ready;
 			return actor;
@@ -410,6 +419,10 @@ export class BrowserSessionProcess {
 		}
 		if (message.type === "ready" && !this.information) {
 			const info = message as unknown as SessionProcessInfo;
+			const runtimeOptions = pageRuntimeConfiguration(
+				info.runtimeOptions,
+				"extension",
+			);
 			if (
 				info.pid !== this.child.pid ||
 				info.session !== this.session ||
@@ -420,6 +433,8 @@ export class BrowserSessionProcess {
 				) ||
 				info.runtimeAdapter !== this.runtimeAdapter ||
 				info.runtimeValidation !== "contract-shape-only" ||
+				JSON.stringify(runtimeOptions) !==
+					JSON.stringify(this.runtimeOptions) ||
 				info.publicExport !==
 					(info.packageName === "poe-code" ? "./safe-js" : "./core") ||
 				!hasRestrictedPermissions(info.permissions)
@@ -432,6 +447,7 @@ export class BrowserSessionProcess {
 				packageName: info.packageName,
 				runtimeAdapter: info.runtimeAdapter,
 				runtimeValidation: info.runtimeValidation,
+				...(runtimeOptions ? { runtimeOptions } : {}),
 				publicExport: info.publicExport,
 				permissions: { ...info.permissions },
 			};

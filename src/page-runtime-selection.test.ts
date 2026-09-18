@@ -1,5 +1,6 @@
 import { expect, it, vi } from "vitest";
 import {
+	type PageRuntimeConfiguration,
 	type PageRuntimeAdapter,
 	pageRuntimeAdapter,
 	selectPageRuntime,
@@ -16,6 +17,115 @@ class Budget {
 	peakCallDepth = 0;
 	peakDataSize = 0;
 }
+
+it.each([
+	{ classicScripts: true },
+	{ classicScripts: false },
+	{ callbackScheduling: "after-prefix" },
+	{ classicScripts: true, callbackScheduling: "after-prefix" },
+] as const)(
+	"snapshots and forwards only explicit extension configuration %#",
+	async (configuration) => {
+		const test = extensionFixture();
+		const requested = { ...configuration };
+		const selected = selectPageRuntime(test.core, "extension", requested);
+		expect(selected.runtimeOptions).toEqual(configuration);
+		expect(Object.isFrozen(selected.runtimeOptions)).toBe(true);
+		Object.assign(requested, {
+			classicScripts: false,
+			callbackScheduling: undefined,
+		});
+		const runtime = selected.factory.createPageRuntime(options());
+		const actual = test.core.createRealm.mock.calls[0][0];
+		expect(actual.classicScripts).toBe(
+			configuration.classicScripts === true ? true : undefined,
+		);
+		expect(actual.callbackScheduling).toBe(configuration.callbackScheduling);
+		await runtime.close();
+	},
+);
+
+it.each([
+	null,
+	[],
+	true,
+	"classic",
+	{ classicScripts: "true" },
+	{ classicScripts: undefined },
+	{ callbackScheduling: "immediate" },
+	{ moduleOptions: {} },
+	{ sourceResolver() {} },
+	Object.create({ classicScripts: true }),
+])(
+	"rejects malformed runtime configuration before touching the core %#",
+	(configuration) => {
+		const getter = vi.fn();
+		const core = Object.defineProperty({}, "Budget", { get: getter });
+		expect(() =>
+			selectPageRuntime(
+				core,
+				"extension",
+				configuration as PageRuntimeConfiguration,
+			),
+		).toThrow(/runtime/);
+		expect(getter).not.toHaveBeenCalled();
+	},
+);
+
+it("rejects configuration accessors and non-serializable keys without executing them", () => {
+	const getter = vi.fn(() => true);
+	for (const value of [
+		Object.defineProperty({}, "classicScripts", {
+			get: getter,
+			enumerable: true,
+		}),
+		{ [Symbol("option")]: true },
+		Object.defineProperty({}, "classicScripts", { value: true }),
+	]) {
+		expect(() =>
+			selectPageRuntime(extensionFixture().core, "extension", value),
+		).toThrow(/runtime/);
+	}
+	expect(getter).not.toHaveBeenCalled();
+});
+
+it.each([
+	{ classicScripts: true },
+	{ classicScripts: false },
+	{ callbackScheduling: "after-prefix" },
+] as const)(
+	"rejects requested extension semantics on legacy %#",
+	(configuration) => {
+		expect(() =>
+			selectPageRuntime(legacyFixture().core, "legacy", configuration),
+		).toThrow(/extension/);
+	},
+);
+
+it("keeps default selection metadata free of configuration", () => {
+	expect(selectPageRuntime(legacyFixture().core)).not.toHaveProperty(
+		"runtimeOptions",
+	);
+	expect(
+		selectPageRuntime(extensionFixture().core, "extension", {}),
+	).not.toHaveProperty("runtimeOptions");
+});
+
+it("normalizes null-prototype configuration into a frozen serializable snapshot", () => {
+	const configuration = Object.assign(Object.create(null), {
+		callbackScheduling: "after-prefix",
+		classicScripts: false,
+	});
+	const selected = selectPageRuntime(
+		extensionFixture().core,
+		"extension",
+		configuration,
+	);
+	expect(JSON.stringify(selected.runtimeOptions)).toBe(
+		'{"classicScripts":false,"callbackScheduling":"after-prefix"}',
+	);
+	expect(Object.isFrozen(selected.runtimeOptions)).toBe(true);
+});
 
 function options(): PageRuntimeOptions {
 	return {

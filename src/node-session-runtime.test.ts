@@ -49,6 +49,9 @@ class FakeChild extends EventEmitter {
 								packageName: "@poe-platform/safe-js",
 								runtimeAdapter: message.runtimeAdapter,
 								runtimeValidation: "contract-shape-only",
+								...(message.runtimeOptions
+									? { runtimeOptions: message.runtimeOptions }
+									: {}),
 								publicExport: "./core",
 								permissions,
 								...this.reply,
@@ -102,6 +105,8 @@ it("sends the legacy default and retains the restricted process launch boundary"
 		runtimeAdapter: "legacy",
 	});
 	expect(child.frames[0]).not.toHaveProperty("websiteScripts");
+	expect(child.frames[0]).not.toHaveProperty("runtimeOptions");
+	expect(actor.info()).not.toHaveProperty("runtimeOptions");
 	expect(boundary.spawn).toHaveBeenCalledWith(
 		process.execPath,
 		expect.arrayContaining([
@@ -116,6 +121,177 @@ it("sends the legacy default and retains the restricted process launch boundary"
 		runtimeValidation: "contract-shape-only",
 		publicExport: "./core",
 	});
+});
+
+it("forwards and echoes an immutable runtime snapshot without enabling the automatic loader", async () => {
+	const runtimeOptions = {
+		classicScripts: true,
+		callbackScheduling: "after-prefix" as const,
+	};
+	const { actor, child } = await fixture({
+		runtimeAdapter: "extension",
+		runtimeOptions,
+	});
+	runtimeOptions.classicScripts = false;
+	expect(child.frames[0].runtimeOptions).toEqual({
+		classicScripts: true,
+		callbackScheduling: "after-prefix",
+	});
+	expect(child.frames[0]).not.toHaveProperty("websiteScripts");
+	expect(actor.info().runtimeOptions).toEqual(child.frames[0].runtimeOptions);
+	expect(Object.isFrozen(actor.info().runtimeOptions)).toBe(true);
+});
+
+it("snapshots runtime settings before asynchronous root validation", async () => {
+	let complete!: (root: string) => void;
+	boundary.readRoot.mockImplementationOnce(
+		() =>
+			new Promise<string>((resolve) => {
+				complete = resolve;
+			}),
+	);
+	const child = new FakeChild();
+	boundary.spawn.mockReturnValue(child);
+	const options: SessionProcessOptions = {
+		packageRoot: "/trusted/fixture",
+		runtimeAdapter: "extension",
+		runtimeOptions: { classicScripts: true },
+	};
+	const loading = BrowserSessionProcess.create(options);
+	options.runtimeOptions = { classicScripts: false };
+	options.runtimeAdapter = "legacy";
+	complete("/trusted/fixture");
+	const actor = await loading;
+	actors.push(actor);
+	expect(child.frames[0]).toMatchObject({
+		runtimeAdapter: "extension",
+		runtimeOptions: { classicScripts: true },
+	});
+});
+
+it.each([
+	[],
+	null,
+	{ classicScripts: "true" },
+	{ callbackScheduling: "immediate" },
+	{ moduleOptions: {} },
+])(
+	"rejects malformed runtime options before root access/spawn %#",
+	async (runtimeOptions) => {
+		await expect(
+			BrowserSessionProcess.create({
+				packageRoot: "/unused",
+				runtimeAdapter: "extension",
+				runtimeOptions,
+			} as SessionProcessOptions),
+		).rejects.toMatchObject({ code: "invalid-input" });
+		expect(boundary.readRoot).not.toHaveBeenCalled();
+		expect(boundary.spawn).not.toHaveBeenCalled();
+	},
+);
+
+it("rejects legacy configuration and outer getters before spawning", async () => {
+	await expect(
+		BrowserSessionProcess.create({
+			packageRoot: "/unused",
+			runtimeOptions: { classicScripts: true },
+		}),
+	).rejects.toMatchObject({ code: "unsupported" });
+	const getter = vi.fn(() => ({ classicScripts: true }));
+	const options = Object.defineProperty(
+		{ packageRoot: "/unused", runtimeAdapter: "extension" },
+		"runtimeOptions",
+		{ get: getter },
+	);
+	await expect(
+		BrowserSessionProcess.create(options as SessionProcessOptions),
+	).rejects.toMatchObject({ code: "invalid-input" });
+	expect(getter).not.toHaveBeenCalled();
+	expect(boundary.readRoot).not.toHaveBeenCalled();
+	expect(boundary.spawn).not.toHaveBeenCalled();
+});
+
+it.each([
+	undefined,
+	{},
+	[],
+	{ classicScripts: false },
+	{ classicScripts: true, callbackScheduling: "immediate" },
+])(
+	"rejects missing or mismatched ready configuration %#",
+	async (runtimeOptions) => {
+		const child = new FakeChild({ runtimeOptions });
+		boundary.spawn.mockReturnValue(child);
+		await expect(
+			BrowserSessionProcess.create({
+				packageRoot: "/trusted/fixture",
+				runtimeAdapter: "extension",
+				runtimeOptions: { classicScripts: true },
+			}),
+		).rejects.toMatchObject({ code: "invalid-input" });
+		expect(child.kill).toHaveBeenCalledExactlyOnceWith("SIGKILL");
+	},
+);
+
+it("rejects unexpected runtime activation in a default ready frame", async () => {
+	await expect(
+		fixture(
+			{ runtimeAdapter: "extension" },
+			{ runtimeOptions: { classicScripts: true } },
+		),
+	).rejects.toMatchObject({ code: "invalid-input" });
+});
+
+it.each([
+	{ classicScripts: false },
+	{ callbackScheduling: "after-prefix" },
+] as const)(
+	"preserves individual serializable process options %#",
+	async (runtimeOptions) => {
+		const { actor, child } = await fixture({
+			runtimeAdapter: "extension",
+			runtimeOptions,
+		});
+		expect(child.frames[0].runtimeOptions).toEqual(runtimeOptions);
+		expect(actor.info().runtimeOptions).toEqual(runtimeOptions);
+	},
+);
+
+it("compares ready configuration independently of JSON field order", async () => {
+	const { actor } = await fixture(
+		{
+			runtimeAdapter: "extension",
+			runtimeOptions: {
+				classicScripts: true,
+				callbackScheduling: "after-prefix",
+			},
+		},
+		{
+			runtimeOptions: {
+				callbackScheduling: "after-prefix",
+				classicScripts: true,
+			},
+		},
+	);
+	expect(actor.info().runtimeOptions).toEqual({
+		classicScripts: true,
+		callbackScheduling: "after-prefix",
+	});
+});
+
+it("rejects adapter accessors before root validation or spawn", async () => {
+	const getter = vi.fn(() => "extension");
+	const options = Object.defineProperty(
+		{ packageRoot: "/unused" },
+		"runtimeAdapter",
+		{ enumerable: true, get: getter },
+	);
+	await expect(
+		BrowserSessionProcess.create(options as SessionProcessOptions),
+	).rejects.toMatchObject({ code: "invalid-input" });
+	expect(getter).not.toHaveBeenCalled();
+	expect(boundary.readRoot).not.toHaveBeenCalled();
+	expect(boundary.spawn).not.toHaveBeenCalled();
 });
 
 it("forwards explicit extension selection independently of classic script opt-in", async () => {

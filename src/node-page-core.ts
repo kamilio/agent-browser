@@ -5,8 +5,9 @@ import { AgentBrowserError } from "./errors.js";
 import { processReadRoot } from "./node-process-boundary.js";
 import {
 	type PageRuntimeAdapter,
+	type PageRuntimeConfiguration,
 	type PageRuntimeSelection,
-	pageRuntimeAdapter,
+	pageRuntimeRequest,
 	selectPageRuntime,
 } from "./page-runtime-selection.js";
 import type { PageScriptCore } from "./page-scripts.js";
@@ -17,6 +18,7 @@ export interface PageCoreLoader {
 
 export interface PageRuntimeLoadOptions {
 	adapter?: PageRuntimeAdapter;
+	runtimeOptions?: Readonly<PageRuntimeConfiguration>;
 }
 
 export interface PageCoreMetadata {
@@ -124,12 +126,10 @@ export async function loadPageRuntime(
 	options: PageRuntimeLoadOptions = {},
 	loader: PageCoreLoader = defaultLoader,
 ): Promise<LoadedPageRuntime> {
-	if (!options || typeof options !== "object" || Array.isArray(options))
-		throw new AgentBrowserError(
-			"invalid-input",
-			"Invalid page runtime options",
-		);
-	const adapter = pageRuntimeAdapter(options.adapter);
+	const { adapter, runtimeOptions } = pageRuntimeRequest(options);
 	const { core, ...metadata } = await loadPublicCore(packageRoot, loader);
-	return Object.freeze({ ...metadata, ...selectPageRuntime(core, adapter) });
+	return Object.freeze({
+		...metadata,
+		...selectPageRuntime(core, adapter, runtimeOptions),
+	});
 }

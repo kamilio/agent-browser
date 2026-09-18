@@ -21,6 +21,32 @@ an SDK, and does not enable this experimental mode automatically in the CLI.
 The September 18 qualification uses a pinned, privately composed SDK source
 candidate; it is not a claim about an installed or published release.
 
+## Explicit process selection
+
+The native process API accepts `runtimeAdapter: "extension"` together with
+`runtimeOptions: { classicScripts: true, callbackScheduling: "after-prefix" }`.
+Only these two serializable runtime options are accepted. The parent validates
+and snapshots them before SDK import/process startup; the child validates them
+again and echoes the selected configuration in its ready metadata.
+
+The corresponding CLI environment options are:
+
+```bash
+AGENT_BROWSER_SAFEJS_ROOT=/path/to/compatible-compiled-sdk \
+AGENT_BROWSER_PAGE_RUNTIME=extension \
+AGENT_BROWSER_PAGE_GLOBALS=classic \
+AGENT_BROWSER_CALLBACK_SCHEDULING=after-prefix \
+AGENT_BROWSER_PAGE_SCRIPTS=classic \
+node dist/src/cli.js serve
+```
+
+The first four settings select the explicit SDK and runtime semantics. The
+separate `AGENT_BROWSER_PAGE_SCRIPTS=classic` enables automatic script loading;
+neither new semantics option enables loading on its own. Invalid values, a
+missing SDK root, legacy-adapter configuration and reader-profile conflicts are
+rejected. These options do not install a compatible SDK or relax CSP/resource
+limits. Native mocked-process/CLI tests are not a real process or Zoom gate.
+
 ## Native integration
 
 - The guest's actual global object supplies `window`, `self`, `top` and `parent`

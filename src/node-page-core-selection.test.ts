@@ -10,6 +10,71 @@ import {
 } from "./node-page-core.js";
 
 const directories: string[] = [];
+
+it("snapshots runtime configuration before awaiting package access and forwards it to selection", async () => {
+	const root = await fixture();
+	const runtimeOptions = {
+		classicScripts: true,
+		callbackScheduling: "after-prefix" as const,
+	};
+	const loader = { importModule: vi.fn(async () => extensionCore()) };
+	const loading = loadPageRuntime(
+		root,
+		{ adapter: "extension", runtimeOptions },
+		loader,
+	);
+	runtimeOptions.classicScripts = false;
+	const selected = await loading;
+	expect(selected.runtimeOptions).toEqual({
+		classicScripts: true,
+		callbackScheduling: "after-prefix",
+	});
+	expect(Object.isFrozen(selected.runtimeOptions)).toBe(true);
+	expect(loader.importModule).toHaveBeenCalledOnce();
+});
+
+it.each([
+	[],
+	null,
+	{ classicScripts: 1 },
+	{ callbackScheduling: "immediate" },
+	{ moduleOptions: {} },
+])(
+	"rejects bad runtime configuration before package access/import %#",
+	async (runtimeOptions) => {
+		const loader = { importModule: vi.fn() };
+		await expect(
+			loadPageRuntime(
+				"/missing-before-import",
+				{ adapter: "extension", runtimeOptions } as PageRuntimeLoadOptions,
+				loader,
+			),
+		).rejects.toMatchObject({ code: "invalid-input" });
+		expect(loader.importModule).not.toHaveBeenCalled();
+	},
+);
+
+it("rejects legacy semantics and outer option getters before importing", async () => {
+	const loader = { importModule: vi.fn() };
+	await expect(
+		loadPageRuntime(
+			"/missing",
+			{ runtimeOptions: { classicScripts: true } },
+			loader,
+		),
+	).rejects.toMatchObject({ code: "unsupported" });
+	const getter = vi.fn(() => ({ classicScripts: true }));
+	const options = Object.defineProperty(
+		{ adapter: "extension" },
+		"runtimeOptions",
+		{ get: getter },
+	);
+	await expect(
+		loadPageRuntime("/missing", options as PageRuntimeLoadOptions, loader),
+	).rejects.toMatchObject({ code: "invalid-input" });
+	expect(getter).not.toHaveBeenCalled();
+	expect(loader.importModule).not.toHaveBeenCalled();
+});
 afterEach(async () => {
 	for (const directory of directories.splice(0))
 		await rm(directory, { recursive: true, force: true });

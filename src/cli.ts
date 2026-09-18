@@ -22,7 +22,10 @@ import { SessionProcessHost } from "./node-session-host.js";
 import { runStateFileCommand } from "./node-state-client.js";
 import { runTerminal } from "./node-terminal.js";
 import { NodeNetworkTransport } from "./node-transport.js";
-import { pageRuntimeAdapter } from "./page-runtime-selection.js";
+import {
+	pageRuntimeAdapter,
+	pageRuntimeConfiguration,
+} from "./page-runtime-selection.js";
 import { loadResearchDocument } from "./research-loader.js";
 import { researchReaderNoticeFor } from "./research-reader-info.js";
 import { BrowserSession } from "./session.js";
@@ -37,6 +40,18 @@ function runtimeConfiguration() {
 	const configuredAdapter = process.env.AGENT_BROWSER_PAGE_RUNTIME;
 	const secretConfig = process.env.AGENT_BROWSER_SECRET_CONFIG;
 	const websiteScripts = process.env.AGENT_BROWSER_PAGE_SCRIPTS;
+	const pageGlobals = process.env.AGENT_BROWSER_PAGE_GLOBALS;
+	const callbackScheduling = process.env.AGENT_BROWSER_CALLBACK_SCHEDULING;
+	if (process.env.AGENT_BROWSER_DOCUMENT_PROFILE === "reader")
+		for (const [name, value] of [
+			["AGENT_BROWSER_PAGE_GLOBALS", pageGlobals],
+			["AGENT_BROWSER_CALLBACK_SCHEDULING", callbackScheduling],
+		])
+			if (value !== undefined)
+				throw new AgentBrowserError(
+					"invalid-input",
+					`Reader document profile is incompatible with ${name}`,
+				);
 	const documentProfile = documentProfileFromEnvironment({
 		AGENT_BROWSER_DOCUMENT_PROFILE: process.env.AGENT_BROWSER_DOCUMENT_PROFILE,
 		AGENT_BROWSER_SAFEJS_ROOT: packageRoot,
@@ -46,6 +61,31 @@ function runtimeConfiguration() {
 	});
 	const identity = identityFromEnvironment(process.env.AGENT_BROWSER_LANGUAGES);
 	const runtimeAdapter = pageRuntimeAdapter(configuredAdapter);
+	if (pageGlobals !== undefined && pageGlobals !== "classic")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"AGENT_BROWSER_PAGE_GLOBALS must be classic when provided",
+		);
+	if (callbackScheduling !== undefined && callbackScheduling !== "after-prefix")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"AGENT_BROWSER_CALLBACK_SCHEDULING must be after-prefix when provided",
+		);
+	if (
+		(pageGlobals !== undefined || callbackScheduling !== undefined) &&
+		!packageRoot
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Page runtime semantics require an explicit SafeJS package root",
+		);
+	const runtimeOptions = pageRuntimeConfiguration(
+		{
+			...(pageGlobals === "classic" ? { classicScripts: true } : {}),
+			...(callbackScheduling ? { callbackScheduling } : {}),
+		},
+		runtimeAdapter,
+	);
 	if (configuredAdapter !== undefined && !packageRoot)
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -80,6 +120,7 @@ function runtimeConfiguration() {
 	return {
 		packageRoot,
 		runtimeAdapter,
+		runtimeOptions,
 		identity,
 		documentProfile,
 		secretConfig,
@@ -92,6 +133,7 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 	const {
 		packageRoot,
 		runtimeAdapter,
+		runtimeOptions,
 		identity,
 		documentProfile,
 		secretConfig,
@@ -103,7 +145,13 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 	});
 	if (packageRoot !== undefined)
 		return new SessionProcessHost({
-			process: { packageRoot, websiteScripts, runtimeAdapter, identity },
+			process: {
+				packageRoot,
+				websiteScripts,
+				runtimeAdapter,
+				identity,
+				...(runtimeOptions ? { runtimeOptions } : {}),
+			},
 		});
 	const loadDocument =
 		documentProfile === "reader" ? loadResearchDocument : loadBrowserDocument;

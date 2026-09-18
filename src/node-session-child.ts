@@ -12,7 +12,7 @@ import { ScriptFrameDecoder, scriptFrame } from "./node-script-protocol.js";
 import { NodeNetworkTransport } from "./node-transport.js";
 import type { PageFetchTransport } from "./page-fetch.js";
 import type { PageNetworkModuleOptions } from "./page-network-modules.js";
-import { pageRuntimeAdapter } from "./page-runtime-selection.js";
+import { pageRuntimeRequest } from "./page-runtime-selection.js";
 import { type PageScriptOptions, PageScripts } from "./page-scripts.js";
 import { ScriptLoader } from "./script-loader.js";
 import { BrowserSession } from "./session.js";
@@ -78,7 +78,10 @@ async function receive(raw: unknown) {
 		session = parseInvocation(["capabilities"], {
 			AGENT_BROWSER_SESSION: message.session,
 		}).session;
-		const runtimeAdapter = pageRuntimeAdapter(message.runtimeAdapter);
+		const { adapter: runtimeAdapter, runtimeOptions } = pageRuntimeRequest(
+			message,
+			"runtimeAdapter",
+		);
 		if (
 			message.websiteScripts !== undefined &&
 			message.websiteScripts !== "classic" &&
@@ -96,6 +99,7 @@ async function receive(raw: unknown) {
 		const identity = sessionIdentityOptions(message.identity);
 		const sdk = await loadPageRuntime(message.packageRoot, {
 			adapter: runtimeAdapter,
+			...(runtimeOptions ? { runtimeOptions } : {}),
 		});
 		const ownerFor = (
 			document: DocumentTree,
@@ -193,6 +197,7 @@ async function receive(raw: unknown) {
 			packageName: sdk.packageName,
 			runtimeAdapter: sdk.adapter,
 			runtimeValidation: sdk.validation,
+			...(sdk.runtimeOptions ? { runtimeOptions: sdk.runtimeOptions } : {}),
 			publicExport: sdk.publicExport,
 			permissions: processPermissions(),
 		});
