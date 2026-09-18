@@ -659,7 +659,7 @@ function inline(
 			const text = plain(node.children ?? []).replace(/\n/g, " ");
 			if (!text) continue;
 			const marker = fence(text, 1);
-			const padding = text.trim() ? " " : "";
+			const padding = /[^ ]/.test(text) ? " " : "";
 			pieces.push(`${marker}${padding}${text}${padding}${marker}`);
 			continue;
 		}

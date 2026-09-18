@@ -6,6 +6,19 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Preserve inline-code whitespace in extracted content
+
+- Replace the inline-code padding trim() check with an ASCII-space distinction,
+  preserving edge spaces around tabs and Unicode whitespace while retaining the
+  all-ASCII-space representation. Do not change code delimiters, line handling,
+  admission limits, network policy or execution defaults.
+- Synthetic native parser and research-reader regressions: old serializer8 pass/
+  16 fail; corrected overlay368 pass/0 fail in7 explicitly selected native files,
+  including24 new cases. Build/types/format/lint pass; retain baseline failures.
+- See reports/inline-code-whitespace-2026-09-18.md/JSON. This is an isolated native
+  extraction correction, not another website visit, SDK pass or Zoom capability.
+  Broad website/crawler and native Zoom execution/media/notetaking gates stay open.
+
 ### Capture the first two executable Zoom client assets
 
 - Two separately scoped native GETs retrieve the loader's configured initial-CDN
