@@ -103,6 +103,7 @@ import {
 	type ScrollIntoViewResult,
 	documentScrollIntoView,
 } from "./scroll-into-view.js";
+import { fetchSecureNavigation } from "./secure-navigation-fetch.js";
 import { DocumentQueries } from "./selectors.js";
 import { type SnapshotOptions, snapshotDocument } from "./snapshot.js";
 import { PageStorageEvents } from "./storage-events.js";
@@ -1692,41 +1693,48 @@ export class BrowserSession {
 		tab.journal = journal;
 		tab.networkNavigation++;
 		tab.networkDocument = null;
+		const navigationRequest: NetworkRequest = {
+			...request,
+			url: url.href,
+			signal,
+			cookieContext: {
+				siteUrl: previous?.document.url ?? tab.openerUrl,
+				credentials: "include",
+				topLevelNavigation: true,
+			},
+		};
 		const response = await journal.run(
 			"document",
 			url.href,
 			request?.method ?? "GET",
 			() =>
-				withAbort(
-					this.fetchNetwork({
-						...request,
-						url: url.href,
-						...(initiatingPolicy?.secureOnly
-							? { redirect: "error" as const }
-							: {}),
-						signal,
-						cookieContext: {
-							siteUrl: previous?.document.url ?? tab.openerUrl,
-							credentials: "include",
-							topLevelNavigation: true,
-						},
-					}),
-					signal,
-				),
+				initiatingPolicy?.secureOnly
+					? fetchSecureNavigation(
+							{
+								...navigationRequest,
+								signal: AbortSignal.any([signal, initiatingPolicy.signal]),
+							},
+							{
+								maxRedirects: this.transport.limits?.maxRedirects ?? 10,
+								timeoutMs: this.transport.limits?.timeoutMs ?? 15000,
+								checkCurrent: () => {
+									this.assertCurrent(job);
+									checkHistory();
+									if (tab.page !== previous || !initiatingPolicy.active)
+										throw new AgentBrowserError(
+											"closed",
+											"Navigation policy owner is no longer active",
+										);
+								},
+								sameSite: (target, siteUrl) =>
+									this.cookies.sameSite(target, siteUrl),
+								request: (input) => this.fetchNetwork(input),
+							},
+						)
+					: withAbort(this.fetchNetwork(navigationRequest), signal),
 		);
 		this.assertCurrent(job);
 		const responseUrl = parseNetworkUrl(response.url).href;
-		if (initiatingPolicy?.secureOnly) {
-			initiatingPolicy.checkSecure(responseUrl);
-			if (
-				response.redirects.length ||
-				[301, 302, 303, 307, 308].includes(response.status)
-			)
-				throw new AgentBrowserError(
-					"policy-denied",
-					"Redirected navigation under secure-only CSP is not implemented",
-				);
-		}
 		if ([204, 205].includes(response.status))
 			return this.result("no-content", tab, response);
 		checkHistory();

@@ -209,6 +209,21 @@ the original pre-session route failure: URL-free open fixes only the harness.
 No actual CLI environment entrypoint, publisher, network, future redirect path,
 Zoom admission or audio is validated by this controlled owned-process gate.
 
+September18, secure-redirect follow-up: the native browser no longer rejects
+every HTTPS navigation redirect under the supported UIR subset. It manually
+checks each next HTTPS destination before dispatch, preserves POST rewrites and
+307/308 replay, strips cross-origin sensitive headers and carries sticky cookie
+taint, fragments, redirect history and one whole-chain network deadline. Owner
+and navigation checks retain the old page on failure. HTTP is still refused,
+not upgraded. Consumer timeout does not falsely release an unsettled queue lease.
+Parent integration passes4452 tests in102 files at
+`/tmp/agent-browser-secure-navigation-union01-mbvii9/candidate`,47.321s; strict
+build/types/format/lint pass. Worker final02 passes740/23 and preserves all prior
+failures. An earlier parent preparation rejected a moving source hash before
+launching any gate. Actual SDK/owned-browser secure redirects are still separate
+acceptance work. Zoom dependency execution, admission, native media and complete
+notetaking remain unresolved; keep the full goal active.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,

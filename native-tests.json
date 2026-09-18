@@ -1,4 +1,6 @@
 [
+	"src/secure-navigation-csp.test.ts",
+	"src/secure-navigation-fetch.test.ts",
 	"src/native-resource-csp.test.ts",
 	"src/script-loader-csp-integration.test.ts",
 	"src/script-node-expandos.test.ts",

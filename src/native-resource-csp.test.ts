@@ -655,7 +655,7 @@ it("rejects insecure targets instead of upgrading, including documents originall
 	expect(test.requests).toHaveLength(1);
 });
 
-it("rejects insecure script admissions, form submissions and all secure-navigation redirects", async () => {
+it("rejects insecure script admissions, form submissions and insecure navigation redirects", async () => {
 	const test = fixture({
 		url: "http://example.com/page",
 		html: '<form id="form" action="http://other.example/submit"><input name="field" value="value"></form><script nonce="native" src="http://other.example/script.js"></script>',
@@ -675,7 +675,7 @@ it("rejects insecure script admissions, form submissions and all secure-navigati
 		test.session.navigate(test.tab, "https://other.example/start"),
 	).rejects.toMatchObject({ code: "policy-denied" });
 	expect(test.requests).toHaveLength(2);
-	expect(test.requests[1].redirect).toBe("error");
+	expect(test.requests[1].redirect).toBe("manual");
 });
 
 it("cannot grant resource enforcement to generic or unbound factories with a forged argument", () => {

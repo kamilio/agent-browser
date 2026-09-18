@@ -68,7 +68,7 @@ export interface NetworkTransport {
 	readonly resourceReuse?: boolean;
 	readonly limits?: Readonly<
 		Pick<NetworkLimits, "maxConcurrent"> &
-			Partial<Pick<NetworkLimits, "maxRedirects">>
+			Partial<Pick<NetworkLimits, "maxRedirects" | "timeoutMs">>
 	>;
 	request(request: NetworkRequest): Promise<NetworkResponse>;
 	requestWithRoutes?(

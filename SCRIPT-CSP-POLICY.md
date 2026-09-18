@@ -18,9 +18,9 @@ Generic fetch never gains script nonce/trust, and CORS, origin, credential,
 mixed-content and resource-budget restrictions still apply independently.
 
 `upgrade-insecure-requests` uses an explicitly stricter subset: native requests
-must already be HTTPS/WSS. HTTP URLs are rejected, not rewritten. Navigation
-redirects are currently refused even when both URLs are HTTPS; this remains a
-compatibility limitation, not standards-equivalent upgrade support. Data/blob
+must already be HTTPS/WSS. HTTP URLs are rejected, not rewritten. Secure
+navigation redirects use the bounded checked path described below; this is not
+standards-equivalent upgrade support. Data/blob
 and custom-scheme resources are unavailable even when their scheme-only source
 expressions are valid. Recognizing that syntax does not add a protocol handler.
 
@@ -61,6 +61,32 @@ SIGKILL; no private in-child SDK retained-value claim is made. The first harness
 failure is preserved: routes needed URL-free public open to create the session.
 This is programmatic owned/public-protocol evidence, not real CLI environment
 startup, publisher execution, future secure redirects or a meeting join.
+
+## Secure navigation redirects
+
+For navigation initiated by a secure-only document policy, each HTTPS redirect
+now passes through native manual requests with destination checks before the
+next dispatch. The transport still owns origin/IP restrictions, cookies, header
+validation and byte/request limits. HTTP, credentials, invalid or ambiguous
+Location values, hidden adapter redirects, loops and hop-limit overflow refuse.
+POST301/302 and non-GET/HEAD303 rewrite to GET;307/308 preserve copied body bytes.
+Cross-origin hops strip sensitive headers; sticky cross-site cookie taint remains.
+The final document retains inherited fragments and aggregate redirect history.
+
+A single network deadline covers the chain, alongside the existing navigation
+deadline. Owner/history checks precede requests and follow responses. Consumer
+cancellation does not prove an arbitrary adapter settled: its live queue lease
+remains counted until settlement. Regression tests verify both compliant abort
+cleanup and a deliberately nonsettling provider that later completes without
+dispatching its late redirect. No lease is silently discarded to report success.
+
+Parent integration passes4452 native tests in102 files at
+`/tmp/agent-browser-secure-navigation-union01-mbvii9/candidate`,47.321s, with
+build/types/format/lint passing. The worker's final02 passes740/23; its audit and
+preserved failures are at
+`/tmp/agent-browser-secure-navigation-september18-RzW3dm/REPORT.md`.
+This is native/mock and routed-transport evidence, not a socket, actual-SDK
+redirect, owned-process redirect, publisher or Zoom admission gate.
 
 The earlier loader/foundation milestones below retain their original evidence
 and describe the support available at those points.
