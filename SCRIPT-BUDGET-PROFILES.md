@@ -57,7 +57,11 @@ formatting and lint checks passing.
 
 This option distinguishes slow initialization capability from performance. It is
 not a speed improvement or a retroactive pass of earlier timeout failures. Actual
-application execution remains a separate acceptance gate. Owned processes still
+application execution is a separate acceptance gate. ASSETS26 now initializes
+the unchanged captured Zoom React/ReactDOM bundle in 118937ms with this explicit
+profile, using 413674 steps and 573049 peak logical data units. The public exports
+are verified; this is not combined application startup or meeting admission.
+The ordinary 16s performance gate remains failed. Owned processes still
 have independent command/startup/heartbeat/heap limits: selecting this profile
 does not silently increase them. A command that needs longer than the default
 30000ms must also explicitly select an appropriate finite `commandTimeoutMs`.
