@@ -49,6 +49,18 @@ requests. The evaluator is not wired into the live loader and still rejects
 unsupported directives/sources. Existing CSP refusal remains in force; see
 SCRIPT-CSP-POLICY.md. It does not yet permit the captured Zoom policy.
 
+Explicit classic-global/after-prefix options now flow through native CLI,
+runtime selection, SDK loading and process initialization/ready validation.
+Together with an opt-in large-source budget, parent native checks pass370 tests
+in13 files and build/types/format/lint. Actual process execution is still a
+separate gate. See CLASSIC-PAGE-GLOBALS.md and SCRIPT-BUDGET-PROFILES.md.
+The budget profile preserves ordinary defaults and the16s/16MiB ceilings while
+allowing16M steps; it advances the2.7M vendor beyond parsing's old1.6M ceiling,
+then correctly stops at a separate SDK regex-source cap (one4143-unit literal).
+An explicit bounded regex-source SDK option is being implemented; no global
+regex limit removal or host regex fallback. The composed scheduling/accounting
+SDK passes1055 tests across73 files, but actual React still times out.
+
 The native browser fetched the missing main.js on September18 at12:14:14.901UTC:
 HTTP200,843255 JavaScript bytes. The vendors request stopped at the existing
 2000000-byte decoded limit; retain that failure and use only a separately proved,

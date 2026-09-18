@@ -56,6 +56,8 @@ export interface ScriptLimits {
 	maxResultBytes: number;
 }
 
+export type ScriptBudgetProfile = "bounded-v1" | "large-source-v1";
+
 const defaults: ScriptLimits = {
 	maxSourceCodeUnits: 262_144,
 	maxSteps: 100_000,
@@ -68,15 +70,38 @@ const defaults: ScriptLimits = {
 	maxResultBytes: 65_536,
 };
 
+const largeSourceDefaults: Readonly<ScriptLimits> = Object.freeze({
+	...defaults,
+	maxSourceCodeUnits: 4_194_304,
+	maxSteps: 16_000_000,
+	maxCallDepth: 512,
+	maxStringLength: 4_194_304,
+	maxArrayLength: 262_144,
+	maxDataSize: 16_777_216,
+	timeoutMs: 16_000,
+});
+
 export function scriptLimits(
 	overrides: Partial<ScriptLimits> = {},
+	profile: ScriptBudgetProfile = "bounded-v1",
 ): Readonly<ScriptLimits> {
-	const limits = Object.freeze({ ...defaults, ...overrides });
+	if (profile !== "bounded-v1" && profile !== "large-source-v1")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid script budget profile",
+		);
+	const limits = Object.freeze({
+		...(profile === "large-source-v1" ? largeSourceDefaults : defaults),
+		...overrides,
+	});
 	for (const key of Object.keys(defaults) as (keyof ScriptLimits)[])
 		if (
 			!Number.isSafeInteger(limits[key]) ||
 			limits[key] < 1 ||
-			limits[key] > defaults[key] * 16
+			limits[key] >
+				(profile === "large-source-v1" && key === "maxSteps"
+					? largeSourceDefaults.maxSteps
+					: defaults[key] * 16)
 		)
 			throw new AgentBrowserError(
 				"invalid-input",

@@ -16,6 +16,7 @@ import {
 } from "./page-runtime.js";
 import {
 	type ScriptEvaluation,
+	type ScriptBudgetProfile,
 	type ScriptLimits,
 	scriptJsonResult,
 	scriptLimits,
@@ -37,6 +38,7 @@ export type {
 } from "./page-runtime.js";
 
 export interface PageScriptOptions extends PageBindingOptions {
+	budgetProfile?: ScriptBudgetProfile;
 	networkSourceModules?: PageNetworkModuleOptions;
 	limits?: Partial<ScriptLimits>;
 	maxPendingCallbacks?: number;
@@ -83,7 +85,7 @@ export class PageScripts {
 			"networkSourceModules",
 			true,
 		) as PageNetworkModuleOptions | undefined;
-		this.limits = scriptLimits(options.limits);
+		this.limits = scriptLimits(options.limits, options.budgetProfile);
 		if (networkSourceModules !== undefined) {
 			const documentUrl = moduleInputData(networkSourceModules, "documentUrl");
 			if (documentUrl !== page.document.url)
