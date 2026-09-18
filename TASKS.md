@@ -61,7 +61,23 @@ Explicit regex-source/compile-allocation forwarding now passes410 native tests
 in14 files with build/types/format/lint passing; SDK/vendor execution remains
 separate. The ordinary profile omits both options. No global regex limit removal
 or host regex fallback. The composed scheduling/accounting
-SDK passes1055 tests across73 files, but actual React still times out.
+SDK passes1055 tests across73 files. The regex extension passes477 scoped SDK
+tests; the actual4143-unit literal constructs with both options and retains
+default/single-option rejection controls. ASSETS25 now registers the complete
+2713574-byte vendor through the native page/public SDK at the ordinary16s cap:
+3094986 steps,3498483 peak logical data units, clean closure. Module bodies and
+meeting UI are not thereby executed. Actual React still fails the ordinary16s
+gate. A separate explicit application-v1 profile supports finite120s evaluation
+with unchanged work/data/regex safety limits;434 native tests in14 files and
+quality checks pass. This is capability policy, not a performance improvement.
+
+The one-GET fresh-session metadata run onSeptember18 at13:55:46.939UTC returns
+HTTP200/71193 decoded bytes, with no outgoing cookies or credentials and clean
+session/transport/jar closure. It observes14 Domain-cookie rejections in the
+selected immutable core, establishing a compatibility gap, not the cause of the
+child302. Pinned-PSL domain-cookie support is now being implemented. The observed
+Referrer-Policy is strict-origin-when-cross-origin; conservative cookie-echo
+redaction withheld CSP values. No response body or cookie values were persisted.
 
 The native browser fetched the missing main.js on September18 at12:14:14.901UTC:
 HTTP200,843255 JavaScript bytes. The vendors request stopped at the existing

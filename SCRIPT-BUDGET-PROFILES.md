@@ -39,9 +39,25 @@ CLI budget environment option in this change. Invalid profile names and
 nonpositive/noninteger/excessive limits reject before page runtime allocation.
 The SDK, process heap/watchdog, network and loader retain their separate limits.
 
-The captured Zoom vendor advanced beyond its former 1.6M-step parsing rejection
-under this profile, then reached the SDK's separate 4096-unit regex-source cap.
-Native adapter tests now verify the explicit regex options and default omission;
-actual SDK/vendor validation remains a separate gate. The vendor has not executed
-successfully. React also still exceeds the unchanged16s
-deadline. Neither failure is relabeled as success by selecting this profile.
+The captured Zoom vendor now registers through the actual SDK with both regex
+options: ASSETS25 passes, using 3,094,986 steps and 3,498,483 peak logical data
+units. This is offline chunk registration, not module execution, full navigation,
+or meeting readiness. Earlier parsing and regex failures remain historical
+evidence. React still exceeds the ordinary 16s deadline.
+
+## Slow application initialization
+
+`application-v1` is a separate explicit programmatic option. It uses the same
+defaults and ceilings as `large-source-v1`, except its evaluation timeout defaults
+to, and cannot exceed, 120000ms. Smaller overrides remain supported. Both existing
+profiles retain their prior timeout ceilings; omitting the profile changes nothing.
+Cancellation, cumulative work/data limits, regex matching limits and output caps
+remain active. Native integration passes 434 tests in 14 files with build, types,
+formatting and lint checks passing.
+
+This option distinguishes slow initialization capability from performance. It is
+not a speed improvement or a retroactive pass of earlier timeout failures. Actual
+application execution remains a separate acceptance gate. Owned processes still
+have independent command/startup/heartbeat/heap limits: selecting this profile
+does not silently increase them. A command that needs longer than the default
+30000ms must also explicitly select an appropriate finite `commandTimeoutMs`.

@@ -132,7 +132,8 @@ export class PageScripts {
 				this.bindings?.console.buffer.write(level, values);
 			};
 			this.runtime = factory.createPageRuntime({
-				...(budgetProfile === "large-source-v1"
+				...(budgetProfile === "large-source-v1" ||
+				budgetProfile === "application-v1"
 					? { regexSourceLength: 8192, regexCompileAllocations: 32768 }
 					: {}),
 				...(existingDocumentWebSockets(page.document)

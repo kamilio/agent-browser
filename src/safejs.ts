@@ -56,7 +56,10 @@ export interface ScriptLimits {
 	maxResultBytes: number;
 }
 
-export type ScriptBudgetProfile = "bounded-v1" | "large-source-v1";
+export type ScriptBudgetProfile =
+	| "bounded-v1"
+	| "large-source-v1"
+	| "application-v1";
 
 const defaults: ScriptLimits = {
 	maxSourceCodeUnits: 262_144,
@@ -81,32 +84,50 @@ const largeSourceDefaults: Readonly<ScriptLimits> = Object.freeze({
 	timeoutMs: 16_000,
 });
 
+const applicationDefaults: Readonly<ScriptLimits> = Object.freeze({
+	...largeSourceDefaults,
+	timeoutMs: 120_000,
+});
+
 export function scriptLimits(
 	overrides: Partial<ScriptLimits> = {},
 	profile: ScriptBudgetProfile = "bounded-v1",
 ): Readonly<ScriptLimits> {
-	if (profile !== "bounded-v1" && profile !== "large-source-v1")
+	if (
+		profile !== "bounded-v1" &&
+		profile !== "large-source-v1" &&
+		profile !== "application-v1"
+	)
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Invalid script budget profile",
 		);
+	const profileDefaults =
+		profile === "application-v1"
+			? applicationDefaults
+			: profile === "large-source-v1"
+				? largeSourceDefaults
+				: defaults;
 	const limits = Object.freeze({
-		...(profile === "large-source-v1" ? largeSourceDefaults : defaults),
+		...profileDefaults,
 		...overrides,
 	});
-	for (const key of Object.keys(defaults) as (keyof ScriptLimits)[])
+	for (const key of Object.keys(defaults) as (keyof ScriptLimits)[]) {
+		let ceiling = defaults[key] * 16;
+		if (profile !== "bounded-v1" && key === "maxSteps")
+			ceiling = largeSourceDefaults.maxSteps;
+		if (profile === "application-v1" && key === "timeoutMs")
+			ceiling = applicationDefaults.timeoutMs;
 		if (
 			!Number.isSafeInteger(limits[key]) ||
 			limits[key] < 1 ||
-			limits[key] >
-				(profile === "large-source-v1" && key === "maxSteps"
-					? largeSourceDefaults.maxSteps
-					: defaults[key] * 16)
+			limits[key] > ceiling
 		)
 			throw new AgentBrowserError(
 				"invalid-input",
 				"Invalid script runtime limit",
 			);
+	}
 	return limits;
 }
 
