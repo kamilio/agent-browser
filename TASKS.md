@@ -6,6 +6,16 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Restore CLI cache admission priority
+
+- Fix the four baseline CLI resource-cache failures separately from selector
+  reuse: reject incompatible anonymous-cache/script settings before script-mode
+  validation, while explicit adapter/root validation still runs first.
+- Add fully configured classic/module rejection cases before IO. Selected native
+ 115/0 in4 files and build/types/format/lint pass; no new full-suite pass claim.
+- Evidence: cli-cache-admission-september18. Preserve the original broad failed
+  run and all website/SDK/credential gates. No SDK activation or push.
+
 ### Finish bounded CSS selector reuse
 
 - Reuse non-nested selector matches within one cascade, capped at1024 entries,

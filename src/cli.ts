@@ -51,6 +51,13 @@ function runtimeConfiguration() {
 			"invalid-input",
 			"AGENT_BROWSER_PAGE_RUNTIME requires an explicit SafeJS package root",
 		);
+	const resourceCache = resourceCacheFromEnvironment(
+		process.env.AGENT_BROWSER_RESOURCE_CACHE,
+		{
+			documentProfile,
+			processRuntime: packageRoot !== undefined || websiteScripts !== undefined,
+		},
+	);
 	if (
 		websiteScripts !== undefined &&
 		websiteScripts !== "classic" &&
@@ -70,13 +77,6 @@ function runtimeConfiguration() {
 			"unsupported",
 			"Website scripts require an explicit SafeJS process runtime",
 		);
-	const resourceCache = resourceCacheFromEnvironment(
-		process.env.AGENT_BROWSER_RESOURCE_CACHE,
-		{
-			documentProfile,
-			processRuntime: packageRoot !== undefined || websiteScripts !== undefined,
-		},
-	);
 	return {
 		packageRoot,
 		runtimeAdapter,

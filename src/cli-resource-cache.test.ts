@@ -340,6 +340,18 @@ describe("synthetic CLI resource cache startup", () => {
 		},
 	);
 
+	it.each(["classic", "module"])(
+		"rejects resource reuse with a fully configured %s runtime before IO",
+		async (websiteScripts) => {
+			vi.stubEnv("AGENT_BROWSER_RESOURCE_CACHE", enabledSetting);
+			vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", "extension");
+			vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", "/synthetic/root");
+			vi.stubEnv("AGENT_BROWSER_PAGE_SCRIPTS", websiteScripts);
+			fixture.connection = { synthetic: "existing-service" };
+			await expectRejected("unsupported", "Resource reuse requires");
+		},
+	);
+
 	it.each([undefined, enabledSetting])(
 		"captures setting %j before connection reading",
 		async (setting) => {
