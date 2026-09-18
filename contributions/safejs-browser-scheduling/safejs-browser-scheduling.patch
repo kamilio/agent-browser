@@ -1,0 +1,1967 @@
+diff --git a/packages/safe-js/README.md b/packages/safe-js/README.md
+index b9e4a70..5f86872 100644
+--- a/packages/safe-js/README.md
++++ b/packages/safe-js/README.md
+@@ -218,11 +218,38 @@ This prints `2`. Evaluations share declarations, closures and object identity wi
+ | `grants` | Granted capability names; `[]`. Every requested capability must be granted before any extension setup runs. |
+ | `builtinOverrides` | Optional `{ console: "extension-name" }` authorizes that registered extension to replace only the builtin console. It must declare `console` and export a host object created in the realm. No overrides by default. |
+ | `limits` | Positive integer caps: `extensions: 32`, `hostObjects: 1024`, `callbacks: 1024`, `guestReferences: 1024`, `cleanups: 1024`, `nestedEvaluations: 16`. Collection budgets also apply. |
++| `callbackScheduling` | Optional `"after-prefix"` for a trusted host scheduler. Omit to retain exclusive evaluation while external callbacks are pending. |
+ 
+ Ordinary host arguments/results are still copied. To preserve live native identity, explicitly create a host object. A guest function crossing to the host becomes an opaque callback: invoke it with `realm.invokeCallback(callback, { thisValue?, args? })`, then `realm.releaseCallback(callback)` when no longer needed. Callbacks and live objects cannot cross realms or survive close. For deferred arguments that must preserve guest identity, opt into retained references as described below.
+ 
+ Need synchronous effects without waiting for an async callback's tail? Use `realm.startCallback(callback, options)` or `context.startCallback(callback, options)`. The frozen `CallbackInvocation` exposes two promises: await `synchronous` when the guest function returns or its async body reaches its first `await`; await `result` for the final value. Interpreter implementation awaits and budget work do not complete the prefix. Ordinary throws reject both promises; nonfatal async-function errors reject only `result`, even before the first `await`. Close, abort and fatal errors reject still-pending handles without changing a completed prefix. The same callback limits, identity and reentry rules apply; no extra grant is required. Calls started outside a host operation are queued in invocation order. Browser event/default-action policy remains the host's responsibility.
+ 
++With `createRealm({ callbackScheduling: "after-prefix" })`, an external host can
++await a callback's real `synchronous` handle and then call `evaluate` while its
++`result` remains pending. All admitted callbacks must have completed their first
++prefix. Source calls still reject with `code: "reentry"` while another source
++is active, including top-level await, or from a guest-owned host operation.
++Source and callback jobs share the existing realm queue, declarations, references
++and cumulative budget. The host must retain and observe callback results; later
++source may supply the state needed to settle them. No source is queued on behalf
++of a rejected call, and the option is not a guest capability or a nested-source
++grant. `invokeCallback` uses the same internal prefix boundary.
++
++Module results remain namespaces, and imports initiated by the admitted source
++remain part of its completion; independent callback imports are not joined into
++that source. Pending callbacks conservatively defer allocation reconciliation
++and compiled-ticket disposal, so more of the data budget may remain charged until
++callbacks and the source finish. Limits are not reset or enlarged.
++
++In this mode a callback failure aborts the realm and rejects its result without
++waiting for global cleanup (a joined callback must not wait on its own caller).
++Use an external `close()` to await complete cleanup, including cleanup failures.
++Calling `close()` from a guest-owned host operation initiates cancellation but
++rejects with `code: "reentry"`; awaiting cleanup there would deadlock its caller.
++External close waits for canceled source, callback and interpreter jobs to unwind
++before releasing retained resources. This scheduling option is a source proposal;
++its authored tests have not been executed or qualified for browser use.
++
+ <details>
+ <summary>Trusted extensions and live host objects</summary>
+ 
+diff --git a/packages/safe-js/src/interp/budget-reconciliation-hold.test.ts b/packages/safe-js/src/interp/budget-reconciliation-hold.test.ts
+new file mode 100644
+index 0000000..6f80462
+--- /dev/null
++++ b/packages/safe-js/src/interp/budget-reconciliation-hold.test.ts
+@@ -0,0 +1,39 @@
++import { expect, it } from "vitest";
++import { Budget } from "./budget.js";
++import { reconcileCompiledValues } from "./values.js";
++
++it("defers compiled ticket disposal and reconciliation until the last hold is released", () => {
++  const budget = new Budget({ dataSize: 1000 });
++  const owner = budget.acquireCompileOwner(true);
++  const ticket = budget.createCompileTicket(owner.owner);
++  budget.resizeCompileTicket(ticket, 20);
++  budget.chargeDataUsage(10);
++  const first = budget.deferReconciliation();
++  const second = budget.deferReconciliation();
++  try {
++    budget.discardCompileTicket(ticket);
++    reconcileCompiledValues(budget, []);
++    expect(budget.compileTicketUsage(ticket)).toBe(20);
++    expect(budget.currentDataSize).toBe(30);
++    first();
++    first();
++    expect(budget.reconciliationDeferred).toBe(true);
++    second();
++    expect(budget.reconciliationDeferred).toBe(false);
++    reconcileCompiledValues(budget, []);
++    expect(budget.compileTicketUsage(ticket)).toBe(0);
++    expect(budget.currentDataSize).toBe(0);
++  } finally { first(); second(); owner.release(); }
++});
++
++it("does not roll back another suspended operation's allocations", () => {
++  const budget = new Budget();
++  const release = budget.deferReconciliation();
++  const rollback = budget.provisionDataUsage(10);
++  budget.chargeDataUsage(20);
++  rollback();
++  expect(budget.currentDataSize).toBe(30);
++  release();
++  reconcileCompiledValues(budget, []);
++  expect(budget.currentDataSize).toBe(0);
++});
+diff --git a/packages/safe-js/src/interp/budget.ts b/packages/safe-js/src/interp/budget.ts
+index b07baf7..e8dd417 100644
+--- a/packages/safe-js/src/interp/budget.ts
++++ b/packages/safe-js/src/interp/budget.ts
+@@ -112,6 +112,8 @@ class BudgetAccounting {
+   provisionalScopes = 0;
+   readonly compileTickets = new Map<CompileTicket, number>();
+   readonly completedCompileTickets = new Set<CompileTicket>();
++  reconciliationHolds = 0;
++  readonly deferredCompileDiscards = new Set<CompileTicket>();
+ 
+   realmViews?: Set<WeakRef<Budget>>;
+ 
+@@ -213,7 +215,8 @@ export class Budget {
+   }
+ 
+   reconcileDataUsage(usage: number): void {
+-    const total = usage + this.accounting.retainedDataSize;
++    const measured = usage + this.accounting.retainedDataSize;
++    const total = this.reconciliationDeferred ? Math.max(measured, this.accounting.currentDataSize) : measured;
+     this.checkDataUsage(total);
+     this.accounting.currentDataSize = total;
+     this.accounting.peakDataSize = Math.max(this.accounting.peakDataSize, total);
+@@ -238,6 +241,25 @@ export class Budget {
+     else this.accounting.retainedValueSources.set(owner, values);
+   }
+ 
++  get reconciliationDeferred(): boolean {
++    return this.accounting.reconciliationHolds > 0;
++  }
++
++  deferReconciliation(): () => void {
++    this.accounting.reconciliationHolds++;
++    const generation = this.accounting.compileGeneration;
++    let released = false;
++    return () => {
++      if (released) return;
++      released = true;
++      if (generation !== this.accounting.compileGeneration) return;
++      if (--this.accounting.reconciliationHolds !== 0) return;
++      for (const ticket of this.accounting.deferredCompileDiscards)
++        this.accounting.completedCompileTickets.add(ticket);
++      this.accounting.deferredCompileDiscards.clear();
++    };
++  }
++
+   *retainedValues(): Iterable<unknown> {
+     for (const values of this.accounting.retainedValueSources.values()) {
+       const retained = values();
+@@ -299,6 +321,7 @@ export class Budget {
+     if (ticket.owner.generation !== this.accounting.compileGeneration || !this.accounting.compileTickets.has(ticket)) {
+       throw new SandboxError("reentry");
+     }
++    if (this.reconciliationDeferred) usage = Math.max(usage, this.compileTicketUsage(ticket));
+     this.setRetainedDataUsage(ticket, usage);
+     this.accounting.compileTickets.set(ticket, usage);
+   }
+@@ -307,6 +330,10 @@ export class Budget {
+     if (ticket.owner.generation !== this.accounting.compileGeneration) return;
+     const usage = this.accounting.compileTickets.get(ticket);
+     if (usage === undefined) return;
++    if (this.reconciliationDeferred) {
++      this.accounting.deferredCompileDiscards.add(ticket);
++      return;
++    }
+     this.accounting.compileTickets.delete(ticket);
+     this.accounting.completedCompileTickets.delete(ticket);
+     this.accounting.retainedData.delete(ticket);
+@@ -321,6 +348,11 @@ export class Budget {
+     retainedOwner?: object,
+     complete = false
+   ): ReadonlySet<CompileTicket> {
++    if (this.reconciliationDeferred) {
++      if (retainedOwner !== undefined) this.setRetainedDataUsage(retainedOwner, usage);
++      else this.reconcileDataUsage(usage);
++      return new Set();
++    }
+     let includedUsage = 0;
+     let transferredUsage = 0;
+     let discardedUsage = 0;
+@@ -399,8 +431,11 @@ export class Budget {
+       released = true;
+       if (generation !== this.accounting.compileGeneration) return;
+       this.accounting.provisionalScopes -= 1;
+-      if (!commit)
+-        this.accounting.currentDataSize = previous + this.accounting.retainedDataSize - previousRetained;
++      if (!commit) {
++        const restored = previous + this.accounting.retainedDataSize - previousRetained;
++        this.accounting.currentDataSize = this.reconciliationDeferred
++          ? Math.max(restored, this.accounting.currentDataSize) : restored;
++      }
+     };
+   }
+ 
+@@ -425,6 +460,8 @@ export class Budget {
+     this.accounting.provisionalScopes = 0;
+     this.accounting.compileTickets.clear();
+     this.accounting.completedCompileTickets.clear();
++    this.accounting.reconciliationHolds = 0;
++    this.accounting.deferredCompileDiscards.clear();
+     this.accounting.stepsUsed = 0;
+     this.accounting.peakCallDepth = 0;
+     this.accounting.currentCallDepth = 0;
+diff --git a/packages/safe-js/src/interp/jobs.ts b/packages/safe-js/src/interp/jobs.ts
+index 9e43b4c..7e166f3 100644
+--- a/packages/safe-js/src/interp/jobs.ts
++++ b/packages/safe-js/src/interp/jobs.ts
+@@ -21,17 +21,46 @@ type PauseRequest = {
+ type ExecutionJob = {
+   queue: SandboxJobQueue;
+   ownsExecution: boolean;
++  attribution?: ReadonlyMap<object, object | undefined>;
+   prefixParent?: ExecutionJob;
+   keptTargets?: Map<Budget, Set<object | symbol>>;
+ };
+ 
+ const activeJob = new AsyncLocalStorage<ExecutionJob>();
++const activeAttribution = new AsyncLocalStorage<{
++  job: ExecutionJob | undefined;
++  values: ReadonlyMap<object, object | undefined> | undefined;
++}>();
++
++function currentJobAttribution(): ReadonlyMap<object, object | undefined> | undefined {
++  const job = activeJob.getStore();
++  const scoped = activeAttribution.getStore();
++  return scoped !== undefined && scoped.job === job
++    ? scoped.values
++    : job?.attribution ?? scoped?.values;
++}
++
++export function getJobAttribution(key: object): object | undefined {
++  return currentJobAttribution()?.get(key);
++}
++
++export function withJobAttribution<Result>(key: object, value: object | undefined, task: () => Result): Result {
++  const values = new Map(currentJobAttribution());
++  values.set(key, value);
++  return activeAttribution.run({ job: activeJob.getStore(), values }, task);
++}
++
++export function captureJobAttribution(): <Result>(task: () => Result) => Result {
++  const values = currentJobAttribution();
++  return task => activeAttribution.run({ job: activeJob.getStore(), values }, task);
++}
+ 
+ export class SandboxJobQueue {
+   private running = false;
+   private pending: Array<() => void> = [];
+   private ready: Array<() => void> = [];
+   private readonly idle: Array<() => void> = [];
++  private readonly unsettled = new Set<Promise<unknown>>();
+   private generation = 0;
+   private controlled = false;
+   private nodesUntilHostTurn = 4096;
+@@ -139,7 +168,7 @@ export class SandboxJobQueue {
+   }
+ 
+   bind<T>(task: () => T): T {
+-    return activeJob.run({queue: this, ownsExecution: false}, task);
++    return activeJob.run({queue: this, ownsExecution: false, attribution: currentJobAttribution()}, task);
+   }
+ 
+   acquire(job: ExecutionJob): Promise<void> {
+@@ -164,16 +193,32 @@ export class SandboxJobQueue {
+     this.advance();
+   }
+ 
+-  async run<T>(task: () => T | Promise<T>): Promise<T> {
+-    const job = { queue: this, ownsExecution: false };
+-    await this.acquire(job);
+-    return activeJob.run(job, async () => {
+-      try {
+-        return await task();
+-      } finally {
+-        this.release(job);
+-      }
+-    });
++  run<T>(task: () => T | Promise<T>): Promise<T> {
++    if (this.finished) return Promise.reject(this.interruption?.reason ?? new Error("Execution is finished."));
++    return this.track((async () => {
++      const job = { queue: this, ownsExecution: false, attribution: currentJobAttribution() };
++      await this.acquire(job);
++      return activeJob.run(job, async () => {
++        try {
++          return await task();
++        } finally {
++          this.release(job);
++        }
++      });
++    })());
++  }
++
++  track<T>(pending: Promise<T>): Promise<T> {
++    this.unsettled.add(pending);
++    void pending.then(
++      () => { this.unsettled.delete(pending); },
++      () => { this.unsettled.delete(pending); }
++    );
++    return pending;
++  }
++
++  async settle(): Promise<void> {
++    while (this.unsettled.size > 0) await Promise.allSettled([...this.unsettled]);
+   }
+ 
+   async drain(): Promise<void> {
+@@ -233,7 +278,8 @@ export function runPromiseJob<T>(task: () => T | Promise<T>): Promise<T> {
+ export function captureJobScheduler(): <T>(task: () => T | Promise<T>) => Promise<T> {
+   const queue = activeJob.getStore()?.queue ?? new SandboxJobQueue();
+   const context = AsyncLocalStorage.snapshot();
+-  return task => context(() => queue.run(task));
++  const attribution = captureJobAttribution();
++  return task => context(() => attribution(() => queue.run(task)));
+ }
+ 
+ export function keepJobTarget(target: object | symbol, budget: Budget): void {
+@@ -266,6 +312,7 @@ export function createResumableJobContext(): {run<T>(task: () => T): T; release(
+       if (ancestor === frame) return activeJob.run(frame, task);
+     }
+     frame.queue = parent.queue;
++    frame.attribution = currentJobAttribution();
+     frame.prefixParent = parent;
+     return activeJob.run(frame, task);
+   }, release: () => {
+@@ -282,15 +329,18 @@ export function runAsyncPrefix<T>(task: () => Promise<T>, joinOwner = false): Pr
+   // Authorized nested source is joined by its enclosing host call. Sharing
+   // that execution token lets a guest await release/reacquire the queue; a
+   // host implementation yield alone still holds the enclosing prefix.
+-  if (joinOwner) return activeJob.run(owner, task);
+-  const job = { queue: parent.queue, ownsExecution: false, prefixParent: parent };
+-  return activeJob.run(job, async () => {
++  if (joinOwner) {
++    const attribution = captureJobAttribution();
++    return parent.queue.track(activeJob.run(owner, () => attribution(task)));
++  }
++  const job = { queue: parent.queue, ownsExecution: false, prefixParent: parent, attribution: currentJobAttribution() };
++  return job.queue.track(activeJob.run(job, async () => {
+     try {
+       return await task();
+     } finally {
+       job.queue.release(job);
+     }
+-  });
++  }));
+ }
+ 
+ export async function suspendJob<T>(pending: Promise<T>): Promise<T> {
+diff --git a/packages/safe-js/src/interp/promise-tracker-ownership.test.ts b/packages/safe-js/src/interp/promise-tracker-ownership.test.ts
+new file mode 100644
+index 0000000..88a0c0f
+--- /dev/null
++++ b/packages/safe-js/src/interp/promise-tracker-ownership.test.ts
+@@ -0,0 +1,185 @@
++import { describe, expect, it, vi } from "vitest";
++import { SandboxError } from "./budget.js";
++import { createGeneratorChannel } from "./generator.js";
++import { SandboxJobQueue, runAsyncPrefix, suspendJob } from "./jobs.js";
++import { SandboxPromiseRejectionTracker } from "./promise-tracker.js";
++import { createSandboxPromise, type SandboxValue } from "./values.js";
++
++function rejected(tracker: SandboxPromiseRejectionTracker, owner: object | undefined, reason: SandboxValue) {
++  return tracker.withOperation(owner, () => {
++    const promise = createSandboxPromise(Promise.reject(reason));
++    tracker.track(promise);
++    return promise;
++  });
++}
++
++describe("promise rejection operation ownership", () => {
++  it("checks its own records, excludes active others and keeps default checks global", async () => {
++    const tracker = new SandboxPromiseRejectionTracker();
++    const source = tracker.startOperation();
++    const callback = tracker.startOperation();
++    const promise = rejected(tracker, source, "source-owned");
++    expect(await tracker.findUnhandledRejection(callback)).toBeUndefined();
++    expect(await tracker.findUnhandledRejection(source)).toMatchObject({ reason: "source-owned" });
++    expect(await tracker.findUnhandledRejection()).toMatchObject({ reason: "source-owned" });
++    tracker.observe(promise);
++    expect(await tracker.findUnhandledRejection(callback)).toBeUndefined();
++    tracker.finishOperation(source);
++    tracker.finishOperation(callback);
++  });
++
++  it("does not attribute a second tracked outcome to a different operation", async () => {
++    const tracker = new SandboxPromiseRejectionTracker();
++    const source = tracker.startOperation();
++    const callback = tracker.startOperation();
++    const promise = rejected(tracker, source, "source-owned");
++    tracker.withOperation(callback, () => tracker.track(promise, promise.promise));
++    expect(await tracker.findUnhandledRejection(callback)).toBeUndefined();
++    tracker.finishOperation(source);
++    expect(await tracker.findUnhandledRejection(callback)).toMatchObject({ reason: "source-owned" });
++    tracker.finishOperation(callback);
++  });
++
++  it("does not lose a rejection that occurs after its creation owner completed", async () => {
++    const tracker = new SandboxPromiseRejectionTracker();
++    const earlier = tracker.startOperation();
++    const later = tracker.startOperation();
++    let reject!: (reason: unknown) => void;
++    const pending = new Promise<SandboxValue>((_resolve, fail) => { reject = fail; });
++    tracker.withOperation(earlier, () => tracker.track(createSandboxPromise(pending)));
++    tracker.finishOperation(earlier);
++    expect(await tracker.findUnhandledRejection(later)).toBeUndefined();
++    reject("late rejection");
++    expect(await tracker.findUnhandledRejection(later)).toMatchObject({ reason: "late rejection" });
++    tracker.finishOperation(later);
++  });
++
++  it("tracks newly created late-continuation promises even after their owner completed", async () => {
++    const tracker = new SandboxPromiseRejectionTracker();
++    const earlier = tracker.startOperation();
++    const later = tracker.startOperation();
++    let resume!: () => void;
++    const gate = new Promise<void>(resolve => { resume = resolve; });
++    const continuation = tracker.withOperation(earlier, async () => {
++      await gate;
++      tracker.track(createSandboxPromise(Promise.reject("late continuation")));
++    });
++    tracker.finishOperation(earlier);
++    resume();
++    await continuation;
++    expect(await tracker.findUnhandledRejection(later)).toMatchObject({ reason: "late continuation" });
++    tracker.finishOperation(later);
++  });
++
++  it("propagates attribution through queued and suspended jobs", async () => {
++    const tracker = new SandboxPromiseRejectionTracker();
++    const source = tracker.startOperation();
++    const callback = tracker.startOperation();
++    const queue = new SandboxJobQueue();
++    let resume!: () => void;
++    let entered!: () => void;
++    const gate = new Promise<void>(resolve => { resume = resolve; });
++    const entering = new Promise<void>(resolve => { entered = resolve; });
++    try {
++      const task = tracker.withOperation(source, () => queue.run(async () => {
++        entered();
++        await suspendJob(gate);
++        tracker.track(createSandboxPromise(Promise.reject("queued continuation")));
++      }));
++      await entering;
++      expect(await tracker.findUnhandledRejection(callback)).toBeUndefined();
++      resume();
++      await task;
++      expect(await tracker.findUnhandledRejection(callback)).toBeUndefined();
++      expect(await tracker.findUnhandledRejection(source)).toMatchObject({ reason: "queued continuation" });
++    } finally {
++      resume();
++      tracker.finishOperation(source);
++      tracker.finishOperation(callback);
++      queue.finish();
++    }
++  });
++
++  it("changes resumed-frame attribution without changing an existing promise's owner", async () => {
++    const tracker = new SandboxPromiseRejectionTracker();
++    const first = tracker.startOperation();
++    const second = tracker.startOperation();
++    const queue = new SandboxJobQueue();
++    let original!: ReturnType<typeof createSandboxPromise>;
++    const channel = createGeneratorChannel(async yieldValue => {
++      original = createSandboxPromise(Promise.reject("original"));
++      tracker.track(original);
++      await yieldValue(0);
++      tracker.track(original, original.promise);
++      await runAsyncPrefix(async () => {
++        tracker.track(createSandboxPromise(Promise.reject("resumed child")));
++      });
++      return 1;
++    });
++    try {
++      await tracker.withOperation(first, () => queue.run(() => channel.next()));
++      await tracker.withOperation(second, () => queue.run(() => channel.next()));
++      expect(await tracker.findUnhandledRejection(second)).toMatchObject({ reason: "resumed child" });
++      expect(await tracker.findUnhandledRejection(first)).toMatchObject({ reason: "original" });
++      tracker.observe(original);
++      expect(await tracker.findUnhandledRejection(first)).toBeUndefined();
++    } finally {
++      tracker.finishOperation(first);
++      tracker.finishOperation(second);
++      queue.finish();
++    }
++  });
++
++  it("keeps an independent async prefix with its origin when a later resumer releases its gate", async () => {
++    const tracker = new SandboxPromiseRejectionTracker();
++    const first = tracker.startOperation();
++    const second = tracker.startOperation();
++    const queue = new SandboxJobQueue();
++    let resume!: () => void;
++    const gate = new Promise<void>(resolve => { resume = resolve; });
++    let continuation!: Promise<void>;
++    const channel = createGeneratorChannel(async yieldValue => {
++      continuation = runAsyncPrefix(async () => {
++        await suspendJob(gate);
++        tracker.track(createSandboxPromise(Promise.reject("independent continuation")));
++      });
++      await yieldValue(0);
++      resume();
++      return 1;
++    });
++    try {
++      await tracker.withOperation(first, () => queue.run(() => channel.next()));
++      await tracker.withOperation(second, () => queue.run(() => channel.next()));
++      await continuation;
++      expect(await tracker.findUnhandledRejection(second)).toBeUndefined();
++      expect(await tracker.findUnhandledRejection(first)).toMatchObject({ reason: "independent continuation" });
++    } finally {
++      resume();
++      tracker.finishOperation(first);
++      tracker.finishOperation(second);
++      queue.finish();
++    }
++  });
++
++  it("includes unowned rejections in an owned checkpoint", async () => {
++    const tracker = new SandboxPromiseRejectionTracker();
++    const callback = tracker.startOperation();
++    rejected(tracker, undefined, "unowned");
++    expect(await tracker.findUnhandledRejection(callback)).toMatchObject({ reason: "unowned" });
++    tracker.finishOperation(callback);
++  });
++
++  it.each(["budget", "reentry"] as const)("keeps %s failures realm-wide despite a different active owner", async kind => {
++    const tracker = new SandboxPromiseRejectionTracker();
++    const source = tracker.startOperation();
++    const callback = tracker.startOperation();
++    const notify = vi.fn();
++    tracker.onFatalRejection(notify);
++    const error = kind === "reentry" ? new SandboxError("reentry") : new SandboxError({ budget: "callDepth", current: 2, limit: 1 });
++    tracker.withOperation(source, () => tracker.track(createSandboxPromise(Promise.reject(error))));
++    await expect(tracker.findUnhandledRejection(callback)).rejects.toBe(error);
++    expect(notify).toHaveBeenCalledWith(error);
++    tracker.finishOperation(source);
++    tracker.finishOperation(callback);
++  });
++});
+diff --git a/packages/safe-js/src/interp/promise-tracker.ts b/packages/safe-js/src/interp/promise-tracker.ts
+index 8c00568..00b1840 100644
+--- a/packages/safe-js/src/interp/promise-tracker.ts
++++ b/packages/safe-js/src/interp/promise-tracker.ts
+@@ -2,9 +2,11 @@ import { AsyncLocalStorage } from "node:async_hooks";
+ 
+ import type { ErrorSourceSpan } from "../error/shape.js";
+ import { SandboxError } from "./budget.js";
++import { getJobAttribution, withJobAttribution } from "./jobs.js";
+ import type { SandboxPromise, SandboxValue } from "./values.js";
+ 
+ type TrackedPromise = {
++  owner?: object;
+   observed: boolean;
+   promise: SandboxPromise;
+   rejectionReason?: SandboxValue;
+@@ -16,6 +18,7 @@ export const unrepresentedPromiseContinuations = new WeakSet<SandboxPromise>();
+ export class SandboxPromiseRejectionTracker {
+   private readonly records = new Set<TrackedPromise>();
+   private readonly recordsByPromise = new WeakMap<SandboxPromise, TrackedPromise>();
++  private readonly activeOperations = new WeakSet<object>();
+   private fatalRejection: SandboxError | undefined;
+   private readonly fatalWaiters = new Set<(error: SandboxError) => void>();
+ 
+@@ -23,6 +26,20 @@ export class SandboxPromiseRejectionTracker {
+     return this.fatalRejection;
+   }
+ 
++  startOperation(): object {
++    const owner = {};
++    this.activeOperations.add(owner);
++    return owner;
++  }
++
++  withOperation<Result>(owner: object | undefined, task: () => Result): Result {
++    return withJobAttribution(this, owner, task);
++  }
++
++  finishOperation(owner: object | undefined): void {
++    if (owner !== undefined) this.activeOperations.delete(owner);
++  }
++
+   onFatalRejection(interrupt: (error: SandboxError) => void): () => void {
+     if (this.fatalRejection === undefined) this.fatalWaiters.add(interrupt);
+     else interrupt(this.fatalRejection);
+@@ -59,6 +76,7 @@ export class SandboxPromiseRejectionTracker {
+     }
+ 
+     const record: TrackedPromise = existing ?? {
++      owner: getJobAttribution(this),
+       observed: false,
+       promise,
+       rejected: false
+@@ -87,7 +105,7 @@ export class SandboxPromiseRejectionTracker {
+     pending.catch(() => undefined);
+   }
+ 
+-  async findUnhandledRejection(): Promise<
++  async findUnhandledRejection(owner?: object): Promise<
+     | {
+         reason: SandboxValue | undefined;
+         span: ErrorSourceSpan | undefined;
+@@ -99,7 +117,11 @@ export class SandboxPromiseRejectionTracker {
+     if (this.fatalRejection !== undefined) throw this.fatalRejection;
+ 
+     for (const record of this.records) {
+-      if (record.rejected && !record.observed) {
++      if (
++        record.rejected && !record.observed &&
++        (owner === undefined || record.owner === undefined || record.owner === owner ||
++          !this.activeOperations.has(record.owner))
++      ) {
+         return {
+           reason: record.rejectionReason,
+           span: record.promise.span
+diff --git a/packages/safe-js/src/interp/promise.ts b/packages/safe-js/src/interp/promise.ts
+index 06961e5..c2245ec 100644
+--- a/packages/safe-js/src/interp/promise.ts
++++ b/packages/safe-js/src/interp/promise.ts
+@@ -11,7 +11,7 @@ import { createIntrinsicObject, getSandboxDataProperty, getSandboxPropertyDescri
+ import { coerceThrownValue, createSubsetErrorValue, isSourceReferenceError } from "./exceptions.js";
+ import { acquireSandboxIterator, closeIterator, getSandboxIterator, readIteratorResult } from "./iteration.js";
+ import { retainValues } from "./resources.js";
+-import { runPromiseJob } from "./jobs.js";
++import { captureJobAttribution, runPromiseJob } from "./jobs.js";
+ import { observeSandboxPromise, unrepresentedPromiseContinuations } from "./promise-tracker.js";
+ import { promiseResolvingFunctions, promiseResolverActions } from "./promise-resolvers.js";
+ import { promiseContinuations, promiseReactionResults, linkPromiseAggregateProducer } from "./promise-continuations.js";
+@@ -111,6 +111,7 @@ export function attachPendingPromiseReaction(
+   context?: SandboxCallContext,
+   reactionCapability?: Extract<PromiseContinuation, {kind: "reaction"}>["capability"]
+ ): void {
++  const attribution = captureJobAttribution();
+   const continuation: Extract<PromiseContinuation, {kind: "reaction"}> = {
+     kind: "reaction", phase: "waiting", source, onFulfilled, onRejected,
+     ...(reactionCapability === undefined ? {} : {capability: reactionCapability})
+@@ -132,7 +133,10 @@ export function attachPendingPromiseReaction(
+       capability.rejectNative(error);
+     }
+   };
+-  source.promise.then(value => react(onFulfilled, value, "fulfilled"), reason => react(onRejected, reason, "rejected"));
++  source.promise.then(
++    value => attribution(() => react(onFulfilled, value, "fulfilled")),
++    reason => attribution(() => react(onRejected, reason, "rejected"))
++  );
+   trackPromiseContinuation(capability.promise, continuation);
+   const asyncHandler = isSandboxClosure(onRejected) ? asyncFunctionHandlers.get(onRejected) : undefined;
+   const generatorHandler = isSandboxClosure(onRejected) ? asyncGeneratorHandlers.get(onRejected) : undefined;
+@@ -462,32 +466,33 @@ function getPromisePrototype(budget: Budget): SandboxObject {
+     then: createSandboxClosure({
+       sandbox: true,
+       call: ([onFulfilled, onRejected], context) => {
++        const attribution = captureJobAttribution();
+         const target = context?.thisValue;
+         if (!isSandboxPromise(target))
+           throw new TypeError("Promise.then requires a promise receiver.");
+-        const finish = (constructor: SandboxClosure) => {
++        const finish = (constructor: SandboxClosure) => attribution(() => {
+           if (constructor !== intrinsicPromiseConstructors.get(budget)) {
+-            return createPromiseCapability(constructor, budget, context).then(capability => {
++            return createPromiseCapability(constructor, budget, context).then(capability => attribution(() => {
+               observeSandboxPromise(target, isSandboxPromise(capability.promise));
+               const continuation: Extract<PromiseContinuation, {kind: "reaction"}> | undefined = isSandboxPromise(capability.promise)
+                 ? {kind: "reaction", phase: "waiting", source: target, onFulfilled, onRejected,
+                     capability: {...capability, promise: capability.promise}}
+                 : undefined;
+               const completion = createSandboxPromise(target.promise.then(
+-                value => {
++                value => attribution(() => {
+                   if (continuation !== undefined) continuation.phase = "running";
+                   consumeSettledHostCall(target);
+                   return runCapabilityReaction(onFulfilled, value, "fulfilled", capability, budget, context);
+-                },
+-                (reason: SandboxValue) => {
++                }),
++                (reason: SandboxValue) => attribution(() => {
+                   if (continuation !== undefined) continuation.phase = "running";
+                   consumeSettledHostCall(target);
+                   return runCapabilityReaction(onRejected, reason, "rejected", capability, budget, context);
+-                }
++                })
+               ));
+               if (continuation !== undefined) trackPromiseContinuation(completion, continuation);
+               return capability.promise;
+-            });
++            }));
+           }
+           observeSandboxPromise(target, true);
+           const continuation: Extract<PromiseContinuation, {kind: "reaction"}> = {
+@@ -495,22 +500,22 @@ function getPromisePrototype(budget: Budget): SandboxObject {
+           };
+           const chained = createSandboxPromise(
+             target.promise.then(
+-              (value) => {
++              (value) => attribution(() => {
+                 continuation.phase = "running";
+                 consumeSettledHostCall(target);
+                 return runPromiseReaction(onFulfilled, value, "fulfilled", budget, chained, context);
+-              },
+-              (reason: SandboxValue) => {
++              }),
++              (reason: SandboxValue) => attribution(() => {
+                 continuation.phase = "running";
+                 consumeSettledHostCall(target);
+                 return runPromiseReaction(onRejected, reason, "rejected", budget, chained, context);
+-              }
++              })
+             )
+           );
+           setSandboxPrototype(chained, prototype, budget);
+           trackPromiseContinuation(chained, continuation);
+           return chained;
+-        };
++        });
+         const constructor = getPromiseSpeciesConstructor(target, prototype, budget, context);
+         return constructor instanceof Promise ? constructor.then(finish) : finish(constructor);
+       },
+diff --git a/packages/safe-js/src/interp/values.ts b/packages/safe-js/src/interp/values.ts
+index 78ad7cb..7272312 100644
+--- a/packages/safe-js/src/interp/values.ts
++++ b/packages/safe-js/src/interp/values.ts
+@@ -1303,6 +1303,7 @@ export function reconcileCompiledValues(
+   parent?: CompileScope,
+   escaping: Iterable<unknown> = []
+ ): void {
++  if (budget.reconciliationDeferred) return;
+   while (parent?.closed) parent = parent.parent;
+   const included = new Set<CompileTicket>();
+   const usage = measureSandboxData([...values, ...budget.retainedValues()], { compileTickets: included });
+diff --git a/packages/safe-js/src/modules/source-graph.ts b/packages/safe-js/src/modules/source-graph.ts
+index cc4fc13..1c314d5 100644
+--- a/packages/safe-js/src/modules/source-graph.ts
++++ b/packages/safe-js/src/modules/source-graph.ts
+@@ -1,4 +1,5 @@
+ import {parseSourceModule, type ParsedSourceModule} from "../parse/source-module.js";
++import {AsyncLocalStorage} from "node:async_hooks";
+ import type { Module } from "../parse/parser.js";
+ import {interpret, type InterpretOptions} from "../interp/interpreter.js";
+ import {Scope} from "../interp/scope.js";
+@@ -42,6 +43,7 @@ export class SourceModuleGraph {
+   private readonly requests = new Map<string, Promise<RecordEntry | SandboxObject>>();
+   private requestDataSize = 0;
+   private readonly pendingImports = new Set<Promise<SandboxObject>>();
++  private readonly importGroup = new AsyncLocalStorage<Set<Promise<SandboxObject>>>();
+   private readonly jobs: SandboxJobQueue;
+   private readonly evaluationStack: RecordEntry[] = [];
+   private evaluationIndex = 0;
+@@ -50,6 +52,7 @@ export class SourceModuleGraph {
+     scope: Scope;
+     resolver: SourceResolver;
+     modules: ModuleEnvironment;
++    serializePreparation?: boolean;
+   }) {
+     this.jobs = options.jobs ?? new SandboxJobQueue();
+     attachSourceLoader(options.modules,this.import.bind(this));
+@@ -66,31 +69,50 @@ export class SourceModuleGraph {
+   }
+ 
+   import(specifier: string, referrer: string): Promise<SandboxObject> {
++    const group = this.importGroup.getStore();
+     const pending=(async () => {
+       const entry = await this.load(specifier, referrer);
+       if (!isRecord(entry)) return entry;
+       await this.loadGraph(entry);
+-      await this.link(entry);
++      if (this.options.serializePreparation) await this.jobs.run(() => this.link(entry));
++      else await this.link(entry);
+       await this.evaluate(entry);
+       await this.jobs.drain();
+       return this.namespace(entry);
+     })();
+     this.pendingImports.add(pending);
+-    void pending.then(() => this.pendingImports.delete(pending), () => this.pendingImports.delete(pending));
++    group?.add(pending);
++    const release = () => { this.pendingImports.delete(pending); group?.delete(pending); };
++    void pending.then(release, release);
+     return pending;
+   }
+ 
+-  async settle(): Promise<void> {
++  withoutImportGroup<Result>(task: () => Result): Result {
++    return this.importGroup.exit(task);
++  }
++
++  withImportGroup<Result>(task: () => Promise<Result>): Promise<Result> {
++    const group = new Set<Promise<SandboxObject>>();
++    return this.importGroup.run(group, async () => {
++      const result = await task();
++      await this.settle(group);
++      return result;
++    });
++  }
++
++  async settle(pendingImports = this.pendingImports): Promise<void> {
+     do {
+-      await Promise.allSettled([...this.pendingImports]);
++      await Promise.allSettled([...pendingImports]);
+       await this.jobs.drain();
+-    } while (this.pendingImports.size > 0);
++    } while (pendingImports.size > 0);
+   }
+ 
+   async evaluateSource(source: SourceModule, beforeEvaluation?: (module: Module) => void): Promise<SandboxObject> {
+-    const entry = this.register(source);
++    const entry = this.options.serializePreparation
++      ? await this.jobs.run(() => this.register(source)) : this.register(source);
+     await this.loadGraph(entry);
+-    await this.link(entry);
++    if (this.options.serializePreparation) await this.jobs.run(() => this.link(entry));
++    else await this.link(entry);
+     beforeEvaluation?.(entry.parsed.module);
+     await this.evaluate(entry);
+     await this.jobs.drain();
+@@ -98,6 +120,8 @@ export class SourceModuleGraph {
+   }
+ 
+   private register(source: SourceModule): RecordEntry {
++      this.options.assertActive?.();
++      this.options.signal?.throwIfAborted();
+       const known = this.records.get(source.id);
+       if (known !== undefined) {
+         if (known.source !== source.source) throw new TypeError(`Source identity '${source.id}' changed within the graph.`);
+@@ -134,7 +158,8 @@ export class SourceModuleGraph {
+       if (source === undefined) throw new TypeError(`Source resolver denied '${specifier}' from '${referrer}'.`);
+       if (typeof source.id !== "string" || source.id.length === 0 || typeof source.source !== "string")
+         throw new TypeError("Source resolver must supply a nonempty identity and source text.");
+-      return this.register(source);
++      return this.options.serializePreparation
++        ? this.jobs.run(() => this.register(source)) : this.register(source);
+     })();
+     this.requests.set(key,request);
+     return request;
+diff --git a/packages/safe-js/src/realm-browser-scheduling.test.ts b/packages/safe-js/src/realm-browser-scheduling.test.ts
+new file mode 100644
+index 0000000..0c6d214
+--- /dev/null
++++ b/packages/safe-js/src/realm-browser-scheduling.test.ts
+@@ -0,0 +1,775 @@
++import { describe, expect, it, vi } from "vitest";
++import { Budget, createRealm, defineExtension, type RealmOptions } from "./core.js";
++
++function deferred<Value = void>() {
++  let resolve!: (value: Value) => void;
++  let reject!: (reason: unknown) => void;
++  const promise = new Promise<Value>((yes, no) => { resolve = yes; reject = no; });
++  return { promise, resolve, reject };
++}
++
++function fixture(options: RealmOptions = {}) {
++  const callbacks: unknown[] = [];
++  const marks: unknown[] = [];
++  const tail = deferred();
++  const sourceEntered = deferred();
++  const sourceWait = deferred();
++  const realm = createRealm({
++    callbackScheduling: "after-prefix",
++    ...options,
++    bindings: {
++      save: (callback: unknown) => { callbacks.push(callback); },
++      mark: (value: unknown) => { marks.push(value); },
++      wait: () => tail.promise,
++      sourceWait: () => { sourceEntered.resolve(); return sourceWait.promise; },
++      ...options.bindings
++    }
++  });
++  return { realm, callbacks, marks, tail, sourceEntered, sourceWait };
++}
++
++describe("explicit callback-prefix source scheduling", () => {
++  it("admits later source without waiting for a tail and lets that source resolve it", async () => {
++    const { realm, callbacks, marks } = fixture();
++    try {
++      expect(await realm.evaluate(`
++        let release;
++        const pending = new Promise(resolve => { release = resolve; });
++        const token = { value: 7 };
++        save(async () => { mark("prefix"); await pending; mark("tail"); return token.value; });
++      `)).toMatchObject({ ok: true });
++      const invocation = realm.startCallback(callbacks[0]);
++      const settled = vi.fn();
++      void invocation.result.then(settled, settled);
++      await invocation.synchronous;
++      expect(await realm.evaluate("const alias = token; return alias === token;")).toMatchObject({ ok: true, returnValue: true });
++      expect(settled).not.toHaveBeenCalled();
++      expect(marks).toEqual(["prefix"]);
++      expect(await realm.evaluate("token.value = 9; release(); return alias === token;")).toMatchObject({ ok: true, returnValue: true });
++      expect(await invocation.result).toBe(9);
++      expect(marks).toEqual(["prefix", "tail"]);
++    } finally { await realm.close(); }
++  });
++
++  it.each([undefined, "after-prefix"] as const)("preserves admission for %s", async callbackScheduling => {
++    const { realm, callbacks } = fixture({ callbackScheduling });
++    try {
++      await realm.evaluate("save(async () => { await wait(); });");
++      const invocation = realm.startCallback(callbacks[0]);
++      void invocation.result.catch(() => undefined);
++      await invocation.synchronous;
++      if (callbackScheduling === undefined)
++        await expect(realm.evaluate("return 1;")).rejects.toMatchObject({ code: "reentry" });
++      else
++        expect(await realm.evaluate("return 1;")).toMatchObject({ ok: true, returnValue: 1 });
++    } finally { await realm.close(); }
++  });
++
++  it("rejects unknown scheduling modes", () => {
++    expect(() => createRealm({ callbackScheduling: "anything" } as unknown as RealmOptions)).toThrow(TypeError);
++  });
++
++  it.each([undefined, "after-prefix"] as const)("lets a successful callback finish before an active source catches its rejection in %s mode", async callbackScheduling => {
++    const cleanup = vi.fn();
++    const { realm, callbacks, sourceEntered, sourceWait } = fixture({ callbackScheduling, extensions: [defineExtension({
++      manifest: { version: 1, name: "source-rejection-owner" },
++      setup(context) { context.onCleanup(cleanup); return {}; }
++    })] });
++    try {
++      await realm.evaluate("save(() => 1);");
++      const source = realm.evaluate(`
++        const caughtLater = Promise.reject("source-owned");
++        await sourceWait();
++        caughtLater.catch(() => undefined);
++        return 7;
++      `);
++      void source.catch(() => undefined);
++      await sourceEntered.promise;
++      const callback = realm.startCallback(callbacks[0]);
++      expect(await callback.result).toBe(1);
++      await callback.synchronous;
++      expect(cleanup).not.toHaveBeenCalled();
++      sourceWait.resolve();
++      expect(await source).toMatchObject({ ok: true, returnValue: 7 });
++      expect(cleanup).not.toHaveBeenCalled();
++      await realm.close();
++      expect(cleanup).toHaveBeenCalledTimes(1);
++    } finally { await realm.close(); }
++  });
++
++  it.each(["source", "callback"] as const)("does not check another active callback's rejection when a %s completes", async operation => {
++    const { realm, callbacks, tail } = fixture();
++    try {
++      await realm.evaluate(`
++        save(async () => {
++          const caughtLater = Promise.reject("callback-owned");
++          await wait();
++          caughtLater.catch(() => undefined);
++          return 7;
++        });
++        save(() => 1);
++      `);
++      const pending = realm.startCallback(callbacks[0]);
++      void pending.result.catch(() => undefined);
++      await pending.synchronous;
++      if (operation === "source")
++        expect(await realm.evaluate("return 1;")).toMatchObject({ ok: true, returnValue: 1 });
++      else {
++        const other = realm.startCallback(callbacks[1]);
++        expect(await other.result).toBe(1);
++        await other.synchronous;
++      }
++      tail.resolve();
++      expect(await pending.result).toBe(7);
++    } finally { await realm.close(); }
++  });
++
++  it("attributes a resumed generator rejection to its callback without releasing the source gate", async () => {
++    const cleaned = deferred();
++    const cleanup = vi.fn(() => { cleaned.resolve(); });
++    const { realm, callbacks, sourceEntered } = fixture({ extensions: [defineExtension({
++      manifest: { version: 1, name: "generator-callback-owner" },
++      setup(context) { context.onCleanup(cleanup); return {}; }
++    })] });
++    try {
++      expect(await realm.evaluate(`
++        const iterator = (function* () {
++          yield 0;
++          Promise.reject("resumed callback rejection");
++          return 1;
++        })();
++        save(() => iterator.next().value);
++      `)).toMatchObject({ ok: true });
++      const source = realm.evaluate("iterator.next(); await sourceWait(); return 7;");
++      const sourceOutcome = Promise.allSettled([source]);
++      await sourceEntered.promise;
++      const callback = realm.startCallback(callbacks[0]);
++      await expect(callback.result).rejects.toMatchObject({
++        name: "UnhandledRejectionError",
++        message: "Unhandled guest promise rejection: resumed callback rejection"
++      });
++      await callback.synchronous;
++      expect(await sourceOutcome).toMatchObject([{ status: "rejected" }]);
++      await cleaned.promise;
++      expect(cleanup).toHaveBeenCalledTimes(1);
++      await realm.close();
++      expect(cleanup).toHaveBeenCalledTimes(1);
++    } finally { await realm.close(); }
++  });
++
++  it("attributes a resumed generator rejection to its source without releasing the callback gate", async () => {
++    const cleaned = deferred();
++    const cleanup = vi.fn(() => { cleaned.resolve(); });
++    const { realm, callbacks } = fixture({ extensions: [defineExtension({
++      manifest: { version: 1, name: "generator-source-owner" },
++      setup(context) { context.onCleanup(cleanup); return {}; }
++    })] });
++    try {
++      expect(await realm.evaluate(`
++        const iterator = (function* () {
++          yield 0;
++          Promise.reject("resumed source rejection");
++          return 1;
++        })();
++        save(async () => { iterator.next(); await wait(); return 7; });
++      `)).toMatchObject({ ok: true });
++      const callback = realm.startCallback(callbacks[0]);
++      const callbackOutcome = Promise.allSettled([callback.result]);
++      await callback.synchronous;
++      await expect(realm.evaluate("return iterator.next().value;")).rejects.toMatchObject({
++        name: "UnhandledRejectionError",
++        message: "Unhandled guest promise rejection: resumed source rejection"
++      });
++      expect(await callbackOutcome).toMatchObject([{ status: "rejected" }]);
++      await cleaned.promise;
++      expect(cleanup).toHaveBeenCalledTimes(1);
++      await realm.close();
++      expect(cleanup).toHaveBeenCalledTimes(1);
++    } finally { await realm.close(); }
++  });
++
++  it("keeps a generator's earlier promise reaction with its registering operation", async () => {
++    const reacted = deferred();
++    const { realm, callbacks, sourceEntered, sourceWait } = fixture({ bindings: {
++      reacted: () => { reacted.resolve(); },
++      reactionWait: () => reacted.promise
++    } });
++    try {
++      expect(await realm.evaluate(`
++        let caughtLater;
++        let release;
++        const pending = new Promise(resolve => { release = resolve; });
++        const iterator = (function* () {
++          pending.then(() => {
++            caughtLater = Promise.reject("registered reaction");
++            reacted();
++          });
++          yield 0;
++          release();
++          return 1;
++        })();
++        save(async () => { iterator.next(); await reactionWait(); return 1; });
++      `)).toMatchObject({ ok: true });
++      const source = realm.evaluate(`
++        iterator.next();
++        await sourceWait();
++        caughtLater.catch(() => undefined);
++        return 7;
++      `);
++      void source.catch(() => undefined);
++      await sourceEntered.promise;
++      const callback = realm.startCallback(callbacks[0]);
++      void callback.result.catch(() => undefined);
++      await reacted.promise;
++      expect(await callback.result).toBe(1);
++      await callback.synchronous;
++      sourceWait.resolve();
++      expect(await source).toMatchObject({ ok: true, returnValue: 7 });
++    } finally { await realm.close(); }
++  });
++
++  it("preserves source rejection ownership through queued promise jobs and guest awaits", async () => {
++    const continued = deferred();
++    const continuation = deferred();
++    const { realm, callbacks, sourceEntered, sourceWait } = fixture({ bindings: {
++      continuationWait: () => { continued.resolve(); return continuation.promise; }
++    } });
++    try {
++      await realm.evaluate("save(() => 1);");
++      const source = realm.evaluate(`
++        await Promise.resolve().then(async () => {
++          await sourceWait();
++          const caughtLater = Promise.reject("continued-source-owned");
++          await continuationWait();
++          caughtLater.catch(() => undefined);
++        });
++        return 7;
++      `);
++      void source.catch(() => undefined);
++      await sourceEntered.promise;
++      sourceWait.resolve();
++      await continued.promise;
++      const callback = realm.startCallback(callbacks[0]);
++      expect(await callback.result).toBe(1);
++      await callback.synchronous;
++      continuation.resolve();
++      expect(await source).toMatchObject({ ok: true, returnValue: 7 });
++    } finally { await realm.close(); }
++  });
++
++  it.each(["source", "callback"] as const)("detects a late rejection from a completed %s owner at a later callback checkpoint", async operation => {
++    const cleaned = deferred();
++    const { realm, callbacks } = fixture({ extensions: [defineExtension({
++      manifest: { version: 1, name: "late-rejection-owner" },
++      setup(context) { context.onCleanup(() => { cleaned.resolve(); }); return {}; }
++    })] });
++    try {
++      await realm.evaluate(`
++        let rejectEarlier;
++        save(() => { new Promise((resolve, reject) => { rejectEarlier = reject; }); return 1; });
++        save(() => { rejectEarlier("late rejection"); return 2; });
++      `);
++      if (operation === "source") {
++        expect(await realm.evaluate('new Promise((resolve, reject) => { rejectEarlier = reject; }); return 1;'))
++          .toMatchObject({ ok: true, returnValue: 1 });
++      } else {
++        const earlier = realm.startCallback(callbacks[0]);
++        expect(await earlier.result).toBe(1);
++        await earlier.synchronous;
++      }
++      const later = realm.startCallback(callbacks[1]);
++      await expect(later.result).rejects.toMatchObject({
++        name: "UnhandledRejectionError",
++        message: "Unhandled guest promise rejection: late rejection"
++      });
++      await cleaned.promise;
++      await realm.close();
++    } finally { await realm.close(); }
++  });
++
++  it.each(["successful", "rejecting"] as const)("keeps a %s joined callback separate from its source's unfinished rejection", async outcome => {
++    const { realm, callbacks } = fixture({ grants: ["source:nested"], extensions: [defineExtension({
++      manifest: { version: 1, name: "joined-rejection-owner", capabilities: ["source:nested"], globals: ["join"] },
++      setup(context) {
++        return { globals: { join: context.nestedOperation(() => context.invokeCallback(callbacks[0])) } };
++      }
++    })] });
++    try {
++      await realm.evaluate(outcome === "rejecting"
++        ? 'save(() => { Promise.reject("callback-owned"); return 1; });' : "save(() => 1);");
++      const source = realm.evaluate(`
++        const caughtLater = Promise.reject("source-owned");
++        join();
++        caughtLater.catch(() => undefined);
++        return 7;
++      `);
++      if (outcome === "rejecting")
++        await expect(source).rejects.toMatchObject({
++          name: "UnhandledRejectionError",
++          message: "Unhandled guest promise rejection: callback-owned"
++        });
++      else expect(await source).toMatchObject({ ok: true, returnValue: 7 });
++      await realm.close();
++    } finally { await realm.close(); }
++  });
++
++  it.each([undefined, "after-prefix"] as const)("settles an unhandled guest callback rejection and automatically cleans up in %s mode", async callbackScheduling => {
++    const cleaned = deferred();
++    const cleanup = vi.fn(() => { cleaned.resolve(); });
++    const { realm, callbacks, marks } = fixture({ callbackScheduling, extensions: [defineExtension({
++      manifest: { version: 1, name: "unhandled-callback-cleanup" },
++      setup(context) { context.onCleanup(cleanup); return {}; }
++    })] });
++    try {
++      expect(await realm.evaluate(`
++        save(() => { Promise.reject("callback rejection"); return 1; });
++        save(() => { mark("still running"); return 2; });
++      `)).toMatchObject({ ok: true });
++      const first = realm.startCallback(callbacks[0]);
++      await expect(first.result).rejects.toMatchObject({
++        name: "UnhandledRejectionError",
++        message: "Unhandled guest promise rejection: callback rejection"
++      });
++      await expect(first.synchronous).resolves.toBeUndefined();
++      const second = realm.startCallback(callbacks[1]);
++      const outcomes = await Promise.allSettled([second.synchronous, second.result]);
++      expect(outcomes.every(outcome => outcome.status === "rejected")).toBe(true);
++      expect(marks).toEqual([]);
++      await cleaned.promise;
++      expect(cleanup).toHaveBeenCalledTimes(1);
++      await Promise.all([realm.close(), realm.close()]);
++      expect(cleanup).toHaveBeenCalledTimes(1);
++    } finally { await realm.close(); }
++  });
++
++  it.each([undefined, "after-prefix"] as const)("does not treat an observed guest callback rejection as unhandled in %s mode", async callbackScheduling => {
++    const cleanup = vi.fn();
++    const { realm, callbacks, marks } = fixture({ callbackScheduling, extensions: [defineExtension({
++      manifest: { version: 1, name: "handled-callback-cleanup" },
++      setup(context) { context.onCleanup(cleanup); return {}; }
++    })] });
++    try {
++      expect(await realm.evaluate(`
++        save(() => Promise.reject("handled").catch(() => { mark("handled"); return 1; }));
++        save(() => { mark("still running"); return 2; });
++      `)).toMatchObject({ ok: true });
++      const first = realm.startCallback(callbacks[0]);
++      expect(await first.result).toBe(1);
++      await first.synchronous;
++      const second = realm.startCallback(callbacks[1]);
++      expect(await second.result).toBe(2);
++      await second.synchronous;
++      expect(marks).toEqual(["handled", "still running"]);
++      expect(cleanup).not.toHaveBeenCalled();
++      await realm.close();
++      expect(cleanup).toHaveBeenCalledTimes(1);
++    } finally { await realm.close(); }
++  });
++
++  it("detects an unhandled callback rejection without joining an unrelated pending tail", async () => {
++    const cleaned = deferred();
++    const cleanup = vi.fn(() => { cleaned.resolve(); });
++    const { realm, callbacks } = fixture({ extensions: [defineExtension({
++      manifest: { version: 1, name: "pending-tail-cleanup" },
++      setup(context) { context.onCleanup(cleanup); return {}; }
++    })] });
++    try {
++      await realm.evaluate(`
++        save(async () => { await wait(); });
++        save(() => { Promise.reject("callback rejection"); return 1; });
++      `);
++      const pending = realm.startCallback(callbacks[0]);
++      const canceled = expect(pending.result).rejects.toMatchObject({ name: "UnhandledRejectionError" });
++      await pending.synchronous;
++      const failing = realm.startCallback(callbacks[1]);
++      await expect(failing.result).rejects.toMatchObject({ name: "UnhandledRejectionError" });
++      await expect(failing.synchronous).resolves.toBeUndefined();
++      await canceled;
++      await cleaned.promise;
++      expect(cleanup).toHaveBeenCalledTimes(1);
++      await realm.close();
++      expect(cleanup).toHaveBeenCalledTimes(1);
++    } finally { await realm.close(); }
++  });
++
++  it("checks a joined callback's discarded rejection without waiting on its source owner", async () => {
++    let joined!: Promise<unknown>;
++    const { realm, callbacks } = fixture({ grants: ["source:nested"], extensions: [defineExtension({
++      manifest: { version: 1, name: "join-unhandled", capabilities: ["source:nested"], globals: ["join"] },
++      setup(context) {
++        return { globals: { join: context.nestedOperation(() => {
++          joined = context.invokeCallback(callbacks[0]);
++          return joined;
++        }) } };
++      }
++    })] });
++    try {
++      await realm.evaluate('save(() => { Promise.reject("joined rejection"); return 1; });');
++      await expect(realm.evaluate("join();")).rejects.toMatchObject({ name: "UnhandledRejectionError" });
++      await expect(joined).rejects.toMatchObject({ name: "UnhandledRejectionError" });
++      await realm.close();
++    } finally { await realm.close(); }
++  });
++
++  it.each(["startCallback", "invokeCallback"] as const)("tracks the actual prefix through %s", async method => {
++    const { realm, callbacks } = fixture();
++    try {
++      await realm.evaluate("save(async () => { await wait(); });");
++      const invocation = method === "startCallback"
++        ? realm.startCallback(callbacks[0]).result : realm.invokeCallback(callbacks[0]);
++      void invocation.catch(() => undefined);
++      await expect(realm.evaluate("return 1;")).rejects.toMatchObject({ code: "reentry" });
++    } finally { await realm.close(); }
++  });
++
++  it("does not equate a yielding nested host operation with a finished prefix", async () => {
++    const entered = deferred();
++    const release = deferred();
++    const { realm, callbacks, marks } = fixture({
++      grants: ["source:nested"],
++      extensions: [defineExtension({
++        manifest: { version: 1, name: "blocked-prefix", capabilities: ["source:nested"], globals: ["work"] },
++        setup(context) {
++          return { globals: { work: context.nestedOperation(async () => {
++            entered.resolve();
++            await release.promise;
++            await context.evaluateNested('mark("nested");');
++          }) } };
++        }
++      })]
++    });
++    try {
++      await realm.evaluate('save(async () => { work(); mark("prefix"); await wait(); });');
++      const invocation = realm.startCallback(callbacks[0]);
++      void invocation.result.catch(() => undefined);
++      const completed = vi.fn();
++      void invocation.synchronous.then(completed, completed);
++      await entered.promise;
++      await expect(realm.evaluate("return 1;")).rejects.toMatchObject({ code: "reentry" });
++      expect(completed).not.toHaveBeenCalled();
++      release.resolve();
++      await invocation.synchronous;
++      expect(marks).toEqual(["nested", "prefix"]);
++      expect(await realm.evaluate("return 1;")).toMatchObject({ ok: true, returnValue: 1 });
++    } finally { release.resolve(); await realm.close(); }
++  });
++
++  it("retains the newer source owner when an older callback finishes", async () => {
++    const { realm, callbacks, tail, sourceEntered, sourceWait } = fixture();
++    try {
++      await realm.evaluate("save(async () => { await wait(); return 4; });");
++      const invocation = realm.startCallback(callbacks[0]);
++      await invocation.synchronous;
++      const source = realm.evaluate("await sourceWait(); return 5;");
++      void source.catch(() => undefined);
++      await sourceEntered.promise;
++      tail.resolve();
++      expect(await invocation.result).toBe(4);
++      await expect(realm.evaluate("return 6;")).rejects.toMatchObject({ code: "reentry" });
++      sourceWait.resolve();
++      expect(await source).toMatchObject({ ok: true, returnValue: 5 });
++      expect(await realm.evaluate("return 6;")).toMatchObject({ ok: true, returnValue: 6 });
++    } finally { await realm.close(); }
++  });
++
++  it("rejects simultaneous sources even before either source starts", async () => {
++    const { realm } = fixture();
++    try {
++      const first = realm.evaluate("return 1;");
++      await expect(realm.evaluate("return 2;")).rejects.toMatchObject({ code: "reentry" });
++      expect(await first).toMatchObject({ ok: true, returnValue: 1 });
++    } finally { await realm.close(); }
++  });
++
++  it("preserves queued callback prefix order and rejects source before all prefixes finish", async () => {
++    const { realm, callbacks, marks, tail } = fixture();
++    try {
++      await realm.evaluate('save(async () => { mark("first"); await wait(); mark("tail"); }); save(() => mark("second"));');
++      const first = realm.startCallback(callbacks[0]);
++      const second = realm.startCallback(callbacks[1]);
++      await expect(realm.evaluate("return 1;")).rejects.toMatchObject({ code: "reentry" });
++      await Promise.all([first.synchronous, second.synchronous, second.result]);
++      expect(await realm.evaluate('mark("source");')).toMatchObject({ ok: true });
++      expect(marks).toEqual(["first", "second", "source"]);
++      tail.resolve();
++      await first.result;
++      expect(marks).toEqual(["first", "second", "source", "tail"]);
++    } finally { await realm.close(); }
++  });
++
++  it("denies external evaluate called directly from a guest-owned host operation", async () => {
++    let attempted!: Promise<unknown>;
++    const { realm } = fixture({ bindings: { reenter: () => {
++      attempted = realm.evaluate("return 2;");
++      void attempted.catch(() => undefined);
++    } } });
++    try {
++      expect(await realm.evaluate("reenter(); return 1;")).toMatchObject({ ok: true, returnValue: 1 });
++      await expect(attempted).rejects.toMatchObject({ code: "reentry" });
++    } finally { await realm.close(); }
++  });
++
++  it("keeps retained argument identity and compiled callback locals across later source", async () => {
++    let reference: unknown;
++    const budget = new Budget({ maxSteps: 100000 });
++    const { realm, callbacks, tail } = fixture({ budget, grants: ["guest:retain"], extensions: [defineExtension({
++      manifest: { version: 1, name: "identity", capabilities: ["guest:retain"], globals: ["capture"] },
++      setup(context) {
++        return { globals: { capture: context.retainGuestArguments((value: unknown) => { reference = value; }, 0) } };
++      }
++    })] });
++    try {
++      await realm.evaluate(`
++        const token = { value: "abc" }; capture(token);
++        save(async value => { const local = /abc/; await wait(); return value === token && local.test(value.value); });
++      `);
++      const invocation = realm.startCallback(callbacks[0], { args: [reference] });
++      await invocation.synchronous;
++      realm.releaseCallback(callbacks[0]);
++      realm.releaseGuestReference(reference);
++      const before = budget.currentDataSize;
++      expect(await realm.evaluate("return token.value;")).toMatchObject({ ok: true, returnValue: "abc" });
++      expect(budget.currentDataSize).toBeGreaterThanOrEqual(before);
++      tail.resolve();
++      expect(await invocation.result).toBe(true);
++      await realm.close();
++      expect(budget.currentDataSize).toBe(0);
++      expect(budget.currentCallDepth).toBe(0);
++    } finally { await realm.close(); }
++  });
++
++  it.each(["source-error", "callback-error", "budget", "abort", "close"] as const)("settles tails and a live source on %s before releasing the budget", async action => {
++    const budget = new Budget({ maxSteps: 20000 });
++    const controller = new AbortController();
++    const cleanup = vi.fn(() => {
++      expect(budget.currentCallDepth).toBe(0);
++    });
++    const { realm, callbacks, tail, sourceEntered } = fixture({ budget, signal: controller.signal, extensions: [defineExtension({
++      manifest: { version: 1, name: "cleanup" },
++      setup(context) { context.onCleanup(cleanup); return {}; }
++    })] });
++    try {
++      await realm.evaluate('save(async () => { await wait(); throw "tail failed"; });');
++      const invocation = realm.startCallback(callbacks[0]);
++      const result = expect(invocation.result).rejects.toBeDefined();
++      await invocation.synchronous;
++      if (action === "source-error" || action === "budget") {
++        await expect(realm.evaluate(action === "budget" ? "while (true) {}" : 'throw "source failed";')).rejects.toBeDefined();
++      } else {
++        const source = realm.evaluate("await sourceWait(); return 1;");
++        const sourceResult = expect(source).rejects.toBeDefined();
++        await sourceEntered.promise;
++        if (action === "callback-error") tail.resolve();
++        if (action === "abort") controller.abort(new Error("stopped"));
++        if (action === "close") await realm.close();
++        await sourceResult;
++      }
++      await result;
++      await expect(invocation.synchronous).resolves.toBeUndefined();
++      await Promise.all([realm.close(), realm.close()]);
++      expect(cleanup).toHaveBeenCalledTimes(1);
++      expect(budget.currentCallDepth).toBe(0);
++      expect(budget.currentDataSize).toBe(0);
++      expect([...budget.retainedValues()]).toEqual([]);
++      const replacement = createRealm({ budget });
++      await replacement.close();
++    } finally { await realm.close(); }
++  });
++
++  it("charges later source and callbacks to the same cumulative step budget", async () => {
++    const budget = new Budget({ maxSteps: 20000 });
++    const { realm, callbacks } = fixture({ budget });
++    try {
++      await realm.evaluate("save(async () => { await wait(); });");
++      const invocation = realm.startCallback(callbacks[0]);
++      void invocation.result.catch(() => undefined);
++      await invocation.synchronous;
++      const before = budget.stepsUsed;
++      expect(await realm.evaluate("return 1;")).toMatchObject({ ok: true });
++      expect(budget.stepsUsed).toBeGreaterThan(before);
++      await expect(realm.evaluate("while (true) {}" )).rejects.toMatchObject({ code: "budgetExceeded" });
++      await expect(invocation.result).rejects.toBeDefined();
++    } finally { await realm.close(); }
++  });
++
++  it("preserves module namespaces, canonical identity and top-level await ownership", async () => {
++    const { realm, callbacks, sourceEntered, sourceWait } = fixture({
++      sourceResolver: () => ({ id: "shared", source: "export const token = {};" })
++    });
++    try {
++      await realm.evaluate("save(async () => { await wait(); });");
++      const invocation = realm.startCallback(callbacks[0]);
++      void invocation.result.catch(() => undefined);
++      await invocation.synchronous;
++      const source = realm.evaluate("import { token } from 'dep'; await sourceWait(); export const same = token;", { filename: "first", sourceType: "module" });
++      void source.catch(() => undefined);
++      await sourceEntered.promise;
++      await expect(realm.evaluate("return 1;")).rejects.toMatchObject({ code: "reentry" });
++      sourceWait.resolve();
++      expect(await source).toMatchObject({ ok: true, returnValue: { same: {} } });
++      expect(await realm.evaluate("import { token } from 'alias'; import { token as again } from 'dep'; export const same = token === again;", { filename: "second", sourceType: "module" })).toMatchObject({ ok: true, returnValue: { same: true } });
++    } finally { await realm.close(); }
++  });
++
++  it("does not join a callback's pending dynamic import into a later module", async () => {
++    const requested = deferred();
++    const module = deferred<{ id: string; source: string }>();
++    const { realm, callbacks } = fixture({ sourceResolver: () => { requested.resolve(); return module.promise; } });
++    try {
++      await realm.evaluate("save(async () => { const value = await import('pending'); return value.answer; });", { filename: "setup", sourceType: "module" });
++      const invocation = realm.startCallback(callbacks[0]);
++      await Promise.all([invocation.synchronous, requested.promise]);
++      expect(await realm.evaluate("export const answer = 42;", { filename: "later", sourceType: "module" })).toMatchObject({ ok: true, returnValue: { answer: 42 } });
++      module.resolve({ id: "pending", source: "export const answer = 7;" });
++      expect(await invocation.result).toBe(7);
++    } finally { await realm.close(); }
++  });
++
++  it("rejects reentrant close instead of releasing live frames or self-waiting", async () => {
++    let closing!: Promise<void>;
++    const { realm } = fixture({ bindings: { closeOwner: () => {
++      closing = realm.close();
++      void closing.catch(() => undefined);
++      return closing;
++    } } });
++    try {
++      await expect(realm.evaluate("await closeOwner();")).rejects.toBeDefined();
++      await expect(closing).rejects.toMatchObject({ code: "reentry" });
++      await realm.close();
++    } finally { await realm.close(); }
++  });
++
++  it.each(["abort", "close"] as const)("rejects unfinished and queued prefixes on %s without waiting for a host release", async action => {
++    const entered = deferred();
++    const controller = new AbortController();
++    const { realm, callbacks, marks } = fixture({ signal: controller.signal, grants: ["source:nested"], extensions: [defineExtension({
++      manifest: { version: 1, name: "hold", capabilities: ["source:nested"], globals: ["hold"] },
++      setup(context) {
++        return { globals: { hold: context.nestedOperation(() => { entered.resolve(); return new Promise(() => {}); }) } };
++      }
++    })] });
++    try {
++      await realm.evaluate('save(async () => { hold(); mark("forbidden"); }); save(() => mark("queued"));');
++      const first = realm.startCallback(callbacks[0]);
++      void first.result.catch(() => undefined);
++      await entered.promise;
++      const second = realm.startCallback(callbacks[1]);
++      void second.result.catch(() => undefined);
++      const outcomes = Promise.allSettled([first.synchronous, first.result, second.synchronous, second.result]);
++      if (action === "abort") controller.abort(new Error("stopped"));
++      await realm.close();
++      expect((await outcomes).every(outcome => outcome.status === "rejected")).toBe(true);
++      expect(marks).toEqual([]);
++    } finally { await realm.close(); }
++  });
++
++  it("does not self-wait when a host operation joins a failing callback", async () => {
++    const { realm, callbacks } = fixture({ grants: ["source:nested"], extensions: [defineExtension({
++      manifest: { version: 1, name: "join", capabilities: ["source:nested"], globals: ["join"] },
++      setup(context) {
++        return { globals: { join: context.nestedOperation(() => context.invokeCallback(callbacks[0])) } };
++      }
++    })] });
++    try {
++      await realm.evaluate('save(() => { throw "callback failed"; });');
++      await expect(realm.evaluate("join();")).rejects.toBeDefined();
++      await realm.close();
++    } finally { await realm.close(); }
++  });
++
++  it("enforces the shared data budget while a tail retains its locals", async () => {
++    const budget = new Budget({ dataSize: 100000 });
++    const { realm, callbacks } = fixture({ budget });
++    try {
++      await realm.evaluate("save(async () => { const local = [1, 2, 3]; await wait(); return local; });");
++      const invocation = realm.startCallback(callbacks[0]);
++      const result = expect(invocation.result).rejects.toBeDefined();
++      await invocation.synchronous;
++      await expect(realm.evaluate('return "x".repeat(200000);')).rejects.toMatchObject({ code: "budgetExceeded", budget: "dataSize" });
++      await result;
++      await realm.close();
++      expect(budget.currentDataSize).toBe(0);
++    } finally { await realm.close(); }
++  });
++
++  it("keeps imports initiated by the current source within that source's completion", async () => {
++    const requested = deferred();
++    const loaded = deferred<{ id: string; source: string }>();
++    const { realm } = fixture({ sourceResolver: () => { requested.resolve(); return loaded.promise; } });
++    try {
++      const source = realm.evaluate("void import('dep'); export const answer = 42;", { filename: "entry", sourceType: "module" });
++      const settled = vi.fn();
++      void source.then(settled, settled);
++      await requested.promise;
++      await expect(realm.evaluate("return 1;")).rejects.toMatchObject({ code: "reentry" });
++      expect(settled).not.toHaveBeenCalled();
++      loaded.resolve({ id: "dep", source: "export const value = 7;" });
++      expect(await source).toMatchObject({ ok: true, returnValue: { answer: 42 } });
++    } finally { await realm.close(); }
++  });
++
++  it("rejects new work immediately during reentrant cancellation rather than joining disposal", async () => {
++    let closedWork!: Promise<PromiseSettledResult<unknown>[]>;
++    const { realm, callbacks } = fixture({ bindings: { stop: () => {
++      closedWork = Promise.allSettled([
++        realm.close(), realm.evaluate("return 1;"), realm.invokeCallback(callbacks[0])
++      ]);
++      return closedWork;
++    } } });
++    try {
++      await realm.evaluate("save(() => 1);");
++      await expect(realm.evaluate("await stop();")).rejects.toBeDefined();
++      expect((await closedWork).every(outcome => outcome.status === "rejected")).toBe(true);
++      await realm.close();
++    } finally { await realm.close(); }
++  });
++
++  it("reports cleanup failure only after releasing the canceled realm's budget", async () => {
++    const budget = new Budget();
++    const cleanup = vi.fn(() => { throw new Error("cleanup failed"); });
++    const { realm, callbacks } = fixture({ budget, extensions: [defineExtension({
++      manifest: { version: 1, name: "cleanup-failure" },
++      setup(context) { context.onCleanup(cleanup); return {}; }
++    })] });
++    try {
++      await realm.evaluate("save(async () => { await wait(); });");
++      const invocation = realm.startCallback(callbacks[0]);
++      const result = expect(invocation.result).rejects.toBeDefined();
++      await invocation.synchronous;
++      await expect(realm.close()).rejects.toThrow("Realm cleanup failed.");
++      await result;
++      expect(cleanup).toHaveBeenCalledTimes(1);
++      expect(budget.currentDataSize).toBe(0);
++      expect(budget.currentCallDepth).toBe(0);
++      const replacement = createRealm({ budget });
++      await replacement.close();
++    } finally { await realm.close().catch(() => undefined); }
++  });
++
++  it("discards late module resolution after closing a source alongside a pending callback", async () => {
++    const requested = deferred();
++    const loaded = deferred<{ id: string; source: string }>();
++    const effect = vi.fn();
++    const budget = new Budget();
++    const { realm, callbacks } = fixture({ budget, bindings: { effect }, sourceResolver: () => {
++      requested.resolve();
++      return loaded.promise;
++    } });
++    try {
++      await realm.evaluate("save(async () => { await wait(); });");
++      const invocation = realm.startCallback(callbacks[0]);
++      const result = expect(invocation.result).rejects.toBeDefined();
++      await invocation.synchronous;
++      const source = realm.evaluate("import 'dep'; export const answer = 1;", { sourceType: "module" });
++      const sourceResult = expect(source).rejects.toBeDefined();
++      await requested.promise;
++      await realm.close();
++      await Promise.all([result, sourceResult]);
++      loaded.resolve({ id: "dep", source: "effect(); export const value = 2;" });
++      await loaded.promise;
++      expect(effect).not.toHaveBeenCalled();
++      expect(budget.currentDataSize).toBe(0);
++      expect([...budget.retainedValues()]).toEqual([]);
++    } finally { await realm.close(); }
++  });
++});
+diff --git a/packages/safe-js/src/realm.ts b/packages/safe-js/src/realm.ts
+index a97c986..2d62bdd 100644
+--- a/packages/safe-js/src/realm.ts
++++ b/packages/safe-js/src/realm.ts
+@@ -79,6 +79,7 @@ export type RealmLimits = {
+   nestedEvaluations?: number;
+ };
+ export type RealmOptions = {
++  callbackScheduling?: "after-prefix";
+   sourceResolver?: SourceResolver;
+   clock?: RunClock;
+   bindings?: Record<string, CallerInjectedBinding>;
+@@ -132,7 +133,9 @@ class RealmState {
+   readonly referenceReleases = new Set<() => void>();
+   readonly resources: RunResources;
+   readonly callbacks = new Map<Callback, SandboxClosure>();
+-  readonly pendingCallbacks = new Set<{ closure: SandboxClosure; promise?: Promise<unknown> }>();
++  readonly pendingCallbacks = new Set<{ closure: SandboxClosure; prefixComplete: boolean; promise?: Promise<unknown> }>();
++  readonly pendingWork = new Set<Promise<unknown>>();
++  releaseReconciliation?: () => void;
+   readonly callbackCache = new WeakMap<SandboxClosure, Callback>();
+   readonly hostObjects = new Set<HostObject>();
+   readonly guestReferences = new Map<GuestReference, [SandboxValue]>();
+@@ -357,6 +360,32 @@ class RealmState {
+       });
+   }
+ 
++  trackWork<Result>(pending: Promise<Result>): Promise<Result> {
++    this.pendingWork.add(pending);
++    void pending.then(
++      () => { this.pendingWork.delete(pending); },
++      () => { this.pendingWork.delete(pending); }
++    );
++    return pending;
++  }
++
++  reconcileWhenIdle(): void {
++    if (this.closed || this.active !== undefined || this.pendingCallbacks.size > 0) return;
++    this.releaseReconciliation?.();
++    this.releaseReconciliation = undefined;
++    try {
++      reconcileCompiledValues(
++        this.budget,
++        [...(this.scope?.retainedDataRoots() ?? []), ...this.retainedRoots()],
++        this.compilation
++      );
++    } catch (error) {
++      this.poison(error);
++      void this.dispose().catch(() => undefined);
++      throw error;
++    }
++  }
++
+   chargeWork = (units = 1): void => {
+     this.assertOpen();
+     if (!Number.isSafeInteger(units) || units < 0)
+@@ -573,12 +602,18 @@ class RealmState {
+     options: CallbackOptions = {},
+     completeSynchronous?: () => void
+   ): Promise<unknown> {
+-    if (this.closed || this.failure !== undefined) await this.dispose();
++    if ((this.closed || this.failure !== undefined) && this.options.callbackScheduling !== "after-prefix")
++      await this.dispose();
+     this.assertOpen();
+     const closure = readGuestCallback(callback, this);
+     this.checkCollection(this.pendingCallbacks.size + 1, this.limits.callbacks, "pending callback");
+-    const record: { closure: SandboxClosure; promise?: Promise<unknown> } = { closure };
++    const scheduled = this.options.callbackScheduling === "after-prefix";
++    const record: { closure: SandboxClosure; prefixComplete: boolean; promise?: Promise<unknown> } = {
++      closure, prefixComplete: false
++    };
+     this.pendingCallbacks.add(record);
++    if (scheduled) this.releaseReconciliation ??= this.budget.deferReconciliation();
++    const rejectionOwner = scheduled ? this.tracker.startOperation() : undefined;
+     const invoke = async () => {
+       this.assertOpen();
+       readGuestCallback(callback, this);
+@@ -610,6 +645,7 @@ class RealmState {
+         if (isSandboxPromise(value) && value.synchronousPrefix !== undefined)
+           await value.synchronousPrefix;
+         this.assertOpen();
++        record.prefixComplete = true;
+         completeSynchronous?.();
+         const settled = await suspendJob(settlement);
+         return this.exportValue(settled);
+@@ -619,22 +655,34 @@ class RealmState {
+       }
+     };
+     try {
+-      const active = this.active !== undefined;
+-      const pending = withSandboxPromiseRejectionTracker(this.tracker, () =>
+-        runResources.run(this.resources, () =>
+-          withCancellationSignal(this.controller.signal, () =>
+-            active && this.phase.getStore()?.active ? runAsyncPrefix(invoke) : this.queue.run(invoke)
++      const active = this.active !== undefined || (scheduled && this.phase.getStore()?.active === true);
++      const execute = () => this.tracker.withOperation(rejectionOwner, () =>
++        withSandboxPromiseRejectionTracker(this.tracker, () =>
++          runResources.run(this.resources, () =>
++            withCancellationSignal(this.controller.signal, () =>
++              active && this.phase.getStore()?.active ? runAsyncPrefix(invoke) : this.queue.run(invoke)
++            )
+           )
+         )
+       );
+-      record.promise = active ? pending : this.perform(() => pending);
+-      return await record.promise;
++      const pending = scheduled && this.sourceGraph !== undefined
++        ? this.sourceGraph.withoutImportGroup(execute) : execute();
++      record.promise = scheduled ? this.trackWork(pending) : active ? pending : this.perform(() => pending);
++      const result = await record.promise;
++      if (scheduled) {
++        await this.checkUnhandledRejection(rejectionOwner);
++        this.assertOpen();
++      }
++      return result;
+     } catch (error) {
+-      if (error instanceof SandboxError) this.poison(error);
++      if (scheduled || error instanceof SandboxError) this.poison(error);
++      if (scheduled) void this.dispose().catch(() => undefined);
+       throw error;
+     } finally {
++      this.tracker.finishOperation(rejectionOwner);
+       this.pendingCallbacks.delete(record);
+-      if (!this.closed && this.active === undefined)
++      if (scheduled) this.reconcileWhenIdle();
++      else if (!this.closed && this.active === undefined)
+         reconcileCompiledValues(
+           this.budget,
+           [...(this.scope?.retainedDataRoots() ?? []), ...this.retainedRoots()],
+@@ -762,19 +810,30 @@ class RealmState {
+     this.assertOpen();
+     if (typeof source !== "string") throw new TypeError("Realm source must be a string.");
+     if (sourceType === "module") {
+-      this.initialize();
+-      this.sourceGraph ??= new SourceModuleGraph({
+-        resolver:this.options.sourceResolver ?? (() => undefined), scope:this.scope!,
+-        modules:createModuleEnvironment(this.modules,{...this.bridgeOptions(),wrappedModules:this.convertedModules}),
+-        budget:this.budget, compilation:this.compilation, signal:this.controller.signal,
+-        jobs:this.queue, assertActive:this.assertOpen, surfaceUnhandledThrows:true
+-      });
+-      const before = this.sourceGraph.stats.nodeVisits;
+-      const namespace = await this.sourceGraph.evaluateSource({id:filename,source}, module => {
+-        this.sourceModuleHash = hashParsedAst(module);
+-      });
+-      await this.sourceGraph.settle();
+-      return {ok:true,returnValue:namespace,snapshot:{bindings:{}},stats:{nodeVisits:this.sourceGraph.stats.nodeVisits - before,currentDataSize:this.budget.currentDataSize,peakDataSize:this.budget.peakDataSize}};
++      const prepare = () => {
++        this.initialize();
++        this.sourceGraph ??= new SourceModuleGraph({
++          resolver:this.options.sourceResolver ?? (() => undefined), scope:this.scope!,
++          modules:createModuleEnvironment(this.modules,{...this.bridgeOptions(),wrappedModules:this.convertedModules}),
++          budget:this.budget, compilation:this.compilation, signal:this.controller.signal,
++          jobs:this.queue, assertActive:this.assertOpen, surfaceUnhandledThrows:true,
++          serializePreparation: this.options.callbackScheduling === "after-prefix"
++        });
++      };
++      const scheduled = this.options.callbackScheduling === "after-prefix";
++      if (scheduled) await this.queue.run(prepare);
++      else prepare();
++      const graph = this.sourceGraph!;
++      const before = graph.stats.nodeVisits;
++      const evaluate = async () => {
++        const namespace = await graph.evaluateSource({id:filename,source}, module => {
++          this.sourceModuleHash = hashParsedAst(module);
++        });
++        if (!scheduled) await graph.settle();
++        return namespace;
++      };
++      const namespace = scheduled ? await graph.withImportGroup(evaluate) : await evaluate();
++      return {ok:true,returnValue:namespace,snapshot:{bindings:{}},stats:{nodeVisits:graph.stats.nodeVisits - before,currentDataSize:this.budget.currentDataSize,peakDataSize:this.budget.peakDataSize}};
+     }
+     const module = parseExecutableModule(source, filename, this.lease.owner);
+     this.initialize();
+@@ -819,7 +878,7 @@ class RealmState {
+       !phase?.active ||
+       phase.extension !== extension ||
+       phase.evaluating ||
+-      this.active === undefined
++      (this.active === undefined && !(this.options.callbackScheduling === "after-prefix" && this.pendingCallbacks.size > 0))
+     )
+       throw new SandboxError("reentry");
+     const leave = this.budget.enterCall();
+@@ -845,38 +904,61 @@ class RealmState {
+ 
+   evaluate = async (source: string, options: { filename?: string; sourceType?: "module" } = {}): Promise<RealmResult> =>
+     this.perform(async () => {
+-      const result = await this.evaluateRaw(source, options.filename, false, options.sourceType);
++      const scheduled = this.options.callbackScheduling === "after-prefix";
++      const result = scheduled && options.sourceType !== "module"
++        ? await this.queue.run(() => this.evaluateRaw(source, options.filename, true))
++        : await this.evaluateRaw(source, options.filename, false, options.sourceType);
+       if (!result.ok) {
+-        await this.dispose();
++        if (!scheduled) await this.dispose();
+         return { ok: false, error: result.error, stats: result.stats };
+       }
+       return { ok: true, returnValue: this.exportValue(result.returnValue), stats: result.stats };
+-    });
++    }, result => !result.ok);
+ 
+-  async perform<Result>(task: () => Promise<Result>): Promise<Result> {
+-    if (this.closed || this.failure !== undefined) await this.dispose();
++  async checkUnhandledRejection(owner?: object): Promise<void> {
++    const unhandled = await this.tracker.findUnhandledRejection(owner);
++    if (unhandled !== undefined) {
++      const error = new Error(
++        `Unhandled guest promise rejection: ${describeThrownValue(unhandled.reason)}`
++      );
++      error.name = "UnhandledRejectionError";
++      throw error;
++    }
++  }
++
++  async perform<Result>(task: () => Promise<Result>, failed?: (result: Result) => boolean): Promise<Result> {
++    if ((this.closed || this.failure !== undefined) && this.options.callbackScheduling !== "after-prefix")
++      await this.dispose();
+     this.assertOpen();
+     if (this.active !== undefined) throw new SandboxError("reentry");
++    const scheduled = this.options.callbackScheduling === "after-prefix";
++    if (scheduled && (this.phase.getStore()?.active || [...this.pendingCallbacks].some(record => !record.prefixComplete)))
++      throw new SandboxError("reentry");
++    const rejectionOwner = scheduled ? this.tracker.startOperation() : undefined;
+     const pending = Promise.resolve().then(() =>
+-      withSandboxPromiseRejectionTracker(this.tracker, () =>
+-        runResources.run(this.resources, () =>
+-          withCancellationSignal(this.controller.signal, task)
++      this.tracker.withOperation(rejectionOwner, () =>
++        withSandboxPromiseRejectionTracker(this.tracker, () =>
++          runResources.run(this.resources, () =>
++            withCancellationSignal(this.controller.signal, task)
++          )
+         )
+       )
+     );
+     this.active = pending;
++    if (scheduled) this.trackWork(pending);
+     try {
+       const result = await pending;
+-      await this.queue.drain();
+-      const unhandled = await this.tracker.findUnhandledRejection();
+-      if (unhandled !== undefined) {
+-        const error = new Error(
+-          `Unhandled guest promise rejection: ${describeThrownValue(unhandled.reason)}`
+-        );
+-        error.name = "UnhandledRejectionError";
+-        throw error;
++      if (scheduled && failed?.(result)) {
++        this.closed = true;
++        this.controller.abort(new Error("SafeJS source evaluation failed."));
++        await this.dispose();
++        return result;
+       }
++      if (scheduled) this.assertOpen();
++      await this.queue.drain();
++      await this.checkUnhandledRejection(rejectionOwner);
+       if (this.failure !== undefined) throw this.failure.reason;
++      if (scheduled) this.assertOpen();
+       if (!this.closed)
+         reconcileCompiledValues(
+           this.budget,
+@@ -894,13 +976,23 @@ class RealmState {
+       }
+       throw reason;
+     } finally {
+-      this.active = undefined;
++      this.tracker.finishOperation(rejectionOwner);
++      if (this.active === pending) this.active = undefined;
++      if (scheduled) this.reconcileWhenIdle();
+     }
+   }
+ 
+   close = (): Promise<void> => {
+     this.closed = true;
+     this.controller.abort(new Error("SafeJS realm is closed."));
++    if (this.options.callbackScheduling === "after-prefix") {
++      const disposal = this.dispose();
++      if (this.phase.getStore()?.active) {
++        void disposal.catch(() => undefined);
++        return Promise.reject(new SandboxError("reentry"));
++      }
++      return disposal;
++    }
+     if (this.phase.getStore()?.active) return this.dispose();
+     return Promise.allSettled([
+       this.active,
+@@ -913,6 +1005,22 @@ class RealmState {
+     this.closed = true;
+     this.controller.abort(new Error("SafeJS realm is closed."));
+     this.options.signal?.removeEventListener("abort", this.abort);
++    if (this.options.callbackScheduling === "after-prefix") {
++      this.disposal = Promise.resolve().then(async () => {
++        while (this.pendingWork.size > 0) await Promise.allSettled([...this.pendingWork]);
++        await this.sourceGraph?.settle();
++        await this.queue.settle();
++        this.releaseReconciliation?.();
++        this.releaseReconciliation = undefined;
++        await this.releaseResources();
++      }).finally(() => this.queue.finish());
++      return this.disposal;
++    }
++    this.disposal = this.releaseResources().finally(() => this.queue.finish());
++    return this.disposal;
++  }
++
++  async releaseResources(): Promise<void> {
+     for (const callback of this.callbacks.keys()) revokeGuestCallback(callback, this);
+     this.callbacks.clear();
+     for (const object of this.hostObjects) revokeHostObject(object, this);
+@@ -924,28 +1032,25 @@ class RealmState {
+     this.budget.setRetainedValues(this, undefined);
+     this.sourceGraph?.close();
+     releaseObjectPrototype(this.budget);
+-    this.disposal = (async () => {
+-      const errors: unknown[] = [];
+-      for (const cleanup of this.cleanups.splice(0).reverse()) {
+-        try {
+-          await cleanup();
+-        } catch (error) {
+-          errors.push(error);
+-        }
++    const errors: unknown[] = [];
++    for (const cleanup of this.cleanups.splice(0).reverse()) {
++      try {
++        await cleanup();
++      } catch (error) {
++        errors.push(error);
+       }
+-      this.scope = undefined;
+-      this.convertedModules.clear();
+-      for (const key of Object.keys(this.globals)) delete this.globals[key];
+-      for (const key of Object.keys(this.modules)) delete this.modules[key];
+-      for (const key of Object.keys(this.builtinBindings))
+-        Reflect.deleteProperty(this.builtinBindings, key);
+-      this.nativeConversions.seen = new WeakMap();
+-      reconcileCompiledValues(this.budget, [], this.compilation);
+-      this.compilation.dispose();
+-      this.lease.release();
+-      if (errors.length > 0) throw new AggregateError(errors, "Realm cleanup failed.");
+-    })().finally(() => this.queue.finish());
+-    return this.disposal;
++    }
++    this.scope = undefined;
++    this.convertedModules.clear();
++    for (const key of Object.keys(this.globals)) delete this.globals[key];
++    for (const key of Object.keys(this.modules)) delete this.modules[key];
++    for (const key of Object.keys(this.builtinBindings))
++      Reflect.deleteProperty(this.builtinBindings, key);
++    this.nativeConversions.seen = new WeakMap();
++    reconcileCompiledValues(this.budget, [], this.compilation);
++    this.compilation.dispose();
++    this.lease.release();
++    if (errors.length > 0) throw new AggregateError(errors, "Realm cleanup failed.");
+   }
+ }
+ 
+@@ -1045,9 +1150,12 @@ function readRealmOptions(value: unknown, oneShot = false): RealmOptions {
+     "clock",
+     "limits"
+   ]);
++  if (!oneShot) supported.add("callbackScheduling");
+   for (const [key, entry] of Object.entries(options)) {
+     if (supported.has(key) || (oneShot && (key === "filename" || key === "sourceType" || entry === undefined))) continue;
+     throw new TypeError(`Unsupported ${oneShot ? "extension-run" : "realm"} option '${key}'.`);
+   }
++  if (options.callbackScheduling !== undefined && options.callbackScheduling !== "after-prefix")
++    throw new TypeError("Realm callbackScheduling must be 'after-prefix'.");
+   return options as RealmOptions;
+ }
