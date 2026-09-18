@@ -58,6 +58,11 @@ it("publishes both constructors once and passes only flags and receiver to nativ
 		]);
 	expect(calls).toEqual([
 		[
+			"port.initialize",
+			["facade", "name", "Boolean(bubbles)", "Boolean(cancelable)"],
+		],
+		["port.createLegacy", ["this"]],
+		[
 			"port.create",
 			[
 				"name",
@@ -69,7 +74,9 @@ it("publishes both constructors once and passes only flags and receiver to nativ
 		],
 		["port.window", []],
 		["port.dispatch", ["target", "facade"]],
+		["port.validateDocument", ["this"]],
 		["port.publish", ["Event", "CustomEvent", "dispatchEvent"]],
+		["port.publishLegacy", ["createEvent"]],
 	]);
 });
 
@@ -177,14 +184,16 @@ it("defines isTrusted as a nonconfigurable own getter and exposes standard phase
 		expect(pageEventBootstrapSource).toContain(`["${name}", ${phase}]`);
 });
 
-it("uses writable configurable global constructors without legacy polyfill stubs", () => {
+it("uses writable configurable constructors and real legacy native initialization", () => {
 	for (const name of ["Event", "CustomEvent"])
 		expect(pageEventBootstrapSource).toContain(
 			`Object.defineProperty(globalThis, "${name}", {value: constructors.${name}, writable: true, configurable: true, enumerable: false});`,
 		);
-	expect(pageEventBootstrapSource).not.toMatch(
-		/createEvent|initCustomEvent|initEvent|\beval\(/,
-	);
+	expect(pageEventBootstrapSource).not.toMatch(/\beval\(/);
+	expect(pageEventBootstrapSource).toContain("port.publishLegacy(createEvent)");
+	expect(pageEventBootstrapSource).toContain("uninitialized.has(event)");
+	expect(pageEventBootstrapSource).toContain("uninitialized.delete(receiver)");
+	expect(pageEventBootstrapSource).toContain("void this.#detail;");
 	expect(pageEventBootstrapSource).toContain('typeof value === "symbol"');
 	expect(pageEventBootstrapSource).toContain("arguments.length === 0");
 });

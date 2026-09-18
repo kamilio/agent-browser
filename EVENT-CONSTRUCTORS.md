@@ -33,9 +33,9 @@ Metrics expose pending releases and cleanup failures rather than hiding them.
 
 ## Scope and gates
 
-This is partial Event support, not full DOM event conformance. Legacy
-`document.createEvent`, `initEvent`, `initCustomEvent`, a public EventTarget
-constructor and specialized event constructors are not supplied. Existing
+This is partial Event support, not full DOM event conformance. A public
+EventTarget constructor and specialized event constructors are not supplied.
+Bounded generic legacy event support is described below. Existing
 native-generated event facades are not newly guaranteed to satisfy guest
 `instanceof Event` checks.
 
@@ -82,7 +82,63 @@ this does not supply a general DOMException implementation. With the separate
 SDK reproduction/correction and six-case gate now passing, one fresh bounded
 live Zoom run is released. Its outcome remains separate from synthetic success.
 
-Zoom's previous filtered run executes fifteen scripts and the real native CSRF
-request. The next captured script uses event APIs, but its original exception is
-not recovered. Event support alone is not proof of usable Zoom UI, legitimate
-admission, incoming audio, permitted recording, transcription or delivery.
+The next filtered live run executes sixteen scripts and the native CSRF request.
+The previous script16 now passes. An exact captured SDK error span identifies
+`document.createEvent` in script17 as the next failure; this diagnosis does not
+reexecute publisher code. See `reports/zoom-event-progress-2026-09-18.md`.
+Event support alone is not proof of usable Zoom UI, legitimate admission,
+incoming audio, permitted recording, transcription or delivery.
+
+## Legacy generic events
+
+The document exposes a guest-owned `createEvent` factory for ASCII-case-insensitive
+`Event`, `Events`, `HTMLEvents` and `CustomEvent`. Unsupported interfaces reject
+with an error named `NotSupportedError`; no specialized event is impersonated.
+The owning document capability and publication guard are validated. Window and
+elements do not gain a `createEvent` method.
+
+Created events have genuine Event/CustomEvent prototypes, native timestamps and
+empty, uninitialized event state. Both native dispatch paths reject them until
+initialization; guest dispatch rejects before crossing the host boundary with
+`InvalidStateError`. Ordinary `new Event("")` remains initialized and dispatchable.
+`initEvent` resets type, bubbles, cancelable, cancellation/stop flags and target
+without replacing the timestamp or composed flag. It is ignored during dispatch.
+`initCustomEvent` additionally updates guest-owned detail without host traversal;
+inherited `initEvent` does not erase custom detail. Both guest methods return void.
+
+The factory retains one bounded guest reference, accounted separately by
+`legacyFactoryReferences` and released on close. Initialization uses existing
+native event capabilities without repeatedly retaining guest receivers. Invalid
+factory and construction arguments are released on rejection.
+
+Core47 passes5,088 tests across122 explicit native files in58.639 seconds.
+Build/types/format pass; only the historical ranges lint finding remains.
+The baseline native implementation fails all24 new initialization cases, retained
+as failure-first evidence. Core46's exact-registration mock and tuple-spread type
+errors are preserved; final expectations remain strict. A new eight-case actual
+SDK gate fails in its first original scenario: the appended initialization
+boolean falls inside the SDK's retained-argument suffix and arrives as an opaque
+reference, not a boolean. All resources close; seven scenarios do not execute.
+This failure is retained at
+`/tmp/agent-browser-legacy-event-actual-september18-8lxy3o/HANDOFF.md`.
+Native source/build for that checkpoint:
+`/tmp/agent-browser-event-union10-zsMU0K/candidate`.
+
+Core48 corrects that boundary without an SDK change. Ordinary construction keeps
+its original five-argument operation; a separate legacy allocator retains only
+the receiver and selects uninitialized state natively. Primitive flags are never
+placed after a retained receiver. The native opaque-reference fixture now also
+wraps primitive suffix values, matching the actual SDK contract. Core48 passes
+5,089/122 native tests in58.141 seconds, with build/types/format0 and the same
+baseline lint finding. Source/build:
+`/tmp/agent-browser-event-union11-aj5A7H/candidate`.
+
+The fresh actual SDK check passes **all eight unchanged scenarios in12.138
+seconds**, including both legacy cases and full observed closure. Forged object,
+null, Window and element factory receivers produce catchable guest TypeError;
+successful creation and dispatch still work afterward. No speculative
+data-copy failure or test relaxation is needed. Factory references, all other
+event references, pending work and SDK data reach zero; processes are absent.
+Parent verifies7,093 input pins and53 artifact hashes/sizes/modes. Evidence:
+`/tmp/agent-browser-legacy-event-boundary-september18-9hkHyf/HANDOFF.md`.
+One new bounded live Zoom load is released; its outcome remains separate.

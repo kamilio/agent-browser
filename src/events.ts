@@ -9,6 +9,7 @@ export interface BrowserEventInit {
 
 interface EventState {
 	type: string;
+	initialized: boolean;
 	bubbles: boolean;
 	cancelable: boolean;
 	composed: boolean;
@@ -41,6 +42,7 @@ export class BrowserEvent {
 			throw new AgentBrowserError("invalid-input", "Invalid event options");
 		eventStates.set(this, {
 			type,
+			initialized: true,
 			bubbles: Boolean(init.bubbles),
 			cancelable: Boolean(init.cancelable),
 			composed: Boolean(init.composed),
@@ -57,6 +59,15 @@ export class BrowserEvent {
 		});
 	}
 
+	static createLegacy(): BrowserEvent {
+		const event = new BrowserEvent("");
+		stateOf(event).initialized = false;
+		return event;
+	}
+
+	get initialized() {
+		return stateOf(this).initialized;
+	}
 	get type() {
 		return stateOf(this).type;
 	}
@@ -98,6 +109,21 @@ export class BrowserEvent {
 	}
 	set returnValue(value: boolean) {
 		if (!value) this.preventDefault();
+	}
+
+	initEvent(type: string, bubbles = false, cancelable = false): void {
+		const state = stateOf(this);
+		if (typeof type !== "string" || type.length > 256)
+			throw new AgentBrowserError("invalid-input", "Invalid event type");
+		if (state.dispatching) return;
+		state.initialized = true;
+		state.canceled = false;
+		state.stopped = false;
+		state.immediate = false;
+		state.target = null;
+		state.type = type;
+		state.bubbles = Boolean(bubbles);
+		state.cancelable = Boolean(cancelable);
 	}
 
 	preventDefault() {
@@ -425,6 +451,8 @@ export class DocumentEvents {
 		this.ensureOpen();
 		this.validateTarget(target);
 		const state = stateOf(event);
+		if (!state.initialized)
+			throw new AgentBrowserError("invalid-input", "Event is not initialized");
 		if (state.dispatching)
 			throw new AgentBrowserError(
 				"invalid-input",
@@ -569,6 +597,8 @@ export class DocumentEvents {
 		this.ensureOpen();
 		this.validateTarget(target);
 		const state = stateOf(event);
+		if (!state.initialized)
+			throw new AgentBrowserError("invalid-input", "Event is not initialized");
 		if (state.dispatching)
 			throw new AgentBrowserError(
 				"invalid-input",

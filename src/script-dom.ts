@@ -402,6 +402,18 @@ export class ScriptDom {
 			definition.properties.dispatchEvent = {
 				get: () => eventConstructors.dispatchEventValue,
 			};
+		if (
+			initial.kind === "document" &&
+			eventBindings &&
+			eventConstructors &&
+			!this.inert
+		)
+			definition.properties.createEvent = {
+				get: () => {
+					this.read(id);
+					return eventConstructors.createEventValue;
+				},
+			};
 		if (eventBindings)
 			Object.assign(definition.methods, {
 				addEventListener: (

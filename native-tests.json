@@ -1089,5 +1089,6 @@
   "src/page-event-bootstrap.test.ts",
   "src/page-event-bindings.test.ts",
   "src/page-event-constructors.test.ts",
-  "src/script-event-construction.test.ts"
+  "src/script-event-construction.test.ts",
+  "src/event-initialization.test.ts"
 ]

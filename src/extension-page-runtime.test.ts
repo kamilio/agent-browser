@@ -813,7 +813,7 @@ it("bootstraps once, shares owned aliases and forwards only supported public eva
 	);
 	expect(test.state.globals?.self).toBe(test.state.globals?.window);
 	expect(test.state.globals?.document).toBe(test.scripts.dom.document);
-	const retainedArgumentStarts = [4, 0, 2, 2];
+	const retainedArgumentStarts = [4, 0, 0, 0, 2, 2];
 	expect(test.state.context.retainGuestArguments).toHaveBeenCalledTimes(
 		retainedArgumentStarts.length,
 	);

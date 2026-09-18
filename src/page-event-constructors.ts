@@ -41,6 +41,7 @@ export class PageEventConstructors {
 	private eventConstructor?: object;
 	private customEventConstructor?: object;
 	private dispatchEvent?: object;
+	private createLegacyEvent?: object;
 	private windowCapability?: object;
 	private bootstrapped = false;
 	private published = false;
@@ -85,8 +86,21 @@ export class PageEventConstructors {
 					cancelable: unknown,
 					composed: unknown,
 					receiver: unknown,
-				) => this.create(type, bubbles, cancelable, composed, receiver),
+				) => this.create(type, bubbles, cancelable, composed, receiver, true),
 				4,
+			);
+			const createLegacy = context.retainGuestArguments(
+				(...args: unknown[]) => {
+					if (args.length !== 1) {
+						for (const value of new Set(args)) this.releaseInvalid(value);
+						throw new AgentBrowserError(
+							"invalid-input",
+							"Invalid legacy event construction",
+						);
+					}
+					return this.create("", false, false, false, args[0], false);
+				},
+				0,
 			);
 			const publish = context.retainGuestArguments(
 				(
@@ -97,8 +111,38 @@ export class PageEventConstructors {
 					this.publish(eventConstructor, customEventConstructor, dispatchEvent),
 				0,
 			);
+			const publishLegacy = context.retainGuestArguments(
+				(...args: unknown[]) => {
+					const factory = args[0];
+					try {
+						this.ensureOpen();
+						if (
+							args.length !== 1 ||
+							!this.published ||
+							this.createLegacyEvent ||
+							!reference(factory) ||
+							ownedReferences.has(factory)
+						)
+							throw new AgentBrowserError(
+								"invalid-input",
+								"Invalid legacy event factory publication",
+							);
+						ownedReferences.add(factory);
+						this.createLegacyEvent = factory;
+					} catch (error) {
+						for (const value of new Set(args)) this.releaseInvalid(value);
+						throw error;
+					}
+				},
+				0,
+			);
 			this.ensureOpen();
-			if (typeof create !== "function" || typeof publish !== "function")
+			if (
+				typeof create !== "function" ||
+				typeof createLegacy !== "function" ||
+				typeof publish !== "function" ||
+				typeof publishLegacy !== "function"
+			)
 				throw new AgentBrowserError(
 					"unsupported",
 					"Invalid retained event operations",
@@ -114,7 +158,21 @@ export class PageEventConstructors {
 				const port = context.createHostObject({
 					methods: {
 						create,
+						createLegacy,
 						publish,
+						publishLegacy,
+						initialize: (facade, type, bubbles, cancelable) =>
+							this.initialize(facade, type, bubbles, cancelable),
+						validateDocument: (capability) => {
+							this.ensureOpen();
+							const target = reference(capability)
+								? this.targets.get(capability)
+								: undefined;
+							if (!target || target.target !== this.tree.root) return false;
+							target.assertActive?.();
+							this.ensureOpen();
+							return true;
+						},
 						dispatch,
 						window: () => {
 							this.ensureOpen();
@@ -160,6 +218,11 @@ export class PageEventConstructors {
 	get dispatchEventValue() {
 		this.ensureOpen();
 		return this.dispatchEvent;
+	}
+
+	get createEventValue() {
+		this.ensureOpen();
+		return this.createLegacyEvent;
 	}
 
 	assertDocument(tree: DocumentTree): void {
@@ -220,6 +283,7 @@ export class PageEventConstructors {
 				Number(this.eventConstructor !== undefined) +
 				Number(this.customEventConstructor !== undefined),
 			dispatchReferences: Number(this.dispatchEvent !== undefined),
+			legacyFactoryReferences: Number(this.createLegacyEvent !== undefined),
 			pendingReleases: this.pendingReleases,
 			cleanupFailures: this.cleanupFailures,
 			partial: true,
@@ -236,10 +300,12 @@ export class PageEventConstructors {
 			this.eventConstructor,
 			this.customEventConstructor,
 			this.dispatchEvent,
+			this.createLegacyEvent,
 		];
 		this.eventConstructor = undefined;
 		this.customEventConstructor = undefined;
 		this.dispatchEvent = undefined;
+		this.createLegacyEvent = undefined;
 		this.windowCapability = undefined;
 		this.targets.clear();
 		this.targetIds.clear();
@@ -308,6 +374,7 @@ export class PageEventConstructors {
 		cancelable: unknown,
 		composed: unknown,
 		receiver: unknown,
+		initialized: unknown,
 	): object {
 		let record: EventRecord | undefined;
 		try {
@@ -319,6 +386,8 @@ export class PageEventConstructors {
 				typeof bubbles !== "boolean" ||
 				typeof cancelable !== "boolean" ||
 				typeof composed !== "boolean" ||
+				typeof initialized !== "boolean" ||
+				(!initialized && (type !== "" || bubbles || cancelable || composed)) ||
 				!reference(receiver) ||
 				ownedReferences.has(receiver)
 			)
@@ -333,7 +402,9 @@ export class PageEventConstructors {
 				);
 			this.created++;
 			record = {
-				event: new BrowserEvent(type, { bubbles, cancelable, composed }),
+				event: initialized
+					? new BrowserEvent(type, { bubbles, cancelable, composed })
+					: BrowserEvent.createLegacy(),
 				receiver,
 				released: false,
 			};
@@ -369,8 +440,40 @@ export class PageEventConstructors {
 				this.records.delete(record);
 				this.releaseRecord(record);
 			} else this.releaseInvalid(receiver);
+			this.releaseInvalid(initialized);
 			throw error;
 		}
+	}
+
+	private initialize(
+		facade: unknown,
+		type: unknown,
+		bubbles: unknown,
+		cancelable: unknown,
+	): boolean {
+		this.ensureOpen();
+		const record = reference(facade)
+			? this.eventFacades.get(facade)
+			: undefined;
+		if (
+			!record ||
+			typeof type !== "string" ||
+			type.length > 256 ||
+			typeof bubbles !== "boolean" ||
+			typeof cancelable !== "boolean"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid event initialization",
+			);
+		if (record.bindings?.metrics().closed)
+			throw new AgentBrowserError(
+				"closed",
+				"Constructed event bindings are closed",
+			);
+		if (record.event.eventPhase !== 0) return false;
+		record.event.initEvent(type, bubbles, cancelable);
+		return true;
 	}
 
 	private async dispatch(

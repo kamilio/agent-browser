@@ -32,6 +32,15 @@ interface Facade {
 }
 interface Port {
 	window(): object;
+	createLegacy(receiver: unknown): Facade;
+	validateDocument(capability: unknown): boolean;
+	publishLegacy(factory: unknown): void;
+	initialize(
+		facade: unknown,
+		type: unknown,
+		bubbles: unknown,
+		cancelable: unknown,
+	): boolean;
 	publish(event: unknown, custom: unknown, dispatch: unknown): void;
 	dispatch(target: unknown, facade: unknown): Promise<boolean>;
 	create(
@@ -108,13 +117,7 @@ function fixture(
 			const wrapped = ((...args: readonly unknown[]) =>
 				operation(
 					...args.map((value, index) => {
-						if (
-							!opaqueReferences ||
-							index < from ||
-							value === null ||
-							(typeof value !== "object" && typeof value !== "function")
-						)
-							return value;
+						if (!opaqueReferences || index < from) return value;
 						const handle = Object.freeze({});
 						guestValues.set(handle, value);
 						return handle;
@@ -232,7 +235,7 @@ function fixture(
 it("registers exactly one unretained dispatch identity during setup and publishes three references once", () => {
 	const test = fixture(false);
 	expect(test.registered.size).toBe(1);
-	expect(test.retained.size).toBe(2);
+	expect(test.retained.size).toBe(4);
 	expect(test.owner.eventConstructorValue).toBeUndefined();
 	expect(test.owner.dispatchEventValue).toBeUndefined();
 	expect(() => test.create()).toThrow();
@@ -255,6 +258,127 @@ it("registers exactly one unretained dispatch identity during setup and publishe
 		constructorReferences: 2,
 		dispatchReferences: 1,
 	});
+});
+
+it("publishes and releases the document factory once without retaining its invocations", () => {
+	const test = fixture();
+	const factory = () => {};
+	expect(test.owner.createEventValue).toBeUndefined();
+	expect(test.retained.get(test.port.publishLegacy)).toBe(0);
+	expect(test.retained.has(test.port.initialize)).toBe(false);
+	test.port.publishLegacy(factory);
+	expect(test.owner.createEventValue).toBe(factory);
+	expect(test.owner.metrics().legacyFactoryReferences).toBe(1);
+	expect(() => test.port.publishLegacy(factory)).toThrow();
+	expect(test.release).not.toHaveBeenCalledWith(factory);
+	test.owner.close();
+	expect(test.owner.metrics().legacyFactoryReferences).toBe(0);
+	expect(
+		test.release.mock.calls.filter(([value]) => value === factory),
+	).toHaveLength(1);
+	expect(() => test.owner.createEventValue).toThrow();
+});
+
+it("validates the owning document and its publication guard before legacy creation", () => {
+	const test = fixture();
+	const document = test.node(test.tree.root);
+	let active = true;
+	test.owner.registerTarget(test.tree.root, document, () => {
+		if (!active) throw new Error("Document revoked");
+	});
+	expect(test.port.validateDocument(document)).toBe(true);
+	for (const invalid of [test.window, test.node(test.target), {}, null])
+		expect(test.port.validateDocument(invalid)).toBe(false);
+	active = false;
+	expect(() => test.port.validateDocument(document)).toThrow(
+		"Document revoked",
+	);
+});
+
+it("releases rejected legacy factory and construction arguments", () => {
+	const test = fixture();
+	const factory = {};
+	const extra = {};
+	expect(() =>
+		(test.port.publishLegacy as (...args: unknown[]) => void)(factory, extra),
+	).toThrow();
+	expect(test.release).toHaveBeenCalledWith(factory);
+	expect(test.release).toHaveBeenCalledWith(extra);
+	expect(test.owner.metrics().legacyFactoryReferences).toBe(0);
+	const receiver = {};
+	const extraReceiver = {};
+	expect(() =>
+		(test.port.createLegacy as (...args: unknown[]) => Facade)(
+			receiver,
+			extraReceiver,
+		),
+	).toThrow();
+	expect(test.release).toHaveBeenCalledWith(receiver);
+	expect(test.release).toHaveBeenCalledWith(extraReceiver);
+	expect(test.owner.metrics().events).toBe(0);
+});
+
+it("keeps legacy events uninitialized until native initialization and permits reuse", async () => {
+	const test = fixture();
+	const receiver = {};
+	const facade = test.port.createLegacy(receiver);
+	const timestamp = (facade as Facade & { timeStamp: number }).timeStamp;
+	expect(facade.type).toBe("");
+	await expect(test.dispatch(facade)).rejects.toThrow();
+	expect(test.port.initialize(facade, "legacy", true, true)).toBe(true);
+	const listener = vi.fn(() => facade.preventDefault());
+	test.bindings.add(test.target, "legacy", listener, false);
+	expect(await test.dispatch(facade)).toBe(false);
+	expect(listener).toHaveBeenCalledOnce();
+	expect(listener.mock.calls[0]).toEqual([receiver]);
+	expect(facade.target).toBe(test.node(test.target));
+	expect(test.port.initialize(facade, "next", false, false)).toBe(true);
+	expect(facade.target).toBeNull();
+	expect(facade.defaultPrevented).toBe(false);
+	expect((facade as Facade & { timeStamp: number }).timeStamp).toBe(timestamp);
+	expect(await test.dispatch(facade)).toBe(true);
+});
+
+it("keeps primitive flags outside the retained suffix for ordinary and legacy construction", async () => {
+	const test = fixture(true, true);
+	const ordinary = test.create("ordinary");
+	const legacy = test.port.createLegacy({});
+	expect(test.retained.get(test.port.create)).toBe(4);
+	expect(test.retained.get(test.port.createLegacy)).toBe(0);
+	expect(ordinary.facade.type).toBe("ordinary");
+	expect(legacy.type).toBe("");
+	expect(
+		[...test.guestValues.values()].some((value) => typeof value === "boolean"),
+	).toBe(false);
+	await expect(test.dispatch(legacy)).rejects.toThrow();
+	expect(test.port.initialize(legacy, "legacy", false, false)).toBe(true);
+	expect(await test.dispatch(legacy)).toBe(true);
+});
+
+it("ignores initialization during dispatch and rejects forged, invalid or closed initialization", async () => {
+	const test = fixture();
+	const { facade } = test.create();
+	test.bindings.add(
+		test.target,
+		"sample",
+		() => {
+			expect(test.port.initialize(facade, "changed", false, false)).toBe(false);
+			expect(facade.type).toBe("sample");
+			facade.preventDefault();
+		},
+		false,
+	);
+	expect(await test.dispatch(facade)).toBe(false);
+	for (const args of [
+		[{}, "valid", false, false],
+		[facade, "a".repeat(257), false, false],
+		[facade, "valid", 1, false],
+	] as const)
+		expect(() =>
+			test.port.initialize(args[0], args[1], args[2], args[3]),
+		).toThrow();
+	test.bindings.close();
+	expect(() => test.port.initialize(facade, "valid", false, false)).toThrow();
 });
 
 it("uses the exact guest event identity without copying detail or recursing through guest getters", async () => {
@@ -501,7 +625,7 @@ it("rejects guest references, unknown and cross-owner target/event capabilities 
 	expect(await first.dispatch(facade)).toBe(true);
 	expect(first.release).not.toHaveBeenCalled();
 	expect(second.release).not.toHaveBeenCalled();
-	expect(first.retained.size).toBe(2);
+	expect(first.retained.size).toBe(4);
 });
 
 it.each([
@@ -568,7 +692,7 @@ it("bounds native target capabilities without registering additional runtime ope
 		test.owner.registerTarget(test.tree.createElement("div"), {}),
 	).toThrow("limit");
 	expect(test.registered.size).toBe(1);
-	expect(test.retained.size).toBe(2);
+	expect(test.retained.size).toBe(4);
 	expect(test.owner.metrics().bindings).toBe(
 		pageEventConstructorLimits.maxBindings,
 	);

@@ -12,6 +12,26 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September18,22:55UTC: generic legacy events now pass all eight actual SDK cases
+in12.138s with complete observed closure. Core48 passes5089/122 native tests,
+build/types/format0 and only the pre-existing ranges lint finding. The failed
+core47 gate exposed primitive values being retained after the guest receiver;
+the native protocol now keeps flags outside that suffix, without an SDK change.
+All original/legacy/forged-receiver cases pass unchanged. Parent verifies7093
+input pins and53 artifacts. One fresh bounded live Zoom load is released after
+rehearsal. Last observed live result is16 scripts; further UI/admission/audio/
+recording/transcription/delivery progress is not yet claimed.
+
+September18,22:44UTC: the fresh core44/K9Y732 Zoom load executes16 scripts, passing
+the former script16 failure. Script17 now fails exactly at document.createEvent,
+identified from the captured public SDK error span without publisher replay.
+Generic legacy Event/CustomEvent factory/init support now passes5088/122 native
+tests (core47); build/types/format0, only baseline ranges lint remains. Eight-case
+actual SDK integration is released, not yet claimed PASS. Native tests alone do
+not establish further website progress. See `EVENT-CONSTRUCTORS.md` and
+`reports/zoom-event-progress-2026-09-18.md`. Usable UI, admission, incoming audio,
+recording, transcription and delivery remain OPEN.
+
 September18,22:27UTC: all six unchanged actual Event integration scenarios PASS
 with complete observed closure, unchanged native core44 and the explicitly
 selected callback-prefix SDK correction. This fixes completed synchronous

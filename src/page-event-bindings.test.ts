@@ -107,6 +107,7 @@ it("publishes shared guest dispatch and passes native target and event handles t
 	);
 	const bootstrap = bindings.globals[pageEventBootstrapGlobal] as () => {
 		publish(event: unknown, custom: unknown, dispatch: unknown): void;
+		publishLegacy(factory: unknown): void;
 		dispatch(target: unknown, event: unknown): Promise<boolean>;
 		create(
 			type: string,
@@ -124,6 +125,8 @@ it("publishes shared guest dispatch and passes native target and event handles t
 		return port.dispatch(this, facades.get(event));
 	};
 	port.publish(eventConstructor, customConstructor, dispatch);
+	const legacyFactory = () => {};
+	port.publishLegacy(legacyFactory);
 	expect(test.nested.has(port.dispatch)).toBe(true);
 	expect(test.retained.has(port.dispatch)).toBe(false);
 	expect(bindings.window).toHaveProperty("Event", eventConstructor);
@@ -136,6 +139,9 @@ it("publishes shared guest dispatch and passes native target and event handles t
 		createElement(name: string): Target;
 	};
 	const element = document.createElement("div");
+	expect(document).toHaveProperty("createEvent", legacyFactory);
+	expect(window).not.toHaveProperty("createEvent");
+	expect(element).not.toHaveProperty("createEvent");
 	for (const target of [window, document, element]) {
 		expect(target.dispatchEvent).toBe(dispatch);
 		const receiver = {};
@@ -156,6 +162,7 @@ it("publishes shared guest dispatch and passes native target and event handles t
 	expect(test.released).toHaveBeenCalledWith(eventConstructor);
 	expect(test.released).toHaveBeenCalledWith(customConstructor);
 	expect(test.released).toHaveBeenCalledWith(dispatch);
+	expect(test.released).toHaveBeenCalledWith(legacyFactory);
 	await expect(dispatch.call(window, {})).rejects.toMatchObject({
 		code: "closed",
 	});
