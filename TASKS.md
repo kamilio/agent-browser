@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Actual SafeJS0.1.640 gate: core compatibility failure
+
+- Approved staged acquisition is complete:15 packages,2710 files and19 contained
+  dependency links. First GET was locally aborted by an incorrect observer
+  hostname check;20 offline checks qualify the correction and a second GET
+  succeeds within the approved16-attempt cap. Preserve both attempts; no TLS,
+  public-address, origin or redirect weakening and no installers.
+- The actual offline kernel/preload control passes. Real SDK core checks then
+  pass11 and fail ordinal12: a new source evaluation after a callback prefix
+  rejects while its async tail is pending (Sandbox object is already running).
+  Seven later core checks,10 page checks and7 module checks are not reached.
+- Stop-on-failure honored: no SDK retry, internal patch or relaxed expectation.
+  Actual process/group cleanup passes; no cleanup/evidence failures, empty
+  HOME/TMP,6855 post-run file pins and19 link pins unchanged.
+- See reports/safejs-0640-gate-2026-09-18.md/JSON and the preserved execution
+  phase. Resolve the supported callback/source scheduling contract next; this
+  result is not a permission barrier or proof that native Zoom/media now works.
+  Keep live-site, WebRTC/audio, notetaking/delivery and credential gates open.
+  The pinned release is not a latest-version claim. No default switch or push.
+
 ### Restore CLI cache admission priority
 
 - Fix the four baseline CLI resource-cache failures separately from selector
