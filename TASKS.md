@@ -21,8 +21,10 @@ externals still exceed the native deadline; a CPU profile identifies retained
 graph accounting as the dominant cost. Immediate source after a controlled
 event callback originally hit SDK re-entry. The explicit after-prefix adapter
 option now passes five actual SDK/native window contracts, including immediate
-source after callback dispatch. Scheduler-only tests retain157 passes and4
-failures; combined SDK repairs and sound accounting optimization are active.
+source after callback dispatch. The original scheduler-only157/4 failures remain
+preserved. Repaired combined SDK qualification now passes756 tests in40 selected
+files and all seven native integration fixtures; this is not the full SDK suite.
+Sound accounting optimization for actual React execution remains active.
 
 Final native script loading/property/state and scheduling-option integration
 passes401 tests in17 files. Seven actual SDK/native cases also pass, including
@@ -38,6 +40,14 @@ The captured main bundle is a PWA shell hosting the actual meeting in a child
 iframe; faithful child-URL derivation is now on the critical path. React runtime
 performance, dynamic ordered loading, full CSP enforcement, child execution and
 incoming media decoding remain open. No meeting admission or audio succeeded.
+
+A conservative script/base CSP evaluator now passes197 native tests in4 files
+with build/types/format/lint passing. Parent review caught and fixed an initial
+strict-dynamic inline over-admission before integration; the unchanged-production
+red run retains9 failures. Strict-dynamic now relaxes only non-parser EXTERNAL
+requests. The evaluator is not wired into the live loader and still rejects
+unsupported directives/sources. Existing CSP refusal remains in force; see
+SCRIPT-CSP-POLICY.md. It does not yet permit the captured Zoom policy.
 
 The native browser fetched the missing main.js on September18 at12:14:14.901UTC:
 HTTP200,843255 JavaScript bytes. The vendors request stopped at the existing

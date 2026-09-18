@@ -1,4 +1,5 @@
 [
+	"src/script-csp-policy.test.ts",
 	"src/script-loader-dynamic.test.ts",
 	"src/script-element-state.test.ts",
 	"src/script-element-properties.test.ts",
