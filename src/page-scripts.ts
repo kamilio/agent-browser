@@ -1,12 +1,22 @@
+import {
+	type DocumentScriptCsp,
+	documentScriptCsp,
+} from "./document-script-csp.js";
+import { existingDocumentWebSockets } from "./document-websocket-owner.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
-import { existingDocumentWebSockets } from "./document-websocket-owner.js";
-import { pageWebSocketBootstrapSource } from "./page-websocket-bootstrap.js";
+import {
+	type HtmlModuleRequest,
+	type HtmlModuleSource,
+	moduleInputData,
+} from "./html-module.js";
 import {
 	type PageBindingOptions,
 	PageBindings,
 	pageBindingGlobalNames,
 } from "./page-bindings.js";
+import type { PageNetworkModuleOptions } from "./page-network-modules.js";
+import { PageClock } from "./page-performance.js";
 import {
 	type PageRuntime,
 	type PageRuntimeError,
@@ -14,22 +24,16 @@ import {
 	type PageScriptCore,
 	legacyPageRuntime,
 } from "./page-runtime.js";
+import { pageWebSocketBootstrapSource } from "./page-websocket-bootstrap.js";
 import {
-	type ScriptEvaluation,
 	type ScriptBudgetProfile,
+	type ScriptEvaluation,
 	type ScriptLimits,
 	scriptJsonResult,
 	scriptLimits,
 } from "./safejs.js";
 import type { ScriptCallbackRuntime } from "./script-events.js";
 import type { SessionPage } from "./session.js";
-import { PageClock } from "./page-performance.js";
-import {
-	type HtmlModuleRequest,
-	type HtmlModuleSource,
-	moduleInputData,
-} from "./html-module.js";
-import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 
 export type {
 	PageRealm,
@@ -62,6 +66,8 @@ export class PageScripts {
 	private evaluations = 0;
 	private consoleCalls = 0;
 	private unregisterClose: () => void = () => {};
+	private unregisterPolicy: () => void = () => {};
+	private readonly scriptPolicy?: DocumentScriptCsp;
 
 	constructor(
 		page: Pick<SessionPage, "document" | "interactions">,
@@ -79,6 +85,12 @@ export class PageScripts {
 			throw new AgentBrowserError(
 				"invalid-input",
 				"Invalid page script options",
+			);
+		this.scriptPolicy = documentScriptCsp(page.document);
+		if (this.scriptPolicy?.unsupported)
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Document script policy is unavailable",
 			);
 		const networkSourceModules = moduleInputData(
 			options,
@@ -125,6 +137,10 @@ export class PageScripts {
 		this.unregisterClose = page.document.onClose(() => {
 			void this.close().catch(() => undefined);
 		});
+		if (this.scriptPolicy)
+			this.unregisterPolicy = this.scriptPolicy.onInvalidated(() => {
+				void this.close().catch(() => undefined);
+			});
 		try {
 			const record = (level: "log" | "error", values: unknown[]) => {
 				if (this.closed) return;
@@ -132,6 +148,9 @@ export class PageScripts {
 				this.bindings?.console.buffer.write(level, values);
 			};
 			this.runtime = factory.createPageRuntime({
+				...(this.scriptPolicy?.stringCompilation === undefined
+					? {}
+					: { stringCompilation: this.scriptPolicy.stringCompilation }),
 				...(budgetProfile === "large-source-v1" ||
 				budgetProfile === "application-v1"
 					? { regexSourceLength: 8192, regexCompileAllocations: 32768 }
@@ -406,6 +425,7 @@ export class PageScripts {
 		this.bindings?.close();
 		this.clock.close();
 		this.unregisterClose();
+		this.unregisterPolicy();
 		return this.closing;
 	}
 
@@ -577,6 +597,8 @@ export class PageScripts {
 	}
 
 	private ensureOpen() {
+		if (this.scriptPolicy?.unsupported)
+			void this.close().catch(() => undefined);
 		if (this.closed)
 			throw new AgentBrowserError("closed", "Page scripts are closed");
 	}

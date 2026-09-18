@@ -267,6 +267,19 @@ describe("native top-level execution CSP context with a fake script runner", () 
 		},
 	);
 
+	it.each([
+		["script-src *", ["ordinary-source", "crossorigin-source"]],
+		["default-src 'self'", ["ordinary-source"]],
+	] as const)(
+		"admits only matching external scripts for %s",
+		async (policy, sources) => {
+			const test = fixture({ "content-security-policy": [policy] });
+			await test.session.navigate(test.tab, pageUrl);
+			expect(test.seen.map(({ source }) => source)).toEqual(sources);
+			expect(test.requests).toHaveLength(sources.length + 1);
+		},
+	);
+
 	it.each(["omitted", false] as const)(
 		"retains conservative loader behavior with %s context",
 		async (loaderContext) => {
@@ -277,6 +290,14 @@ describe("native top-level execution CSP context with a fake script runner", () 
 				);
 				await test.session.navigate(test.tab, pageUrl);
 				expect(test.contexts[0].topLevelDocument).toBe(true);
+				if (policy === "") {
+					expect(test.seen.map((entry) => entry.source)).toEqual([
+						"inline-source",
+						"ordinary-source",
+						"crossorigin-source",
+					]);
+					continue;
+				}
 				expect(test.seen).toEqual([]);
 				expect(test.requests.map(({ url }) => url)).toEqual([pageUrl]);
 				expect(
@@ -287,7 +308,7 @@ describe("native top-level execution CSP context with a fake script runner", () 
 					complete: true,
 					issues: { "csp-not-supported": 3 },
 				});
-				expect(test.events).toEqual(["DOMContentLoaded", "window-load"]);
+				expect(test.events).toEqual([]);
 			}
 		},
 	);
@@ -319,8 +340,6 @@ describe("native top-level execution CSP context with a fake script runner", () 
 	);
 
 	it.each<[string, NetworkResponse["headers"]]>([
-		["script source", { "content-security-policy": ["script-src *"] }],
-		["default source", { "content-security-policy": ["default-src 'self'"] }],
 		["connect source", { "content-security-policy": ["connect-src 'none'"] }],
 		["sandbox", { "content-security-policy": ["sandbox allow-scripts"] }],
 		[
@@ -403,7 +422,11 @@ describe("native top-level execution CSP context with a fake script runner", () 
 				complete: true,
 				issues: { "csp-not-supported": 3 },
 			});
-			expect(test.events).toEqual(["DOMContentLoaded", "window-load"]);
+			expect(test.events).toEqual(
+				_name === "report-only alongside enforced"
+					? ["DOMContentLoaded", "window-load"]
+					: [],
+			);
 			expect(test.session.metrics().requestQueue).toMatchObject({
 				active: 0,
 				pending: 0,

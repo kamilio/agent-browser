@@ -1,5 +1,37 @@
 # Script CSP policy foundation
 
+## Native loader integration — September 18, 2026
+
+The native loader now activates the already-supported script/base policy subset
+instead of blanket-refusing it. This does not admit the complete captured Zoom
+policy: unsupported directives still fail closed, without removing response
+headers or borrowing permission from another resource destination.
+
+The session snapshots enforced headers and binds an authentic document owner
+before runtime creation. Prepared-script admissions retain immutable native nonce
+and parser provenance, are branded to that owner, and are checked before fetch,
+on every manual redirect hop, and before evaluation. Raw-only fetch adapters and
+active-policy module loading remain conservative. The bound string-compilation
+decision reaches PageScripts before factory allocation; a factory deny cannot
+be weakened. Policy failure/closure invalidates admissions and closes the runtime;
+unsupported meta insertion remains sticky even when the element is removed.
+
+Post-commit dynamic script requests use the live document's cancellation scope;
+bootstrap requests retain navigation cancellation. Generic fetch does not inherit
+script permission. Image/style owners receive all immutable enforced headers.
+The top-level framing/report-only exception remains limited to its original
+context; combining frame-ancestors with execution directives is still unsupported.
+
+Parent integration passes3422 native tests in72 files at
+`/tmp/agent-browser-csp-loader-union01-glcJNn/candidate`,36.237s. Build, selected
+types, format and lint pass. The worker's738/14 focused run, earlier failures and
+exact patches remain at `/tmp/agent-browser-csp-loader-september18-jNe8bL`.
+Original dirty page-scripts.test.ts bytes are unchanged. These are native/mock
+results, not an actual SDK, full-policy Zoom navigation or meeting acceptance.
+
+The sections below retain the earlier foundation and isolated policy-gate
+milestones; their statements about then-unactivated loader wiring are historical.
+
 `createScriptCspPolicy(documentUrl, headers, limits?)` parses a bounded,
 conservative subset of enforced Content Security Policy into an immutable
 script-element/base capability. This module is not yet connected to the live

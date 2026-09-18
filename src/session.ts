@@ -1,71 +1,49 @@
 import {
-	CookieJar,
-	type CookieJarOptions,
-	type CookieLimits,
-} from "./cookies.js";
-import { ContentSecurityPolicy } from "./content-security-policy.js";
-import type { DocumentWebSockets } from "./document-websockets.js";
-import {
-	bindDocumentWebSockets,
-	existingDocumentWebSockets,
-} from "./document-websocket-owner.js";
-import type { WebSocketTransport } from "./websocket-transport.js";
-import { hasUnsupportedExecutionCsp } from "./execution-content-security-policy.js";
-import { NetworkRequestQueue } from "./network-request-queue.js";
-import {
-	fetchStylesheetResource,
-	type StylesheetFetchPolicy,
-	type StylesheetFetchResult,
-} from "./stylesheet-fetch.js";
-import {
-	fetchScriptResource,
-	type ScriptFetchPolicy,
-	type ScriptFetchResult,
-} from "./script-fetch.js";
-import {
 	type BrowserIdentity,
 	type BrowserIdentityOptions,
 	browserIdentityHeaders,
 	createBrowserIdentity,
 } from "./browser-identity.js";
-import { bindDocumentIdentity } from "./document-identity.js";
-import {
-	documentImageContentSecurityPolicy,
-	imageContentSecurityPolicyValues,
-} from "./document-image-content-security-policy.js";
-import { ImageContentSecurityPolicy } from "./image-content-security-policy.js";
-import { nativeHeadlessDisplay } from "./native-headless-display.js";
-import {
-	type ColorSchemePreference,
-	nativeColorScheme,
-	validateColorSchemePreference,
-} from "./native-color-scheme.js";
-import { documentFiles, existingDocumentFiles } from "./document-files.js";
-import type { UploadActionRunner } from "./upload-transfers.js";
 import {
 	clickTargetAriaDisabled,
 	findClickPoint,
-	findHoverPoint,
 	findGeneratedClickPoint,
 	findGeneratedHoverPoint,
+	findHoverPoint,
 } from "./click-target.js";
-import { resolveVisualTarget } from "./generated-controls.js";
-import { imageMediaTypes } from "./image-decoder.js";
+import { ContentSecurityPolicy } from "./content-security-policy.js";
+import {
+	CookieJar,
+	type CookieJarOptions,
+	type CookieLimits,
+} from "./cookies.js";
+import { documentFiles, existingDocumentFiles } from "./document-files.js";
+import { bindDocumentIdentity } from "./document-identity.js";
+import { documentImageContentSecurityPolicy } from "./document-image-content-security-policy.js";
+import type { ImageFetch } from "./document-images.js";
+import {
+	type DocumentScriptAdmission,
+	documentScriptCsp,
+	initializeDocumentScriptCsp,
+	snapshotDocumentScriptCspHeaders,
+} from "./document-script-csp.js";
 import {
 	type ScriptLoadReport,
 	documentScriptState,
 } from "./document-script-state.js";
 import { selectDocumentFragmentTarget, urlFragment } from "./document-url.js";
+import {
+	bindDocumentWebSockets,
+	existingDocumentWebSockets,
+} from "./document-websocket-owner.js";
+import type { DocumentWebSockets } from "./document-websockets.js";
 import { type DocumentLimits, DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { type EventAction, runEventActionAsync } from "./event-actions.js";
-import {
-	documentScrollIntoView,
-	type ScrollIntoViewOptions,
-	type ScrollIntoViewResult,
-} from "./scroll-into-view.js";
+import { hasUnsupportedExecutionCsp } from "./execution-content-security-policy.js";
 import type { FormRequestResult } from "./form-actions.js";
 import type { FormSubmissionOptions } from "./forms.js";
+import { resolveVisualTarget } from "./generated-controls.js";
 import {
 	type DocumentHistory,
 	type HistoryArchive,
@@ -73,14 +51,22 @@ import {
 } from "./history.js";
 import { type HtmlParseInfo, htmlParseInfo } from "./html-info.js";
 import type { HtmlScriptHooks } from "./html-parser.js";
+import { ImageContentSecurityPolicy } from "./image-content-security-policy.js";
+import { imageMediaTypes } from "./image-decoder.js";
 import {
 	type DocumentInteractions,
 	type InteractionResult,
 	documentInteractions,
 } from "./interactions.js";
-import type { KeyboardResult } from "./keyboard.js";
 import { keyboardChord } from "./keyboard-state.js";
+import type { KeyboardResult } from "./keyboard.js";
 import type { DocumentMouse, MouseButton, MouseResult } from "./mouse.js";
+import {
+	type ColorSchemePreference,
+	nativeColorScheme,
+	validateColorSchemePreference,
+} from "./native-color-scheme.js";
+import { nativeHeadlessDisplay } from "./native-headless-display.js";
 import {
 	NavigationHistory,
 	type TraversalTarget,
@@ -89,6 +75,7 @@ import {
 	NetworkJournal,
 	type NetworkJournalSnapshot,
 } from "./network-journal.js";
+import { NetworkRequestQueue } from "./network-request-queue.js";
 import { NetworkRoutes } from "./network-routes.js";
 import {
 	type NetworkRequest,
@@ -98,15 +85,31 @@ import {
 } from "./network.js";
 import { recordPageTraversalError } from "./page-console.js";
 import type { PageFetchTransport } from "./page-fetch.js";
-import type { ImageFetch } from "./document-images.js";
 import { type PageHistoryPort, bindPageHistory } from "./page-history.js";
 import { type PageStoragePort, bindPageStorage } from "./page-storage.js";
 import { PageTraversals } from "./page-traversals.js";
+import {
+	type ScriptFetchPolicy,
+	type ScriptFetchResult,
+	fetchScriptResource,
+} from "./script-fetch.js";
+import {
+	type ScrollIntoViewOptions,
+	type ScrollIntoViewResult,
+	documentScrollIntoView,
+} from "./scroll-into-view.js";
 import { DocumentQueries } from "./selectors.js";
 import { type SnapshotOptions, snapshotDocument } from "./snapshot.js";
 import { PageStorageEvents } from "./storage-events.js";
 import { BrowserStorage, type StorageLimits } from "./storage.js";
 import { type DocumentStyles, documentStyles } from "./styles.js";
+import {
+	type StylesheetFetchPolicy,
+	type StylesheetFetchResult,
+	fetchStylesheetResource,
+} from "./stylesheet-fetch.js";
+import type { UploadActionRunner } from "./upload-transfers.js";
+import type { WebSocketTransport } from "./websocket-transport.js";
 
 export interface DocumentLoaderContext {
 	readonly topLevelDocument?: true;
@@ -125,6 +128,7 @@ export interface DocumentLoaderContext {
 		url: string,
 		policy: ScriptFetchPolicy,
 		signal: AbortSignal,
+		admission?: DocumentScriptAdmission,
 	) => Promise<Readonly<ScriptFetchResult>>;
 	readonly fetchImage?: ImageFetch;
 	readonly scripts?: HtmlScriptHooks;
@@ -1741,8 +1745,41 @@ export class BrowserSession {
 			fetchLifetime.signal,
 			bootstrapLifetime.signal,
 		]);
-		const fetchCspBlocked = hasUnsupportedExecutionCsp(response.headers, true);
-		const imageCspHeaders = imageContentSecurityPolicyValues(response.headers);
+		const scriptHeaders = snapshotDocumentScriptCspHeaders(response.headers);
+		if (scriptHeaders === null)
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Invalid document script policy headers",
+			);
+		const fetchCspBlocked = hasUnsupportedExecutionCsp(
+			scriptHeaders as NetworkResponse["headers"],
+			true,
+		);
+		const imageCspHeaders: string[] = Object.getOwnPropertyNames(scriptHeaders)
+			.filter(
+				(name) =>
+					name.length === 23 &&
+					name.toLowerCase() === "content-security-policy",
+			)
+			.flatMap(
+				(name) => Object.getOwnPropertyDescriptor(scriptHeaders, name)?.value,
+			);
+		const assertScriptOwner = () => {
+			this.ensureOpen();
+			if (fetchLifetime.signal.aborted) throw aborted(fetchLifetime.signal);
+			if (!committed) this.assertCurrent(job);
+			else if (!candidate || tab.page?.document !== candidate)
+				throw new AgentBrowserError(
+					"closed",
+					"Script document is no longer active",
+				);
+		};
+		const scriptResourceSignal = (requestSignal?: AbortSignal) =>
+			AbortSignal.any([
+				fetchLifetime.signal,
+				...(!committed ? [bootstrapSignal] : []),
+				...(requestSignal ? [requestSignal] : []),
+			]);
 		const imageCsp = new ImageContentSecurityPolicy(
 			responseUrl,
 			imageCspHeaders,
@@ -1811,6 +1848,7 @@ export class BrowserSession {
 						"Loaded document URL must match the final response URL",
 					);
 				bindDocumentIdentity(document, this.identity);
+				initializeDocumentScriptCsp(document, scriptHeaders, true);
 				documentImageContentSecurityPolicy(document, imageCspHeaders);
 				if (this.webSocketTransport)
 					bindDocumentWebSockets(document, this.webSocketTransport, {
@@ -2014,7 +2052,10 @@ export class BrowserSession {
 							"policy-denied",
 							"Mixed-content document fetch is not allowed",
 						);
-					if (fetchCspBlocked)
+					if (
+						fetchCspBlocked ||
+						(candidate && documentScriptCsp(candidate)?.unsupported)
+					)
 						throw new AgentBrowserError(
 							"policy-denied",
 							"Fetch CSP enforcement is not implemented",
@@ -2231,18 +2272,16 @@ export class BrowserSession {
 						resourceUrl: string,
 						policy: ScriptFetchPolicy,
 						scriptSignal: AbortSignal,
+						admission?: DocumentScriptAdmission,
 					) => {
-						const policySignal = AbortSignal.any([
-							bootstrapSignal,
-							scriptSignal,
-						]);
+						const policySignal = scriptResourceSignal(scriptSignal);
 						let type: ScriptFetchResult["type"] = "opaque";
 						const response = await journal.run(
 							"script",
 							resourceUrl,
 							"GET",
 							async () => {
-								this.assertCurrent(job);
+								assertScriptOwner();
 								policySignal.throwIfAborted();
 								if (++scriptResources > this.limits.maxScriptRequests)
 									throw new AgentBrowserError(
@@ -2258,20 +2297,33 @@ export class BrowserSession {
 										documentUrl: responseUrl,
 										signal: policySignal,
 										maxRedirects: this.transport.limits?.maxRedirects ?? 10,
-										checkContentSecurityPolicy: () => {
-											if (fetchCspBlocked)
+										checkContentSecurityPolicy: (url, redirectCount) => {
+											const owner = candidate
+												? documentScriptCsp(candidate)
+												: undefined;
+											if (
+												owner?.unsupported ||
+												((fetchCspBlocked || owner?.enforced) &&
+													(!owner ||
+														!admission ||
+														!owner.allowsRequest(
+															admission,
+															url,
+															redirectCount,
+														)))
+											)
 												throw new AgentBrowserError(
 													"policy-denied",
 													"Script Content Security Policy is not supported",
 												);
 										},
 										request: async (input) => {
-											this.assertCurrent(job);
+											assertScriptOwner();
 											const script = await withAbort(
 												this.fetchNetwork({ ...input, signal: policySignal }),
 												policySignal,
 											);
-											this.assertCurrent(job);
+											assertScriptOwner();
 											return script;
 										},
 									},
@@ -2284,8 +2336,12 @@ export class BrowserSession {
 					},
 					fetchScript: (resourceUrl: string) =>
 						journal.run("script", resourceUrl, "GET", async () => {
-							this.assertCurrent(job);
-							if (fetchCspBlocked)
+							assertScriptOwner();
+							const scriptSignal = scriptResourceSignal();
+							const owner = candidate
+								? documentScriptCsp(candidate)
+								: undefined;
+							if (fetchCspBlocked || owner?.enforced || owner?.unsupported)
 								throw new AgentBrowserError(
 									"policy-denied",
 									"Script CSP enforcement is not implemented",
@@ -2311,16 +2367,16 @@ export class BrowserSession {
 									headers: {
 										accept: "text/javascript, application/javascript",
 									},
-									signal: bootstrapSignal,
+									signal: scriptSignal,
 									cookieContext: {
 										siteUrl: responseUrl,
 										credentials: "include",
 										topLevelNavigation: false,
 									},
 								}),
-								bootstrapSignal,
+								scriptSignal,
 							);
-							this.assertCurrent(job);
+							assertScriptOwner();
 							return script;
 						}),
 					fetchStylesheet: (resourceUrl: string) =>

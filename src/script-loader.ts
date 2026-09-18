@@ -1,14 +1,19 @@
+import { documentImages } from "./document-images.js";
+import {
+	type DocumentScriptAdmission,
+	type DocumentScriptCsp,
+	initializeDocumentScriptCsp,
+	snapshotDocumentScriptCspHeaders,
+} from "./document-script-csp.js";
 import {
 	type ScriptLoadReport,
 	updateDocumentScriptState,
 } from "./document-script-state.js";
 import { documentBaseUrl } from "./document-url.js";
-import { documentImages } from "./document-images.js";
 import { withDocumentWrite } from "./document-write.js";
 import type { DocumentMutation, DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
-import { hasUnsupportedExecutionCsp } from "./execution-content-security-policy.js";
 import { BrowserEvent } from "./events.js";
 import { documentHistory } from "./history.js";
 import type { HtmlModuleRequest, HtmlModuleSource } from "./html-module.js";
@@ -20,13 +25,13 @@ import {
 	parseNetworkUrl,
 } from "./network.js";
 import type { ScriptEvaluation } from "./safejs.js";
-import type { ScriptFetchPolicy, ScriptFetchResult } from "./script-fetch.js";
 import {
 	initializeScriptElement,
 	markScriptElementStarted,
 	scriptElementAsync,
 	scriptElementState,
 } from "./script-element-state.js";
+import type { ScriptFetchPolicy, ScriptFetchResult } from "./script-fetch.js";
 import {
 	parseIntegrityMetadata,
 	verifyIntegrityMetadata,
@@ -41,6 +46,7 @@ export interface ScriptLoaderOptions {
 
 interface ScriptRunner {
 	readonly closed: boolean;
+	close?(): void | Promise<void>;
 	readonly supportsHtmlModules?: boolean;
 	prepareModule?(request: HtmlModuleRequest): Promise<HtmlModuleSource>;
 	evaluate(
@@ -61,6 +67,8 @@ interface Source {
 	external: boolean;
 	module?: boolean;
 	error?: string;
+	admission?: DocumentScriptAdmission;
+	redirectCount?: number;
 }
 
 type PreparedScript =
@@ -121,6 +129,10 @@ export class ScriptLoader implements HtmlScriptHooks {
 	private tail = Promise.resolve();
 	private ordered = Promise.resolve();
 	private csp = false;
+	private readonly responseHeaders: unknown;
+	private scriptPolicy?: DocumentScriptCsp;
+	private unsubscribePolicy?: () => void;
+	private runtimeClosing = false;
 	private readonly counts = {
 		mode: "classic" as ScriptLoadReport["mode"],
 		partial: true as const,
@@ -136,6 +148,10 @@ export class ScriptLoader implements HtmlScriptHooks {
 	};
 	private readonly abort = () => {
 		this.controller.abort();
+		this.scriptPolicy?.close();
+		this.unsubscribePolicy?.();
+		this.unsubscribePolicy = undefined;
+		this.closeRuntime();
 		this.unsubscribeMutations?.();
 		this.unsubscribeMutations = undefined;
 		this.options.signal.removeEventListener("abort", this.abort);
@@ -164,6 +180,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 				url: string,
 				policy: ScriptFetchPolicy,
 				signal: AbortSignal,
+				admission?: DocumentScriptAdmission,
 			) => Promise<Readonly<ScriptFetchResult>>;
 			limits?: ScriptLoaderOptions;
 		},
@@ -197,9 +214,8 @@ export class ScriptLoader implements HtmlScriptHooks {
 				"invalid-input",
 				"Invalid script document context",
 			);
-		this.csp = hasUnsupportedExecutionCsp(
+		this.responseHeaders = snapshotDocumentScriptCspHeaders(
 			options.response.headers,
-			options.topLevelDocument === true,
 		);
 		options.signal.addEventListener("abort", this.abort, { once: true });
 		if (options.signal.aborted) this.abort();
@@ -212,6 +228,16 @@ export class ScriptLoader implements HtmlScriptHooks {
 				"Script loader already owns a document",
 			);
 		this.live();
+		if (tree.url !== this.options.response.url)
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Script document URL does not match the response",
+			);
+		this.scriptPolicy = initializeDocumentScriptCsp(
+			tree,
+			this.responseHeaders,
+			this.options.topLevelDocument === true,
+		);
 		this.tree = tree;
 		updateDocumentScriptState(tree, {
 			readyState: "loading",
@@ -222,11 +248,18 @@ export class ScriptLoader implements HtmlScriptHooks {
 			this.abort();
 			this.options.signal.removeEventListener("abort", this.abort);
 		});
-		this.runner = this.options.owner(tree);
+		this.unsubscribePolicy = this.scriptPolicy?.onInvalidated(() => {
+			this.csp = true;
+			this.closeRuntime();
+		});
+		if (!this.blocked()) {
+			this.runner = this.options.owner(tree);
+			if (this.blocked()) this.closeRuntime();
+		}
 		this.modules =
 			this.options.limits?.modules === true &&
-			this.runner.supportsHtmlModules === true &&
-			typeof this.runner.prepareModule === "function";
+			this.runner?.supportsHtmlModules === true &&
+			typeof this.runner?.prepareModule === "function";
 		if (this.modules) this.counts.mode = "classic-and-module";
 		this.unsubscribeMutations = tree.onMutation((record) =>
 			this.mutation(record),
@@ -241,6 +274,8 @@ export class ScriptLoader implements HtmlScriptHooks {
 				"Script policy document mismatch",
 			);
 		this.csp = true;
+		this.scriptPolicy?.close();
+		this.closeRuntime();
 	}
 
 	runParser(step: () => void): Promise<void> {
@@ -260,6 +295,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 	private mutation(record: DocumentMutation) {
 		const tree = this.tree;
 		if (!tree || this.controller.signal.aborted) return;
+		if (this.scriptPolicy?.unsupported || this.csp) this.closeRuntime();
 		if (this.parserDepth) {
 			for (const id of record.addedNodes)
 				for (const { node } of tree.walk(id))
@@ -401,7 +437,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 			this.skip("script-count-limit");
 			return { mode: "skip" };
 		}
-		if (this.counts.halted || this.runner?.closed) {
+		if (!this.blocked() && (this.counts.halted || this.runner?.closed)) {
 			this.counts.halted = true;
 			this.skip("realm-halted");
 			return { mode: "skip" };
@@ -412,6 +448,9 @@ export class ScriptLoader implements HtmlScriptHooks {
 			);
 			return { mode: "skip" };
 		}
+		const admission = this.scriptPolicy?.enforced
+			? this.scriptPolicy.prepareScript(id)
+			: undefined;
 		markScriptElementStarted(tree, id);
 		const node = tree.get(id);
 		const attributes = node.attributes;
@@ -429,13 +468,30 @@ export class ScriptLoader implements HtmlScriptHooks {
 			this.skip("nomodule");
 			return { mode: "skip" };
 		}
-		if (this.blocked()) {
+		if (this.blocked() || (this.scriptPolicy?.enforced && !admission)) {
 			this.skip("csp-not-supported");
 			return { mode: "skip" };
 		}
 		if (!tree.isConnected(id)) {
 			this.skip("disconnected-script");
 			return { mode: "skip" };
+		}
+		if (admission) {
+			let allowed = false;
+			try {
+				allowed = Object.hasOwn(attributes, "src")
+					? admission.allows(
+							parseNetworkUrl(
+								new URL(attributes.src, documentBaseUrl(tree)).href,
+							).href,
+							0,
+						)
+					: admission.allows();
+			} catch {}
+			if (!allowed) {
+				this.skip("csp-not-supported");
+				return { mode: "skip" };
+			}
 		}
 		if (module) {
 			const external = Object.hasOwn(attributes, "src");
@@ -457,14 +513,18 @@ export class ScriptLoader implements HtmlScriptHooks {
 			}
 			return {
 				mode: "inline",
-				source: { id, text: source, url: tree.url, external: false },
+				source: { id, text: source, url: tree.url, external: false, admission },
 			};
 		}
-		const requiresPolicy = ["integrity", "crossorigin"].some((name) =>
-			Object.hasOwn(attributes, name),
-		);
+		const requiresPolicy =
+			!!admission ||
+			["integrity", "crossorigin"].some((name) =>
+				Object.hasOwn(attributes, name),
+			);
 		if (requiresPolicy && !this.options.fetchWithPolicy) {
-			this.skip("integrity-or-cors-not-supported");
+			this.skip(
+				admission ? "csp-not-supported" : "integrity-or-cors-not-supported",
+			);
 			return { mode: "skip" };
 		}
 		if (++this.counts.external > this.maxExternal) {
@@ -499,6 +559,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 						integrity: attributes.integrity ?? "",
 					}
 				: undefined,
+			admission,
 		);
 		return { mode, source };
 	}
@@ -616,6 +677,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 		value: string,
 		encoding?: string,
 		selection?: { policy: ScriptFetchPolicy; integrity: string },
+		admission?: DocumentScriptAdmission,
 	): Promise<Source> {
 		let url = this.options.response.url;
 		const baseUrl = this.tree ? documentBaseUrl(this.tree) : url;
@@ -631,6 +693,11 @@ export class ScriptLoader implements HtmlScriptHooks {
 			if (!value.trim() || !this.tree)
 				throw new AgentBrowserError("invalid-input", "Missing script URL");
 			url = parseNetworkUrl(new URL(value, baseUrl).href).href;
+			if (this.blocked() || (admission && !admission.allows(url, 0)))
+				throw new AgentBrowserError(
+					"policy-denied",
+					"Script policy no longer admits this request",
+				);
 			if (
 				new URL(this.tree.url).protocol === "https:" &&
 				new URL(url).protocol !== "https:"
@@ -654,6 +721,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 						url,
 						selection.policy,
 						this.controller.signal,
+						...(admission ? ([admission] as const) : ([] as const)),
 					),
 				);
 				this.live();
@@ -677,6 +745,16 @@ export class ScriptLoader implements HtmlScriptHooks {
 			}
 			this.live();
 			const finalUrl = parseNetworkUrl(response.url);
+			if (
+				admission &&
+				(!Array.isArray(response.redirects) ||
+					response.redirects.length > 20 ||
+					!admission.allows(finalUrl.href, response.redirects.length))
+			)
+				throw new AgentBrowserError(
+					"policy-denied",
+					"Script response blocked by document policy",
+				);
 			if (
 				new URL(this.tree.url).protocol === "https:" &&
 				finalUrl.protocol !== "https:"
@@ -711,6 +789,8 @@ export class ScriptLoader implements HtmlScriptHooks {
 				text: decodeResponseText(response, encoding ?? "utf-8").text,
 				url: response.url,
 				external: true,
+				admission,
+				redirectCount: response.redirects.length,
 			};
 		} catch (error) {
 			return {
@@ -756,6 +836,10 @@ export class ScriptLoader implements HtmlScriptHooks {
 
 	private async execute(source: Source, context?: HtmlScriptContext) {
 		const tree = this.tree;
+		if (this.blocked()) {
+			this.skip("csp-not-supported");
+			return;
+		}
 		if (!tree || !this.runner)
 			throw new AgentBrowserError("closed", "Script document is unavailable");
 		if (this.counts.halted || this.runner.closed) {
@@ -771,6 +855,15 @@ export class ScriptLoader implements HtmlScriptHooks {
 			this.counts.failed++;
 			this.issue(`fetch-${source.error}`);
 			await this.event(source.id, "error");
+			return;
+		}
+		if (
+			source.admission &&
+			!(source.external
+				? source.admission.allows(source.url, source.redirectCount)
+				: source.admission.allows())
+		) {
+			this.skip("csp-not-supported");
 			return;
 		}
 		const previous = source.module
@@ -912,7 +1005,8 @@ export class ScriptLoader implements HtmlScriptHooks {
 	}
 
 	private blocked() {
-		if (!this.csp && this.tree)
+		if (this.scriptPolicy?.unsupported) this.csp = true;
+		if (!this.csp && !this.scriptPolicy && this.tree)
 			this.csp = [...this.tree.walk()].some(
 				({ node }) =>
 					node.tagName === "meta" &&
@@ -920,6 +1014,13 @@ export class ScriptLoader implements HtmlScriptHooks {
 						"content-security-policy",
 			);
 		return this.csp;
+	}
+	private closeRuntime() {
+		if (!this.runner || this.runtimeClosing) return;
+		this.runtimeClosing = true;
+		try {
+			void Promise.resolve(this.runner.close?.()).catch(() => undefined);
+		} catch {}
 	}
 	private skip(code: string) {
 		this.counts.skipped++;

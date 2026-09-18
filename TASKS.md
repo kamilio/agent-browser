@@ -134,6 +134,24 @@ in-child disposal. Parent verifies7047 final evidence hashes. This qualifies
 programmatic owned process/public commands, not the real CLI environment
 entrypoint, full Zoom dependency execution or meeting participation.
 
+September18,17:49UTC: authentic document policy now reaches native script loading
+and runtime creation. Nonce/provenance-bound admissions are checked before fetch,
+at each actual redirect hop and before evaluation; invalidation closes runtime
+owners and meta-policy rejection stays sticky. Parent integration passes3422
+native tests in72 files at
+`/tmp/agent-browser-csp-loader-union01-glcJNn/candidate`,36.237s, with build/types/
+format/lint passing. This activates only the supported script/base subset, not
+the complete Zoom policy. See SCRIPT-CSP-POLICY.md. The captured join policy also
+requires upgrade-insecure-requests and image/style/font/connect/media/frame/object
+handling; those still block startup and must not be dropped to force admission.
+
+The private allocation-only SDK candidate at
+`/tmp/agent-browser-sdk-expando-perf-6xkMAq/HANDOFF.md` passes1526 tests/103files
+plus strict build/types, but paired medians show only1.85% small-realm and6.21%
+scope improvements and a0.44% large-graph regression. Parent holds the proposed
+publisher retry rather than treating these as a Zoom fix. The candidate remains
+private/uninstalled; a new measured graph-classification investigation is active.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,
