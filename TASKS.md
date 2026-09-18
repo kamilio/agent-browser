@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Fresh public content and escaped Markdown labels
+
+- Three new scoped anonymous GETs on September18 at03:35UTC retrieve MDN
+  Response.arrayBuffer, Wikipedia Benchmark (computing) and Hacker News, all200.
+  Verify useful method/examples, benchmark definition/limitations and all30
+  story title/destination pairs rather than treating nonempty text as success.
+- Existing focused/compact offline replay reduces Markdown bytes62.1%/12.3%/
+  20.1%, retaining selected content/qualifications. No additional network request.
+  No challenge occurs; this is not proof of CAPTCHA handling or evasion.
+- Fresh output exposes a real source-link gap: punctuation escapes in labels
+  suppress valid candidates. Accept bounded ASCII punctuation pairs while keeping
+  literal labels/backslashes and all destination/security/code exclusions. Final
+  native952/0 in10 files;133 new scanner cases plus document integration. Baseline
+  reproducer865/87 retained; build/types/format/lint pass. Patched offline discovery
+  recovers all30 captured headlines. No live retry after the patch.
+- Live/replay prerequisite suites1293/0 and775/0 remain separate; all request,
+  document/session/process cleanup checks pass. Preserve two verifier mistakes,
+  the real parser failure and initial test-lint correction. No full-suite claim.
+- See reports/fresh-content-2026-09-18.md/JSON and MARKDOWN-SOURCE-LINKS.md.
+  An unfollowed HN title/link offers an Astra research lead, not Twitter evidence
+  or proof about the linked product. Keep100-site/research, script/SDK, Zoom/media,
+  credential/passkey and broader access-challenge gates open. No default switch
+  or push; overall browser goal stays active.
+
 ### Read binary fetch bodies and replay captured search data
 
 - Add PageFetch Response.arrayBuffer() through the shared one-shot body consumer:

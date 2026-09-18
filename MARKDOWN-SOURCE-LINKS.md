@@ -25,6 +25,19 @@ angle-wrapped destinations, and HTTP(S) autolinks. Reference links, images,
 titles, ambiguous escapes, malformed URLs and credential-bearing URLs are
 excluded. Labels are source text, not rendered or confirmed clickable text.
 
+Backslash escapes of ASCII punctuation inside a label are recognized without
+interpreting the escaped bracket or backtick as structure. The literal label
+still includes its backslashes; no Markdown rendering or entity decoding is
+performed. This admits ordinary producer output such as
+`[Near\-Lossless](<https://example.test/article>)`. Non-punctuation label escapes
+and all destination escapes remain unsupported. URL, code/HTML exclusion and
+work/retention limits are unchanged.
+
+The September 18 follow-up is verified by 952 selected native checks and replay
+of fresh captured headlines. See `reports/fresh-content-2026-09-18.md`; its live
+captures precede the scanner patch, and patched discovery is checked offline
+without following the discovered links.
+
 Default limits: 2,000,000 source UTF-16 units, 8,000,000 work units, nesting 16,
 32 entries, 256 label units and 4,096 URL units. Caller entry/label maxima are
 256/1,024. URL limits never produce a truncated URL. The enclosing discovery

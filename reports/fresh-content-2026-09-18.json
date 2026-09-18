@@ -1,0 +1,868 @@
+{
+  "date": "2026-09-18",
+  "liveCaptureCommit": "94dfd04a64088eaacaf8194bb7b24a24a2c506b6",
+  "liveCaptureRuntime": {
+    "at": "2026-09-18T03:34:31.775Z",
+    "root": "/tmp/agent-browser-binary-fetch-oybLr7/candidate",
+    "baseline": "94dfd04a64088eaacaf8194bb7b24a24a2c506b6",
+    "qualifiedOwnedOverlays": [
+      "src/page-fetch.ts",
+      "src/page-fetch-binary.test.ts"
+    ],
+    "manifests": {
+      "SOURCE": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/binary-fetch-september18/SOURCE-core01.json",
+        "base": "/tmp/agent-browser-binary-fetch-oybLr7/candidate",
+        "count": 1684,
+        "sha256": "c416606507062e6a31d989f1d40bba4bf1b0b618f2da8880a2e2abc42363a746"
+      },
+      "COMPILED": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/binary-fetch-september18/COMPILED-core01.json",
+        "base": "/tmp/agent-browser-binary-fetch-oybLr7/candidate/dist",
+        "count": 2504,
+        "sha256": "5035521bbbd2129f10d629eafa0c0231f572b129e3d8c79932a1071fe0cae21d"
+      }
+    },
+    "native": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/fresh-content-september18/native-core01/EXECUTION.json",
+    "quality": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/binary-fetch-september18/CHECK-core01.json",
+    "capturedReplay": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/binary-fetch-september18/replay-core01/RESULT.json",
+    "actualSdkExecuted": false,
+    "liveNetworkExecuted": false,
+    "qualifiedResearchTests": 1293,
+    "qualifiedResearchFiles": 16
+  },
+  "finalParserRuntime": {
+    "at": "2026-09-18T03:55:22.001Z",
+    "root": "/tmp/agent-browser-markdown-label-escapes-WNfOxu/candidate",
+    "baseline": "94dfd04a64088eaacaf8194bb7b24a24a2c506b6",
+    "qualifiedOwnedOverlays": [
+      "src/markdown-source-links.ts",
+      "src/markdown-source-links.test.ts",
+      "src/document-markdown-links.test.ts",
+      "src/markdown-source-links-escaped.test.ts"
+    ],
+    "manifests": {
+      "SOURCE": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/markdown-label-escapes-september18/SOURCE-core02.json",
+        "base": "/tmp/agent-browser-markdown-label-escapes-WNfOxu/candidate",
+        "count": 1685,
+        "sha256": "2bedec2a9ea8c90ca65cd9d2145a494eab94d1d7150d7f7de02de04bc49d5c3a"
+      },
+      "COMPILED": {
+        "file": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/markdown-label-escapes-september18/COMPILED-core02.json",
+        "base": "/tmp/agent-browser-markdown-label-escapes-WNfOxu/candidate/dist",
+        "count": 2504,
+        "sha256": "0eeaf342ebbe1a05fbe25f2a762d02b66fa321886137e0257175851acd49fc4f"
+      }
+    },
+    "native": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/markdown-label-escapes-september18/native-core02/EXECUTION.json",
+    "quality": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/markdown-label-escapes-september18/CHECK-core02.json",
+    "actualSdkExecuted": false,
+    "liveNetworkExecuted": false
+  },
+  "captures": [
+    {
+      "id": "mdn-arraybuffer",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/Response/arrayBuffer",
+      "originalRoot": "/tmp/agent-browser-fresh-content-2sliGg/mdn-arraybuffer",
+      "authorization": {
+        "status": "FINAL",
+        "suppliedBy": "parent",
+        "authorizationBasis": "Continuing explicit user-authorized public website functionality testing, separately scoped here; exact one-GET target and pinned zero-network proof required. No new permissions inferred from native test results.",
+        "anonymousContentOnly": true,
+        "commit": "94dfd04a64088eaacaf8194bb7b24a24a2c506b6",
+        "runtime": {
+          "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/fresh-content-september18/RUNTIME.json",
+          "sha256": "4c0c826091691f78410a1b4a8bc793bad8f7f148e91191222a10dbb8996d3da0"
+        },
+        "maximumLiveGETs": 1,
+        "exactUrl": "https://developer.mozilla.org/en-US/docs/Web/API/Response/arrayBuffer",
+        "noRetriesOrRedirects": true,
+        "scopeSha256": "9fe4596f14cafe94223bcbe05184fb7a7924892017018d0b317759b4a8a617aa"
+      },
+      "primaryResponse": {
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/Response/arrayBuffer",
+        "status": 200,
+        "receivedAt": "2026-09-18T03:35:10.086Z",
+        "headers": {
+          "content-type": [
+            "text/html"
+          ],
+          "content-length": [
+            "17570"
+          ],
+          "content-encoding": [
+            "br"
+          ],
+          "content-security-policy": [
+            "default-src 'self'; script-src 'report-sample' 'self' 'wasm-unsafe-eval' assets.codepen.io production-assets.codepen.io https://js.stripe.com transcend-cdn.com 'sha256-XNBp89FG76amD8BqrJzyflxOF9PaWPqPqvJfKZPCv7M=' 'sha256-YCNoU9DNiinACbd8n6UPyB/8vj0kXvhkOni9/06SuYw=' 'sha256-PZjP7OR6mBEtnvXIZfCZ5PuOlxoDF1LDZL8aj8c42rw='; script-src-elem 'report-sample' 'self' 'wasm-unsafe-eval' assets.codepen.io production-assets.codepen.io https://js.stripe.com transcend-cdn.com 'sha256-XNBp89FG76amD8BqrJzyflxOF9PaWPqPqvJfKZPCv7M=' 'sha256-YCNoU9DNiinACbd8n6UPyB/8vj0kXvhkOni9/06SuYw=' 'sha256-PZjP7OR6mBEtnvXIZfCZ5PuOlxoDF1LDZL8aj8c42rw='; style-src 'report-sample' 'self' 'unsafe-inline' transcend-cdn.com; object-src 'none'; base-uri 'self'; connect-src 'self' developer.allizom.org bcd.developer.allizom.org bcd.developer.mozilla.org updates.developer.allizom.org updates.developer.mozilla.org https://incoming.telemetry.mozilla.org https://observatory-api.mdn.allizom.net https://observatory-api.mdn.mozilla.net telemetry.transcend.io telemetry.us.transcend.io transcend-cdn.com https://api.github.com/search/issues https://api.stripe.com; font-src 'self'; frame-src 'self' mdn.github.io *.mdnplay.dev *.mdnyalp.dev *.play.test.mdn.allizom.net https://v2.scrimba.com https://scrimba.com jsfiddle.net www.youtube-nocookie.com codepen.io survey.alchemer.com https://js.stripe.com; img-src 'self' data: *.githubusercontent.com *.gravatar.com mozillausercontent.com firefoxusercontent.com profile.stage.mozaws.net profile.accounts.firefox.com developer.mozilla.org mdn.dev wikipedia.org upload.wikimedia.org https://mdn.github.io/shared-assets/ https://mdn.dev/; manifest-src 'self'; media-src 'self' archive.org videos.cdn.mozilla.net https://mdn.github.io/shared-assets/; child-src 'self'; worker-src 'self';"
+          ]
+        },
+        "headerCapture": {
+          "kind": "selected-response-headers-v2",
+          "partial": true,
+          "omitted": []
+        },
+        "decodedBytes": 156303,
+        "encodedBytes": 17570,
+        "bodySha256": "40dee73f7cf34af8799ff15c4a5b60e97845d20c8b273920c29d30f1a3c188fd",
+        "hashScope": "transport-decoded-body-before-loader",
+        "redirects": 0,
+        "elapsedMs": 452.781655
+      },
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "nativeMetrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 17570,
+        "decodedBytes": 156303,
+        "active": 0,
+        "closed": true
+      },
+      "extraction": {
+        "title": "Response: arrayBuffer() method - Web APIs | MDN",
+        "markdownBytes": 23199,
+        "sha256": "716302f4d0ef256350a7946b62814014d3097c1db8de8756a6e1b9c364e4edf9"
+      },
+      "proofExecution": {
+        "mode": "proof",
+        "pid": 2762413,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.33828223310410976,
+        "safetyPassed": true,
+        "safetyErrors": [],
+        "summary": {
+          "outcome": "extracted-unverified",
+          "admission": null,
+          "status": 200,
+          "receivedAt": "2026-09-18T03:34:53.943Z",
+          "bodyBytes": 674,
+          "markdownBytes": 523,
+          "requests": 1,
+          "mockedRequests": 1
+        }
+      },
+      "execution": {
+        "mode": "live",
+        "pid": 2762648,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.7873355522751808,
+        "safetyPassed": true,
+        "safetyErrors": [],
+        "summary": {
+          "outcome": "extracted-unverified",
+          "admission": null,
+          "status": 200,
+          "receivedAt": "2026-09-18T03:35:10.086Z",
+          "bodyBytes": 156303,
+          "markdownBytes": 23199,
+          "requests": 1,
+          "mockedRequests": 0
+        }
+      },
+      "focusExecution": {
+        "at": "2026-09-18T03:41:03.435459+00:00",
+        "pid": 2767864,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.2695939280092716,
+        "passed": true,
+        "errors": [],
+        "summary": {
+          "markdownBytes": 8798,
+          "originalMarkdownBytes": 23199,
+          "selection": {
+            "method": "content-focus",
+            "matches": null
+          },
+          "focus": null,
+          "networkRequests": 0
+        }
+      },
+      "focusContentSelection": {
+        "policy": "main-content-v3",
+        "selected": "main",
+        "reason": "unique-main",
+        "mainCandidates": 1,
+        "articleCandidates": 0,
+        "scannedNodes": 1667,
+        "outsideArticleContent": true,
+        "mainArticleCandidates": 0,
+        "outsideMainArticleContent": true
+      },
+      "scopeSha256": "9fe4596f14cafe94223bcbe05184fb7a7924892017018d0b317759b4a8a617aa"
+    },
+    {
+      "id": "wikipedia-benchmark",
+      "url": "https://en.wikipedia.org/wiki/Benchmark_(computing)",
+      "originalRoot": "/tmp/agent-browser-fresh-content-2sliGg/wikipedia-benchmark",
+      "authorization": {
+        "status": "FINAL",
+        "suppliedBy": "parent",
+        "authorizationBasis": "Continuing explicit user-authorized public website functionality testing, separately scoped here; exact one-GET target and pinned zero-network proof required. No new permissions inferred from native test results.",
+        "anonymousContentOnly": true,
+        "commit": "94dfd04a64088eaacaf8194bb7b24a24a2c506b6",
+        "runtime": {
+          "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/fresh-content-september18/RUNTIME.json",
+          "sha256": "4c0c826091691f78410a1b4a8bc793bad8f7f148e91191222a10dbb8996d3da0"
+        },
+        "maximumLiveGETs": 1,
+        "exactUrl": "https://en.wikipedia.org/wiki/Benchmark_(computing)",
+        "noRetriesOrRedirects": true,
+        "scopeSha256": "9fe4596f14cafe94223bcbe05184fb7a7924892017018d0b317759b4a8a617aa"
+      },
+      "primaryResponse": {
+        "url": "https://en.wikipedia.org/wiki/Benchmark_(computing)",
+        "status": 200,
+        "receivedAt": "2026-09-18T03:35:09.772Z",
+        "headers": {
+          "content-type": [
+            "text/html; charset=UTF-8"
+          ],
+          "content-length": [
+            "42753"
+          ],
+          "content-encoding": [
+            "gzip"
+          ],
+          "content-security-policy": [
+            "script-src 'unsafe-eval' blob: 'self' meta.wikimedia.org *.wikimedia.org *.wikipedia.org *.wikinews.org *.wiktionary.org *.wikibooks.org *.wikiversity.org *.wikisource.org wikisource.org *.wikiquote.org *.wikidata.org *.wikifunctions.org *.wikivoyage.org *.mediawiki.org mediawiki.org wikimedia.org *.wmflabs.org *.wmcloud.org *.toolforge.org wss://*.toolforge.org *.jsdelivr.net unpkg.com cdnjs.cloudflare.com raw.githubusercontent.com *.github.com code.jquery.com cdn.mathjax.org use.typekit.net fonts.cdnfonts.com use.fontawesome.com i.ytimg.com rsms.me doi.org localhost https://localhost:* http://localhost:* wss://localhost:* ws://localhost:* *.google.com *.gstatic.com *.googleapis.com *.translate.yandex.net yastatic.net ya.ru radically.github.io cdn.sammdot.ca cdn.fontshare.com viaf.org publicai-proxy.alaexis.workers.dev iiif.archive.org api.flickr.com live.staticflickr.com api.anthropic.com api.openai.com api.publicai.co catalogo.pusc.it parsifal.urbe.it opac.sbn.it overpass-api.de api.openrouteservice.org archive.org *.openstreetmap.org *.waymarkedtrails.org *.thunderforest.com registry.ipe.wiki analytics.ipe.wiki qlever.dev app.goacoustic.com wikipedia-archive.ourworldindata.org api.inaturalist.org inaturalist-open-data.s3.amazonaws.com validator.w3.org db.onlinewebfonts.com fontlibrary.org 'unsafe-inline' auth.wikimedia.org; default-src 'self' data: blob: upload.wikimedia.org thumb.wikimedia.org https://commons.wikimedia.org meta.wikimedia.org *.wikimedia.org *.wikipedia.org *.wikinews.org *.wiktionary.org *.wikibooks.org *.wikiversity.org *.wikisource.org wikisource.org *.wikiquote.org *.wikidata.org *.wikifunctions.org *.wikivoyage.org *.mediawiki.org mediawiki.org wikimedia.org *.wmflabs.org *.wmcloud.org *.toolforge.org wss://*.toolforge.org *.jsdelivr.net unpkg.com cdnjs.cloudflare.com raw.githubusercontent.com *.github.com code.jquery.com cdn.mathjax.org use.typekit.net fonts.cdnfonts.com use.fontawesome.com i.ytimg.com rsms.me doi.org localhost https://localhost:* http://localhost:* wss://localhost:* ws://localhost:* *.google.com *.gstatic.com *.googleapis.com *.translate.yandex.net yastatic.net ya.ru radically.github.io cdn.sammdot.ca cdn.fontshare.com viaf.org publicai-proxy.alaexis.workers.dev iiif.archive.org api.flickr.com live.staticflickr.com api.anthropic.com api.openai.com api.publicai.co catalogo.pusc.it parsifal.urbe.it opac.sbn.it overpass-api.de api.openrouteservice.org archive.org *.openstreetmap.org *.waymarkedtrails.org *.thunderforest.com registry.ipe.wiki analytics.ipe.wiki qlever.dev app.goacoustic.com wikipedia-archive.ourworldindata.org api.inaturalist.org inaturalist-open-data.s3.amazonaws.com validator.w3.org db.onlinewebfonts.com fontlibrary.org en.wikibooks.org en.wikinews.org en.wikiquote.org en.wikisource.org en.wikiversity.org en.wikivoyage.org en.wiktionary.org www.mediawiki.org commons.wikimedia.org foundation.wikimedia.org incubator.wikimedia.org species.wikimedia.org wikimania.wikimedia.org www.wikidata.org www.wikifunctions.org auth.wikimedia.org; style-src 'self' data: blob: upload.wikimedia.org thumb.wikimedia.org https://commons.wikimedia.org meta.wikimedia.org *.wikimedia.org *.wikipedia.org *.wikinews.org *.wiktionary.org *.wikibooks.org *.wikiversity.org *.wikisource.org wikisource.org *.wikiquote.org *.wikidata.org *.wikifunctions.org *.wikivoyage.org *.mediawiki.org mediawiki.org wikimedia.org *.wmflabs.org *.wmcloud.org *.toolforge.org wss://*.toolforge.org *.jsdelivr.net unpkg.com cdnjs.cloudflare.com raw.githubusercontent.com *.github.com code.jquery.com cdn.mathjax.org use.typekit.net fonts.cdnfonts.com use.fontawesome.com i.ytimg.com rsms.me doi.org localhost https://localhost:* http://localhost:* wss://localhost:* ws://localhost:* *.google.com *.gstatic.com *.googleapis.com *.translate.yandex.net yastatic.net ya.ru radically.github.io cdn.sammdot.ca cdn.fontshare.com viaf.org publicai-proxy.alaexis.workers.dev iiif.archive.org api.flickr.com live.staticflickr.com api.anthropic.com api.openai.com api.publicai.co catalogo.pusc.it parsifal.urbe.it opac.sbn.it overpass-api.de api.openrouteservice.org archive.org *.openstreetmap.org *.waymarkedtrails.org *.thunderforest.com registry.ipe.wiki analytics.ipe.wiki qlever.dev app.goacoustic.com wikipedia-archive.ourworldindata.org api.inaturalist.org inaturalist-open-data.s3.amazonaws.com validator.w3.org db.onlinewebfonts.com fontlibrary.org 'unsafe-inline'; object-src 'none'; report-uri /w/api.php?action=cspreport&format=json; report-to csp-report-to-endpoint"
+          ]
+        },
+        "headerCapture": {
+          "kind": "selected-response-headers-v2",
+          "partial": true,
+          "omitted": []
+        },
+        "decodedBytes": 211735,
+        "encodedBytes": 42753,
+        "bodySha256": "acf6a4f3b5177d5114c0a981de297ebf162fb10737552a391a6acd89786193d1",
+        "hashScope": "transport-decoded-body-before-loader",
+        "redirects": 0,
+        "elapsedMs": 38.847410999999994
+      },
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "nativeMetrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 42753,
+        "decodedBytes": 211735,
+        "active": 0,
+        "closed": true
+      },
+      "extraction": {
+        "title": "Benchmark (computing) - Wikipedia",
+        "markdownBytes": 67049,
+        "sha256": "4c1523d283a264ce2a8efa4514af02f7e784cc74b7e2e31f3a11bbfdce304df7"
+      },
+      "proofExecution": {
+        "mode": "proof",
+        "pid": 2762437,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.3360351826995611,
+        "safetyPassed": true,
+        "safetyErrors": [],
+        "summary": {
+          "outcome": "extracted-unverified",
+          "admission": null,
+          "status": 200,
+          "receivedAt": "2026-09-18T03:34:54.024Z",
+          "bodyBytes": 674,
+          "markdownBytes": 523,
+          "requests": 1,
+          "mockedRequests": 1
+        }
+      },
+      "execution": {
+        "mode": "live",
+        "pid": 2762681,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.49257695861160755,
+        "safetyPassed": true,
+        "safetyErrors": [],
+        "summary": {
+          "outcome": "extracted-unverified",
+          "admission": null,
+          "status": 200,
+          "receivedAt": "2026-09-18T03:35:09.772Z",
+          "bodyBytes": 211735,
+          "markdownBytes": 67049,
+          "requests": 1,
+          "mockedRequests": 0
+        }
+      },
+      "focusExecution": {
+        "at": "2026-09-18T03:41:03.597840+00:00",
+        "pid": 2767876,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.36898319236934185,
+        "passed": true,
+        "errors": [],
+        "summary": {
+          "markdownBytes": 58802,
+          "originalMarkdownBytes": 67049,
+          "selection": {
+            "method": "content-focus",
+            "matches": null
+          },
+          "focus": null,
+          "networkRequests": 0
+        }
+      },
+      "focusContentSelection": {
+        "policy": "main-content-v3",
+        "selected": "main",
+        "reason": "unique-main",
+        "mainCandidates": 1,
+        "articleCandidates": 0,
+        "scannedNodes": 3765,
+        "outsideArticleContent": true,
+        "mainArticleCandidates": 0,
+        "outsideMainArticleContent": true
+      },
+      "scopeSha256": "9fe4596f14cafe94223bcbe05184fb7a7924892017018d0b317759b4a8a617aa"
+    },
+    {
+      "id": "hacker-news",
+      "url": "https://news.ycombinator.com/",
+      "originalRoot": "/tmp/agent-browser-fresh-content-2sliGg/hacker-news",
+      "authorization": {
+        "status": "FINAL",
+        "suppliedBy": "parent",
+        "authorizationBasis": "Continuing explicit user-authorized public website functionality testing, separately scoped here; exact one-GET target and pinned zero-network proof required. No new permissions inferred from native test results.",
+        "anonymousContentOnly": true,
+        "commit": "94dfd04a64088eaacaf8194bb7b24a24a2c506b6",
+        "runtime": {
+          "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/fresh-content-september18/RUNTIME.json",
+          "sha256": "4c0c826091691f78410a1b4a8bc793bad8f7f148e91191222a10dbb8996d3da0"
+        },
+        "maximumLiveGETs": 1,
+        "exactUrl": "https://news.ycombinator.com/",
+        "noRetriesOrRedirects": true,
+        "scopeSha256": "9fe4596f14cafe94223bcbe05184fb7a7924892017018d0b317759b4a8a617aa"
+      },
+      "primaryResponse": {
+        "url": "https://news.ycombinator.com/",
+        "status": 200,
+        "receivedAt": "2026-09-18T03:35:10.011Z",
+        "headers": {
+          "content-type": [
+            "text/html; charset=utf-8"
+          ],
+          "content-encoding": [
+            "gzip"
+          ],
+          "content-security-policy": [
+            "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://cdnjs.cloudflare.com/; frame-src 'self' https://www.google.com/recaptcha/; style-src 'self' 'unsafe-inline'; img-src 'self' https://account.ycombinator.com; frame-ancestors 'self'"
+          ]
+        },
+        "headerCapture": {
+          "kind": "selected-response-headers-v2",
+          "partial": true,
+          "omitted": []
+        },
+        "decodedBytes": 34053,
+        "encodedBytes": 5600,
+        "bodySha256": "368c3f44bd2958ee0405f95db581f0524eb726533b6c486ec69881b98bd517c4",
+        "hashScope": "transport-decoded-body-before-loader",
+        "redirects": 0,
+        "elapsedMs": 249.35736699999998
+      },
+      "classification": {
+        "classifier": "browser-challenges",
+        "barrier": null,
+        "diagnostic": null
+      },
+      "nativeMetrics": {
+        "mockedRequests": 0,
+        "mockedDecodedBytes": 0,
+        "requests": 1,
+        "redirects": 0,
+        "encodedBytes": 5600,
+        "decodedBytes": 34053,
+        "active": 0,
+        "closed": true
+      },
+      "extraction": {
+        "title": "Hacker News",
+        "markdownBytes": 33172,
+        "sha256": "8f6be745172f49f16c0a329c3fc6a78142f8e7a0fba1f72b9a054b09a0baa0a4"
+      },
+      "proofExecution": {
+        "mode": "proof",
+        "pid": 2762444,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.3416879251599312,
+        "safetyPassed": true,
+        "safetyErrors": [],
+        "summary": {
+          "outcome": "extracted-unverified",
+          "admission": null,
+          "status": 200,
+          "receivedAt": "2026-09-18T03:34:54.072Z",
+          "bodyBytes": 674,
+          "markdownBytes": 523,
+          "requests": 1,
+          "mockedRequests": 1
+        }
+      },
+      "execution": {
+        "mode": "live",
+        "pid": 2762688,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.585445661097765,
+        "safetyPassed": true,
+        "safetyErrors": [],
+        "summary": {
+          "outcome": "extracted-unverified",
+          "admission": null,
+          "status": 200,
+          "receivedAt": "2026-09-18T03:35:10.011Z",
+          "bodyBytes": 34053,
+          "markdownBytes": 33172,
+          "requests": 1,
+          "mockedRequests": 0
+        }
+      },
+      "focusExecution": {
+        "at": "2026-09-18T03:41:03.586467+00:00",
+        "pid": 2767883,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 0.31913017854094505,
+        "passed": true,
+        "errors": [],
+        "summary": {
+          "markdownBytes": 26490,
+          "originalMarkdownBytes": 33172,
+          "selection": {
+            "method": "content-focus",
+            "matches": null
+          },
+          "focus": null,
+          "networkRequests": 0
+        }
+      },
+      "focusContentSelection": {
+        "policy": "main-content-v3",
+        "selected": "document",
+        "reason": "no-nonempty-landmark",
+        "mainCandidates": 0,
+        "articleCandidates": 0,
+        "scannedNodes": 1280,
+        "outsideArticleContent": true
+      },
+      "scopeSha256": "9fe4596f14cafe94223bcbe05184fb7a7924892017018d0b317759b4a8a617aa"
+    }
+  ],
+  "contentVerification": {
+    "at": "2026-09-18T03:55:22.190Z",
+    "discoveryRuntime": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/markdown-label-escapes-september18/RUNTIME-core02.json",
+    "checks": [
+      {
+        "id": "mdn-arraybuffer",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/Response/arrayBuffer",
+        "receivedAt": "2026-09-18T03:35:10.086Z",
+        "status": 200,
+        "originalBodySha256": "40dee73f7cf34af8799ff15c4a5b60e97845d20c8b273920c29d30f1a3c188fd",
+        "originalMarkdownBytes": 23199,
+        "focusedMarkdownBytes": 8798,
+        "contentSelection": {
+          "policy": "main-content-v3",
+          "selected": "main",
+          "reason": "unique-main",
+          "mainCandidates": 1,
+          "articleCandidates": 0,
+          "scannedNodes": 1667,
+          "outsideArticleContent": true,
+          "mainArticleCandidates": 0,
+          "outsideMainArticleContent": true
+        },
+        "barrier": null,
+        "methodSectionsPreserved": true,
+        "requiredTextChecks": 11,
+        "exactCodeBlocksPreserved": 5,
+        "sourceQualificationsPreserved": true
+      },
+      {
+        "id": "wikipedia-benchmark",
+        "url": "https://en.wikipedia.org/wiki/Benchmark_(computing)",
+        "receivedAt": "2026-09-18T03:35:09.772Z",
+        "status": 200,
+        "originalBodySha256": "acf6a4f3b5177d5114c0a981de297ebf162fb10737552a391a6acd89786193d1",
+        "originalMarkdownBytes": 67049,
+        "focusedMarkdownBytes": 58802,
+        "contentSelection": {
+          "policy": "main-content-v3",
+          "selected": "main",
+          "reason": "unique-main",
+          "mainCandidates": 1,
+          "articleCandidates": 0,
+          "scannedNodes": 3765,
+          "outsideArticleContent": true,
+          "mainArticleCandidates": 0,
+          "outsideMainArticleContent": true
+        },
+        "barrier": null,
+        "definitionAndQualificationsPreserved": true,
+        "relevantSectionsPreserved": 5,
+        "maintenanceNoticePreserved": true,
+        "sourceClaimsFactChecked": false
+      },
+      {
+        "id": "hacker-news",
+        "url": "https://news.ycombinator.com/",
+        "receivedAt": "2026-09-18T03:35:10.011Z",
+        "status": 200,
+        "originalBodySha256": "368c3f44bd2958ee0405f95db581f0524eb726533b6c486ec69881b98bd517c4",
+        "originalMarkdownBytes": 33172,
+        "focusedMarkdownBytes": 26490,
+        "contentSelection": {
+          "policy": "main-content-v3",
+          "selected": "document",
+          "reason": "no-nonempty-landmark",
+          "mainCandidates": 0,
+          "articleCandidates": 0,
+          "scannedNodes": 1280,
+          "outsideArticleContent": true
+        },
+        "barrier": null,
+        "storyTitleAndDestinationPairsPreserved": 30,
+        "storyOrderingPreserved": true,
+        "scoreTextsPreserved": 29,
+        "firstSourceLink": {
+          "title": "Astra for Law",
+          "url": "https://openai.com/index/astra-for-law/"
+        },
+        "lastSourceLink": {
+          "title": "Show HN: Share your AI Setup, Learn from others",
+          "url": "https://mysetup.ai/"
+        },
+        "sourceHasUnscoredJob": true,
+        "votingNotValidated": true
+      }
+    ],
+    "taskLevelContentVerified": true,
+    "sourceOnly": true,
+    "newNetworkRequests": 0,
+    "websiteCodeExecuted": false,
+    "linksFollowed": false,
+    "sourceClaimsFactChecked": false,
+    "focusPolicy": "main-content-v3",
+    "compactTables": true,
+    "literalLabelsNotRendered": true
+  },
+  "qualification": {
+    "contentPipeline": {
+      "label": "core01",
+      "pid": 2758954,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 61.684752916917205,
+      "passedTests": 1293,
+      "failedTests": 0,
+      "files": 16,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "focusReplayPipeline": {
+      "label": "core02",
+      "pid": 2766547,
+      "exitCode": 0,
+      "timedOut": false,
+      "signals": [],
+      "childAbsent": true,
+      "groupAbsent": true,
+      "elapsedSeconds": 65.53574700281024,
+      "passedTests": 775,
+      "failedTests": 0,
+      "files": 9,
+      "homeEntries": [],
+      "tmpEntries": []
+    },
+    "parser": {
+      "native": {
+        "label": "core02",
+        "pid": 2776328,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 30.53929089382291,
+        "passedTests": 952,
+        "failedTests": 0,
+        "files": 10,
+        "homeEntries": [],
+        "tmpEntries": []
+      },
+      "baseline": {
+        "label": "red01",
+        "pid": 2775048,
+        "exitCode": 1,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 29.625116772949696,
+        "passedTests": 865,
+        "failedTests": 87,
+        "files": 10,
+        "homeEntries": [],
+        "tmpEntries": []
+      },
+      "baselineFailures": [
+        {
+          "file": "src/document-markdown-links.test.ts",
+          "failed": 1
+        },
+        {
+          "file": "src/markdown-source-links-escaped.test.ts",
+          "failed": 85
+        },
+        {
+          "file": "src/markdown-source-links.test.ts",
+          "failed": 1
+        }
+      ],
+      "initialNative": {
+        "label": "core01",
+        "pid": 2775108,
+        "exitCode": 0,
+        "timedOut": false,
+        "signals": [],
+        "childAbsent": true,
+        "groupAbsent": true,
+        "elapsedSeconds": 29.836647432297468,
+        "passedTests": 952,
+        "failedTests": 0,
+        "files": 10,
+        "homeEntries": [],
+        "tmpEntries": []
+      },
+      "initialQuality": {
+        "label": "core01",
+        "executions": [
+          {
+            "name": "build",
+            "pid": 2775145,
+            "exitCode": 0,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 7.680240124464035
+          },
+          {
+            "name": "types",
+            "pid": 2775195,
+            "exitCode": 0,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 4.123322507366538
+          },
+          {
+            "name": "format",
+            "pid": 2775209,
+            "exitCode": 0,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 0.0321379192173481
+          },
+          {
+            "name": "lint",
+            "pid": 2775228,
+            "exitCode": 1,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 0.06432928331196308
+          }
+        ],
+        "checks": {
+          "build": 0,
+          "types": 0,
+          "format": 0,
+          "lint": 1
+        },
+        "allProcessesClosed": true,
+        "homeEntries": [
+          ".cache"
+        ],
+        "tmpEntries": [
+          "node-compile-cache"
+        ]
+      },
+      "finalQuality": {
+        "label": "core02",
+        "executions": [
+          {
+            "name": "build",
+            "pid": 2776363,
+            "exitCode": 0,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 7.8802890703082085
+          },
+          {
+            "name": "types",
+            "pid": 2776566,
+            "exitCode": 0,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 4.274138104170561
+          },
+          {
+            "name": "format",
+            "pid": 2776579,
+            "exitCode": 0,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 0.03230801597237587
+          },
+          {
+            "name": "lint",
+            "pid": 2776598,
+            "exitCode": 0,
+            "timedOut": false,
+            "signals": [],
+            "childAbsent": true,
+            "groupAbsent": true,
+            "elapsedSeconds": 0.03203676640987396
+          }
+        ],
+        "checks": {
+          "build": 0,
+          "types": 0,
+          "format": 0,
+          "lint": 0
+        },
+        "allProcessesClosed": true,
+        "homeEntries": [
+          ".cache"
+        ],
+        "tmpEntries": [
+          "node-compile-cache"
+        ]
+      },
+      "newScannerTests": 133,
+      "newDocumentIntegrationTests": 1
+    },
+    "fullSuitePassed": false
+  },
+  "verifierFailures": [
+    {
+      "at": "2026-09-18T03:44:28.348Z",
+      "passed": false,
+      "scriptSha256": "73be35f6f2671dad98241a5a3fc092e8fff4fa62654112d1437a9a5023488965",
+      "failure": "Synthetic benchmarks are useful for testing individual components",
+      "cause": "Verifier incorrectly capitalized a mid-sentence phrase; both captured and focused Markdown preserve the lower-case source text.",
+      "guard": "/tmp/agent-browser-fresh-content-2sliGg/content-verification/guard.json",
+      "networkAttempts": 0,
+      "productionChanged": false,
+      "newWebsiteRequests": 0
+    },
+    {
+      "at": "2026-09-18T03:45:14.956Z",
+      "passed": false,
+      "scriptSha256": "cf6b460c87a662378910ec416704304efa974977a3324fd938ea367f821de98f",
+      "failure": "Purpose",
+      "cause": "Verifier expected navigation-anchor Markdown rather than the retained article heading; focusing intentionally removes that navigation. Both outputs retain exact ## headings.",
+      "guard": "/tmp/agent-browser-fresh-content-2sliGg/content-verification02/guard.json",
+      "networkAttempts": 0,
+      "productionChanged": false,
+      "newWebsiteRequests": 0
+    },
+    {
+      "at": "2026-09-18T03:47:32.198Z",
+      "passed": false,
+      "failure": "Bonsai 2 27B: Near-Lossless Compression in a 9x Smaller Footprint",
+      "cause": "Native Markdown source-link discovery rejects backslash punctuation in labels; the source HTML and both Markdown extractions preserve this story. This is a source-discovery gap, not HTML extraction loss.",
+      "guard": "/tmp/agent-browser-fresh-content-2sliGg/content-verification03/guard.json",
+      "networkAttempts": 0,
+      "newWebsiteRequests": 0,
+      "productionFixPhase": "node_modules/.cache/native-validation/markdown-label-escapes-september18"
+    }
+  ],
+  "archive": {
+    "path": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/fresh-content-september18/CAPTURE-ARCHIVE.json",
+    "sha256": "22a10a18e660a30d71851e54149c5c5338390d3e567b9c1c093019f360064762",
+    "files": 123
+  },
+  "limitations": {
+    "liveAfterParserPatch": false,
+    "websiteCodeExecuted": false,
+    "sdkExecuted": false,
+    "subresourcesFetched": false,
+    "linksFollowed": false,
+    "captchaEncountered": false,
+    "captchaHandlingVerified": false,
+    "sourceClaimsFactChecked": false,
+    "zoomJoined": false,
+    "credentialsAccessed": false,
+    "devicesAccessed": false,
+    "defaultRuntimeChanged": false,
+    "pushed": false,
+    "overallGoalComplete": false
+  }
+}

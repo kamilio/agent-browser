@@ -48,6 +48,7 @@ it.each([
 		"https://example.test/guide",
 	],
 	["[](/guide)", "", "https://example.test/guide"],
+	["[Escaped\\]](/target)", "Escaped\\]", "https://example.test/target"],
 	["[Unicode 😀](/é)", "Unicode 😀", "https://example.test/%C3%A9"],
 	["[Encoded](/a%20b)", "Encoded", "https://example.test/a%20b"],
 ])("recognizes literal single-line source %j", (source, label, url) => {
@@ -146,7 +147,6 @@ it.each([
 	"[Escaped](/a\\(b\\))",
 	"[Escaped](https:\\\\example.test/path)",
 	"\\[Escaped](/target)",
-	"[Escaped\\]](/target)",
 	"[Entity](/a&amp;b)",
 	"[Entity](/a&#41;b)",
 	"[Entity](/a&#x29;b)",

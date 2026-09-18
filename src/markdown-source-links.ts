@@ -1,6 +1,8 @@
 import { AgentBrowserError } from "./errors.js";
 import { parseNetworkUrl } from "./network.js";
 
+const asciiPunctuation = /^[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]$/;
+
 export const markdownSourceLinkLimits = Object.freeze({
 	maxSourceCodeUnits: 2_000_000,
 	maxEntries: 32,
@@ -419,6 +421,15 @@ export function discoverMarkdownSourceLinks(
 				let literal = true;
 				while (cursor < end && depth) {
 					const labelCharacter = read(cursor++);
+					if (
+						!inlineTicks &&
+						labelCharacter === "\\" &&
+						cursor < end &&
+						asciiPunctuation.test(read(cursor))
+					) {
+						cursor++;
+						continue;
+					}
 					if (labelCharacter === "`") {
 						literal = false;
 						cursor = consumeTicks(cursor - 1, end);

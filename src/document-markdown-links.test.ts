@@ -351,6 +351,32 @@ it.each([
 	},
 );
 
+it("discovers producer-escaped labels without rendering or changing the source document", () => {
+	const text = "[Near\\-Lossless \\[guide\\]](<https://example.test/article>)";
+	const tree = document(text);
+	const before = extraction.extractDocument(tree, { format: "markdown" });
+	const result = extraction.discoverDocumentLinks(tree, "example.test/article");
+	expect(sourceLinks(result).entries).toEqual([
+		{
+			url: "https://example.test/article",
+			label: "Near\\-Lossless \\[guide\\]",
+			labelTruncated: false,
+			startLine: 1,
+			column: 1,
+		},
+	]);
+	expect(tree.textContent(tree.root)).toBe(text);
+	expect(extraction.extractDocument(tree, { format: "markdown" })).toEqual(
+		before,
+	);
+	const queries = new DocumentQueries(tree);
+	try {
+		expect(queries.querySelectorAll("a")).toEqual([]);
+	} finally {
+		queries.close();
+	}
+});
+
 it.each(["json", "markdown"] as const)(
 	"keeps %s extraction literal and separate from requested link discovery",
 	(format) => {
