@@ -164,3 +164,13 @@ CLI forwarding is separately qualified by291 native tests in6 files at
 format and lint passing for the scoped change. The failure-first run retains17
 failed assertions. This mock-only qualification does not execute an SDK, create
 a real process, visit a website or establish actual owned Zoom recovery.
+
+The separate actual owned-process control passes12 public commands at
+`/tmp/agent-browser-owned-dom-expando-september18-u0WtXr/HANDOFF.md`, with exact
+runtime-option echo, cross-evaluation identity/mutation, membership/deletion and
+readonly protection. Startup367.972ms; supervisor1.818s. Website scripting stays
+off, with one synthetic route and no publisher/network/credential access.
+Production SIGKILL cleanup leaves child/process group absent and private
+HOME/TMP empty; this is not graceful in-child disposal. It is programmatic
+process/public-command qualification, not the actual CLI environment entrypoint
+or Zoom dependency recovery. Parent verifies7047 final evidence hashes.

@@ -120,6 +120,20 @@ passes291 native tests in6 files,6.326s, with build/types/format/lint passing.
 The failure-first17 assertion failures remain preserved. This is mocked CLI
 qualification, not actual SDK/process/website admission. See DOM-EXPANDOS.md.
 
+September18,17:34UTC: one actual owned native process now passes12 public
+commands for the new expando capability at
+`/tmp/agent-browser-owned-dom-expando-september18-u0WtXr/HANDOFF.md`. The ready
+frame echoes the exact requested runtime options; guest identity and nested
+mutation persist across evaluations, hasOwn/keys and deletion agree, and
+declared readonly native properties remain protected. Website scripting stays
+off. Only one tiny synthetic route document is requested; fresh stores are
+empty and no publisher, network or credentials are used. Startup367.972ms,
+supervisor1.818s/exit0,12 commands/pending0/four heartbeats, child and group absent,
+private HOME/TMP empty. Close uses production SIGKILL; do not claim graceful
+in-child disposal. Parent verifies7047 final evidence hashes. This qualifies
+programmatic owned process/public commands, not the real CLI environment
+entrypoint, full Zoom dependency execution or meeting participation.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,
