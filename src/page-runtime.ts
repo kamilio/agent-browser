@@ -72,6 +72,7 @@ export interface PageRuntime {
 }
 
 export interface PageRuntimeOptions {
+	initializationSource?: string;
 	networkSourceModules?: PageNetworkModuleOptions;
 	limits: Readonly<ScriptLimits>;
 	signal: AbortSignal;
@@ -105,6 +106,11 @@ export function legacyPageRuntime(core: PageScriptCore): PageRuntimeFactory {
 		);
 	return {
 		createPageRuntime(options) {
+			if (options.initializationSource !== undefined)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Page initialization source requires the extension runtime",
+				);
 			if (options.networkSourceModules !== undefined)
 				throw new AgentBrowserError(
 					"unsupported",

@@ -60,13 +60,15 @@ for applications owning a `DocumentTree` directly.
 
 ## Explicit limitations
 
-This is a **host-side document API**, not a page JavaScript `WebSocket` global.
-Public SafeJS construction, binary conversion, event delivery and scheduling
-still require their own bridge and real-SDK validation. The existing callback
-reentry compatibility failure is not relaxed or hidden by this addition.
+This document describes the **host-side document API**. The opt-in page
+JavaScript bridge now shares the same document owner; see `PAGE-WEBSOCKETS.md`
+for its partial profile and isolated real-SDK evidence. The existing callback
+reentry compatibility failure is not relaxed or hidden by that addition.
 
 No cookie/credential handshake, page event constructor, Blob bridge, WebRTC,
 audio decoder, Zoom admission, capture, transcription or delivery is implemented
 here. Connections are not yet represented in the HTTP request journal. No CLI
 flag enables them implicitly. Native tests use explicit in-memory adapters only;
-they do not establish website, real socket, device, credential or SDK acceptance.
+they do not establish website, real socket, device or credential acceptance.
+The separately authorized page-bridge SDK fixture also uses an in-memory adapter,
+not real sockets or a meeting service.

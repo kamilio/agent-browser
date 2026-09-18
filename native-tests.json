@@ -1,4 +1,8 @@
 [
+	"src/document-websocket-owner.test.ts",
+	"src/page-websockets.test.ts",
+	"src/extension-page-runtime-bootstrap.test.ts",
+	"src/websocket-bridge-evidence.test.ts",
 	"src/document-websockets.test.ts",
 	"src/document-websocket-policy.test.ts",
 	"src/connect-content-security-policy.test.ts",

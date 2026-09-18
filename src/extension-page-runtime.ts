@@ -96,6 +96,23 @@ export function extensionPageRuntime(
 				: undefined;
 	return {
 		createPageRuntime(options) {
+			const initializationSource = options.initializationSource;
+			if (
+				initializationSource !== undefined &&
+				typeof initializationSource !== "string"
+			)
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Invalid page initialization source",
+				);
+			if (
+				initializationSource !== undefined &&
+				initializationSource.length > options.limits.maxSourceCodeUnits
+			)
+				throw new AgentBrowserError(
+					"resource-limit",
+					"Page initialization source is too large",
+				);
 			if (options.signal.aborted)
 				throw new AgentBrowserError(
 					"aborted",
@@ -327,7 +344,12 @@ export function extensionPageRuntime(
 				initialize() {
 					ensureOpen();
 					initialized ??= (async () => {
-						const result = await evaluate("");
+						const result = await evaluate(
+							initializationSource ?? "",
+							initializationSource === undefined
+								? {}
+								: { filename: "agent-browser:page-bootstrap" },
+						);
 						if (!result.ok)
 							throw Object.assign(
 								new Error("Page extension initialization failed"),

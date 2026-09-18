@@ -1,4 +1,7 @@
 import { AgentBrowserError } from "./errors.js";
+import { existingDocumentWebSockets } from "./document-websocket-owner.js";
+import { PageWebSockets, type PageWebSocketLimits } from "./page-websockets.js";
+import { pageWebSocketBootstrapGlobal } from "./page-websocket-bootstrap.js";
 import type { PageAbortSignals } from "./page-abort-signals.js";
 import { documentIdentity } from "./document-identity.js";
 import { PagePasskeys, type PagePasskeyContext } from "./page-passkeys.js";
@@ -49,6 +52,7 @@ export interface PageBindingContext extends ScriptHostObjectFactory {
 }
 
 export interface PageBindingOptions {
+	webSocketLimits?: Partial<PageWebSocketLimits>;
 	passkeys?: {
 		authenticator: PasskeyAuthenticator;
 		context: PagePasskeyContext;
@@ -74,6 +78,9 @@ export function pageBindingGlobalNames(
 	options: PageBindingOptions = {},
 ): readonly string[] {
 	return Object.freeze([
+		...(existingDocumentWebSockets(document)
+			? [pageWebSocketBootstrapGlobal]
+			: []),
 		"navigator",
 		"screen",
 		...Object.keys(nativeHeadlessDisplay),
@@ -118,6 +125,7 @@ export class PageBindings {
 	readonly focus: PageFocus;
 	readonly network?: PageFetch;
 	readonly passkeys?: PagePasskeys;
+	readonly webSockets?: PageWebSockets;
 	readonly navigator: object;
 	readonly screen: object;
 	readonly location: ScriptLocation;
@@ -180,6 +188,15 @@ export class PageBindings {
 		this.ensureOpen();
 		this.unregisterClose = page.document.onClose(() => this.close());
 		try {
+			const socketOwner = existingDocumentWebSockets(page.document);
+			if (socketOwner)
+				this.webSockets = new PageWebSockets(
+					page.document,
+					context,
+					lifecycle,
+					socketOwner,
+					options.webSocketLimits,
+				);
 			if (options.passkeys !== undefined) {
 				this.passkeys = new PagePasskeys(
 					page.document,
@@ -313,6 +330,16 @@ export class PageBindings {
 			);
 			this.window = context.createHostObject({
 				properties: {
+					...(this.webSockets
+						? {
+								WebSocket: {
+									get: () => {
+										this.ensureOpen();
+										return this.webSockets?.constructorValue;
+									},
+								},
+							}
+						: {}),
 					screen: {
 						get: () => {
 							this.ensureOpen();
@@ -543,6 +570,9 @@ export class PageBindings {
 				(error) => lifecycle.fail(error),
 			);
 			this.globals = {
+				...(this.webSockets
+					? { [pageWebSocketBootstrapGlobal]: this.webSockets.bootstrap }
+					: {}),
 				...nativeHeadlessDisplay,
 				navigator: this.navigator,
 				screen: this.screen,
@@ -582,6 +612,7 @@ export class PageBindings {
 	close() {
 		if (this.closedValue) return;
 		this.closedValue = true;
+		this.webSockets?.close();
 		this.passkeys?.close();
 		this.focus?.close();
 		this.timers?.close();

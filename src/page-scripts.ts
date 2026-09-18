@@ -1,5 +1,7 @@
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { existingDocumentWebSockets } from "./document-websocket-owner.js";
+import { pageWebSocketBootstrapSource } from "./page-websocket-bootstrap.js";
 import {
 	type PageBindingOptions,
 	PageBindings,
@@ -127,6 +129,9 @@ export class PageScripts {
 				this.bindings?.console.buffer.write(level, values);
 			};
 			this.runtime = factory.createPageRuntime({
+				...(existingDocumentWebSockets(page.document)
+					? { initializationSource: pageWebSocketBootstrapSource }
+					: {}),
 				...(networkSourceModules !== undefined ? { networkSourceModules } : {}),
 				limits: this.limits,
 				signal: this.lifetime.signal,

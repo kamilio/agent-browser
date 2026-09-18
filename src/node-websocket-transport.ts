@@ -8,10 +8,15 @@ import { AgentBrowserError } from "./errors.js";
 import type { WebSocketTransport } from "./websocket-transport.js";
 
 export { DocumentWebSockets } from "./document-websockets.js";
+export {
+	bindDocumentWebSockets,
+	existingDocumentWebSockets,
+} from "./document-websocket-owner.js";
 export type {
 	DocumentWebSocketConnectOptions,
 	DocumentWebSocketLimits,
 	DocumentWebSocketOptions,
+	DocumentWebSocketStart,
 } from "./document-websockets.js";
 export type {
 	WebSocketConnection,

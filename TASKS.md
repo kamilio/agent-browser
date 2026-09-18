@@ -6,6 +6,29 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Page WebSocket bridge: finite real-SDK profile passes
+
+- Bind document ownership before parser/script startup; opt-in PageScripts gets
+  a guest-owned WebSocket constructor, Window identity, synchronous admission,
+  bounded/copied text and binary traffic, listeners and lifecycle cancellation.
+  No transport is installed implicitly. Blob receive remains unsupported.
+- The first approved SDK run passed9 then failed immediate CLOSING visibility;
+  five later checks were not reached. Browser-side cancellable network tasks fix
+  the interpreter-microtask race without changing the assertion, fixture or SDK.
+- Final selected native1510/0 in23 files; build/types/format/lint pass. The
+  isolated core03 SafeJS0.1.640 WebSocket profile passes15/15 plus the guard. Both
+  approved runs are consumed. Each verifies6913 file pins/19 links after execution,
+  child/parent group cleanup and empty SDK HOME/TMP. Preserve the failed attempt.
+- Final core04 fixes two reviewed write/event accounting edges with two native
+  regressions. Those follow-ups have not been rerun against the actual SDK;
+  preserve the core03-only scope of the successful SDK evidence.
+- See PAGE-WEBSOCKETS.md and reports/page-websockets-2026-09-18.md/JSON. The
+  older host-only and failed-core entries below retain their original evidence.
+  This profile does not retry or supersede the failed core async-tail scheduling
+  contract; real sockets, long-session bounds, Zoom/WebRTC/audio and notetaking
+  capture/transcription/summary/delivery remain open. No meeting, credential or
+  device access, browser fallback, default SDK switch or push. Goal stays active.
+
 ### Document-owned WebSockets: host API, not a page global
 
 - Opt in through BrowserSessionOptions.webSocketTransport; each committed page

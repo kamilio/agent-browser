@@ -1,0 +1,17 @@
+export const pageWebSocketCheckLabels = [
+	"Guest constructor, Window identity and readonly constants",
+	"Invalid URLs and protocols fail before transport effects",
+	"Connecting state, URL, origin and offered protocol propagation",
+	"Open event receiver, target and ready state",
+	"Text send reaches the in-memory connection",
+	"Text message data, origin and event receiver",
+	"Typed-array views and ArrayBuffer sends copy guest bytes",
+	"ArrayBuffer receive copies transport bytes",
+	"Listener ordering, once, deduplication and removal",
+	"Close validation and open-to-closed transition",
+	"Connecting close cancels and cleans a late connection",
+	"Bootstrap authority is one-shot and not exposed on instances",
+	"Document cleanup suppresses already queued message callbacks",
+	"Realm cleanup aborts the connection without post-close callbacks",
+	"All fixture owners and in-memory resources finish cleanup",
+] as const;

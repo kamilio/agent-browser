@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	parseIsolatedSafeJsGatePlan,
 	runIsolatedSafeJsGate,
+	runIsolatedWebSocketCheck,
 	validateIsolatedSafeJsGuardEvidence,
 	type IsolatedSafeJsGatePlan,
 } from "../scripts/run-isolated-safejs-gate.js";
@@ -17,9 +18,14 @@ const fixture = vi.hoisted(() => ({
 	nonregular: new Set<string>(),
 	serial: 10,
 	launches: [] as string[],
+	commands: [] as { stage: string; args: string[] }[],
+	validatedReleases: [] as { kind: string; version: string }[],
 	terminated: [] as string[],
 	reaped: [] as string[],
 	failStage: "",
+	cleanupFailureStage: "",
+	terminalFailureStage: "",
+	changeSourceStage: "",
 	contaminateHome: false,
 	changeInput: false,
 	releaseEvidence: true,
@@ -74,6 +80,11 @@ vi.mock("node:fs", async (original) => {
 			),
 		],
 		writeFileSync: (path: string, contents: string) => {
+			if (
+				fixture.terminalFailureStage &&
+				path.endsWith(`/${fixture.terminalFailureStage}/TERMINAL.json`)
+			)
+				throw new Error("Synthetic terminal write failure");
 			if (fixture.files.has(path)) throw new Error(`Output exists: ${path}`);
 			fixture.files.set(path, Buffer.from(contents));
 		},
@@ -81,7 +92,14 @@ vi.mock("node:fs", async (original) => {
 });
 
 vi.mock("./safejs-release-evidence.js", () => ({
-	validateSafeJsReleaseEvidence: () => fixture.releaseEvidence,
+	validateSafeJsReleaseEvidence: (
+		kind: string,
+		_evidence: unknown,
+		version: string,
+	) => {
+		fixture.validatedReleases.push({ kind, version });
+		return fixture.releaseEvidence;
+	},
 }));
 
 vi.mock("./node-safejs-gate-process.js", () => ({
@@ -97,6 +115,7 @@ vi.mock("./node-safejs-gate-process.js", () => ({
 	) => {
 		const stage = dirname(command.cwd).split("/").at(-1) ?? "";
 		fixture.launches.push(stage);
+		fixture.commands.push({ stage, args: [...command.args] });
 		const policy = JSON.parse(
 			fixture.files.get(command.args[2])?.toString() ?? "{}",
 		);
@@ -151,10 +170,17 @@ vi.mock("./node-safejs-gate-process.js", () => ({
 				"/fixture/runtime/scripts/check-released-safejs.js",
 				Buffer.from("changed"),
 			);
+		if (fixture.changeSourceStage === stage)
+			fixture.files.set(
+				"/fixture/source/bridge.ts",
+				Buffer.from("changed source"),
+			);
 		register({
 			wait: () => (stage === fixture.failStage ? 1 : 0),
 			terminateGroup: () => {
 				fixture.terminated.push(stage);
+				if (fixture.cleanupFailureStage === stage)
+					throw new Error("Synthetic cleanup failure");
 			},
 			reap: () => {
 				fixture.reaped.push(stage);
@@ -240,6 +266,15 @@ function makePlan(): IsolatedSafeJsGatePlan {
 		"/fixture/runtime/scripts/check-released-html-modules.js",
 		"modules fixture",
 	);
+	const websocket = addFile(
+		"/fixture/runtime/scripts/check-released-websocket-bridge.js",
+		"websocket fixture",
+	);
+	const source = addFile("/fixture/source/bridge.ts", "source fixture");
+	const sourceInventory = addFile(
+		"/metadata/source.json",
+		JSON.stringify({ "bridge.ts": { sha256: source.sha256 } }),
+	);
 	const sdk = addFile(
 		"/fixture/deps/sdk/package.json",
 		JSON.stringify({ name: "@poe-platform/safe-js", version: "0.1.640" }),
@@ -250,6 +285,9 @@ function makePlan(): IsolatedSafeJsGatePlan {
 			"scripts/check-released-safejs.js": { sha256: core.sha256 },
 			"scripts/check-released-page.js": { sha256: page.sha256 },
 			"scripts/check-released-html-modules.js": { sha256: modules.sha256 },
+			"scripts/check-released-websocket-bridge.js": {
+				sha256: websocket.sha256,
+			},
 		}),
 	);
 	const dependency = addFile(
@@ -279,6 +317,7 @@ function makePlan(): IsolatedSafeJsGatePlan {
 		runtimeRoot: "/fixture/runtime",
 		sdkRoot: "/fixture/deps/sdk",
 		inventories: [
+			{ root: "/fixture/source", manifest: sourceInventory, read: false },
 			{ root: "/fixture/runtime", manifest: runtime, read: true },
 			{ root: "/fixture/deps", manifest: dependency, read: true },
 		],
@@ -292,6 +331,11 @@ function execute(plan = makePlan()) {
 	return runIsolatedSafeJsGate(input.file, input.sha256);
 }
 
+function executeWebSocket(plan = makePlan()) {
+	const input = addFile("/metadata/plan.json", JSON.stringify(plan));
+	return runIsolatedWebSocketCheck(input.file, input.sha256);
+}
+
 beforeEach(() => {
 	fixture.files.clear();
 	fixture.directories.clear();
@@ -299,9 +343,14 @@ beforeEach(() => {
 	fixture.openFlags.length = 0;
 	fixture.nonregular.clear();
 	fixture.launches.length = 0;
+	fixture.commands.length = 0;
+	fixture.validatedReleases.length = 0;
 	fixture.terminated.length = 0;
 	fixture.reaped.length = 0;
 	fixture.failStage = "";
+	fixture.cleanupFailureStage = "";
+	fixture.terminalFailureStage = "";
+	fixture.changeSourceStage = "";
 	fixture.contaminateHome = false;
 	fixture.changeInput = false;
 	fixture.releaseEvidence = true;
@@ -396,6 +445,7 @@ describe("isolated SafeJS gate stages without real processes", () => {
 	it("runs guard, core, page and modules with independent cleanup and terminal records", async () => {
 		const result = await execute();
 		expect(result.passed).toBe(true);
+		expect(result).not.toHaveProperty("profile");
 		expect(fixture.launches).toEqual(["guard", "core", "page", "modules"]);
 		expect(fixture.terminated).toEqual(fixture.launches);
 		expect(fixture.reaped).toEqual(fixture.launches);
@@ -474,6 +524,162 @@ describe("isolated SafeJS gate stages without real processes", () => {
 		const plan = makePlan();
 		plan.outputParent = "/fixture";
 		await expect(execute(plan)).rejects.toThrow("must not overlap");
+		expect(fixture.launches).toEqual([]);
+	});
+});
+
+describe("separate isolated WebSocket bridge profile", () => {
+	it("runs only guard then the fixed bridge fixture with unchanged bounds", async () => {
+		const result = await executeWebSocket();
+		expect(result.passed).toBe(true);
+		expect(result.profile).toBe("websocket-bridge");
+		expect(result.releaseGateVerified).toBe(false);
+		expect(result.stages).toEqual([
+			{ stage: "guard", passed: true },
+			{ stage: "websocket", passed: true },
+		]);
+		expect(fixture.launches).toEqual(["guard", "websocket"]);
+		expect(fixture.terminated).toEqual(fixture.launches);
+		expect(fixture.reaped).toEqual(fixture.launches);
+		expect(fixture.validatedReleases).toEqual([
+			{ kind: "websocket", version: "0.1.640" },
+		]);
+		expect(fixture.commands.map((command) => command.args.at(-1))).toEqual([
+			"/tools/control.mjs",
+			"/fixture/runtime/scripts/check-released-websocket-bridge.js",
+		]);
+		for (const command of fixture.commands) {
+			expect(command.args).toContain("--max-old-space-size=384");
+			const invocation = JSON.parse(
+				fixture.files
+					.get(join(result.root, command.stage, "INVOCATION.json"))
+					?.toString() ?? "{}",
+			);
+			expect(invocation.deadlineMs).toBe(45_000);
+			expect(invocation.sdkImported).toBe(command.stage !== "guard");
+			expect(invocation.policy.readPaths).not.toContain("/fixture/source");
+			const terminal = JSON.parse(
+				fixture.files
+					.get(join(result.root, command.stage, "TERMINAL.json"))
+					?.toString() ?? "{}",
+			);
+			expect(terminal.passed).toBe(true);
+		}
+		const saved = JSON.parse(
+			fixture.files.get(join(result.root, "RESULT.json"))?.toString() ?? "{}",
+		);
+		expect(saved).toEqual(JSON.parse(JSON.stringify(result)));
+		expect(result.limitations.join(" ")).toContain(
+			"NOT the release core/page/module gate",
+		);
+		expect(fixture.descriptors.size).toBe(0);
+	});
+	it.each(["guard", "websocket"])(
+		"stops after failed %s without another profile or retry",
+		async (stage) => {
+			fixture.failStage = stage;
+			const result = await executeWebSocket();
+			expect(result.passed).toBe(false);
+			expect(result.profile).toBe("websocket-bridge");
+			expect(fixture.launches).toEqual(
+				stage === "guard" ? ["guard"] : ["guard", "websocket"],
+			);
+			expect(fixture.terminated).toEqual(fixture.launches);
+			expect(fixture.reaped).toEqual(fixture.launches);
+		},
+	);
+	it.each(["guard", "websocket"])(
+		"fails closed when %s cleanup fails and still reaps",
+		async (stage) => {
+			fixture.cleanupFailureStage = stage;
+			const result = await executeWebSocket();
+			expect(result.passed).toBe(false);
+			expect(fixture.launches).toEqual(
+				stage === "guard" ? ["guard"] : ["guard", "websocket"],
+			);
+			expect(fixture.reaped).toEqual(fixture.launches);
+			const terminal = JSON.parse(
+				fixture.files
+					.get(join(result.root, stage, "TERMINAL.json"))
+					?.toString() ?? "{}",
+			);
+			expect(terminal.cleanupFailures.length).toBeGreaterThan(0);
+		},
+	);
+	it.each(["guard", "websocket"])(
+		"does not pass without %s terminal evidence",
+		async (stage) => {
+			fixture.terminalFailureStage = stage;
+			const result = await executeWebSocket();
+			expect(result.passed).toBe(false);
+			expect(fixture.launches).toEqual(
+				stage === "guard" ? ["guard"] : ["guard", "websocket"],
+			);
+			expect(fixture.reaped).toEqual(fixture.launches);
+		},
+	);
+	it("rejects bridge evidence even when both processes exit successfully", async () => {
+		fixture.releaseEvidence = false;
+		const result = await executeWebSocket();
+		expect(result.passed).toBe(false);
+		expect(result.stages).toEqual([
+			{ stage: "guard", passed: true },
+			{ stage: "websocket", passed: false },
+		]);
+		expect(fixture.launches).toEqual(["guard", "websocket"]);
+		expect(fixture.reaped).toEqual(fixture.launches);
+	});
+	it("requires its explicitly approved plan digest before any process launch", async () => {
+		const input = addFile("/metadata/plan.json", JSON.stringify(makePlan()));
+		await expect(
+			runIsolatedWebSocketCheck(input.file, "0".repeat(64)),
+		).rejects.toThrow("Changed input");
+		expect(fixture.launches).toEqual([]);
+	});
+	it("does not allow a caller-supplied stage sequence in the plan", async () => {
+		const input = addFile(
+			"/metadata/plan.json",
+			JSON.stringify({ ...makePlan(), stages: ["websocket"] }),
+		);
+		await expect(
+			runIsolatedWebSocketCheck(input.file, input.sha256),
+		).rejects.toThrow("Unexpected gate plan fields");
+		expect(fixture.launches).toEqual([]);
+	});
+	it("rejects changed source pins before launch", async () => {
+		const plan = makePlan();
+		fixture.files.set("/fixture/source/bridge.ts", Buffer.from("changed"));
+		await expect(executeWebSocket(plan)).rejects.toThrow(
+			"Changed inventory file",
+		);
+		expect(fixture.launches).toEqual([]);
+	});
+	it.each(["guard", "websocket"])(
+		"detects a source pin change during %s and reaps the process",
+		async (stage) => {
+			fixture.changeSourceStage = stage;
+			const result = await executeWebSocket();
+			expect(result.passed).toBe(false);
+			expect(fixture.launches).toEqual(
+				stage === "guard" ? ["guard"] : ["guard", "websocket"],
+			);
+			expect(fixture.reaped).toEqual(fixture.launches);
+		},
+	);
+	it("rejects forbidden bridge operations without launching other release checks", async () => {
+		fixture.preloadAttempts = ["fetch"];
+		expect((await executeWebSocket()).passed).toBe(false);
+		expect(fixture.launches).toEqual(["guard", "websocket"]);
+		expect(fixture.reaped).toEqual(fixture.launches);
+	});
+	it("requires the bridge script to match its pinned inventory", async () => {
+		const plan = makePlan();
+		fixture.files.delete(
+			"/fixture/runtime/scripts/check-released-websocket-bridge.js",
+		);
+		await expect(executeWebSocket(plan)).rejects.toThrow(
+			"Missing inventory files",
+		);
 		expect(fixture.launches).toEqual([]);
 	});
 });

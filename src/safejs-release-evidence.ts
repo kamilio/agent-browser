@@ -1,3 +1,5 @@
+import { pageWebSocketCheckLabels } from "./page-websocket-check-labels.js";
+
 const coreLabels = [
 	"Realm-owned host aliases preserve identity and indexed reads",
 	"Indexed capabilities remain live across evaluations",
@@ -43,6 +45,24 @@ const moduleLabels = [
 	"All fixture owners close",
 ] as const;
 
+const websocketCheckIds = [
+	"constructor-identity",
+	"synchronous-admission",
+	"connecting",
+	"open",
+	"text-send",
+	"text-receive",
+	"binary-send",
+	"binary-receive",
+	"listeners",
+	"close-open",
+	"close-connecting",
+	"bootstrap-authority",
+	"document-cleanup",
+	"realm-cleanup",
+	"all-owners-closed",
+] as const;
+
 function isRecord(value: unknown): value is object {
 	if (value === null || typeof value !== "object" || Array.isArray(value))
 		return false;
@@ -67,13 +87,16 @@ function timestamp(value: unknown): number {
 }
 
 export function validateSafeJsReleaseEvidence(
-	kind: "core" | "page" | "modules",
+	kind: "core" | "page" | "modules" | "websocket",
 	value: unknown,
 	version: string,
 ): boolean {
 	try {
 		if (
-			(kind !== "core" && kind !== "page" && kind !== "modules") ||
+			(kind !== "core" &&
+				kind !== "page" &&
+				kind !== "modules" &&
+				kind !== "websocket") ||
 			typeof version !== "string" ||
 			version.length === 0 ||
 			!isRecord(value) ||
@@ -98,7 +121,9 @@ export function validateSafeJsReleaseEvidence(
 				? "explicit-local-release-contract-probe"
 				: kind === "page"
 					? "explicit-local-release-native-browser-in-memory"
-					: "explicit-local-release-html-modules-in-memory";
+					: kind === "modules"
+						? "explicit-local-release-html-modules-in-memory"
+						: "explicit-local-release-websocket-bridge-in-memory";
 		if (ownValue(value, "scope") !== scope) return false;
 		if (kind === "core") {
 			if (
@@ -120,8 +145,29 @@ export function validateSafeJsReleaseEvidence(
 			)
 				return false;
 		}
-		if (kind === "modules" && !Object.hasOwn(value, "cleanupFailures"))
+		if (
+			(kind === "modules" || kind === "websocket") &&
+			!Object.hasOwn(value, "cleanupFailures")
+		)
 			return false;
+		if (kind === "websocket") {
+			const plannedCheckIds = ownValue(value, "plannedCheckIds");
+			const notReached = ownValue(value, "notReached");
+			if (
+				ownValue(value, "realSockets") !== false ||
+				ownValue(value, "credentials") !== false ||
+				ownValue(value, "devices") !== false ||
+				ownValue(value, "failed") !== 0 ||
+				!Array.isArray(notReached) ||
+				ownValue(notReached, "length") !== 0 ||
+				!Array.isArray(plannedCheckIds) ||
+				ownValue(plannedCheckIds, "length") !== websocketCheckIds.length ||
+				!websocketCheckIds.every(
+					(id, index) => ownValue(plannedCheckIds, String(index)) === id,
+				)
+			)
+				return false;
+		}
 
 		const startedAt = timestamp(ownValue(value, "startedAt"));
 		const finishedAt = timestamp(ownValue(value, "finishedAt"));
@@ -132,7 +178,9 @@ export function validateSafeJsReleaseEvidence(
 				? coreLabels
 				: kind === "page"
 					? pageLabels
-					: moduleLabels;
+					: kind === "modules"
+						? moduleLabels
+						: pageWebSocketCheckLabels;
 		const checks = ownValue(value, "checks");
 		if (
 			ownValue(value, "passed") !== labels.length ||
@@ -145,7 +193,9 @@ export function validateSafeJsReleaseEvidence(
 			return (
 				isRecord(entry) &&
 				ownValue(entry, "label") === label &&
-				ownValue(entry, "passed") === true
+				ownValue(entry, "passed") === true &&
+				(kind !== "websocket" ||
+					ownValue(entry, "id") === websocketCheckIds[index])
 			);
 		});
 	} catch {

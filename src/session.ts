@@ -1,6 +1,10 @@
 import { CookieJar, type CookieLimits } from "./cookies.js";
 import { ContentSecurityPolicy } from "./content-security-policy.js";
-import { DocumentWebSockets } from "./document-websockets.js";
+import type { DocumentWebSockets } from "./document-websockets.js";
+import {
+	bindDocumentWebSockets,
+	existingDocumentWebSockets,
+} from "./document-websocket-owner.js";
 import type { WebSocketTransport } from "./websocket-transport.js";
 import { hasUnsupportedExecutionCsp } from "./execution-content-security-policy.js";
 import { NetworkRequestQueue } from "./network-request-queue.js";
@@ -1784,6 +1788,10 @@ export class BrowserSession {
 					);
 				bindDocumentIdentity(document, this.identity);
 				documentImageContentSecurityPolicy(document, imageCspHeaders);
+				if (this.webSocketTransport)
+					bindDocumentWebSockets(document, this.webSocketTransport, {
+						headerValues: imageCspHeaders,
+					});
 				documentStyles(document).setColorSchemePreference(
 					tab.colorSchemePreference,
 				);
@@ -2354,15 +2362,7 @@ export class BrowserSession {
 				fetch,
 				...(this.webSocketTransport
 					? {
-							webSockets: new DocumentWebSockets(
-								candidate,
-								this.webSocketTransport,
-								{
-									headerValues: imageContentSecurityPolicyValues(
-										response.headers,
-									),
-								},
-							),
+							webSockets: existingDocumentWebSockets(candidate),
 						}
 					: {}),
 				document: candidate,

@@ -26,7 +26,8 @@ import {
 type Pin = { file: string; sha256: string };
 type Inventory = { root: string; manifest: Pin; read: boolean };
 type InventoryEntry = { sha256: string } | { link: string };
-type Stage = "guard" | "core" | "page" | "modules";
+type Stage = "guard" | "core" | "page" | "modules" | "websocket";
+type Profile = "release" | "websocket-bridge";
 
 export type IsolatedSafeJsGatePlan = {
 	format: 1;
@@ -478,7 +479,9 @@ async function runStage(
 				? "check-released-safejs.js"
 				: stage === "page"
 					? "check-released-page.js"
-					: "check-released-html-modules.js",
+					: stage === "modules"
+						? "check-released-html-modules.js"
+						: "check-released-websocket-bridge.js",
 		);
 	}
 	const policyFile = join(directory, "POLICY.json");
@@ -593,6 +596,21 @@ export async function runIsolatedSafeJsGate(
 	planFile: string,
 	approvedPlanSha256: string,
 ) {
+	return runIsolatedProfile(planFile, approvedPlanSha256, "release");
+}
+
+export async function runIsolatedWebSocketCheck(
+	planFile: string,
+	approvedPlanSha256: string,
+) {
+	return runIsolatedProfile(planFile, approvedPlanSha256, "websocket-bridge");
+}
+
+async function runIsolatedProfile(
+	planFile: string,
+	approvedPlanSha256: string,
+	profile: Profile,
+) {
 	requireValue(
 		absolute(planFile) && digest(approvedPlanSha256),
 		"An absolute plan and explicitly approved SHA256 are required",
@@ -618,11 +636,20 @@ export async function runIsolatedSafeJsGate(
 	);
 	validatePrerequisites(plan);
 	await verifyInputs(plan, planPin, new AbortController().signal);
-	const root = mkdtempSync(join(plan.outputParent, "safejs-gate-"));
+	const root = mkdtempSync(
+		join(
+			plan.outputParent,
+			profile === "release" ? "safejs-gate-" : "websocket-bridge-",
+		),
+	);
+	const sequence: readonly Stage[] =
+		profile === "release"
+			? ["guard", "core", "page", "modules"]
+			: ["guard", "websocket"];
 	const stages: { stage: Stage; passed: boolean }[] = [];
 	let failure: string | undefined;
 	try {
-		for (const stage of ["guard", "core", "page", "modules"] as const) {
+		for (const stage of sequence) {
 			const passed = await runStage(
 				stage,
 				plan,
@@ -640,12 +667,17 @@ export async function runIsolatedSafeJsGate(
 				: "Unknown gate failure";
 	}
 	const result = {
+		...(profile === "websocket-bridge"
+			? { profile, releaseGateVerified: false }
+			: {}),
 		root,
 		version: plan.version,
 		planSha256: approvedPlanSha256,
 		scopeSha256: plan.scope.sha256,
 		passed:
-			stages.length === 4 && stages.every((entry) => entry.passed) && !failure,
+			stages.length === sequence.length &&
+			stages.every((entry) => entry.passed) &&
+			!failure,
 		stages,
 		failure,
 		limitations: [
@@ -655,7 +687,9 @@ export async function runIsolatedSafeJsGate(
 			"Guard and child-written reports are not tamper-proof. This is not a hostile-code security boundary.",
 			"The historical guard does not filter exec/clone/fork or ioctl; only isolated trusted release fixtures are in scope.",
 			"No website, Zoom, audio, passkey, credential, socket, or TTY acceptance is implied.",
-			"Only finite synthetic HTML modules are checked, not website scripts or top-level-await timing.",
+			profile === "release"
+				? "Only finite synthetic HTML modules are checked, not website scripts or top-level-await timing."
+				: "Only the finite in-memory WebSocket bridge fixture is checked. This is NOT the release core/page/module gate and does not supersede its failures.",
 		],
 	};
 	save(join(root, "RESULT.json"), result);

@@ -23,6 +23,11 @@ export interface DocumentWebSocketConnectOptions {
 	signal?: AbortSignal;
 }
 
+export interface DocumentWebSocketStart {
+	readonly url: string;
+	readonly connection: Promise<WebSocketConnection>;
+}
+
 interface Lease {
 	controller: AbortController;
 	cancelled: boolean;
@@ -90,6 +95,13 @@ export class DocumentWebSockets {
 		input: unknown,
 		options: DocumentWebSocketConnectOptions = {},
 	): Promise<WebSocketConnection> {
+		return this.start(input, options).connection;
+	}
+
+	start(
+		input: unknown,
+		options: DocumentWebSocketConnectOptions = {},
+	): Readonly<DocumentWebSocketStart> {
 		this.ensureOpen();
 		if (!options || typeof options !== "object" || Array.isArray(options))
 			throw new AgentBrowserError("invalid-input", "Invalid WebSocket options");
@@ -109,7 +121,7 @@ export class DocumentWebSockets {
 				"Document WebSocket connection limit exceeded",
 			);
 		this.attempts++;
-		return new Promise((resolve, reject) => {
+		const connection = new Promise<WebSocketConnection>((resolve, reject) => {
 			const abort = () =>
 				this.cancel(
 					lease,
@@ -226,6 +238,7 @@ export class DocumentWebSockets {
 					if (!lease.connection) this.release(lease);
 				});
 		});
+		return Object.freeze({ url: target.url, connection });
 	}
 
 	metrics() {
