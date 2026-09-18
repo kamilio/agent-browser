@@ -12,6 +12,15 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September18,23:36UTC: the first core50/application-unicode-v1 live load executes
+16 scripts, then script17 reaches its unchanged120s evaluation deadline. The
+former immediate32k regexp error does not recur, but no internal timeout span
+or CPU/wait cause is available. Parent verifies7223 inputs/73 artifacts, complete
+observed closure. One offline exact-vendor native diagnostic is profiling CPU
+and public-budget progress; no live retry or timeout increase. See
+`reports/zoom-unicode-initialization-timeout-2026-09-18.md`. Zoom is not joined;
+usable UI, admission, audio, recording, transcription and delivery remain OPEN.
+
 September18: exact-literal SDK diagnostics reproduce32k failure and demonstrate
 65,536 compilation units are sufficient, with all source/data/step/matcher/depth
 guards active and seven realms closed. New opt-in application-unicode-v1 now

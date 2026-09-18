@@ -69,7 +69,7 @@ not replace the child CommandHost's independent default30000ms timeout.
 
 ## CLI selection
 
-`AGENT_BROWSER_SCRIPT_BUDGET_PROFILE` accepts `bounded-v1`, `large-source-v1`
+`AGENT_BROWSER_SCRIPT_BUDGET_PROFILE` accepts `bounded-v1`, `large-source-v1`,
 `application-v1`, or `application-unicode-v1`. It requires an explicit `AGENT_BROWSER_SAFEJS_ROOT` and
 `AGENT_BROWSER_PAGE_RUNTIME=extension`; it does not enable website scripting.
 Reader mode conflicts with explicit script profile or command-timeout selection.
@@ -203,3 +203,9 @@ retains its existing smaller execution bounds. Parent verifies7,095 inputs and
 `/tmp/agent-browser-unicode-profile-actual-september18-FnUo0Z/HANDOFF.md`.
 A fresh live load with the new profile is released. No usable Zoom UI, admission,
 audio or notetaking is claimed by these synthetic results.
+
+The first live core50 load no longer produces the immediate32k compilation
+failure but still stops at script17's120-second evaluation deadline. This does
+not establish complete bundle execution or a specific performance cause; see
+`reports/zoom-unicode-initialization-timeout-2026-09-18.md`. The deadline is not
+raised. Exact-asset offline CPU/progress diagnosis is separate from live success.
