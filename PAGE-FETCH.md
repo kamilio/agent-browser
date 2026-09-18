@@ -77,13 +77,27 @@ streaming/guest signals.
   `redirect: "error"` rejects; `manual` returns an opaque-redirect-shaped response
   with status 0 and no URL, headers or body content exposed.
 - Responses expose status, ok, URL, type, redirected, bodyUsed, read-only header
-  `get`/`has`, asynchronous `text()`/`json()`, and independent `clone()` bodies.
+  `get`/`has`, asynchronous `text()`/`json()`/`arrayBuffer()`, and independent
+  `clone()` bodies.
   HTTP error statuses resolve normally. Text uses UTF-8; non-null bodies consume
   once, including JSON parse failures. HEAD/204/205/304 have null-body behavior.
   `statusText` is empty because the transport does not preserve reason phrases.
 - Set-Cookie/Set-Cookie2 never become guest response headers. Header lookups do not
   expose inherited object properties. All returned capabilities revoke on owner
   close; body buffers are released on consumption/close.
+
+`arrayBuffer()` preserves arbitrary response bytes without UTF-8 decoding. It
+returns the response's owned, exact-length buffer, independent of the transport
+and any cloned response. The read transfers that retained storage out of the
+fetch owner rather than making another host-side copy at consumption. Runtime
+conversion may still copy it when importing the value into a guest realm.
+
+All three readers share the same body-use, cancellation and retention accounting.
+Reading a non-null body consumes it even when empty; any subsequent reader
+rejects. Null bodies (HEAD, 204/205/304 and opaque manual redirects) instead return
+fresh empty buffers without becoming used. Closing the owner still revokes the
+response capability, but does not revoke a buffer already returned to its caller.
+The existing response-size, lifetime-byte, clone and CORS/policy limits apply.
 
 Network policy, DNS/address checks, TLS verification, cookie policy and transport
 limits remain in the existing adapter. The default Node adapter remains Node-only;
@@ -133,8 +147,9 @@ with negative mock-origin fixtures. Real multi-origin/wire acceptance and broade
 conformance remain required. `no-cors` and a preflight cache remain unsupported.
 
 Also incomplete: XHR, Request/Response/Headers constructors and prototype/brand
-semantics, iterable headers, guest AbortController/AbortSignal, streams, binary/
-Blob/FormData bodies, complete coercions, cache/revalidation, referrer/integrity,
+semantics, iterable headers, guest AbortController/AbortSignal, streams, binary
+request bodies, Blob/FormData bodies, complete coercions, cache/revalidation,
+referrer/integrity,
 keepalive, and full browser task/microtask phases. A supplied non-null guest signal
 or an unsupported active option is rejected, not silently ignored. Undefined
 optional fields and a null signal are accepted as absent.
@@ -145,6 +160,10 @@ The current runtime's broader browser API and performance limitations still appl
 
 ## Verification
 
+- `reports/binary-fetch-2026-09-18.md`: 421 selected native checks pass, including
+  40 binary-body tests. An offline replay reads three captured Git Pagefind
+  resources through `arrayBuffer()` and preserves their exact bytes for the native
+  source parser. No new website or actual-SDK execution is claimed by that replay.
 - `reports/page-fetch-focused-2026-09-02.json`: 198 passing tests across ten files.
   Includes request validation, header filtering, redirects, null/consumed/cloned
   bodies, quotas, deadline/close races, document-port ownership, CSP, capabilities,

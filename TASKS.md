@@ -6,6 +6,26 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Read binary fetch bodies and replay captured search data
+
+- Add PageFetch Response.arrayBuffer() through the shared one-shot body consumer:
+  exact owned bytes, isolated clones, existing abort/CORS/retention rules and
+  repeatable null-body buffers. No binary request body, Blob or runtime fallback.
+- A saved Git Pagefind module uses this method for binary metadata. Baseline
+  production lacks it; new tests yield387/34, all34 failures confined to the new
+  file. Final selected native421/0 in15 files includes40 binary-body tests;
+  build/types/format/lint pass. Preserve the explicit-manifest selection refusal.
+- Offline PageFetch replay preserves34789 captured bytes across metadata/index/
+  fragment responses, transport mutation and clones; existing native parsing
+  reproduces85 literal rebas matches in the supplied chunk and Reference /docs.html.
+  Zero network attempts, retained bytes or outstanding leases at closure. This
+  does not execute Pagefind, prove its UI/WASM or reclassify original MIME failures.
+- See PAGE-FETCH.md and reports/binary-fetch-2026-09-18.md/JSON. Actual SDK and
+  live-site acceptance of this fetch method remain open; prior WebSocket SDK
+  evidence does not transfer. Keep Zoom/media/notetaking, varied-site/research,
+  credentials/passkeys and access-challenge gates open. No SDK retry, live socket,
+  credentials/devices, default switch or push; overall goal remains active.
+
 ### Page WebSocket bridge: finite real-SDK profile passes
 
 - Bind document ownership before parser/script startup; opt-in PageScripts gets

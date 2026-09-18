@@ -798,10 +798,10 @@ export class PageFetch {
 					"Fetch response is not yet published",
 				);
 		};
-		const consume = () => {
+		const consumeBytes = () => {
 			read();
 			if (body.used) throw new TypeError("Fetch body is already consumed");
-			if (!body.hasBody) return "";
+			if (!body.hasBody) return new Uint8Array();
 			body.used = true;
 			group.bodies.delete(body);
 			this.releaseCancellation(group);
@@ -813,7 +813,7 @@ export class PageFetch {
 			const bytes = body.bytes;
 			body.bytes = null;
 			this.retainedBytes -= bytes?.byteLength ?? 0;
-			return new TextDecoder().decode(bytes ?? undefined);
+			return bytes ?? new Uint8Array();
 		};
 		try {
 			const headers = this.capability({
@@ -849,8 +849,10 @@ export class PageFetch {
 					bodyUsed: property(() => body.used),
 				},
 				methods: {
-					text: async () => consume(),
-					json: async () => JSON.parse(consume()),
+					text: async () => new TextDecoder().decode(consumeBytes()),
+					json: async () =>
+						JSON.parse(new TextDecoder().decode(consumeBytes())),
+					arrayBuffer: async () => consumeBytes().buffer,
 					clone: () => {
 						read();
 						if (body.used)

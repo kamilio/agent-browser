@@ -1,4 +1,5 @@
 [
+	"src/page-fetch-binary.test.ts",
 	"src/document-websocket-owner.test.ts",
 	"src/page-websockets.test.ts",
 	"src/extension-page-runtime-bootstrap.test.ts",
