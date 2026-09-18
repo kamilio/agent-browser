@@ -12,6 +12,17 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September18,21:17UTC verification: the new filtered core37 live run executes15
+scripts and completes the formerly failing synchronous CSRF request, native POST
+HTTP200. Script16 now fails; static inspection identifies missing Event/CustomEvent
+and dispatchEvent, but the exact guest exception is not recovered. A separate
+offline replay stops at its source-order guard before reaching that failure.
+Parent verifies7097 input and71 artifact pins; resources close. The sole explicit
+file-paa.zoom.us filter remains, with optionality unknown. Implement genuine event
+constructors/dispatch, validate with actual SDK, then reload Zoom. See
+`reports/zoom-filtered-xhr-progress-2026-09-18.md`. UI/admission/audio/recording/
+transcription/delivery and unfiltered compatibility remain OPEN; no join claimed.
+
 September18: native text XMLHttpRequest now passes4 actual SafeJS scenarios,
 including synchronous CSRF-style prototype middleware, correct timer ordering,
 async events/errors, reentrant abort/open and closing pending work. Core37 passes
