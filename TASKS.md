@@ -261,6 +261,16 @@ not a default SDK upgrade or claimed Zoom speedup. The exact incremental patch
 is retained in contributions/safejs-classic-scope-sharing. Actual owned-browser
 qualification and the next meaningful live run remain separate acceptance gates.
 
+September18, explicit origin blocking: optional blockedOrigins denies exact
+origins before DNS/wire/route delivery and rechecks redirect targets. WebSocket
+options forward the same policy; no hard-coded vendor list or default filtering
+is added. Bounded indexed list validation rejects sparse entries and avoids
+caller iterators. Parent integration passes4720 tests in105 files,47.736s, with
+all core33 quality checks. Earlier red/fixture/type failures remain preserved.
+See NETWORK-ORIGIN-BLOCKING.md. The native fake-runner/fake-socket gate is not
+actual SDK or live evidence. A separately labeled filtered Zoom experiment is
+next; the existing unfiltered timeout, admission and media gates remain open.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,

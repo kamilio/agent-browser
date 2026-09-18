@@ -5,6 +5,7 @@ import type { RequestOptions } from "node:https";
 import { Duplex } from "node:stream";
 import type { PeerCertificate } from "node:tls";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { networkPolicyDiagnostic } from "./network-policy-diagnostic.js";
 import {
 	type NodeWebSocketConnectOptions,
 	NodeWebSocketTransport,
@@ -538,6 +539,69 @@ describe("WebSocket transport policy and input admission", () => {
 			expectNoRequest();
 		},
 	);
+
+	it.each([
+		"wss://chat.example",
+		"https://chat.example",
+		"WSS://CHAT.EXAMPLE:443",
+	])(
+		"blocks explicit origin %s before DNS or handshake",
+		async (blockedOrigin) => {
+			const resolver = vi.fn(async () => [publicAddress]);
+			const blockedOrigins = [blockedOrigin];
+			const transport = createTransport({
+				resolver,
+				blockedOrigins,
+				allowedOrigins: ["wss://chat.example"],
+				allowPrivateOrigins: ["wss://chat.example"],
+			});
+			blockedOrigins.splice(0);
+			const operation = observe(transport.connect(target, documentOptions));
+			await flushMicrotasks();
+			expect(resolver).not.toHaveBeenCalled();
+			expectNoRequest();
+			const result = await operation;
+			expect(result).toMatchObject({ error: { code: "policy-denied" } });
+			expect(
+				networkPolicyDiagnostic("error" in result ? result.error : undefined),
+			).toEqual({ kind: "network-policy-v1", reason: "origin-blocked" });
+			expect(transport.metrics()).toMatchObject({
+				requests: 0,
+				pending: 0,
+				active: 0,
+			});
+		},
+	);
+
+	it.each(
+		[[], ["ws://chat.example"], ["wss://chat.example:9443"]].map(
+			(blockedOrigins) => ({ blockedOrigins }),
+		),
+	)(
+		"does not broaden an explicit WebSocket origin block $blockedOrigins",
+		async ({ blockedOrigins }) => {
+			const operation = beginConnect(createTransport({ blockedOrigins }));
+			upgrade(await requestAt());
+			await operation;
+		},
+	);
+
+	it.each(
+		[
+			null,
+			"wss://chat.example",
+			["wss://chat.example/path"],
+			["wss://chat.example?value=1"],
+			["wss://chat.example#fragment"],
+			["wss://user:password@chat.example"],
+			Array.from({ length: 1001 }, () => "wss://chat.example"),
+		].map((blockedOrigins) => ({ blockedOrigins })),
+	)("rejects malformed WebSocket blocked origins %#", ({ blockedOrigins }) => {
+		expect(() =>
+			createTransport({ blockedOrigins: blockedOrigins as readonly string[] }),
+		).toThrow();
+		expectNoRequest();
+	});
 
 	it("allows private DNS only for an explicitly authorized exact target origin", async () => {
 		const resolver = vi.fn(async () => ["127.0.0.1", publicAddress]);

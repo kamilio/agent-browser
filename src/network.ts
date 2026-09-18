@@ -86,6 +86,7 @@ export type NetworkRouteResolver = (
 export interface NetworkPolicyOptions {
 	allowPrivateOrigins?: readonly string[];
 	allowedOrigins?: readonly string[];
+	blockedOrigins?: readonly string[];
 }
 
 function ipv4Value(address: string): bigint | undefined {
@@ -206,13 +207,15 @@ function originSet(
 	values: readonly string[] | undefined,
 ): Set<string> | undefined {
 	if (values === undefined) return undefined;
-	if (!Array.isArray(values) || values.length > 1000)
+	const length = Array.isArray(values) ? values.length : -1;
+	if (!Number.isSafeInteger(length) || length < 0 || length > 1000)
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Invalid network origin policy",
 		);
 	return new Set(
-		values.map((value) => {
+		Array.from({ length }, (_entry, index) => {
+			const value = values[index];
 			const url = parseNetworkUrl(value);
 			if (url.pathname !== "/" || url.search || url.hash)
 				throw new AgentBrowserError(
@@ -227,16 +230,20 @@ function originSet(
 export class NetworkPolicy {
 	private readonly privateOrigins: ReadonlySet<string>;
 	private readonly origins?: ReadonlySet<string>;
+	private readonly blockedOrigins?: ReadonlySet<string>;
 
 	constructor(options: NetworkPolicyOptions = {}) {
 		this.privateOrigins = originSet(options.allowPrivateOrigins) ?? new Set();
 		this.origins = originSet(options.allowedOrigins);
+		this.blockedOrigins = originSet(options.blockedOrigins);
 	}
 
 	checkUrl(value: string): URL {
 		const url = parseNetworkUrl(value);
 		if (url.port && blockedPorts.has(Number(url.port)))
 			throw networkPolicyError("blocked-port");
+		if (this.blockedOrigins?.has(url.origin))
+			throw networkPolicyError("origin-blocked");
 		if (this.origins && !this.origins.has(url.origin))
 			throw networkPolicyError("origin-not-allowed");
 		if (!this.privateOrigins.has(url.origin)) {

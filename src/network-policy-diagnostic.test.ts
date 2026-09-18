@@ -45,6 +45,7 @@ const messages = {
 	"url-credentials": "Credentials in URLs are not allowed",
 	"blocked-port": "Network port is not allowed",
 	"origin-not-allowed": "Network origin is not allowed",
+	"origin-blocked": "Network origin is explicitly blocked",
 	"local-name": "Local network names are not allowed",
 	"literal-address-policy":
 		"Private or reserved network addresses are not allowed",

@@ -244,6 +244,7 @@ export class NodeWebSocketTransport implements WebSocketTransport {
 		this.policy = new NetworkPolicy({
 			allowedOrigins: policyOrigins(options.allowedOrigins),
 			allowPrivateOrigins: policyOrigins(options.allowPrivateOrigins),
+			blockedOrigins: policyOrigins(options.blockedOrigins),
 		});
 		this.resolver = options.resolver ?? resolveAddresses;
 	}
