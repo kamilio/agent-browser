@@ -33,6 +33,7 @@ const extensionName = "agent-browser-page";
 
 export interface ExtensionPageRuntimeOptions {
 	classicScripts?: boolean;
+	callbackScheduling?: "after-prefix";
 	sourceModules?: PageSourceModuleOptions;
 	networkSourceModules?: PageNetworkModuleOptions;
 }
@@ -93,6 +94,12 @@ export function extensionPageRuntime(
 			"Invalid classic Script option",
 		);
 	const classicScripts = configuration.classicScripts === true;
+	const callbackScheduling = configuration.callbackScheduling;
+	if (callbackScheduling !== undefined && callbackScheduling !== "after-prefix")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid callback scheduling option",
+		);
 	const networkModuleOptions = configuration.networkSourceModules;
 	if (moduleOptions !== undefined && networkModuleOptions !== undefined)
 		throw new AgentBrowserError(
@@ -266,6 +273,7 @@ export function extensionPageRuntime(
 			try {
 				realm = core.createRealm({
 					...(classicScripts ? { classicScripts: true } : {}),
+					...(callbackScheduling ? { callbackScheduling } : {}),
 					...(moduleScope
 						? {
 								sourceResolver: (specifier, referrer, resolution) => {

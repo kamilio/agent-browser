@@ -90,6 +90,7 @@ export interface ReleasedCore {
 	}): unknown;
 	createRealm(options: {
 		classicScripts?: boolean;
+		callbackScheduling?: "after-prefix";
 		sourceResolver?: ReleasedSourceResolver;
 		extensions: readonly unknown[];
 		builtinOverrides?: { console?: string };

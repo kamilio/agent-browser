@@ -8,6 +8,13 @@ const runtime = extensionPageRuntime(core, { classicScripts: true });
 const scripts = new PageScripts(page, runtime, options);
 ```
 
+With a compatible scheduling-capable core, select
+`callbackScheduling: "after-prefix"` alongside `classicScripts: true` to allow
+new source after an event callback's synchronous prefix without conflating its
+unfinished asynchronous result. This option is separately validated and
+forwarded to the SDK; it is not an adapter-side queue or a completion stub.
+The default does not request a scheduling mode.
+
 This requires the classic-Script SDK capability, not merely the native loader's
 `websiteScripts: "classic"` setting. It does not install, upgrade or substitute
 an SDK, and does not enable this experimental mode automatically in the CLI.
@@ -47,10 +54,11 @@ promised.
 
 The captured React externals previously failed when assigning a host Window
 property. They now reach an SDK accounting/performance blocker and still exceed
-the native time limit. A controlled event callback followed immediately by new
-source still exposes the separately tracked SDK scheduling/re-entry blocker.
-Neither issue is hidden by increasing the production timeout or changing the
-publisher source.
+the native time limit. The explicit `after-prefix` scheduling option passes the
+controlled-event callback followed immediately by new source in the composed
+SDK/native fixture. Broader scheduler qualification still has separately tracked
+failures; this focused pass is not complete SDK qualification. No production
+timeout increase or publisher-source rewrite hides the remaining blockers.
 
 Native tests, captured-source execution and live HTTP acquisition are separate
 gates. No successful Zoom joining UI, meeting admission, incoming media decode,

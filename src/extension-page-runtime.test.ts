@@ -239,6 +239,33 @@ it("counts its native window bootstrap against the configured source limit", () 
 	}
 });
 
+it.each([null, false, true, 0, "", "immediate", [], {}])(
+	"rejects invalid callback scheduling (%j)",
+	(callbackScheduling) => {
+		expect(() =>
+			extensionPageRuntime(fakeCore().core, {
+				callbackScheduling: callbackScheduling as "after-prefix",
+			}),
+		).toThrow("Invalid callback scheduling option");
+	},
+);
+
+it("forwards explicit callback-prefix scheduling without enabling classic Scripts", async () => {
+	const test = fixture(fakeCore(), 1000, {
+		callbackScheduling: "after-prefix",
+	});
+	expect(test.state.options.callbackScheduling).toBe("after-prefix");
+	expect(test.state.options).not.toHaveProperty("classicScripts");
+	await expect(test.scripts.evaluate("source")).resolves.toMatchObject({
+		ok: true,
+	});
+});
+
+it("leaves callback scheduling to the SDK when no option is selected", () => {
+	const test = fixture();
+	expect(test.state.options).not.toHaveProperty("callbackScheduling");
+});
+
 it("declares owned console, retention, and focus await-result grants before lazy setup", async () => {
 	const test = fixture();
 	expect(test.defineExtension.mock.calls[0][0].manifest).toMatchObject({
