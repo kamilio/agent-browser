@@ -28,6 +28,8 @@ export interface PageScriptCore extends PageBindingContext {
 		maxSteps: number;
 		maxCallDepth?: number;
 		stringLength?: number;
+		regexSourceLength?: number;
+		regexCompileAllocations?: number;
 		arrayLength?: number;
 		dataSize?: number;
 	}) => SafeJsBudget;
@@ -72,6 +74,8 @@ export interface PageRuntime {
 }
 
 export interface PageRuntimeOptions {
+	regexSourceLength?: number;
+	regexCompileAllocations?: number;
 	initializationSource?: string;
 	networkSourceModules?: PageNetworkModuleOptions;
 	limits: Readonly<ScriptLimits>;
@@ -120,6 +124,12 @@ export function legacyPageRuntime(core: PageScriptCore): PageRuntimeFactory {
 				maxSteps: options.limits.maxSteps,
 				maxCallDepth: options.limits.maxCallDepth,
 				stringLength: options.limits.maxStringLength,
+				...(options.regexSourceLength === undefined
+					? {}
+					: { regexSourceLength: options.regexSourceLength }),
+				...(options.regexCompileAllocations === undefined
+					? {}
+					: { regexCompileAllocations: options.regexCompileAllocations }),
 				arrayLength: options.limits.maxArrayLength,
 				dataSize: options.limits.maxDataSize,
 			});

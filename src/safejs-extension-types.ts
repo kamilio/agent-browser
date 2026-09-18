@@ -76,6 +76,8 @@ export interface ReleasedCore {
 		deadline?: number;
 		maxCallDepth?: number;
 		stringLength?: number;
+		regexSourceLength?: number;
+		regexCompileAllocations?: number;
 		arrayLength?: number;
 		dataSize: number;
 	}) => SafeJsBudget;

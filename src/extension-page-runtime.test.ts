@@ -8,7 +8,7 @@ import {
 import { DocumentInteractions } from "./interactions.js";
 import { pageBindingGlobalNames } from "./page-bindings.js";
 import { bindPageHistory } from "./page-history.js";
-import { PageScripts } from "./page-scripts.js";
+import { PageScripts, type PageScriptOptions } from "./page-scripts.js";
 import { bindPageStorage } from "./page-storage.js";
 import type {
 	ReleasedContext,
@@ -175,13 +175,17 @@ function fixture(
 	shared = fakeCore(),
 	timeoutMs = 1000,
 	configuration: ExtensionPageRuntimeOptions = {},
+	pageConfiguration: PageScriptOptions = {},
 ) {
 	const tree = new DocumentTree("https://example.com/");
 	const interactions = new DocumentInteractions(tree);
 	const scripts = new PageScripts(
 		{ document: tree, interactions },
 		extensionPageRuntime(shared.core, configuration),
-		{ limits: { timeoutMs } },
+		{
+			...pageConfiguration,
+			limits: { ...pageConfiguration.limits, timeoutMs },
+		},
 	);
 	owners.push({ scripts, tree });
 	return {
@@ -192,6 +196,25 @@ function fixture(
 		state: shared.realms[shared.realms.length - 1],
 	};
 }
+
+it.each([undefined, "bounded-v1", "large-source-v1"] as const)(
+	"requests larger regex compilation only for explicit large-source profile %s",
+	(budgetProfile) => {
+		const test = fixture(fakeCore(), 1000, {}, { budgetProfile });
+		if (budgetProfile === "large-source-v1")
+			expect(test.budgetOptions[0]).toMatchObject({
+				maxSteps: 16_000_000,
+				regexSourceLength: 8192,
+				regexCompileAllocations: 32768,
+			});
+		else {
+			expect(test.budgetOptions[0]).not.toHaveProperty("regexSourceLength");
+			expect(test.budgetOptions[0]).not.toHaveProperty(
+				"regexCompileAllocations",
+			);
+		}
+	},
+);
 
 it.each([null, 0, "true", [], {}])(
 	"rejects a non-boolean classic Script option (%j)",

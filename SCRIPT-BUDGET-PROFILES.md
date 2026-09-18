@@ -16,6 +16,12 @@ exceed the ordinary step allowance merely while parsing. It sets these defaults:
 | Call depth | 512 |
 | Array length | 262,144 |
 
+The profile also explicitly requests an 8192-unit regex-source allowance and
+32768 regex compilation allocations from the SDK. The ordinary profile omits
+both options, preserving SDK defaults. These are independent finite compilation
+budgets, not host-regex execution or changes to regex matching limits. The SDK
+must support these options; adapter forwarding alone does not establish that.
+
 Run count and result-output defaults are unchanged. Explicit `limits` still
 override profile defaults within finite ceilings. Only the maximum step allowance
 increases beyond the old ceilings; time, logical data, source/string, array,
@@ -35,5 +41,7 @@ The SDK, process heap/watchdog, network and loader retain their separate limits.
 
 The captured Zoom vendor advanced beyond its former 1.6M-step parsing rejection
 under this profile, then reached the SDK's separate 4096-unit regex-source cap.
-It has not executed successfully. React also still exceeds the unchanged16s
+Native adapter tests now verify the explicit regex options and default omission;
+actual SDK/vendor validation remains a separate gate. The vendor has not executed
+successfully. React also still exceeds the unchanged16s
 deadline. Neither failure is relabeled as success by selecting this profile.

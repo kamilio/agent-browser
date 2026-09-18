@@ -174,6 +174,12 @@ export function extensionPageRuntime(
 				maxSteps: options.limits.maxSteps,
 				maxCallDepth: options.limits.maxCallDepth,
 				stringLength: options.limits.maxStringLength,
+				...(options.regexSourceLength === undefined
+					? {}
+					: { regexSourceLength: options.regexSourceLength }),
+				...(options.regexCompileAllocations === undefined
+					? {}
+					: { regexCompileAllocations: options.regexCompileAllocations }),
 				arrayLength: options.limits.maxArrayLength,
 				dataSize: options.limits.maxDataSize,
 			});

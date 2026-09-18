@@ -2,7 +2,11 @@ import { afterEach, expect, it, vi } from "vitest";
 import { DocumentTree } from "./document.js";
 import { documentInteractions } from "./interactions.js";
 import { PageScripts, type PageScriptOptions } from "./page-scripts.js";
-import type { PageRuntime, PageRuntimeOptions } from "./page-runtime.js";
+import {
+	legacyPageRuntime,
+	type PageRuntime,
+	type PageRuntimeOptions,
+} from "./page-runtime.js";
 import { scriptLimits, type ScriptLimits } from "./safejs.js";
 
 const select = scriptLimits as (
@@ -94,8 +98,11 @@ it("passes the selected profile limits into the real PageScripts factory boundar
 			closed = true;
 		},
 	};
+	const readProfile = vi.fn(() => "large-source-v1" as const);
 	const options = {
-		budgetProfile: "large-source-v1",
+		get budgetProfile() {
+			return readProfile();
+		},
 		limits: { maxSteps: 3_000_000 },
 	} as PageScriptOptions;
 	const scripts = new PageScripts(
@@ -111,8 +118,55 @@ it("passes the selected profile limits into the real PageScripts factory boundar
 	expect(received?.limits).toBe(scripts.limits);
 	expect(received?.limits.maxSteps).toBe(3_000_000);
 	expect(received?.limits.timeoutMs).toBe(16_000);
+	expect(received).toHaveProperty("regexSourceLength", 8192);
+	expect(received).toHaveProperty("regexCompileAllocations", 32768);
+	expect(readProfile).toHaveBeenCalledTimes(1);
 	await scripts.close();
 	expect(closed).toBe(true);
+});
+
+it("forwards an explicitly selected regex-source allowance through the legacy budget boundary", async () => {
+	let recorded: unknown;
+	class Budget {
+		stepsUsed = 0;
+		peakCallDepth = 0;
+		peakDataSize = 0;
+		constructor(options: unknown) {
+			recorded = options;
+		}
+	}
+	const factory = legacyPageRuntime({
+		Budget,
+		SandboxError: Error as never,
+		createHostObject: () => ({}),
+		retainGuestArguments: (operation) => operation,
+		releaseGuestReference: () => false,
+		deepCopyFromSandbox: (value) => value,
+		startCallback: () => ({
+			synchronous: Promise.resolve(),
+			result: Promise.resolve(undefined),
+		}),
+		createRealm: () => ({
+			closed: false,
+			evaluate: async () => ({}),
+			close: async () => undefined,
+		}),
+	});
+	const runtime = factory.createPageRuntime({
+		limits: select({}, "large-source-v1"),
+		regexSourceLength: 8192,
+		regexCompileAllocations: 32768,
+		signal: new AbortController().signal,
+		globals: [],
+		setup: () => ({}),
+		onClosed() {},
+		sink: { log() {}, error() {} },
+	} as PageRuntimeOptions);
+	expect(recorded).toMatchObject({
+		regexSourceLength: 8192,
+		regexCompileAllocations: 32768,
+	});
+	await runtime.close();
 });
 
 it("rejects a malformed PageScripts profile before allocating runtime state", () => {

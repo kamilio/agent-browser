@@ -85,7 +85,8 @@ export class PageScripts {
 			"networkSourceModules",
 			true,
 		) as PageNetworkModuleOptions | undefined;
-		this.limits = scriptLimits(options.limits, options.budgetProfile);
+		const budgetProfile = options.budgetProfile;
+		this.limits = scriptLimits(options.limits, budgetProfile);
 		if (networkSourceModules !== undefined) {
 			const documentUrl = moduleInputData(networkSourceModules, "documentUrl");
 			if (documentUrl !== page.document.url)
@@ -131,6 +132,9 @@ export class PageScripts {
 				this.bindings?.console.buffer.write(level, values);
 			};
 			this.runtime = factory.createPageRuntime({
+				...(budgetProfile === "large-source-v1"
+					? { regexSourceLength: 8192, regexCompileAllocations: 32768 }
+					: {}),
 				...(existingDocumentWebSockets(page.document)
 					? { initializationSource: pageWebSocketBootstrapSource }
 					: {}),
