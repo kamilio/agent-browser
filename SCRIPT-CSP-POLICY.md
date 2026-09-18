@@ -32,6 +32,15 @@ results, not an actual SDK, full-policy Zoom navigation or meeting acceptance.
 The sections below retain the earlier foundation and isolated policy-gate
 milestones; their statements about then-unactivated loader wiring are historical.
 
+The subsequent actual-SDK control passes4/4 cases in5.858s at
+`/tmp/agent-browser-native-csp-sdk-control-GiNBmn/stage02`, using this qualified
+native candidate and unchanged BqM3JX SDK. It verifies nonce admission/rejection,
+native document mutation, unsafe-eval/factory-deny intersection, redirect denial
+before transport and direct policy-close runtime invalidation. All four SDK
+realms finish with zero retained values/data; all native owners, transports and
+process groups close. Transport/source/URLs are synthetic and no publisher is
+executed. Full Zoom resource-policy admission and meeting acceptance remain open.
+
 `createScriptCspPolicy(documentUrl, headers, limits?)` parses a bounded,
 conservative subset of enforced Content Security Policy into an immutable
 script-element/base capability. This module is not yet connected to the live

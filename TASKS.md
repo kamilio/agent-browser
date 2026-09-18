@@ -152,6 +152,16 @@ scope improvements and a0.44% large-graph regression. Parent holds the proposed
 publisher retry rather than treating these as a Zoom fix. The candidate remains
 private/uninstalled; a new measured graph-classification investigation is active.
 
+September18,18:00UTC: native CSP loading now also passes4 actual-SDK controls at
+`/tmp/agent-browser-native-csp-sdk-control-GiNBmn/RESULT.md`,5.858s. These use real
+native session/loader/parser/PageScripts plus unchanged BqM3JX SDK with synthetic
+transport/source only. Nonce enforcement, document mutation, eval-policy
+intersection, redirect rejection and owner invalidation all pass; four real
+SDK realms finish with data/retained values0, native owners/transports/process
+groups close and HOME/TMP stay empty. The initial recursive harness-type error
+is preserved; corrected types pass. This is not a website, full captured Zoom
+policy, actual CLI entrypoint, publisher-performance recovery or meeting pass.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,
