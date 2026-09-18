@@ -196,6 +196,19 @@ next. Font/media/frame/object and WebAssembly remain unavailable. Full Zoom
 dependency execution still fails the prior120s gate; no meeting/audio/notetaking
 success follows from these policy controls. Keep the complete goal active.
 
+September18, owned-process follow-up: actual core30/BqM3JX policy enforcement
+passes12/12 public commands in2.068s at
+`/tmp/agent-browser-owned-resource-csp-corrected-september18-arChiH/HANDOFF.md`.
+Automatic nonce source executes, its nonnonce peer stays blocked, native DOM
+changes and guest indirect eval succeeds. Actual guest fetches produce one
+allowed result and two denials, with only two synthetic route deliveries total.
+Public close succeeds; actor pending0, five heartbeats, child/process group
+absent and empty HOME/TMP. Parent verifies7061 evidence hashes. Final actor
+termination is production SIGKILL, not graceful SDK-disposal evidence. Preserve
+the original pre-session route failure: URL-free open fixes only the harness.
+No actual CLI environment entrypoint, publisher, network, future redirect path,
+Zoom admission or audio is validated by this controlled owned-process gate.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,

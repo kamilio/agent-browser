@@ -50,6 +50,18 @@ close. Stage01's5/6 result is preserved: its harness omitted the fetch binding;
 stage02 supplies the production context.fetch binding, without production edits.
 No publisher executes and no Zoom admission or incoming audio is claimed.
 
+The subsequent owned-process control passes12/12 public commands in2.068s at
+`/tmp/agent-browser-owned-resource-csp-corrected-september18-arChiH`. The actual
+core30/BqM3JX child automatically runs the nonce script, blocks its nonnonce peer,
+changes native DOM and permits indirect eval under the synthetic policy. Three
+guest fetches return one allowed response and two denials; only the document and
+allowed response reach route delivery. Public close succeeds, actor commands
+finish pending0 and processes are absent. Final process disposal uses production
+SIGKILL; no private in-child SDK retained-value claim is made. The first harness
+failure is preserved: routes needed URL-free public open to create the session.
+This is programmatic owned/public-protocol evidence, not real CLI environment
+startup, publisher execution, future secure redirects or a meeting join.
+
 The earlier loader/foundation milestones below retain their original evidence
 and describe the support available at those points.
 
