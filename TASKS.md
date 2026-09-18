@@ -6,6 +6,27 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Trace the real Zoom browser-client entry point
+
+- Native parsing/static AST inspection traces the captured launch shell's actual
+  CDN loader, rather than inventing a meeting-origin asset URL. One fresh native
+  bundle GET returns200/text/javascript and1196388 complete bytes at06:13:43UTC.
+  Reader extraction still fails at1162732 code units versus its1M non-HTML limit;
+  preserve the failure, zero Markdown and exit1. No retry or limit increase.
+- Offline source/schema analysis finds the browser-join route inside the shell's
+  base64/protobuf configuration, field4.urls -> field3.webClientUrl. Decode only
+  the selected route; keep its exact query-bearing value private and pinned.
+  Display /wc/join/7982110526 with the query redacted, never as a substitute URL.
+  The real browser-client route remains unfetched; no host admission is proved.
+- Reuse817/0 native and green quality evidence, not a new SDK/runtime pass.
+  Preserve the invalid-flag synthetic exit64, pre-child runner path mistake and
+  function-shape inspection assertion; corrected isolated runs close with no IO.
+- See reports/zoom-client-discovery-2026-09-18.md/JSON. Source capture is not source
+  execution or reader success. SafeJS callback/source scheduling, real client
+  execution, WebRTC/media decode, permitted recording/transcription/delivery,
+  credentials/passkeys and broader browser/research goals remain open. No join,
+  device access, source/SDK execution, alternate browser, default change or push.
+
 ### Source-linked content follow-up and explicit manual redirects
 
 - Five separately authorized one-GET reads: documentation introduction200/8540
