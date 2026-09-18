@@ -224,6 +224,20 @@ launching any gate. Actual SDK/owned-browser secure redirects are still separate
 acceptance work. Zoom dependency execution, admission, native media and complete
 notetaking remain unresolved; keep the full goal active.
 
+September18, owned secure-redirect follow-up: core31/BqM3JX passes21 public
+commands in2.167s at
+`/tmp/agent-browser-owned-secure-redirect-corrected-september18-pGROyj`.
+Actual native form submission follows HTTPS303 into a new document and real
+SDK runtime; an insecure next hop is denied and the final page remains usable.
+The public journal observes POST/303/final URL, not the final hop's raw method
+or body. Four synthetic deliveries, empty request queues/pending loads, public
+close and absent processes are verified. Final actor disposal is production
+SIGKILL, not graceful in-child SDK disposal. Preserve the initial preflight's
+invalid empty optional body arguments; the correction changes only the harness.
+This is owned/public-protocol evidence, not real CLI startup, live Zoom loading,
+meeting admission or audio. Full-document Zoom and runtime performance remain
+the immediate work; keep the goal active.
+
 The isolated classic-Script runtime passes126 tests in4 files on a fresh pinned
 source copy. Native window integration has219 passing tests in11 files. Actual
 captured Zoom chunk execution, shared global aliases, cross-script exports,

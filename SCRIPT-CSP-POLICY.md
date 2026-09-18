@@ -88,6 +88,19 @@ preserved failures are at
 This is native/mock and routed-transport evidence, not a socket, actual-SDK
 redirect, owned-process redirect, publisher or Zoom admission gate.
 
+The subsequent actual owned core31/BqM3JX control passes21 public commands in
+2.167s at `/tmp/agent-browser-owned-secure-redirect-corrected-september18-pGROyj`.
+A public native form submission follows a303 HTTPS redirect and initializes the
+new document's real SDK runtime under the complete synthetic policy. Its journal
+records POST,303 and the final URL; it does not independently expose the final
+hop's method or body. New document identity/content replaces the prior owner.
+An insecure next hop is denied before trap delivery and the final page remains
+usable. All four requests are synthetic; queues and pending loads finish empty.
+Public close succeeds, then production actor disposal uses SIGKILL; processes
+are absent. This is not graceful in-child SDK disposal or a real CLI entrypoint.
+The initial preflight failure is preserved: omitting two invalid empty optional
+`--body=` arguments corrects only the harness. No publisher or meeting runs here.
+
 The earlier loader/foundation milestones below retain their original evidence
 and describe the support available at those points.
 
