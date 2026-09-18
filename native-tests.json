@@ -1,4 +1,6 @@
 [
+	"src/style-selector-cache.test.ts",
+	"src/style-selector-reuse.test.ts",
 	"src/node-safejs-gate-process.test.ts",
 	"src/safejs-release-evidence.test.ts",
 	"src/isolated-safejs-gate.test.ts",

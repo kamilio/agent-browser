@@ -192,6 +192,7 @@ import {
 	substituteVariables,
 } from "./css-variables.js";
 import { CustomPropertyResolutionCache } from "./css-variable-resolution-cache.js";
+import { StyleSelectorCache } from "./style-selector-cache.js";
 import {
 	DocumentQueries,
 	type SelectorSpecificity,
@@ -1512,6 +1513,7 @@ export class DocumentStyles {
 		const documentBase = documentBaseUrl(this.tree);
 		charge(nodes.length);
 		const declarationBases = new WeakMap<CssDeclaration, string>();
+		const selectorMatches = new StyleSelectorCache(charge);
 		const parseSheet = (
 			text: string,
 			graph: Readonly<StylesheetSource> | undefined,
@@ -1790,12 +1792,23 @@ export class DocumentStyles {
 						"CSS cascade work limit exceeded",
 					);
 				let matches: ReturnType<DocumentQueries["matchingStyleSpecificities"]>;
-				try {
-					matches = this.queries.matchingStyleSpecificities(
-						rule.selector,
-						this.limits.maxWork - work,
-						rule.nesting,
+				const cached =
+					rule.nesting === undefined
+						? selectorMatches.get(rule.selector)
+						: undefined;
+				if (cached === undefined && work >= this.limits.maxWork)
+					throw new AgentBrowserError(
+						"resource-limit",
+						"CSS cascade work limit exceeded",
 					);
+				try {
+					matches =
+						cached ??
+						this.queries.matchingStyleSpecificities(
+							rule.selector,
+							this.limits.maxWork - work,
+							rule.nesting,
+						);
 				} catch (error) {
 					if (
 						error instanceof AgentBrowserError &&
@@ -1825,7 +1838,11 @@ export class DocumentStyles {
 						diagnosticCollector.resolve([selectorSample], resolution);
 					continue;
 				}
-				charge(this.queries.metrics().lastWork);
+				if (cached === undefined) {
+					charge(this.queries.metrics().lastWork);
+					if (rule.nesting === undefined)
+						selectorMatches.set(rule.selector, matches);
+				}
 				if (matches.elements.size || matches.before.size || matches.after.size)
 					applicable(rule.issues);
 				if (rule.diagnosticSampleIds) {
@@ -1843,7 +1860,7 @@ export class DocumentStyles {
 						},
 					});
 				}
-				if (!media.matches) continue;
+				if (!media.matches || rule.declarations.length === 0) continue;
 				for (const name of ["elements", "before", "after"] as const) {
 					charge(matches[name].size * rule.declarations.length);
 					for (const [id, specificity] of matches[name])

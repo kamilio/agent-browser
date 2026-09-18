@@ -6,6 +6,30 @@ CAPTCHA friction. Request pacing is an initial opt-in measure, not a replacement
 for real-site coverage, performance measurements, compatibility work or human
 handoff at access restrictions. Those broader outcomes remain unverified.
 
+### Finish bounded CSS selector reuse
+
+- Reuse non-nested selector matches within one cascade, capped at1024 entries,
+  32768 retained units and65536 selector code units. Preserve per-rule
+  specificity, declaration order and diagnostics; do not raise the CSS budget.
+- Focused native883/0 in18 files; build/types/format/lint pass. Broad available
+  run51400/13 in1021 files is NOT green. Four CLI failures reproduce on baseline;
+  nine other failures clear with the previous15-second bound. Baseline/candidate
+  rechecks both1003/4 in8 files with identical outcomes. Do not hide failures or
+  fix unrelated CLI behavior in this change. Manifest1043 retains22 missing paths.
+- Fresh offline replay of previously captured Grokipedia HTML/CSS preserves all
+  63 article sections and produces63 block boundaries under4,485,889 work units.
+  Actual Markdown hashes match the historical66067/66052-byte outputs; only
+  source-hidden TTS controls differ in non-whitespace text. No new website GET,
+  SDK execution, wall-clock speedup or generalized rendering claim.
+- Verify1665 source/2464 compiled pins, keep the unrelated styles import/order
+  diff uncommitted, and preserve all42 dirty tracked/700 untracked input bytes.
+  See STYLE-SELECTOR-REUSE.md and reports/selector-reuse-2026-09-18.md/JSON.
+- SDK authorization update: the bounded0.1.640 staging/runtime scope was approved
+  September18 and is recorded in safejs-runtime-0640-september18/APPROVAL.json.
+  This CSS result does not imply successful dependency acquisition or SDK gates.
+  Native Zoom/media, diverse-site content, research and credential/passkey gates
+  remain open. Preserve historical measurements and do not push.
+
 ### Prepare actual SafeJS acceptance for native Zoom support
 
 - Connect the lifecycle supervisor to an owned POSIX process adapter and a

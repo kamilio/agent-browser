@@ -1,0 +1,115 @@
+{
+  "date": "2026-09-18",
+  "baseline": "7496b3c9e6c5069113f0822beac8b3efc81ef3d9",
+  "phase": "/home/kjopek/project/agent-browser/node_modules/.cache/native-validation/selector-reuse-final-september18",
+  "root": "/tmp/agent-browser-selector-final-GiNG06/candidate",
+  "focused": {
+    "passed": 883,
+    "failed": 0,
+    "files": 18
+  },
+  "availableNative": {
+    "label": "release01",
+    "pid": 2585601,
+    "exitCode": 1,
+    "timedOut": false,
+    "signals": [],
+    "childAbsent": true,
+    "groupAbsent": true,
+    "elapsedSeconds": 670.4555091727525,
+    "passedTests": 51400,
+    "failedTests": 13,
+    "files": 1021,
+    "homeEntries": [],
+    "tmpEntries": []
+  },
+  "broadFailureComparison": {
+    "at": "2026-09-18T01:34:16.296Z",
+    "broad": {
+      "passed": 51400,
+      "failed": 13,
+      "files": 1021,
+      "testTimeoutMs": 3000
+    },
+    "diagnostics": {
+      "passed": 1003,
+      "failed": 4,
+      "files": 8,
+      "testTimeoutMs": 15000,
+      "baselineAndCandidateIdenticalStatuses": true
+    },
+    "reproducedOnUnchangedBaseline": [
+      "cli-resource-cache.test.ts::32::synthetic CLI resource cache startup rejects enabled reuse with AGENT_BROWSER_PAGE_SCRIPTS=\"classic\" before IO",
+      "cli-resource-cache.test.ts::33::synthetic CLI resource cache startup rejects enabled reuse with AGENT_BROWSER_PAGE_SCRIPTS=\"\" before IO",
+      "cli-resource-cache.test.ts::34::synthetic CLI resource cache startup rejects enabled reuse with AGENT_BROWSER_PAGE_SCRIPTS=\"module\" before IO",
+      "cli-resource-cache.test.ts::35::synthetic CLI resource cache startup rejects enabled reuse with AGENT_BROWSER_PAGE_SCRIPTS=\" \" before IO"
+    ],
+    "passedOnBothWithPriorFullSuiteTimeout": [
+      "research-csp-admission.test.ts::80::keeps default replay metadata and receipt budgets authoritative",
+      "research-find.test.ts::217::keeps real loader source limits before discovery (reader=true)",
+      "research-headings.test.ts::86::does not bypass the full-source 'source' limit (reader=false)",
+      "research-headings.test.ts::87::does not bypass the full-source 'source' limit (reader=true)",
+      "research-http-provenance.test.ts::6::HTTP provenance (reader=false) retains HTTP provenance when body capture exceeds its bound",
+      "research-json-replay.test.ts::8::admits a greater-than-2MB long capture with an omitted script and small table",
+      "research-json-replay.test.ts::11::does not promote a long capture whose omitted script exceeded the reader text limit",
+      "research-section.test.ts::79::retains full-document loader limits for a tiny section (reader=true)",
+      "svg-image-xml.test.ts::206::charges finite bounded linear work for text, references and nested namespace growth"
+    ],
+    "unchangedDiagnosticInputs": [
+      "src/cli-resource-cache.test.ts",
+      "src/research-csp-admission.test.ts",
+      "src/research-find.test.ts",
+      "src/research-headings.test.ts",
+      "src/research-http-provenance.test.ts",
+      "src/research-json-replay.test.ts",
+      "src/research-section.test.ts",
+      "src/svg-image-xml.test.ts",
+      "src/cli.ts"
+    ],
+    "fullSuitePassClaim": false,
+    "cssChangesMadeToFixThese": false
+  },
+  "fullSuitePassed": false,
+  "manifest": {
+    "entries": 1043,
+    "missing": 22,
+    "completeManifestRun": false
+  },
+  "quality": {
+    "build": 0,
+    "types": 0,
+    "format": 0,
+    "lint": 0
+  },
+  "pins": {
+    "source": 1665,
+    "compiled": 2464
+  },
+  "content": {
+    "offlineReplay": true,
+    "networkRequests": 0,
+    "sections": 63,
+    "blockSections": 63,
+    "work": 4485889,
+    "workLimit": 5000000,
+    "expectedOutputs": {
+      "unloaded": {
+        "bytes": 66052,
+        "sha256": "a0266336ffd47163bc6927b198c9bbec5536e21ff3c0630a2599c6591d6a5078"
+      },
+      "captured-styles": {
+        "bytes": 66067,
+        "sha256": "cfcb515b43564bdffcfe95629aa8a439c9486d827626610907eb53d1cfcc3436"
+      }
+    },
+    "suppressedSourceHiddenControlCodeUnits": 14
+  },
+  "preserved": {
+    "tracked": 42,
+    "untracked": 700,
+    "unrelatedStyleDiffSha256": "17815f0b02ae824163f19f7f8c1471728042cb475bfb0992821b95592056d01c"
+  },
+  "sdkExecuted": false,
+  "freshWebsiteVisit": false,
+  "pushed": false
+}
