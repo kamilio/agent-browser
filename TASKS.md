@@ -14,7 +14,8 @@
 
 ## Retained development inputs
 
-- Native source: `/tmp/agent-browser-event-union13-duJvuD/candidate` (rebuild when needed).
+- Build native code from this repository; redundant scratch sources/builds are removed.
+- One unmerged test is preserved at `/tmp/agent-browser-event-union13-duJvuD/candidate/src/extraction-content-focus-nested.test.ts`.
 - SafeJS source: `/tmp/agent-browser-sdk-released-tickets-w68sa7j8/candidate`.
 - SafeJS runtime: `/tmp/agent-browser-released-ticket-sdk-cybnsyeb/package`.
 - SDK code patches: `contributions/`.
