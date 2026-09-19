@@ -379,10 +379,14 @@ export function sanitizeResearchHtml(
 		tokenStart = tokenizer.position;
 		return tokenizer.next();
 	};
-	const output: string[] = [];
+	const output: (string | undefined)[] = [];
 	let sourceInitial = true;
 	const skipped: string[] = [];
 	const open: string[] = [];
+	const spanCandidates: (
+		| { outputIndex: number; hasClass: boolean }
+		| undefined
+	)[] = [];
 	let sourceHiddenOmission = false;
 	let legacyOmittedDepth = 0;
 	let sourceTables: ResearchSourceDataTableCollector | undefined;
@@ -400,6 +404,19 @@ export function sanitizeResearchHtml(
 		report.outputCodeUnits += value.length;
 		check("reader.output", limits.maxOutputCodeUnits, report.outputCodeUnits);
 		output.push(value);
+	};
+	const preserveSpanCandidates = (depth: number) => {
+		while (spanCandidates.length > depth) {
+			const candidate = spanCandidates.pop();
+			if (candidate) {
+				report.outputCodeUnits += output[candidate.outputIndex]?.length ?? 0;
+				check(
+					"reader.output",
+					limits.maxOutputCodeUnits,
+					report.outputCodeUnits,
+				);
+			}
+		}
 	};
 	const text = (value: string, omit: boolean) => {
 		report.textCodeUnits += value.length;
@@ -796,15 +813,34 @@ export function sanitizeResearchHtml(
 				: preservedTags.has(name)
 					? name
 					: undefined;
+		if (
+			outputName &&
+			((token.kind === "start" &&
+				(isHtmlSpecial(outputName) ||
+					(reconstructableFormatting.has(name) && open.includes(name)))) ||
+				(token.kind === "end" && open.at(-1) !== name))
+		) {
+			preserveSpanCandidates(0);
+			spanCandidates.length = open.length;
+		}
 		if (token.kind === "end") {
 			const index = open.lastIndexOf(name);
+			const candidate = index >= 0 ? spanCandidates[index] : undefined;
+			const unwrapped = candidate !== undefined && index === open.length - 1;
+			if (unwrapped) {
+				output[candidate.outputIndex] = undefined;
+				spanCandidates[index] = undefined;
+				report.unwrappedElements++;
+				if (candidate.hasClass) report.ignoredAttributes++;
+			}
 			if (index >= 0) {
+				preserveSpanCandidates(index);
 				open.length = index;
 				if (open.length < templateFallbackHiddenDepth)
 					templateFallbackHiddenDepth = 0;
 				if (unwrappedControlBoundaries.has(name)) emit(" ");
 			}
-			if (outputName) emit(`</${outputName}>`);
+			if (outputName && !unwrapped) emit(`</${outputName}>`);
 			continue;
 		}
 		if (!voidTags.has(name)) {
@@ -829,6 +865,8 @@ export function sanitizeResearchHtml(
 			if (name === "li" && open.at(-1) === "li") open.pop();
 			if (open.length < templateFallbackHiddenDepth)
 				templateFallbackHiddenDepth = 0;
+			preserveSpanCandidates(open.length);
+			spanCandidates.push(undefined);
 			open.push(name);
 			if (
 				!templateFallbackHiddenDepth &&
@@ -859,6 +897,7 @@ export function sanitizeResearchHtml(
 			Object.hasOwn(token.attributes, "aria-level") &&
 			token.attributes["aria-level"].length > 64;
 		let attributes = "";
+		let semanticAttributes = false;
 		for (const [attribute, value] of Object.entries(token.attributes)) {
 			let keep =
 				attribute === "id" ||
@@ -893,8 +932,18 @@ export function sanitizeResearchHtml(
 					keep = false;
 				}
 			}
-			if (keep) attributes += ` ${attribute}="${escapeHtml(value)}"`;
-			else report.ignoredAttributes++;
+			if (keep) {
+				attributes += ` ${attribute}="${escapeHtml(value)}"`;
+				if (attribute !== "class") semanticAttributes = true;
+			} else report.ignoredAttributes++;
+		}
+		if (name === "span" && open.includes("pre") && !semanticAttributes) {
+			spanCandidates[open.length - 1] = {
+				outputIndex: output.length,
+				hasClass: Object.hasOwn(token.attributes, "class"),
+			};
+			output.push(`<span${attributes}>`);
+			continue;
 		}
 		if (outputName) emit(`<${outputName}${attributes}>`);
 		else if (attributes) emit(`<span${attributes}></span>`);
@@ -908,6 +957,28 @@ export function sanitizeResearchHtml(
 			"unsupported",
 			"Unclosed omitted reader subtree",
 		);
+	preserveSpanCandidates(0);
+	let afterPreStart = false;
+	let unwrappedPreStart = false;
+	for (let index = 0; index < output.length; index++) {
+		check();
+		const value = output[index];
+		if (value === undefined) {
+			unwrappedPreStart ||= afterPreStart;
+			continue;
+		}
+		if (!value) continue;
+		if (unwrappedPreStart && value.startsWith("\n")) {
+			check(
+				"reader.output",
+				limits.maxOutputCodeUnits,
+				++report.outputCodeUnits,
+			);
+			output[index] = `\n${value}`;
+		}
+		afterPreStart = /^<pre[ >]/.test(value);
+		unwrappedPreStart = false;
+	}
 	const sourceDataTables = sourceTables?.finish();
 	const access = sourceAccess?.finish();
 	const products = sourceProducts?.finish();

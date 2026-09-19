@@ -12,14 +12,18 @@ import { svgNamespace } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { type ExtractedNode, extractDocument } from "./extraction.js";
 import { htmlParseInfo } from "./html-info.js";
+import { parseHtmlDocument } from "./html-parser.js";
+import { HtmlTokenizer } from "./html-tokenizer.js";
 import type { NetworkResponse } from "./network.js";
 import { NodeNetworkTransport } from "./node-transport.js";
 import {
 	loadResearchDocument,
 	researchReaderInfo,
 	researchReaderProfile,
+	researchReaderRawLimits,
 	sanitizeResearchHtml,
 } from "./research-loader.js";
+import { resourceLimitDiagnostic } from "./resource-limit.js";
 import { DocumentQueries } from "./selectors.js";
 import type { DocumentLoaderContext } from "./session.js";
 
@@ -383,6 +387,450 @@ it("escapes decoded text and raw text instead of reinterpreting markup", () => {
 		tree.close();
 	}
 });
+
+it("bounds DOM allocation for syntax-highlighted pre blocks without losing code", () => {
+	const line =
+		'<span class="line"><span style="color:red">const </span>' +
+		'<span style="color:blue">value</span>' +
+		'<span style="color:green"> = &lt;雪&gt;;\n</span></span>';
+	const source = `<pre><code>${line.repeat(7000)}</code></pre>`;
+	const expected = "const value = <雪>;\n".repeat(7000);
+	const sanitized = sanitizeResearchHtml(source);
+	expect(sanitized.html).toBe(
+		`<pre><code>${"const value = &lt;雪&gt;;\n".repeat(7000)}</code></pre>`,
+	);
+	expect(sanitized.report).toMatchObject({
+		sourceCodeUnits: source.length,
+		textCodeUnits: expected.length,
+		outputCodeUnits: sanitized.html.length,
+		tokens: 77_004,
+		unwrappedElements: 28_000,
+		ignoredAttributes: 28_000,
+		omittedTokens: 0,
+	});
+	const tree = loadResearchDocument(response(source), context);
+	try {
+		const queries = new DocumentQueries(tree);
+		expect(queries.querySelector("span")).toBeNull();
+		const code = queries.querySelector("pre > code");
+		if (code === null) throw new Error("Expected preformatted code");
+		expect(tree.textContent(code)).toBe(expected);
+		expect(tree.nodeCount).toBeLessThanOrEqual(16);
+		expect(extractDocument(tree).content).toBe(`\`\`\`\n${expected}\`\`\`\n`);
+	} finally {
+		tree.close();
+	}
+});
+
+it("matches nested unwrapped and meaningful span closing tags inside pre", () => {
+	const source =
+		'<pre><code><span class="line"><span id="anchor">A' +
+		'<span style="color:red">B<span role="note" aria-label="label">C' +
+		'<span class="token">D</span>E</span>F</span>G</span>H</span>I</code></pre>';
+	const html =
+		'<pre><code><span id="anchor">AB<span role="note" aria-label="label">' +
+		"CDE</span>FG</span>HI</code></pre>";
+	const sanitized = sanitizeResearchHtml(source);
+	expect(sanitized.html).toBe(html);
+	expect(sanitized.report.unwrappedElements).toBe(3);
+	const tree = loadResearchDocument(response(source), context);
+	try {
+		const queries = new DocumentQueries(tree);
+		for (const [selector, text] of [
+			["#anchor", "ABCDEFG"],
+			['[role="note"]', "CDE"],
+			["code", "ABCDEFGHI"],
+		]) {
+			const node = queries.querySelector(selector);
+			if (node === null) throw new Error(`Expected ${selector}`);
+			expect(tree.textContent(node)).toBe(text);
+		}
+	} finally {
+		tree.close();
+	}
+});
+
+it.each([
+	'id=""',
+	'role=""',
+	'class="token" id="target"',
+	'role="img" title="diagram" aria-label="image"',
+	'role="cell" aria-colspan="2"',
+])(
+	"preserves pre spans with retained semantic attributes: %s",
+	(attributes) => {
+		const source = `<pre><span ${attributes}>text</span></pre>`;
+		expect(sanitizeResearchHtml(source).html).toBe(source);
+	},
+);
+
+it("only unwraps pre spans after filtering their source attributes", () => {
+	const source =
+		'<span class="outside" style="color:red">Before</span>' +
+		'<code><span class="inline">Inline</span></code>' +
+		'<pre><span title="ignored" data-token="x" onclick="run()">Code</span></pre>' +
+		'<span class="outside">After</span>';
+	expect(sanitizeResearchHtml(source).html).toBe(
+		'<span class="outside">Before</span>' +
+			'<code><span class="inline">Inline</span></code>' +
+			'<pre>Code</pre><span class="outside">After</span>',
+	);
+});
+
+it.each([
+	["<pre><span>\n\t&lt;&amp;&#13;雪</span></pre>", "\n\t<&\r雪"],
+	["<pre><span><span>\n\ntext</span></span></pre>", "\n\ntext"],
+	["<pre><span></span>\ntext</pre>", "\ntext"],
+	["<pre>\n<span>\ntext</span></pre>", "\ntext"],
+	["<pre>\n\n<span>text</span></pre>", "\ntext"],
+	["<pre><span><b>\ntext</b></span></pre>", "\ntext"],
+	["<pre><span>\r\ntext\rnext</span></pre>", "\ntext\nnext"],
+])(
+	"preserves pre newline handling when removing wrappers: %s",
+	(source, text) => {
+		const tree = loadResearchDocument(response(source), context);
+		try {
+			const queries = new DocumentQueries(tree);
+			const pre = queries.querySelector("pre");
+			if (pre === null) throw new Error("Expected preformatted text");
+			expect(tree.textContent(pre)).toBe(text);
+			expect(queries.querySelector("span")).toBeNull();
+		} finally {
+			tree.close();
+		}
+	},
+);
+
+it.each([
+	[
+		'<pre><code><span>A</code><span id="kept">B</span>C</pre>',
+		'<pre><code><span>A</code><span id="kept">B</span>C</pre>',
+		3,
+	],
+	[
+		'<pre><span>A</pre><span id="kept">B</span>C',
+		'<pre><span>A</pre><span id="kept">B</span>C',
+		2,
+	],
+	[
+		'<pre><span><span>A</span>B</span><span id="kept">C</span>D</pre>',
+		'<pre>AB<span id="kept">C</span>D</pre>',
+		3,
+	],
+	[
+		'<pre><table><tr><td><span>A<td><span id="kept">B</span>C</table></pre>',
+		'<pre><table><tr><td><span>A<td><span id="kept">B</span>C</table></pre>',
+		5,
+	],
+	[
+		'<pre><dl><dt><span>A<dd><span id="kept">B</span>C</dl></pre>',
+		'<pre><dl><dt><span>A<dd><span id="kept">B</span>C</dl></pre>',
+		4,
+	],
+	[
+		"<pre><span/>A</span>B</pre><span>C</span>",
+		"<pre>AB</pre><span>C</span>",
+		2,
+	],
+])(
+	"preserves unsafe candidates and clears source stack state on depth reuse: %s",
+	(source, html, maxDepth) => {
+		expect(sanitizeResearchHtml(source, { maxDepth }).html).toBe(html);
+		expect(() =>
+			sanitizeResearchHtml(source, { maxDepth: maxDepth - 1 }),
+		).toThrow(expect.objectContaining({ code: "resource-limit" }));
+	},
+);
+
+it("bounds source depth while reusing implied table ends under pre", () => {
+	const source = `<pre><table><tr>${'<td><span class="token">text'.repeat(140)}</table></pre>`;
+	expect(sanitizeResearchHtml(source, { maxDepth: 5 }).html).toBe(source);
+	expect(() => sanitizeResearchHtml(source, { maxDepth: 4 })).toThrow(
+		expect.objectContaining({ code: "resource-limit" }),
+	);
+});
+
+it.each(["mark", "div", "code"])(
+	"preserves malformed span ends crossing an open %s without rejecting content",
+	(tag) => {
+		const source = `<pre><span class="line">\n<${tag}>A</span>B</${tag}></pre>`;
+		const sanitized = sanitizeResearchHtml(source);
+		expect(sanitized.html).toBe(source);
+		expect(sanitized.report).toMatchObject({
+			outputCodeUnits: source.length,
+			unwrappedElements: 0,
+			ignoredAttributes: 0,
+		});
+		const baseline = parseHtmlDocument(source, response(source).url);
+		const tree = loadResearchDocument(response(source), context);
+		try {
+			expect(tree.textContent(tree.root)).toBe(
+				baseline.textContent(baseline.root),
+			);
+			const node = new DocumentQueries(tree).querySelector(tag);
+			const original = new DocumentQueries(baseline).querySelector(tag);
+			if (node === null || original === null)
+				throw new Error(`Expected ${tag}`);
+			expect(tree.textContent(node)).toBe(baseline.textContent(original));
+		} finally {
+			baseline.close();
+			tree.close();
+		}
+	},
+);
+
+it.each([
+	'<pre><span id="kept"><p><span class="line">A<div>B</div></span>C</span></pre>',
+	'<pre><span class="line"><mark><div>A</mark>B</div>C</span>D</pre>',
+	'<pre><a href="/first"><span class="line">A<a href="/second">B</a></span>C</a></pre>',
+])("preserves candidates across parser scope changes: %s", (source) => {
+	const sanitized = sanitizeResearchHtml(source);
+	expect(sanitized.html).toBe(source);
+	expect(sanitized.report.unwrappedElements).toBe(0);
+	const baseline = parseHtmlDocument(source, response(source).url);
+	const tree = loadResearchDocument(response(source), context);
+	try {
+		expect(tree.textContent(tree.root)).toBe(
+			baseline.textContent(baseline.root),
+		);
+		const queries = new DocumentQueries(tree);
+		const originalQueries = new DocumentQueries(baseline);
+		for (const selector of ["#kept", "mark", "a"]) {
+			const nodes = queries.querySelectorAll(selector);
+			const originals = originalQueries.querySelectorAll(selector);
+			expect(nodes.map((node) => tree.textContent(node))).toEqual(
+				originals.map((node) => baseline.textContent(node)),
+			);
+		}
+	} finally {
+		baseline.close();
+		tree.close();
+	}
+});
+
+it.each([
+	{
+		source: `<pre><span class="${"token".repeat(1000)}">text</span></pre>`,
+		html: "<pre>text</pre>",
+		unwrapped: 1,
+		ignored: 1,
+		text: "text",
+	},
+	{
+		source:
+			'<pre><span class="line">\n<span class="token">A</span><mark>B</span>C</mark></pre>',
+		html: '<pre><span class="line">\nA<mark>B</span>C</mark></pre>',
+		unwrapped: 1,
+		ignored: 1,
+		text: "\nABC",
+	},
+	{
+		source: '<pre><span class="line"><span class="token">\nA</span>',
+		html: '<pre><span class="line">\nA',
+		unwrapped: 1,
+		ignored: 1,
+		text: "\nA",
+	},
+	{
+		source: '<pre><span class="line">\nA',
+		html: '<pre><span class="line">\nA',
+		unwrapped: 0,
+		ignored: 0,
+		text: "\nA",
+	},
+	{
+		source: '<pre><span class="line">\nA</pre>',
+		html: '<pre><span class="line">\nA</pre>',
+		unwrapped: 0,
+		ignored: 0,
+		text: "\nA",
+	},
+	{
+		source:
+			'<pre><span class="line"><span class="token">\nA</span></span></pre>',
+		html: "<pre>\n\nA</pre>",
+		unwrapped: 2,
+		ignored: 2,
+		text: "\nA",
+	},
+	{
+		source:
+			'<pre><span class="line"></span>\nA</pre><pre><span class="token">\nB</span></pre>',
+		html: "<pre>\n\nA</pre><pre>\n\nB</pre>",
+		unwrapped: 2,
+		ignored: 2,
+		text: "\nA\nB",
+	},
+])(
+	"accounts exactly for deferred span output ($unwrapped unwrapped)",
+	({ source, html, unwrapped, ignored, text }) => {
+		const sanitized = sanitizeResearchHtml(source, {
+			maxOutputCodeUnits: html.length,
+		});
+		expect(sanitized.html).toBe(html);
+		expect(sanitized.report).toMatchObject({
+			outputCodeUnits: html.length,
+			textCodeUnits: text.length,
+			unwrappedElements: unwrapped,
+			ignoredAttributes: ignored,
+		});
+		let failure: unknown;
+		try {
+			sanitizeResearchHtml(source, { maxOutputCodeUnits: html.length - 1 });
+		} catch (error) {
+			failure = error;
+		}
+		expect(resourceLimitDiagnostic(failure)).toMatchObject({
+			kind: "reader.output",
+			limit: html.length - 1,
+			observed: html.length,
+		});
+		const tree = loadResearchDocument(response(source), context);
+		try {
+			expect(tree.textContent(tree.root)).toBe(text);
+		} finally {
+			tree.close();
+		}
+	},
+);
+
+it.each([undefined, "source-hidden-v1", "source-hidden-inline-v1"] as const)(
+	"applies visibility before unwrapping pre spans under %s",
+	(policy) => {
+		const source =
+			'<pre><span class="line">A<span hidden><span id="hidden">H</span></span>' +
+			'<span aria-hidden="true">R</span><span style="display:none">I</span>' +
+			'<span id="kept">B</span>C</span></pre>';
+		const sanitized = sanitizeResearchHtml(
+			source,
+			{},
+			undefined,
+			undefined,
+			undefined,
+			policy,
+		);
+		expect(sanitized.html).toBe(
+			policy === undefined
+				? '<pre>A<span id="hidden">H</span>RI<span id="kept">B</span>C</pre>'
+				: policy === "source-hidden-v1"
+					? '<pre>AI<span id="kept">B</span>C</pre>'
+					: '<pre>A<span id="kept">B</span>C</pre>',
+		);
+		expect(sanitized.report.textCodeUnits).toBe(6);
+		if (policy !== undefined) {
+			expect(sanitized.report.sourceHiddenSubtrees).toBe(
+				policy === "source-hidden-v1" ? 2 : 3,
+			);
+			expect(() =>
+				sanitizeResearchHtml(
+					source,
+					{ maxDepth: 3 },
+					undefined,
+					undefined,
+					undefined,
+					policy,
+				),
+			).toThrow(expect.objectContaining({ code: "resource-limit" }));
+		}
+	},
+);
+
+it.each([
+	"<pre><span><span hidden>secret</pre>",
+	"<pre><span><span hidden>secret",
+	"<pre><span><script>unterminated",
+])(
+	"does not hide malformed omitted nesting inside unwrapped spans: %s",
+	(source) => {
+		expect(() =>
+			sanitizeResearchHtml(
+				source,
+				{},
+				undefined,
+				undefined,
+				undefined,
+				"source-hidden-v1",
+			),
+		).toThrow(expect.objectContaining({ code: "unsupported" }));
+	},
+);
+
+it("charges source, token, text and output budgets across unwrapped pre spans", () => {
+	const source =
+		'<pre><span class="line">\n<span>code&amp;</span></span></pre>';
+	const baseline = sanitizeResearchHtml(source);
+	for (const [limit, total, kind] of [
+		["maxSourceCodeUnits", baseline.report.sourceCodeUnits, "reader.source"],
+		["maxTokens", baseline.report.tokens, "reader.tokens"],
+		["maxTextCodeUnits", baseline.report.textCodeUnits, "reader.text"],
+		["maxOutputCodeUnits", baseline.report.outputCodeUnits, "reader.output"],
+		["maxDepth", 3, "reader.depth"],
+	] as const) {
+		expect(sanitizeResearchHtml(source, { [limit]: total }).html).toBe(
+			baseline.html,
+		);
+		let failure: unknown;
+		try {
+			sanitizeResearchHtml(source, { [limit]: total - 1 });
+		} catch (error) {
+			failure = error;
+		}
+		expect(resourceLimitDiagnostic(failure)).toMatchObject({
+			kind,
+			limit: total - 1,
+			observed: total,
+		});
+	}
+});
+
+it.each([0, 1])(
+	"keeps omitted raw work bounded inside unwrapped pre spans (excess %s)",
+	(excess) => {
+		const original = HtmlTokenizer.prototype.discardRaw;
+		const limit = researchReaderRawLimits.maxWorkUnits;
+		let calls = 0;
+		vi.spyOn(HtmlTokenizer.prototype, "discardRaw").mockImplementation(
+			function (this: HtmlTokenizer, name, debit) {
+				calls++;
+				debit(limit / 2 + (calls === 2 ? excess : 0));
+				return original.call(this, name, () => {});
+			},
+		);
+		const source =
+			"<pre><span><script>a</script><span><style>b</style></span>C</span></pre>";
+		const sanitize = () =>
+			sanitizeResearchHtml(
+				source,
+				{},
+				undefined,
+				undefined,
+				"separate-omitted-raw-v1",
+			);
+		if (excess) {
+			let failure: unknown;
+			try {
+				sanitize();
+			} catch (error) {
+				failure = error;
+			}
+			expect(resourceLimitDiagnostic(failure)).toEqual({
+				kind: "reader.omitted-work",
+				unit: "code-units",
+				limit,
+				observed: limit + 1,
+			});
+		} else {
+			const sanitized = sanitize();
+			expect(sanitized.html).toBe("<pre>C</pre>");
+			expect(sanitized.report.omittedRaw).toMatchObject({
+				workUnits: limit,
+				codeUnits: 2,
+				elements: 2,
+			});
+		}
+		expect(calls).toBe(2);
+	},
+);
 
 it.each([
 	"<svg><g></svg><p>escape</p>",
