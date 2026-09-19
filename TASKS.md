@@ -12,6 +12,15 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September19 dispatcher follow-up: the small-visitor factoring experiment passes
+six new cases,155 selected regressions/types/build, but one pair of owned helper
+runs differs by only about1.2% and does not demonstrate a useful improvement.
+Do not promote its FkoP3v package or run another vendor/live attempt on that basis.
+Added host-stack boundaries remain an additional qualification risk for deeply
+nested closure/provider or transparent-root chains. Preserve the experiment;
+2x8YPp remains the last qualified SDK. See
+`reports/zoom-data-dispatch-trial-2026-09-19.md`. Zoom acceptance remains OPEN.
+
 September19,01:08UTC: tracked literal accounting and its runtime snapshot repair
 pass the supported core tests and nine native/runtime cases; three CLI-related
 suites remain unavailable. Undefined-only capture visitor pruning passes seven
