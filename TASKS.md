@@ -12,8 +12,11 @@
   cancellation or credential isolation. Mutable graphs cannot be cached by identity.
 - Empty owned module environments and object import metadata now reuse shallow
   scope snapshots; owned-graph accounting is faster, but Zoom still times out.
+- Closure captures reuse their fresh root arrays; accounting is 9–13% faster in
+  the 400-closure fixture, but the live Vue startup timeout remains unresolved.
 - Cold SDK depth-limit tests exhaust the default Node stack. They pass with a
   larger test stack; production stack settings are unchanged and this gate remains open.
+- A Promise constructor snapshot test also times out on the unmodified SDK baseline.
 - Uncaught guest exceptions close the SafeJS realm; loader-only recovery cannot
   restore execution. Preserve shutdown on budget failures and cancellation.
 - Complete legitimate admission, incoming audio, permitted recording, transcription,

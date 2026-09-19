@@ -1,0 +1,128 @@
+--- a/packages/safe-js/src/interp/async.ts
++++ b/packages/safe-js/src/interp/async.ts
+@@ -248,7 +248,11 @@
+       : { name: context.inferredName }),
+     ...(construct === undefined ? {} : { construct }),
+     retainedValues: () => {
+-      const values = [...context.scope.retainedDataRoots(), context.functionEnvironment?.homeObject, context.functionEnvironment?.newTarget];
++      const values = context.scope.retainedDataRoots();
++      const homeObject = context.functionEnvironment?.homeObject;
++      const newTarget = context.functionEnvironment?.newTarget;
++      if (homeObject !== undefined) values.push(homeObject);
++      if (newTarget !== undefined) values.push(newTarget);
+       if (constructionState !== undefined) {
+         values.push(constructionState.constructor, constructionState.newTarget,
+           constructionState.prototype, constructionState.thisValue);
+@@ -362,7 +366,14 @@
+     sandbox: true,
+     length: getFunctionLength(node.params),
+     ...(node.id === undefined ? { name: context.inferredName } : { name: node.id.name }),
+-    retainedValues: () => [...context.scope.retainedDataRoots(), context.functionEnvironment?.homeObject, context.functionEnvironment?.newTarget],
++    retainedValues: () => {
++      const values = context.scope.retainedDataRoots();
++      const homeObject = context.functionEnvironment?.homeObject;
++      const newTarget = context.functionEnvironment?.newTarget;
++      if (homeObject !== undefined) values.push(homeObject);
++      if (newTarget !== undefined) values.push(newTarget);
++      return values;
++    },
+     call: async (args, callContext) => {
+       let prototype: Extract<SandboxValue, object> | undefined;
+       // Parameter initializers may replace the prototype; retain the current value
+--- /dev/null
++++ b/packages/safe-js/src/interp/closure-capture-allocation.test.ts
+@@ -0,0 +1,94 @@
++import { afterEach, expect, it, vi } from "vitest";
++import { parseModule } from "../parse/parser.js";
++import { getClosureOrigin } from "./closure-origin.js";
++import { interpret } from "./interpreter.js";
++import { measureSandboxData } from "./values.js";
++
++afterEach(() => vi.restoreAllMocks());
++
++async function fixture(expression: string) {
++  const result = await interpret(parseModule(`{let text="abc";return ${expression};}`).body[0]);
++  if (!result.ok) throw new Error("Closure fixture failed");
++  const closure = result.returnValue as object;
++  const origin = getClosureOrigin(closure);
++  const marker = Object.getOwnPropertySymbols(closure).find((symbol) => symbol.description === "SandboxRetainedValues");
++  if (!origin || !marker) throw new Error("Missing interpreted closure metadata");
++  const retained = Object.getOwnPropertyDescriptor(closure, marker)?.value as () => unknown[];
++  return { closure, origin, retained };
++}
++
++it.each([
++  "()=>text",
++  "function(){return text}",
++  "async ()=>text",
++  "function*(){yield text}",
++  "async function*(){yield text}",
++])("reuses the fresh scope snapshot instead of copying it for %s", async (expression) => {
++  const { origin, retained } = await fixture(expression);
++  const original = origin.scope.retainedDataRoots.bind(origin.scope);
++  let snapshot: unknown[] | undefined;
++  vi.spyOn(origin.scope, "retainedDataRoots").mockImplementation(() => {
++    const roots = original();
++    snapshot = roots;
++    return roots;
++  });
++  const captures = retained();
++  expect(captures).toBe(snapshot);
++  expect(captures).not.toContain(undefined);
++  expect(measureSandboxData(captures)).toBe(3);
++});
++
++it.each(["()=>text", "function*(){yield text}"])("does not mutate earlier snapshots for %s", async (expression) => {
++  const { origin, retained } = await fixture(expression);
++  const before = retained();
++  origin.scope.assign("text", "longer");
++  const after = retained();
++  expect(after).not.toBe(before);
++  expect(measureSandboxData(before)).toBe(3);
++  expect(measureSandboxData(after)).toBe(6);
++  expect(measureSandboxData([...before, ...after])).toBe(9);
++});
++
++it.each(["function(){return text}", "function*(){yield text}"])(
++  "preserves metadata read order and mutable captures for %s",
++  async (expression) => {
++    const { origin, retained } = await fixture(expression);
++    if (!origin.environment) throw new Error("Missing function environment");
++    const original = origin.scope.retainedDataRoots.bind(origin.scope);
++    const order: string[] = [];
++    const homeObject = { text: "home" };
++    const newTarget = { text: "target" };
++    vi.spyOn(origin.scope, "retainedDataRoots").mockImplementation(() => {
++      order.push("scope");
++      return original();
++    });
++    Object.defineProperties(origin.environment, {
++      homeObject: {
++        get() {
++          order.push("home");
++          return homeObject;
++        },
++      },
++      newTarget: {
++        get() {
++          order.push("target");
++          return newTarget;
++        },
++      },
++    });
++    const captures = retained();
++    expect(order).toEqual(["scope", "home", "target"]);
++    expect(captures.slice(-2)).toEqual([homeObject, newTarget]);
++    const before = measureSandboxData(captures);
++    homeObject.text = "longer home";
++    expect(measureSandboxData(captures) - before).toBe(7);
++    expect(original()).toHaveLength(1);
++  },
++);
++
++it("retains lexical constructor metadata for arrows", async () => {
++  const { origin, retained } = await fixture("new (function Constructor(){return ()=>new.target;})()");
++  const target = origin.environment?.newTarget;
++  expect(target).toBeDefined();
++  expect(retained()).toContain(target);
++});
