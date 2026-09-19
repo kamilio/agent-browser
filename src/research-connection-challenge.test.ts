@@ -18,6 +18,24 @@ const source =
 const encoder = new TextEncoder();
 
 it.each([false, true])(
+	"does not extract a documentation JavaScript notice (reader=%s)",
+	async (reader) => {
+		const { report } = await navigate(
+			"<title>Concurrency | Documentation</title><noscript><h1>This page requires JavaScript.</h1><p>Please turn on JavaScript in your browser and refresh the page to view its content.</p></noscript>",
+			200,
+			reader,
+			{},
+		);
+		expect(report).toMatchObject({
+			outcome: "semantic-barrier",
+			contentSuccess: false,
+			classification: { barrier: "javascript-required" },
+		});
+		expect(report.extraction).toBeUndefined();
+	},
+);
+
+it.each([false, true])(
 	"does not return a JavaScript-required fallback as research content (reader=%s)",
 	async (reader) => {
 		const { report } = await navigate(

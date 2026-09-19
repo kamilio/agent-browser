@@ -245,14 +245,17 @@ export function classifyBrowserChallenge(
 		if (
 			!title.truncated &&
 			!text.truncated &&
-			(title.value === "" ||
-				/^javascript is not available[.!…]*$/.test(title.value)) &&
-			hasTextMarker(text, /\bjavascript is not available\b/) &&
-			hasTextMarker(text, /\bjavascript is disabled in this browser\b/) &&
-			hasTextMarker(
-				text,
-				/\bplease enable javascript or switch to a supported browser\b/,
-			)
+			(/^this page requires javascript[.!…]*\s*please turn on javascript in your browser and refresh the page to view its content[.!…]*$/.test(
+				text.value,
+			) ||
+				((title.value === "" ||
+					/^javascript is not available[.!…]*$/.test(title.value)) &&
+					hasTextMarker(text, /\bjavascript is not available\b/) &&
+					hasTextMarker(text, /\bjavascript is disabled in this browser\b/) &&
+					hasTextMarker(
+						text,
+						/\bplease enable javascript or switch to a supported browser\b/,
+					)))
 		)
 			return diagnostic(
 				headers,

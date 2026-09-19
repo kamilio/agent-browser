@@ -7,6 +7,34 @@ import {
 const html = { "content-type": ["text/html; charset=utf-8"] };
 const challenge = { "cf-mitigated": ["challenge"] };
 
+describe("bounded documentation JavaScript notices", () => {
+	const text =
+		"This page requires JavaScript. Please turn on JavaScript in your browser and refresh the page to view its content.";
+	const response = {
+		status: 200,
+		headers: html,
+		title: "Concurrency | Documentation",
+		text,
+	};
+	it("recognizes a complete documentation-shell notice without calling it a CAPTCHA", () => {
+		expect(classifyBrowserChallenge(response)).toMatchObject({
+			kind: "javascript-required",
+			provider: "unspecified",
+			evidence: ["html-javascript-required"],
+		});
+	});
+	it.each([
+		{ text: `Article discussing the message: ${text}` },
+		{ text: `${text} Actual documentation follows.` },
+		{ text: text.replace("turn on JavaScript", "turn on cookies") },
+		{ text: `${text}${" ".repeat(8192)}` },
+		{ headers: { "content-type": ["application/json"] } },
+		{ status: 204 },
+	])("does not hide real content or malformed responses %#", (change) => {
+		expect(classifyBrowserChallenge({ ...response, ...change })).toBeNull();
+	});
+});
+
 describe("bounded JavaScript-required page diagnostics", () => {
 	const text =
 		"JavaScript is not available. We’ve detected that JavaScript is disabled in this browser. Please enable JavaScript or switch to a supported browser to continue.";
