@@ -27,6 +27,20 @@ When unsupported CSS prevents pointer clicks, explicit keyboard activation can
 still navigate a focusable link: `press Enter --target=e123` using its snapshot
 reference. This respects focus restrictions; it does not validate pointer geometry.
 
+## Streamed content extraction
+
+For large React-streamed HTML, use an explicit inert extraction strategy:
+
+```bash
+node dist/scripts/research-browser.js --document-strategy native-streamed-content-v1 --content-focus main-content-v3 --output-limit-policy text-prefix-v1 https://arena.ai/leaderboard
+```
+
+This admits up to 16 MB per response and projects recognized React completion
+calls into their placeholders without executing scripts or loading stylesheets.
+It accepts one Markdown URL, without body capture, reader mode or DOM selection.
+Unknown helper versions and unresolved hidden chunks remain untouched. Output is
+source-derived, not verified rendering, hydration or proof of interactive support.
+
 ## Runtime configuration
 
 Set configuration on the service, not only on a client:

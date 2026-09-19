@@ -2,6 +2,7 @@ import { loadBrowserDocument } from "./document-loader.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import type { NetworkResponse } from "./network.js";
+import type { ReactStreamingReport } from "./react-streaming.js";
 import { loadResearchDocument } from "./research-loader.js";
 import {
 	type ResourceLimitDiagnostic,
@@ -9,11 +10,14 @@ import {
 } from "./resource-limit.js";
 import type { DocumentLoaderContext } from "./session.js";
 
-export type ResearchDocumentStrategy = "native-reader-fallback-v1";
+export type ResearchDocumentStrategy =
+	| "native-reader-fallback-v1"
+	| "native-streamed-content-v1";
 
 export interface ResearchDocumentStrategyInfo {
 	readonly policy: ResearchDocumentStrategy;
 	readonly mode: "native" | "reader";
+	readonly streaming?: Readonly<ReactStreamingReport>;
 	readonly nativeFailure?: Readonly<{
 		category: "unsupported" | "resource-limit";
 		stage: "loader";
@@ -24,7 +28,11 @@ export interface ResearchDocumentStrategyInfo {
 export function validateResearchDocumentStrategy(
 	value: unknown,
 ): ResearchDocumentStrategy | undefined {
-	if (value === undefined || value === "native-reader-fallback-v1")
+	if (
+		value === undefined ||
+		value === "native-reader-fallback-v1" ||
+		value === "native-streamed-content-v1"
+	)
 		return value;
 	throw new AgentBrowserError(
 		"invalid-input",

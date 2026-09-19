@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import type { Writable } from "node:stream";
 import { pathToFileURL } from "node:url";
 import { browserChallengeStructure } from "../src/browser-challenge-structure.js";
-import { researchResponseChallengeStructure } from "./research-challenge-structure.js";
 import {
 	type BrowserChallengeDiagnostic,
 	classifyBrowserChallenge,
@@ -12,10 +11,6 @@ import { documentTitle } from "../src/document-title.js";
 import { AgentBrowserError } from "../src/errors.js";
 import type { ContentFocusPolicy } from "../src/extraction-content-focus.js";
 import {
-	type HttpsRedirectPolicy,
-	validateHttpsRedirectPolicy,
-} from "../src/https-redirect-policy.js";
-import {
 	type DocumentExtraction,
 	type DocumentHeadingOutline,
 	type DocumentTextLineDiscovery,
@@ -23,6 +18,10 @@ import {
 	discoverDocumentTextLines,
 	extractDocument,
 } from "../src/extraction.js";
+import {
+	type HttpsRedirectPolicy,
+	validateHttpsRedirectPolicy,
+} from "../src/https-redirect-policy.js";
 import { validateJsonSourcePointer } from "../src/json-source-selection.js";
 import {
 	type NetworkPolicyDiagnostic,
@@ -53,6 +52,10 @@ import {
 	researchReaderProfile,
 } from "../src/research-loader.js";
 import {
+	type ResearchReaderMimePolicy,
+	validateResearchReaderMimePolicy,
+} from "../src/research-mime-policy.js";
+import {
 	type ResearchReaderFallbackEncoding,
 	type ResearchReaderRawPolicy,
 	type ResearchReaderVisibilityPolicy,
@@ -61,24 +64,28 @@ import {
 	validateResearchReaderVisibilityPolicy,
 } from "../src/research-reader-info.js";
 import {
-	type ResourceLimitDiagnostic,
-	resourceLimitDiagnostic,
-} from "../src/resource-limit.js";
-import {
 	type ResearchResponseHeaderCapture,
 	captureResearchResponseHeaders,
 } from "../src/research-response-headers.js";
+import {
+	type ResourceLimitDiagnostic,
+	resourceLimitDiagnostic,
+} from "../src/resource-limit.js";
 import { type RetryAfterAdvice, parseRetryAfter } from "../src/retry-after.js";
 import { validateSelectorSyntax } from "../src/selectors.js";
 import { BrowserSession, type NavigationResult } from "../src/session.js";
+import {
+	type SourceHeadingPolicy,
+	validateSourceHeadingPolicy,
+} from "../src/source-headings.js";
 import {
 	type SourceLinkLabelPolicy,
 	validateSourceLinkLabelPolicy,
 } from "../src/source-link-labels.js";
 import {
-	type SourceHeadingPolicy,
-	validateSourceHeadingPolicy,
-} from "../src/source-headings.js";
+	loadStreamedContentDocument,
+	streamedContentLimits,
+} from "../src/streamed-content-loader.js";
 import {
 	type ResearchAdmissionProvenance,
 	type ResearchExitReport,
@@ -89,6 +96,7 @@ import {
 	type ResearchBodyCapture,
 	captureResearchBody,
 } from "./research-body-capture.js";
+import { researchResponseChallengeStructure } from "./research-challenge-structure.js";
 import {
 	hasResearchExtractionContent,
 	researchDiagnosticTextLimit,
@@ -100,21 +108,17 @@ import {
 	researchFragmentReport,
 } from "./research-fragment.js";
 import {
-	type ResearchReaderMimePolicy,
-	validateResearchReaderMimePolicy,
-} from "../src/research-mime-policy.js";
-import {
-	classifyResearchVisibility,
-	researchVisibilityEvidence,
-} from "./research-visibility.js";
+	type ResearchRedirectHandoff,
+	summarizeResearchRedirect,
+} from "./research-redirect.js";
 import {
 	exitResearchCliFailure,
 	writeResearchOutput,
 } from "./research-stream-output.js";
 import {
-	type ResearchRedirectHandoff,
-	summarizeResearchRedirect,
-} from "./research-redirect.js";
+	classifyResearchVisibility,
+	researchVisibilityEvidence,
+} from "./research-visibility.js";
 
 export const researchRunLimits = Object.freeze({
 	maxUrls: 8,
@@ -529,9 +533,11 @@ export function parseResearchArguments(args: readonly string[]) {
 			section !== undefined ||
 			headings ||
 			find !== undefined ||
-			contentFocus !== undefined ||
+			(contentFocus !== undefined &&
+				documentStrategy !== "native-streamed-content-v1") ||
 			jsonPointer !== undefined ||
-			outputLimitPolicy !== undefined ||
+			(outputLimitPolicy !== undefined &&
+				documentStrategy !== "native-streamed-content-v1") ||
 			sourceLinkLabelPolicy !== undefined ||
 			sourceHeadingPolicy !== undefined ||
 			preferMarkdown)
@@ -539,6 +545,14 @@ export function parseResearchArguments(args: readonly string[]) {
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Research document strategy requires default whole-document extraction without reader policies",
+		);
+	if (
+		documentStrategy === "native-streamed-content-v1" &&
+		(urls.length !== 1 || captureBody || format === "json")
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Streamed content requires one Markdown URL without body capture",
 		);
 	if (redirectMode !== undefined && httpsRedirectPolicy !== undefined)
 		throw new AgentBrowserError(
@@ -692,7 +706,10 @@ export function parseResearchArguments(args: readonly string[]) {
 		);
 	if (
 		outputLimitPolicy !== undefined &&
-		(!reader || format === "json" || headings || find !== undefined)
+		((!reader && documentStrategy !== "native-streamed-content-v1") ||
+			format === "json" ||
+			headings ||
+			find !== undefined)
 	)
 		throw new AgentBrowserError(
 			"invalid-input",
@@ -999,6 +1016,10 @@ export async function researchNavigation(
 		validated.documentProfile === "long-v1"
 			? researchLongDocumentAdmission
 			: undefined;
+	const contentLimits =
+		validated.documentStrategy === "native-streamed-content-v1"
+			? streamedContentLimits
+			: undefined;
 	const started = Date.now();
 	const fragment = researchFragmentReport(validated.urls[0]);
 	const report: ResearchNavigationReport = {
@@ -1131,7 +1152,10 @@ export async function researchNavigation(
 					cookieJar,
 					captureServiceBackoff: true,
 					captureRateLimit: true,
-					limits: admissionLimits?.network ?? researchRunLimits.network,
+					limits:
+						contentLimits?.network ??
+						admissionLimits?.network ??
+						researchRunLimits.network,
 					...(validated.httpsRedirectPolicy === undefined
 						? {}
 						: { httpsRedirectPolicy: validated.httpsRedirectPolicy }),
@@ -1276,6 +1300,14 @@ export async function researchNavigation(
 			},
 			loadDocument: (response, context) => {
 				stage = "loader";
+				if (validated.documentStrategy === "native-streamed-content-v1")
+					return loadStreamedContentDocument(response, context, (streaming) => {
+						report.documentStrategy = Object.freeze({
+							policy: "native-streamed-content-v1",
+							mode: "native",
+							streaming,
+						});
+					});
 				if (validated.documentStrategy !== undefined)
 					return loadNativeReaderFallbackDocument(
 						response,
@@ -1451,14 +1483,16 @@ export async function researchNavigation(
 				maxTabs: 1,
 				maxNavigations: 1,
 				navigationTimeoutMs:
+					contentLimits?.navigationTimeoutMs ??
 					admissionLimits?.navigationTimeoutMs ??
 					researchRunLimits.navigationTimeoutMs,
 			},
-			documentLimits: admissionLimits?.document ?? {
-				maxNodes: 50_000,
-				maxDepth: 128,
-				maxTextCodeUnits: 2_000_000,
-			},
+			documentLimits: contentLimits?.document ??
+				admissionLimits?.document ?? {
+					maxNodes: 50_000,
+					maxDepth: 128,
+					maxTextCodeUnits: 2_000_000,
+				},
 		});
 		const tab = session.createTab();
 		const navigation = await session.navigate(tab.id, validated.urls[0], {
@@ -1839,7 +1873,7 @@ if (
 	void main().catch(() => {
 		exitResearchCliFailure(
 			64,
-			"Usage: research-browser [--document-strategy native-reader-fallback-v1] [--document-profile default|long-v1] [--reader] [--redirect-mode manual | --https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--source-link-label-policy source-aria-label-v1] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1|main-content-v2|main-content-v3] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --json-pointer POINTER | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; manual mode reports redirects without following their Location, and response-body extraction may still occur; document strategy requires default whole-document extraction without reader, reader policies, selection/discovery, content-focus, JSON-pointer, text-prefix, source labels/headings or Markdown preference; empty JSON pointer selects root; JSON pointer excludes content-focus, text-prefix and long-v1; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; source link-label policy requires reader HTML Markdown extraction and excludes discovery, literal selection and text-prefix; text-prefix requires reader Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
+			"Usage: research-browser [--document-strategy native-reader-fallback-v1|native-streamed-content-v1] [--document-profile default|long-v1] [--reader] [--redirect-mode manual | --https-redirect-policy same-origin-upgrade-v1] [--prefer-markdown] [--reader-fallback-encoding utf-8] [--reader-raw-policy separate-omitted-raw-v1] [--reader-visibility-policy source-hidden-v1|source-hidden-inline-v1] [--reader-mime-policy markdown-html-document-v1] [--capture-body] [--format markdown|json] [--source-link-label-policy source-aria-label-v1] [--output-limit-policy text-prefix-v1] [--content-focus main-content-v1|main-content-v2|main-content-v3] [--table-metadata] [--compact-tables] [--table-rows] [--min-request-interval-ms 0..60000] [--selector CSS | --lines START:END | --json-pointer POINTER | --section CSS | --headings | --find QUERY] PUBLIC_HTTP_URL... (1–8 URLs; manual mode reports redirects without following their Location, and response-body extraction may still occur; native-streamed-content-v1 requires one Markdown URL without capture and allows content-focus/text-prefix; native-reader-fallback-v1 requires default whole-document extraction without reader, reader policies, selection/discovery, content-focus, JSON-pointer, text-prefix, source labels/headings or Markdown preference; empty JSON pointer selects root; JSON pointer excludes content-focus, text-prefix and long-v1; long-v1 requires one reader capture with headings; reader policies and fallback encoding require reader; UTF-8 fallback applies only to HTML without a stronger charset; MIME repair requires default reader DOM operations; source link-label policy requires reader HTML Markdown extraction and excludes discovery, literal selection and text-prefix; text-prefix requires reader or streamed-content Markdown extraction; content-focus excludes manual selection/discovery; compact/row tables require Markdown; prefer-markdown requires default reader without DOM selection)\n",
 		);
 	});
 }

@@ -1090,5 +1090,8 @@
   "src/page-event-bindings.test.ts",
   "src/page-event-constructors.test.ts",
   "src/script-event-construction.test.ts",
-  "src/event-initialization.test.ts"
+  "src/event-initialization.test.ts",
+  "src/react-streaming.test.ts",
+  "src/streamed-content-loader.test.ts",
+  "src/research-streamed-content.test.ts"
 ]

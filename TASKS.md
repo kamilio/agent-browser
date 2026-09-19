@@ -7,7 +7,8 @@
   recovery works; syntax, module, callback and resource failures remain fatal.
 - Open test gates: SDK default-stack depth tests and a baseline Promise snapshot
   timeout; existing native capability-metadata and classic-loader limit expectations.
-- Fix large-HTML admission and React streaming-boundary extraction; finish other
+- Opt-in 16 MB extraction now projects recognized React stream completions;
+  unknown helper variants and interactive behavior remain unverified. Finish
   compatibility work, legitimate challenge handoffs, top100 checks, browser-only
   research, playground/terminal and command coverage.
 - Validate secret placeholders with extensible .env/pass providers and passkeys.
