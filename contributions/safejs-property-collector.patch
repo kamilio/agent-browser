@@ -1,0 +1,85 @@
+--- a/packages/safe-js/src/interp/values.ts
++++ b/packages/safe-js/src/interp/values.ts
+@@ -812,6 +812,41 @@
+     }
+   };
+ 
++  const collectObjectProperties = (value: object): readonly unknown[] => {
++    // Capture values before any retained callback can mutate later properties.
++    // Plain transport records do not charge hidden fields. Preserve proxy trap
++    // ordering, including managed-state changes during descriptor capture.
++    const intrinsicDescriptors = intrinsicObjectDataDescriptors(value);
++    const proxyKeys = intrinsicDescriptors === undefined && nodeTypes.isProxy(value) ? Object.getOwnPropertyNames(value) : undefined;
++    const proxyDescriptors = proxyKeys?.map(key => Object.getOwnPropertyDescriptor(value,key));
++    const includeNonEnumerable = isSandboxDate(value) || isSandboxArrayBuffer(value) || isSandboxSharedArrayBuffer(value) || isSandboxDataView(value) || sandboxErrorTypes.has(value) || hasManagedDescriptors(value);
++    const keys = intrinsicDescriptors === undefined
++      ? proxyKeys ?? (includeNonEnumerable ? Object.getOwnPropertyNames(value) : Object.keys(value)) : undefined;
++    const metadata = hostFunctionMetadata.get(value);
++    const projection = metadata === undefined ? intrinsicObjectDataProjection(value, includeNonEnumerable) : undefined;
++    if (projection !== undefined) {
++      usage += projection.propertyUnits + projection.stringUnits;
++      return projection.values;
++    }
++    const retained: unknown[] = [];
++    for (let index = 0; index < (intrinsicDescriptors?.length ?? keys!.length); index++) {
++      const entry = intrinsicDescriptors?.[index];
++      const key = entry?.[0] ?? keys![index]!;
++      const descriptor = entry?.[1] ?? (proxyDescriptors === undefined
++        ? Object.getOwnPropertyDescriptor(value,key) : proxyDescriptors[index]);
++      if (descriptor === undefined) continue;
++      if (!descriptor.enumerable && !includeNonEnumerable) continue;
++      const initial = metadata?.get(key);
++      if (initial !== undefined && "value" in descriptor && Object.is(initial.value, descriptor.value) &&
++          initial.enumerable === descriptor.enumerable && initial.configurable === descriptor.configurable &&
++          initial.writable === descriptor.writable) continue;
++      usage += 1 + key.length;
++      if ("value" in descriptor) retained.push(descriptor.value);
++      else for (const closure of retainedAccessorClosures(descriptor)) retained.push(closure);
++    }
++    return retained;
++  };
++
+   const visitClosure = (value: SandboxClosure, depth: number): void => {
+     const prototype = getSandboxPrototype(value);
+     if (prototype !== null) visit(prototype, depth + 1);
+@@ -1294,39 +1329,7 @@
+       return;
+     }
+ 
+-    // Capture values before any retained callback can mutate later properties.
+-    // Plain transport records do not charge hidden fields. Preserve proxy trap
+-    // ordering, including managed-state changes during descriptor capture.
+-    const intrinsicDescriptors = intrinsicObjectDataDescriptors(value);
+-    const proxyKeys = intrinsicDescriptors === undefined && nodeTypes.isProxy(value) ? Object.getOwnPropertyNames(value) : undefined;
+-    const proxyDescriptors = proxyKeys?.map(key => Object.getOwnPropertyDescriptor(value,key));
+-    const includeNonEnumerable = isSandboxDate(value) || isSandboxArrayBuffer(value) || isSandboxSharedArrayBuffer(value) || isSandboxDataView(value) || sandboxErrorTypes.has(value) || hasManagedDescriptors(value);
+-    const keys = intrinsicDescriptors === undefined
+-      ? proxyKeys ?? (includeNonEnumerable ? Object.getOwnPropertyNames(value) : Object.keys(value)) : undefined;
+-    const metadata = hostFunctionMetadata.get(value);
+-    const projection = metadata === undefined ? intrinsicObjectDataProjection(value, includeNonEnumerable) : undefined;
+-    if (projection !== undefined) {
+-      usage += projection.propertyUnits + projection.stringUnits;
+-      for (const entry of projection.values) visit(entry, depth + 1);
+-      return;
+-    }
+-    const retained: unknown[] = [];
+-    for (let index = 0; index < (intrinsicDescriptors?.length ?? keys!.length); index++) {
+-      const entry = intrinsicDescriptors?.[index];
+-      const key = entry?.[0] ?? keys![index]!;
+-      const descriptor = entry?.[1] ?? (proxyDescriptors === undefined
+-        ? Object.getOwnPropertyDescriptor(value,key) : proxyDescriptors[index]);
+-      if (descriptor === undefined) continue;
+-      if (!descriptor.enumerable && !includeNonEnumerable) continue;
+-      const initial = metadata?.get(key);
+-      if (initial !== undefined && "value" in descriptor && Object.is(initial.value, descriptor.value) &&
+-          initial.enumerable === descriptor.enumerable && initial.configurable === descriptor.configurable &&
+-          initial.writable === descriptor.writable) continue;
+-      usage += 1 + key.length;
+-      if ("value" in descriptor) retained.push(descriptor.value);
+-      else for (const closure of retainedAccessorClosures(descriptor)) retained.push(closure);
+-    }
+-    for (const entry of retained) visit(entry, depth + 1);
++    for (const entry of collectObjectProperties(value)) visit(entry, depth + 1);
+   };
+ 
+   for (const value of values) visit(value);
