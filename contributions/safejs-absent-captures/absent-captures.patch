@@ -1,0 +1,109 @@
+--- a/packages/safe-js/src/interp/values.ts
++++ b/packages/safe-js/src/interp/values.ts
+@@ -826,7 +826,8 @@
+       } else visit(value.properties, depth + 1);
+     }
+     if (!options.ignoreClosureCaptures)
+-      for (const retained of value[sandboxRetainedValues]?.() ?? []) visit(retained, depth + 1);
++      for (const retained of value[sandboxRetainedValues]?.() ?? [])
++        if (retained !== undefined) visit(retained, depth + 1);
+   };
+ 
+   const visit = (value: unknown, depth = 0): void => {
+--- /dev/null
++++ b/packages/safe-js/src/interp/absent-capture-accounting.test.ts
+@@ -0,0 +1,94 @@
++import { expect, it, vi } from "vitest";
++import { MAX_DATA_DEPTH } from "../graph-depth.js";
++import { Budget } from "./budget.js";
++import { createSandboxClosure, measureSandboxData, reconcileCompiledValues, type SandboxObject } from "./values.js";
++
++it("consumes every absent capture without charging it", () => {
++  let starts = 0;
++  let yields = 0;
++  let completed = false;
++  const closure = createSandboxClosure({ call: () => undefined, retainedValues: function* () {
++    starts++;
++    for (let index = 0; index < 1000; index++) { yields++; yield undefined; }
++    completed = true;
++  } });
++  expect(measureSandboxData([closure])).toBe(1);
++  expect({ starts, yields, completed }).toEqual({ starts: 1, yields: 1000, completed: true });
++});
++
++it("preserves provider order and charged values around absent captures", () => {
++  const order: string[] = [];
++  const payload = { text: "abc" };
++  const symbol = Symbol("owned");
++  const closure = createSandboxClosure({ call: () => undefined, retainedValues: function* () {
++    order.push("start");
++    yield undefined;
++    order.push("symbol");
++    yield symbol;
++    yield null;
++    yield false;
++    yield 0;
++    order.push("payload");
++    yield payload;
++    yield undefined;
++    yield "text";
++    yield 10n;
++    order.push("done");
++  } });
++  expect(measureSandboxData([closure])).toBe(1 + measureSandboxData([symbol, payload, "text", 10n]));
++  expect(order).toEqual(["start", "symbol", "payload", "done"]);
++});
++
++it("propagates provider errors after an absent capture", () => {
++  const failure = new Error("owned provider failed");
++  let reached = false;
++  const closure = createSandboxClosure({ call: () => undefined, retainedValues: function* () {
++    yield undefined;
++    reached = true;
++    throw failure;
++  } });
++  expect(() => measureSandboxData([closure])).toThrow(failure);
++  expect(reached).toBe(true);
++});
++
++it("remeasures mutable descendants and rejects transient retained growth", () => {
++  const payload = { text: "abc" };
++  const closure = createSandboxClosure({ call: () => undefined, retainedValues: () => [undefined, payload, undefined] });
++  const budget = new Budget({ dataSize: 64 });
++  const owner = {};
++  budget.setRetainedValues(owner, () => [closure]);
++  try {
++    reconcileCompiledValues(budget, []);
++    const before = budget.currentDataSize;
++    payload.text = "x".repeat(1000);
++    expect(() => reconcileCompiledValues(budget, [])).toThrow(expect.objectContaining({ budget: "dataSize" }));
++    payload.text = "abc";
++    reconcileCompiledValues(budget, []);
++    expect(budget.currentDataSize).toBe(before);
++  } finally {
++    budget.setRetainedValues(owner, undefined);
++    reconcileCompiledValues(budget, []);
++  }
++  expect(budget.currentDataSize).toBe(0);
++});
++
++it("does not hide data-depth failures behind absent captures", () => {
++  let nested: SandboxObject = {};
++  for (let depth = 0; depth <= MAX_DATA_DEPTH; depth++) nested = { next: nested };
++  const closure = createSandboxClosure({ call: () => undefined, retainedValues: () => [undefined, nested] });
++  expect(() => measureSandboxData([closure])).toThrow(expect.objectContaining({ budget: "dataDepth" }));
++});
++
++it("still deduplicates shared values and cycles after absent captures", () => {
++  const payload: SandboxObject = { text: "abc" };
++  payload.self = payload;
++  const closure = createSandboxClosure({ call: () => undefined, retainedValues: () => [undefined, payload, undefined, payload] });
++  expect(measureSandboxData([closure, payload])).toBe(1 + measureSandboxData([payload]));
++});
++
++it("does not invoke ignored capture providers", () => {
++  const provider = vi.fn(() => { throw new Error("ignored provider ran"); });
++  const closure = createSandboxClosure({ call: () => undefined, retainedValues: provider });
++  expect(measureSandboxData([closure], { ignoreClosureCaptures: true })).toBe(1);
++  expect(provider).not.toHaveBeenCalled();
++});
