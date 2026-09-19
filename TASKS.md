@@ -10,6 +10,10 @@
   transcript is demonstrated.
 - Address repeated retained-graph accounting without weakening memory, depth,
   cancellation or credential isolation. Mutable graphs cannot be cached by identity.
+- Empty owned module environments and object import metadata now reuse shallow
+  scope snapshots; owned-graph accounting is faster, but Zoom still times out.
+- Cold SDK depth-limit tests exhaust the default Node stack. They pass with a
+  larger test stack; production stack settings are unchanged and this gate remains open.
 - Constructor descriptor tracking passes 444 selected SDK tests and eight native
   fixture checks; synthetic accounting improved, but Zoom speed remains unverified.
 - Complete legitimate admission, incoming audio, permitted recording, transcription,

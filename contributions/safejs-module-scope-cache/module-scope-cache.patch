@@ -1,0 +1,222 @@
+diff --git a/packages/safe-js/src/modules/empty-environment.ts b/packages/safe-js/src/modules/empty-environment.ts
+--- a/packages/safe-js/src/modules/empty-environment.ts
++++ b/packages/safe-js/src/modules/empty-environment.ts
+@@ -1,3 +1,13 @@
+ import type { ModuleEnvironment } from "./registry.js";
+ 
+ export const immutableEmptyModuleEnvironments = new WeakSet<ModuleEnvironment>();
++export const ownedModuleNamespaces = new WeakMap<ModuleEnvironment, object>();
++
++export function hasEmptyOwnedModuleEnvironment(environment: ModuleEnvironment): boolean {
++  const namespaces = ownedModuleNamespaces.get(environment);
++  if (namespaces === undefined) return false;
++  if (Object.getOwnPropertyDescriptor(environment, "namespaces")?.value === namespaces &&
++      Object.keys(namespaces).length === 0) return true;
++  ownedModuleNamespaces.delete(environment);
++  return false;
++}
+diff --git a/packages/safe-js/src/modules/registry.ts b/packages/safe-js/src/modules/registry.ts
+--- a/packages/safe-js/src/modules/registry.ts
++++ b/packages/safe-js/src/modules/registry.ts
+@@ -20,7 +20,7 @@
+   SourceSpan
+ } from "../parse/parser.js";
+ import { registerPendingHostCallPolicy } from "../snapshot/policy.js";
+-import { immutableEmptyModuleEnvironments } from "./empty-environment.js";
++import { immutableEmptyModuleEnvironments, ownedModuleNamespaces } from "./empty-environment.js";
+ 
+ export type ModuleExports =
+   | ReadonlyMap<string, CallerInjectedBinding>
+@@ -59,6 +59,7 @@
+     namespaces: createBindingRecord(Object.fromEntries(options.wrappedModules ?? []))
+   };
+   immutableEmptyModuleEnvironments.delete(environment);
++  if (restored === undefined) ownedModuleNamespaces.set(environment, environment.namespaces);
+   moduleEnvironments.set(environment, {registry,options,prepared:new Set(),capabilities:new Map()});
+   return environment;
+ }
+diff --git a/packages/safe-js/src/interp/scope.ts b/packages/safe-js/src/interp/scope.ts
+--- a/packages/safe-js/src/interp/scope.ts
++++ b/packages/safe-js/src/interp/scope.ts
+@@ -7,7 +7,7 @@
+ import type { SandboxObject } from "./values.js";
+ import type { ModuleEnvironment } from "../modules/registry.js";
+ import { scopeDataRoots } from "./scope-data-roots.js";
+-import { immutableEmptyModuleEnvironments } from "../modules/empty-environment.js";
++import { hasEmptyOwnedModuleEnvironment } from "../modules/empty-environment.js";
+ 
+ type ScopeBinding = {
+   kind: VariableDeclarationKind;
+@@ -82,7 +82,7 @@
+   #frameHydrated = false;
+   #bindingDataRoots?: SandboxObject[];
+   #dataRevision = {};
+-  #retainedDataSnapshot?: WeakRef<{ scopes: Array<{ scope: Scope; revision: object }>; roots: InterpreterValue[] }>;
++  #retainedDataSnapshot?: WeakRef<{ scopes: Array<{ scope: Scope; revision: object; importMeta?: InterpreterValue }>; roots: InterpreterValue[] }>;
+   #globalVarNames?: Set<string>;
+   #globalVarNameValues?: string[];
+ 
+@@ -287,23 +287,23 @@
+ 
+   retainedDataRoots(): InterpreterValue[] {
+     const captured = this.#retainedDataSnapshot?.deref();
+-    let scopes: Array<{ scope: Scope; revision: object }> | undefined = captured === undefined ? [] : undefined;
++    let scopes: Array<{ scope: Scope; revision: object; importMeta?: InterpreterValue }> | undefined = captured === undefined ? [] : undefined;
+     let unchanged = captured !== undefined;
+     let scopeCount = 0;
+     for (let scope: Scope | undefined = this; scope !== undefined; scope = scope.parent) {
+       const moduleEnvironment = scope.moduleEnvironment;
+-      if ((moduleEnvironment !== undefined && (scope.options.globalEnvironment !== true || !immutableEmptyModuleEnvironments.has(moduleEnvironment))) || scope.resourceState !== undefined ||
+-          scope.privateNames !== undefined || scope.importMeta !== undefined || scope.withEnvironment) {
++      if ((moduleEnvironment !== undefined && !hasEmptyOwnedModuleEnvironment(moduleEnvironment)) || scope.resourceState !== undefined ||
++          scope.privateNames !== undefined || (scope.importMeta !== undefined && (typeof scope.importMeta !== "object" || scope.importMeta === null)) || scope.withEnvironment) {
+         scopes = undefined;
+         unchanged = false;
+         break;
+       }
+       const previous = captured?.scopes[scopeCount];
+-      if (unchanged && (previous?.scope !== scope || previous.revision !== scope.#dataRevision)) {
++      if (unchanged && (previous?.scope !== scope || previous.revision !== scope.#dataRevision || previous.importMeta !== scope.importMeta)) {
+         unchanged = false;
+         scopes = captured!.scopes.slice(0, scopeCount);
+       }
+-      scopes?.push({ scope, revision: scope.#dataRevision });
++      scopes?.push({ scope, revision: scope.#dataRevision, importMeta: scope.importMeta });
+       scopeCount++;
+     }
+     if (unchanged) {
+diff --git a/packages/safe-js/src/interp/scope-metadata-groups.test.ts b/packages/safe-js/src/interp/scope-metadata-groups.test.ts
+--- /dev/null
++++ b/packages/safe-js/src/interp/scope-metadata-groups.test.ts
+@@ -0,0 +1,131 @@
++import { expect, it, vi } from "vitest";
++import { MAX_DATA_DEPTH } from "../graph-depth.js";
++import { hasEmptyOwnedModuleEnvironment } from "../modules/empty-environment.js";
++import { createModuleEnvironment, resolveModuleNamespace } from "../modules/registry.js";
++import { Budget } from "./budget.js";
++import { Scope } from "./scope.js";
++import { createSandboxClosure, measureSandboxData, type SandboxObject } from "./values.js";
++
++it.each([false, true])("reuses object metadata roots with an owned empty environment: %s", withEnvironment => {
++  const metadata = { url: "fixture" };
++  const parent = new Scope({ outer: "abc" }, undefined, metadata);
++  if (withEnvironment) parent.moduleEnvironment = createModuleEnvironment(undefined, { budget: new Budget() });
++  const child = parent.child({ inner: "def" });
++  const roots = child.retainedDataRoots();
++  const captures = vi.spyOn(parent, "retainedDataRoots");
++  try {
++    expect(child.retainedDataRoots()[0]).toBe(roots[0]);
++    expect(captures).not.toHaveBeenCalled();
++    expect(measureSandboxData(roots)).toBe(measureSandboxData([metadata, "abc", "def"]));
++    metadata.url = "a much longer fixture";
++    expect(measureSandboxData(child.retainedDataRoots())).toBe(measureSandboxData([metadata, "abc", "def"]));
++  } finally { captures.mockRestore(); }
++});
++
++it("invalidates cached empty namespaces after additions, deletion, or replacement", () => {
++  const parent = new Scope({ outer: "abc" }, undefined, { url: "fixture" });
++  const environment = createModuleEnvironment(undefined, { budget: new Budget() });
++  parent.moduleEnvironment = environment;
++  const child = parent.child({ inner: "def" });
++  const before = child.retainedDataRoots();
++  const baseline = measureSandboxData(before);
++  environment.namespaces.first = { text: "hello" };
++  expect(measureSandboxData(child.retainedDataRoots())).toBe(baseline + 11);
++  environment.namespaces = { second: { text: "longer" } };
++  expect(measureSandboxData(child.retainedDataRoots())).toBe(baseline + 12);
++  delete environment.namespaces.second;
++  expect(measureSandboxData(child.retainedDataRoots())).toBe(baseline);
++  expect(measureSandboxData(before)).toBe(baseline);
++});
++
++it("observes same-walk binding changes while retaining prior snapshots", () => {
++  const metadata = { url: "fixture" };
++  const parent = new Scope({}, undefined, metadata);
++  parent.moduleEnvironment = createModuleEnvironment(undefined, { budget: new Budget() });
++  parent.declare("outer", "let", "abc");
++  const child = parent.child({ inner: "x" });
++  const before = child.retainedDataRoots();
++  const first = createSandboxClosure({call:()=>undefined, retainedValues:()=>child.retainedDataRoots()});
++  const mutate = createSandboxClosure({call:()=>undefined, retainedValues:()=>{ parent.assign("outer", "longer"); return []; }});
++  const last = createSandboxClosure({call:()=>undefined, retainedValues:()=>child.retainedDataRoots()});
++  expect(measureSandboxData([first, mutate, last])).toBe(3 + measureSandboxData([metadata, "abc", "longer", "x"]));
++  expect(measureSandboxData(before)).toBe(measureSandboxData([metadata, "abc", "x"]));
++});
++
++it.each(["importMeta", "namespace"])("preserves raw primitive %s multiplicity", kind => {
++  const parent = new Scope({ outer: "abc" }, undefined, kind === "importMeta" ? "raw" : undefined);
++  parent.moduleEnvironment = createModuleEnvironment(undefined, { budget: new Budget() });
++  if (kind === "namespace") parent.moduleEnvironment.namespaces.text = "raw";
++  const child = parent.child({ inner: "abc" });
++  const closures = Array.from({length:2},()=>createSandboxClosure({call:()=>undefined,retainedValues:()=>child.retainedDataRoots()}));
++  expect(measureSandboxData(closures)).toBe(14);
++});
++
++it("does not cache externally supplied namespaces or invoke getters while checking eligibility", () => {
++  const parent = new Scope({ text: "abc" });
++  const environment = createModuleEnvironment(undefined, { budget: new Budget() });
++  parent.moduleEnvironment = environment;
++  const child = parent.child({ text: "def" });
++  child.retainedDataRoots();
++  let reads = 0;
++  Object.defineProperty(environment, "namespaces", {get:()=>{ reads++; return { data: { text: "value" } }; }});
++  expect(measureSandboxData(child.retainedDataRoots())).toBe(17);
++  expect(reads).toBe(1);
++});
++
++it("rejects cached metadata after hydrating an import.meta object", () => {
++  const parent = new Scope();
++  const child = parent.child({ inner: "def" });
++  const before = child.retainedDataRoots();
++  const frame = parent.captureFrame();
++  parent.hydrateFrame({ ...frame, importMeta: { text: "longer" } });
++  expect(measureSandboxData(child.retainedDataRoots())).toBe(measureSandboxData(before) + 12);
++});
++
++it("retires the fast path after a namespace becomes nonempty, without rescanning it", () => {
++  const environment = createModuleEnvironment(undefined, {budget:new Budget()});
++  expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(true);
++  environment.namespaces.text = "value";
++  const keys = vi.spyOn(Object, "keys");
++  try {
++    expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(false);
++    expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(false);
++    expect(keys).toHaveBeenCalledTimes(1);
++  } finally { keys.mockRestore(); }
++  delete environment.namespaces.text;
++  expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(false);
++});
++
++it("keeps external and restored empty namespace containers outside the cache", () => {
++  const external = {available:[], namespaces:{}};
++  expect(hasEmptyOwnedModuleEnvironment(external)).toBe(false);
++  createModuleEnvironment(undefined, {budget:new Budget()}, external);
++  expect(hasEmptyOwnedModuleEnvironment(external)).toBe(false);
++});
++
++it("observes a host module loaded during the same accounting walk", () => {
++  const metadata = {url:"fixture"};
++  const environment = createModuleEnvironment({fixture:{text:"module payload"}}, {budget:new Budget()});
++  const scope = new Scope({text:"abc"}, undefined, metadata);
++  scope.moduleEnvironment = environment;
++  const before = scope.retainedDataRoots();
++  const first = createSandboxClosure({call:()=>undefined,retainedValues:()=>scope.retainedDataRoots()});
++  const mutate = createSandboxClosure({call:()=>undefined,retainedValues:()=>{ resolveModuleNamespace(environment,"fixture"); return []; }});
++  const last = createSandboxClosure({call:()=>undefined,retainedValues:()=>scope.retainedDataRoots()});
++  const actual = measureSandboxData([first,mutate,last]);
++  expect(actual).toBe(3 + measureSandboxData([metadata,"abc",environment.namespaces.fixture]));
++  expect(measureSandboxData(before)).toBe(measureSandboxData([metadata,"abc"]));
++  delete environment.namespaces.fixture;
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(measureSandboxData(before));
++});
++
++it("preserves the data-depth boundary through cacheable module metadata", () => {
++  let nested: SandboxObject = {};
++  for (let depth=0;depth<MAX_DATA_DEPTH;depth++) nested={next:nested};
++  const scope = new Scope({text:"abc"},undefined,nested);
++  scope.moduleEnvironment=createModuleEnvironment(undefined,{budget:new Budget()});
++  const roots=scope.retainedDataRoots();
++  expect(measureSandboxData(roots)).toBe(measureSandboxData([nested,"abc"]));
++  nested.next={next:nested.next};
++  expect(()=>measureSandboxData(scope.retainedDataRoots())).toThrow(expect.objectContaining({budget:"dataDepth"}));
++});
