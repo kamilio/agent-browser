@@ -12,6 +12,19 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September19 runtime follow-up: a late-entry observer locates repeated vendor
+schema/type checks and sees Date advance; it does not establish a frozen clock.
+The private-name-cache experiment is NOT promoted: no useful vendor progress
+and a later changing-accessor regression remains unfixed. Released-ticket scan
+pruning passes13focused/250selected tests/types/build and nine native checks,
+but its exact vendor still times out120.300s at827879steps. No useful end-to-end
+speedup, new live load or default activation is claimed. See
+`reports/zoom-runtime-followup-2026-09-19.md` and
+`contributions/safejs-released-tickets/README.md`. Retained-graph accounting
+remains the measured bottleneck; do not pursue an unproven instanceof shortcut
+or increase deadlines. Meeting UI, admission, audio, recording, transcription
+and delivery remain OPEN. Keep Zoom ahead of unrelated website work.
+
 September19 dispatcher follow-up: the small-visitor factoring experiment passes
 six new cases,155 selected regressions/types/build, but one pair of owned helper
 runs differs by only about1.2% and does not demonstrate a useful improvement.

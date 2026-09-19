@@ -1,0 +1,262 @@
+--- a/packages/safe-js/src/interp/budget.ts
++++ b/packages/safe-js/src/interp/budget.ts
+@@ -321,6 +321,11 @@
+     return ticket.owner.generation === this.accounting.compileGeneration
+       ? (this.accounting.compileTickets.get(ticket) ?? 0)
+       : 0;
++  }
++
++  hasCompileTicket(ticket: CompileTicket): boolean {
++    return ticket.owner.generation === this.accounting.compileGeneration &&
++      this.accounting.compileTickets.has(ticket);
+   }
+ 
+   resizeCompileTicket(ticket: CompileTicket, usage: number): void {
+--- a/packages/safe-js/src/interp/values.ts
++++ b/packages/safe-js/src/interp/values.ts
+@@ -1360,7 +1360,13 @@
+     return;
+   }
+   const kept = new Set<CompileTicket>();
+-  if (parent !== undefined && included.size > 0) measureSandboxData(escaping, { compileTickets: kept });
++  if (parent !== undefined) {
++    for (const ticket of included) {
++      if (!ticket.owner.budget.hasCompileTicket(ticket)) continue;
++      measureSandboxData(escaping, { compileTickets: kept });
++      break;
++    }
++  }
+   const transferred = new Set<CompileTicket>();
+   for (const ticket of included) {
+     if (!kept.has(ticket)) {
+--- /dev/null
++++ b/packages/safe-js/src/interp/reconcile-released-tickets.test.ts
+@@ -0,0 +1,228 @@
++import { expect, it, vi } from "vitest";
++import { Budget } from "./budget.js";
++import { CompileScope } from "./regex/compile-guard.js";
++import { createSandboxClosure, createSandboxRegex, measureSandboxData, reconcileCompiledValues } from "./values.js";
++
++it("distinguishes active zero-charge tickets, shared views, foreign budgets and deferred release", () => {
++  const budget = new Budget();
++  const operation = budget.acquireCompileOwner();
++  const ticket = budget.createCompileTicket(operation.owner);
++  const release = budget.deferReconciliation();
++  try {
++    expect(budget.compileTicketUsage(ticket)).toBe(0);
++    expect(budget.hasCompileTicket(ticket)).toBe(true);
++    expect(budget.forkRealm().hasCompileTicket(ticket)).toBe(true);
++    expect(new Budget().hasCompileTicket(ticket)).toBe(false);
++    expect(budget.hasCompileTicket({ owner: operation.owner })).toBe(false);
++    budget.discardCompileTicket(ticket);
++    expect(budget.hasCompileTicket(ticket)).toBe(true);
++    release();
++    reconcileCompiledValues(budget, []);
++    expect(budget.hasCompileTicket(ticket)).toBe(false);
++  } finally {
++    release();
++    budget.discardCompileTicket(ticket);
++    operation.release();
++  }
++});
++
++it.each(["discarded", "transferred", "reset"] as const)("does not rescan captures for %s regex tickets", disposition => {
++  const budget = new Budget();
++  const operation = budget.acquireCompileOwner();
++  const parent = new CompileScope(operation.owner);
++  const child = new CompileScope(operation.owner, parent);
++  try {
++    const regex = createSandboxRegex("a+", "g", 0, child);
++    const ticket = [...child.tickets][0]!;
++    if (disposition === "discarded") budget.discardCompileTicket(ticket);
++    else if (disposition === "transferred") reconcileCompiledValues(budget, [regex], child, parent);
++    else {
++      child.dispose();
++      parent.dispose();
++      operation.release();
++      budget.reset();
++    }
++    expect(budget.compileTicketUsage(ticket)).toBe(0);
++    const captures = vi.fn(() => [regex, "payload"]);
++    const closure = createSandboxClosure({ call: () => undefined, retainedValues: captures });
++    const expected = measureSandboxData([closure]);
++    captures.mockClear();
++    const selectedParent = disposition === "reset" ? new CompileScope() : parent;
++    const selectedChild = disposition === "reset" ? new CompileScope(undefined, selectedParent) : child;
++    reconcileCompiledValues(budget, [closure], selectedChild, selectedParent, [closure]);
++    expect(budget.currentDataSize).toBe(expected);
++    expect(captures).toHaveBeenCalledTimes(1);
++  } finally {
++    child.dispose();
++    parent.dispose();
++    operation.release();
++  }
++});
++
++it.each([0, 30])("still scans escaping captures for active tickets charged %s", charge => {
++  const budget = new Budget();
++  const operation = budget.acquireCompileOwner();
++  const parent = new CompileScope(operation.owner);
++  const child = new CompileScope(operation.owner, parent);
++  try {
++    const regex = createSandboxRegex("a+", "", 0, child);
++    const ticket = [...child.tickets][0]!;
++    budget.resizeCompileTicket(ticket, charge);
++    const captures = vi.fn(() => [regex]);
++    const closure = createSandboxClosure({ call: () => undefined, retainedValues: captures });
++    reconcileCompiledValues(budget, [closure], child, parent, [closure]);
++    expect(captures).toHaveBeenCalledTimes(2);
++    expect(budget.compileTicketUsage(ticket)).toBe(charge);
++    expect(parent.tickets.has(ticket)).toBe(charge > 0);
++  } finally {
++    child.dispose();
++    parent.dispose();
++    operation.release();
++  }
++});
++
++it("does not hide an active ticket behind a released ticket", () => {
++  const budget = new Budget();
++  const operation = budget.acquireCompileOwner();
++  const parent = new CompileScope(operation.owner);
++  const child = new CompileScope(operation.owner, parent);
++  try {
++    const released = createSandboxRegex("a", "", 0, child);
++    budget.discardCompileTicket([...child.tickets][0]!);
++    const active = createSandboxRegex("b", "", 0, child);
++    const ticket = [...child.tickets].at(-1)!;
++    const captures = vi.fn(() => [released, active]);
++    const closure = createSandboxClosure({ call: () => undefined, retainedValues: captures });
++    reconcileCompiledValues(budget, [closure], child, parent, [closure]);
++    expect(captures).toHaveBeenCalledTimes(2);
++    expect(budget.compileTicketUsage(ticket)).toBeGreaterThan(0);
++    expect(parent.tickets.has(ticket)).toBe(true);
++  } finally {
++    child.dispose();
++    parent.dispose();
++    operation.release();
++  }
++});
++
++it("still measures mutable descendants and enforces data limits after ticket release", () => {
++  const budget = new Budget({ dataSize: 500 });
++  const operation = budget.acquireCompileOwner();
++  const parent = new CompileScope(operation.owner);
++  const child = new CompileScope(operation.owner, parent);
++  try {
++    const regex = createSandboxRegex("a", "", 0, child);
++    budget.discardCompileTicket([...child.tickets][0]!);
++    const payload = { text: "small" };
++    const closure = createSandboxClosure({ call: () => undefined, retainedValues: () => [regex, payload] });
++    reconcileCompiledValues(budget, [closure], child, parent, [closure]);
++    const before = budget.currentDataSize;
++    payload.text = "longer";
++    reconcileCompiledValues(budget, [closure], child, parent, [closure]);
++    expect(budget.currentDataSize).toBe(before + 1);
++    payload.text = "x".repeat(501);
++    expect(() => reconcileCompiledValues(budget, [closure], child, parent, [closure]))
++      .toThrow(expect.objectContaining({ code: "budgetExceeded", budget: "dataSize" }));
++  } finally {
++    child.dispose();
++    parent.dispose();
++    operation.release();
++  }
++});
++
++it("keeps foreign active tickets observable during escape scanning", () => {
++  const foreign = new Budget();
++  const operation = foreign.acquireCompileOwner();
++  const foreignScope = new CompileScope(operation.owner);
++  try {
++    const regex = createSandboxRegex("a", "", 0, foreignScope);
++    const captures = vi.fn(() => [regex]);
++    const closure = createSandboxClosure({ call: () => undefined, retainedValues: captures });
++    const parent = new CompileScope();
++    reconcileCompiledValues(new Budget(), [closure], new CompileScope(undefined, parent), parent, [closure]);
++    expect(captures).toHaveBeenCalledTimes(2);
++  } finally {
++    foreignScope.dispose();
++    operation.release();
++  }
++});
++
++it("preserves a zero-charge ticket resized by the escaping callback", () => {
++  const budget = new Budget();
++  const operation = budget.acquireCompileOwner();
++  const parent = new CompileScope(operation.owner);
++  const child = new CompileScope(operation.owner, parent);
++  try {
++    const regex = createSandboxRegex("a", "", 0, child);
++    const ticket = [...child.tickets][0]!;
++    budget.resizeCompileTicket(ticket, 0);
++    let calls = 0;
++    const closure = createSandboxClosure({ call: () => undefined, retainedValues: () => {
++      if (++calls === 2) budget.resizeCompileTicket(ticket, 20);
++      return [regex];
++    } });
++    reconcileCompiledValues(budget, [closure], child, parent, [closure]);
++    expect(calls).toBe(2);
++    expect(budget.compileTicketUsage(ticket)).toBe(20);
++    expect(parent.tickets.has(ticket)).toBe(true);
++  } finally {
++    child.dispose();
++    parent.dispose();
++    operation.release();
++  }
++});
++
++it.each(["deferred", "provisional"] as const)("keeps %s completed tickets active until actual release", mode => {
++  const budget = new Budget();
++  const operation = budget.acquireCompileOwner();
++  const parent = new CompileScope(operation.owner);
++  const child = new CompileScope(operation.owner, parent);
++  const release = mode === "deferred" ? budget.deferReconciliation() : budget.provisionDataUsage(0);
++  try {
++    const regex = createSandboxRegex("a", "", 0, child);
++    const ticket = [...child.tickets][0]!;
++    if (mode === "deferred") budget.discardCompileTicket(ticket);
++    else reconcileCompiledValues(budget, [regex], child);
++    release(true);
++    expect(budget.hasCompileTicket(ticket)).toBe(true);
++    const captures = vi.fn(() => [regex]);
++    const closure = createSandboxClosure({ call: () => undefined, retainedValues: captures });
++    reconcileCompiledValues(budget, [closure], child, parent, [closure]);
++    expect(captures).toHaveBeenCalledTimes(2);
++    expect(budget.compileTicketUsage(ticket)).toBeGreaterThan(0);
++    reconcileCompiledValues(budget, [closure], child, parent);
++    expect(budget.hasCompileTicket(ticket)).toBe(false);
++    captures.mockClear();
++    reconcileCompiledValues(budget, [closure], child, parent, [closure]);
++    expect(captures).toHaveBeenCalledTimes(1);
++  } finally {
++    release(true);
++    child.dispose();
++    parent.dispose();
++    operation.release();
++  }
++});
++
++it("observes a ticket discarded by a later first-pass capture", () => {
++  const budget = new Budget();
++  const operation = budget.acquireCompileOwner();
++  const parent = new CompileScope(operation.owner);
++  const child = new CompileScope(operation.owner, parent);
++  try {
++    const regex = createSandboxRegex("a", "", 0, child);
++    const ticket = [...child.tickets][0]!;
++    const discard = createSandboxClosure({ call: () => undefined, retainedValues: () => {
++      budget.discardCompileTicket(ticket);
++      return [];
++    } });
++    const captures = vi.fn(() => [regex, discard]);
++    const closure = createSandboxClosure({ call: () => undefined, retainedValues: captures });
++    reconcileCompiledValues(budget, [closure], child, parent, [closure]);
++    expect(captures).toHaveBeenCalledTimes(1);
++    expect(budget.hasCompileTicket(ticket)).toBe(false);
++    expect(budget.currentDataSize).toBe(measureSandboxData([closure]));
++  } finally {
++    child.dispose();
++    parent.dispose();
++    operation.release();
++  }
++});
