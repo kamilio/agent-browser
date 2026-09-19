@@ -39,3 +39,19 @@ The isolated Zoom vendor profile places retained-scope lookup on the hot
 accounting path, but this contribution alone is not an end-to-end performance
 measurement. Actual browser integration, live Zoom execution, admission, audio
 and notetaking remain separate acceptance gates.
+
+## Native integration follow-up
+
+The separately assembled scope-only package
+`/tmp/agent-browser-scope-sdk-SKJBld/package` changes only `dist/interp/scope.js`
+from K9Y732. With unchanged native core50 it passes all nine actual native
+Event/legacy/Unicode cases in 11.735 seconds; all observed resources close.
+Parent verifies 7,085 input hashes, 2,865 recorded modes and 43 artifacts in
+`/tmp/agent-browser-scope-actual-JqHgrY`.
+
+The subsequent exact-vendor isolation still times out: navigation 120.322
+seconds, 824,987 SDK steps and 800,076 peak data units. Evidence is
+`/tmp/agent-browser-scope-vendor-Peu5Vn`; parent verifies 7,085 input hashes/modes
+and 20 artifacts, with complete observed closure. CLI profiling is explicitly
+disabled for this run, so it is not an identical-observer timing comparison.
+The deterministic bookkeeping reduction does not resolve Zoom initialization.

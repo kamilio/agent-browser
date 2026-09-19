@@ -12,6 +12,15 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+Scope-only integration follow-up: all nine actual native/runtime cases pass
+in11.735s on unchanged core50. The exact-vendor replay still times out at120.322s,
+with824987 steps and800076 peak data; no Zoom initialization fix is claimed.
+Parent verifies7085 inputs for each run and complete observed closure. Combined
+literal tracking passes535 related tests but remains unqualified while a separate
+in-memory snapshot compatibility concern is reproduced and addressed. See
+`contributions/safejs-scope-cache/README.md`. No live retry or deadline increase;
+meeting UI, admission, audio, recording, transcription and delivery remain OPEN.
+
 September19,00:10UTC: the isolated vendor's V8 profile identifies repeated
 retained-data accounting:22,776/23,860 samples include reconcileCompiledValues.
 All original runtime/deadline/isolation bounds remain; the sole change is an
