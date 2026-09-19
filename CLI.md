@@ -40,7 +40,10 @@ Set configuration on the service, not only on a client:
   code units, and 16,777,216 response bytes; default limits are unchanged.
 - `AGENT_BROWSER_DOCUMENT_PROFILE=reader`: partial static extraction instead of
   normal rendering. Scripts and styles are omitted and forms are inert. This
-  mode cannot be combined with explicit SafeJS/page-runtime/secret configuration.
+  mode disables subresource requests and WebSockets while retaining document CSP
+  and base-URL restrictions. Unsupported execution policies do not prevent static
+  extraction. It cannot be combined with explicit SafeJS/page-runtime/secret
+  configuration.
 - `AGENT_BROWSER_LANGUAGES`: a JSON array such as `["pl-PL","en-US"]`; the
   default is `en-US`.
 

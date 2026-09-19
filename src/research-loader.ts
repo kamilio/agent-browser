@@ -1143,7 +1143,8 @@ export function loadResearchDocument(
 	const inertContext = {
 		limits: selectedLimits ?? context.limits,
 		signal: context.signal,
-		initializeDocument: context.initializeDocument,
+		initializeDocument: (tree: DocumentTree) =>
+			context.initializeDocument?.(tree, "inert-reader"),
 	};
 	const tree = effectiveHtml
 		? parseHtmlDocument(

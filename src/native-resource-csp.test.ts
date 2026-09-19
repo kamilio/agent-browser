@@ -5,6 +5,7 @@ import { documentScriptCsp } from "./document-script-csp.js";
 import { documentBaseUrl } from "./document-url.js";
 import { existingDocumentWebSockets } from "./document-websocket-owner.js";
 import { DocumentTree } from "./document.js";
+import { extractDocument } from "./extraction.js";
 import type {
 	NetworkRequest,
 	NetworkResponse,
@@ -12,13 +13,18 @@ import type {
 } from "./network.js";
 import { pageBindingGlobalNames } from "./page-bindings.js";
 import { PageFetch } from "./page-fetch.js";
+import { loadResearchDocument, researchReaderInfo } from "./research-loader.js";
 import {
 	createNativeDocumentScriptCspPolicy,
 	createScriptCspPolicy,
 } from "./script-csp-policy.js";
 import type { ScriptHostObjectDefinition } from "./script-dom.js";
 import { ScriptLoader } from "./script-loader.js";
-import { BrowserSession, type DocumentLoaderContext } from "./session.js";
+import {
+	BrowserSession,
+	type DocumentLoader,
+	type DocumentLoaderContext,
+} from "./session.js";
 import { documentStyles } from "./styles.js";
 import type { WebSocketTransport } from "./websocket-transport.js";
 
@@ -69,9 +75,11 @@ function fixture(
 		url?: string;
 		request?: (input: NetworkRequest) => Promise<NetworkResponse>;
 		sockets?: WebSocketTransport;
+		loader?: DocumentLoader;
 	} = {},
 ) {
 	const url = options.url ?? pageUrl;
+	const policies = options.policies ?? [policy];
 	const requests: NetworkRequest[] = [];
 	const evaluated: string[] = [];
 	const runtimePolicies: (string | undefined)[] = [];
@@ -84,7 +92,7 @@ function fixture(
 				return response(
 					url,
 					options.html ?? '<script nonce="native">admitted</script>',
-					{ "content-security-policy": options.policies ?? [policy] },
+					policies.length ? { "content-security-policy": policies } : {},
 				);
 			return options.request
 				? options.request(input)
@@ -107,6 +115,7 @@ function fixture(
 		...(options.sockets ? { webSocketTransport: options.sockets } : {}),
 		loadDocument(input, supplied) {
 			context = supplied;
+			if (options.loader) return options.loader(input, supplied);
 			const scripts = new ScriptLoader({
 				response: input,
 				signal: supplied.signal,
@@ -767,3 +776,294 @@ it("denies insecure or CSP-blocked WebSocket destinations before transport dispa
 	).rejects.toMatchObject({ code: "policy-denied" });
 	expect(connect).not.toHaveBeenCalled();
 });
+
+const readerPolicies = [
+	{
+		name: "Wikipedia",
+		value: "default-src 'self'; script-src 'self' wss://*.toolforge.org",
+	},
+	{
+		name: "MDN",
+		value:
+			"default-src 'self'; script-src 'self' 'sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=' 'report-sample'; worker-src 'self' blob:; child-src 'self'; manifest-src 'self'; style-src 'self' 'sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='",
+	},
+] as const;
+
+it.each(["text/html", "text/plain"])(
+	"selects inert-reader before populating a %s document",
+	async (mime) => {
+		const initialize = vi.fn((tree: DocumentTree, mode?: "inert-reader") => {
+			expect(mode).toBe("inert-reader");
+			expect(tree.textContent(tree.root)).toBe("");
+		});
+		const test = fixture({
+			policies: [],
+			html: "Readable source",
+			loader(input, context) {
+				return loadResearchDocument(
+					{ ...input, headers: { "content-type": [mime] } },
+					{
+						...context,
+						initializeDocument(tree, mode) {
+							initialize(tree, mode);
+							required(context.initializeDocument)(tree, mode);
+						},
+					},
+				);
+			},
+		});
+		await test.load();
+		expect(initialize).toHaveBeenCalledExactlyOnceWith(
+			test.tree(),
+			"inert-reader",
+		);
+		expect(extractDocument(test.tree()).content).toContain("Readable source");
+		expect(test.requests).toHaveLength(1);
+	},
+);
+
+it.each(
+	readerPolicies.flatMap(({ name, value }) =>
+		["'none'", "'self'"].map((base) => ({ name, value, base })),
+	),
+)(
+	"extracts inert $name content with base-uri $base and original CSP owners",
+	async ({ value, base }) => {
+		const test = fixture({
+			policies: [`${value}; base-uri ${base}`],
+			loader: loadResearchDocument,
+			html: `<base href="https://other.example/base/">
+				<link rel="stylesheet" href="/site.css">
+				<style>main { display: none }</style>
+				<script>readerScriptMarker()</script><script src="/site.js"></script>
+				<iframe src="/frame">Frame marker</iframe>
+				<main><h1>Reference article</h1><p>Static article evidence.</p>
+				<img src="/diagram.png" srcset="/large.png 2x" alt="Diagram"></main>`,
+		});
+		await test.load();
+		const tree = test.tree();
+		const content = extractDocument(tree).content;
+		expect(content).toContain("Reference article");
+		expect(content).toContain("Static article evidence");
+		expect(content).not.toContain("readerScriptMarker");
+		expect(content).not.toContain("Frame marker");
+		expect(researchReaderInfo(tree)?.omittedSubtrees).toMatchObject({
+			script: 2,
+			style: 1,
+			link: 1,
+			iframe: 1,
+		});
+		const queries = test.session.page(test.tab).queries;
+		expect(
+			queries.querySelector("script, style, link, iframe, [src], [srcset]"),
+		).toBeNull();
+		expect(queries.querySelector("base[href]")).not.toBeNull();
+		expect(documentBaseUrl(tree)).toBe(pageUrl);
+		expect(required(documentResourceCsp(tree)).present).toBe(true);
+		expect(required(documentScriptCsp(tree)).unsupported).toBe(true);
+		expect(
+			required(documentScriptCsp(tree)).allowsBase(
+				"https://other.example/base/",
+			),
+		).toBe(false);
+		expect(test.evaluated).toEqual([]);
+		expect(test.runtimePolicies).toEqual([]);
+		expect(test.requests.map((input) => input.url)).toEqual([pageUrl]);
+	},
+);
+
+it("retains unrestricted reader base URLs when no CSP is present", async () => {
+	const test = fixture({
+		policies: [],
+		loader: loadResearchDocument,
+		html: '<base href="https://other.example/base/"><p>Readable</p>',
+	});
+	await test.load();
+	expect(documentBaseUrl(test.tree())).toBe("https://other.example/base/");
+	expect(test.requests).toHaveLength(1);
+});
+
+const readerSubresources: readonly {
+	name: string;
+	request: (context: DocumentLoaderContext) => Promise<unknown>;
+}[] = [
+	{
+		name: "fetch",
+		request: (context) => required(context.fetch)({ url: `${pageUrl}/data` }),
+	},
+	{
+		name: "image",
+		request: (context) =>
+			required(context.fetchImage)(`${pageUrl}/image.png`, context.signal),
+	},
+	{
+		name: "script",
+		request: (context) => required(context.fetchScript)(`${pageUrl}/script.js`),
+	},
+	{
+		name: "script with policy",
+		request: (context) =>
+			required(context.fetchScriptWithPolicy)(
+				`${pageUrl}/script.js`,
+				{ mode: "no-cors", credentials: "omit" },
+				context.signal,
+			),
+	},
+	{
+		name: "stylesheet",
+		request: (context) =>
+			required(context.fetchStylesheet)(`${pageUrl}/style.css`),
+	},
+	{
+		name: "stylesheet with policy",
+		request: (context) =>
+			required(context.fetchStylesheetWithPolicy)(`${pageUrl}/style.css`, {
+				mode: "no-cors",
+				credentials: "omit",
+			}),
+	},
+];
+
+it.each([
+	{ name: "no CSP", policies: [] },
+	{
+		name: "permissive CSP",
+		policies: ["default-src 'self'; style-src 'self' 'unsafe-inline'"],
+	},
+	...readerPolicies.map(({ name, value }) => ({ name, policies: [value] })),
+])(
+	"denies every reader subresource before transport with $name, during and after loading",
+	async ({ policies }) => {
+		const connect = vi.fn(async () => {
+			throw new Error("Unexpected reader WebSocket dispatch");
+		});
+		const denySubresources = async (context: DocumentLoaderContext) => {
+			for (const { name, request } of readerSubresources) {
+				await expect(request(context), name).rejects.toMatchObject({
+					code: "policy-denied",
+				});
+				expect(test.requests, name).toHaveLength(1);
+			}
+		};
+		const test = fixture({
+			policies,
+			html: "<p>Reader content</p>",
+			sockets: { connect },
+			async loader(input, context) {
+				const tree = loadResearchDocument(input, context);
+				expect(existingDocumentWebSockets(tree)).toBeUndefined();
+				await denySubresources(context);
+				return tree;
+			},
+		});
+		await test.load();
+		await denySubresources(test.context());
+		const page = test.session.page(test.tab);
+		await expect(
+			required(page.fetch)({ url: `${pageUrl}/data` }),
+		).rejects.toMatchObject({ code: "policy-denied" });
+		await expect(pageFetch(test).fetch("/data")).rejects.toMatchObject({
+			code: "policy-denied",
+		});
+		expect(existingDocumentWebSockets(test.tree())).toBeUndefined();
+		expect(page.webSockets).toBeUndefined();
+		expect(connect).not.toHaveBeenCalled();
+		expect(test.requests.map((input) => input.url)).toEqual([pageUrl]);
+	},
+);
+
+it.each(readerPolicies)(
+	"still rejects $name CSP in the native loader before script evaluation",
+	async ({ value }) => {
+		const test = fixture({ policies: [value] });
+		await expect(test.load()).rejects.toMatchObject({ code: "policy-denied" });
+		expect(test.runtimePolicies).toEqual([]);
+		expect(test.evaluated).toEqual([]);
+		expect(test.requests).toHaveLength(1);
+	},
+);
+
+it("rejects switching an initialized native document to inert-reader", async () => {
+	const test = fixture({
+		policies: [],
+		html: "<p>Native content</p>",
+		async loader(input, context) {
+			const tree = await loadBrowserDocument(input, context);
+			expect(() =>
+				required(context.initializeDocument)(tree, "inert-reader"),
+			).toThrow(expect.objectContaining({ code: "policy-denied" }));
+			return tree;
+		},
+	});
+	await test.load();
+	await expect(
+		required(test.session.page(test.tab).fetch)({ url: `${pageUrl}/data` }),
+	).resolves.toMatchObject({ status: 200 });
+	expect(test.requests).toHaveLength(2);
+});
+
+it.each([
+	{ name: "unrestricted", policies: [], denied: false },
+	{
+		name: "unsupported CSP",
+		policies: [readerPolicies[0].value],
+		denied: true,
+	},
+])(
+	"does not leak reader mode into a later $name native navigation",
+	async ({ policies, denied }) => {
+		const nextUrl = "https://example.com/native";
+		const connect = vi.fn(async () => {
+			throw new Error("Unexpected WebSocket dispatch");
+		});
+		const test = fixture({
+			policies: [readerPolicies[0].value],
+			html: "<p>Reader content</p>",
+			sockets: { connect },
+			loader: (input, context) =>
+				input.url === pageUrl
+					? loadResearchDocument(input, context)
+					: loadBrowserDocument(input, context),
+			request: async (input) =>
+				response(
+					input.url,
+					"<p>Native content</p>",
+					input.url === nextUrl && policies.length
+						? { "content-security-policy": policies }
+						: {},
+				),
+		});
+		await test.load();
+		const reader = test.session.page(test.tab);
+		expect(existingDocumentWebSockets(reader.document)).toBeUndefined();
+		const navigation = test.session.navigate(test.tab, nextUrl);
+		if (denied) {
+			await expect(navigation).rejects.toMatchObject({ code: "policy-denied" });
+			expect(test.session.page(test.tab)).toBe(reader);
+			await expect(
+				required(reader.fetch)({ url: `${pageUrl}/data` }),
+			).rejects.toMatchObject({ code: "policy-denied" });
+			expect(test.requests.map((input) => input.url)).toEqual([
+				pageUrl,
+				nextUrl,
+			]);
+		} else {
+			await navigation;
+			const native = test.session.page(test.tab);
+			expect(native.document).not.toBe(reader.document);
+			expect(extractDocument(native.document).content).toContain(
+				"Native content",
+			);
+			expect(existingDocumentWebSockets(native.document)).toBeDefined();
+			await expect(
+				required(native.fetch)({ url: `${nextUrl}/data` }),
+			).resolves.toMatchObject({ status: 200 });
+			expect(test.requests.map((input) => input.url)).toEqual([
+				pageUrl,
+				nextUrl,
+				`${nextUrl}/data`,
+			]);
+		}
+		expect(connect).not.toHaveBeenCalled();
+	},
+);

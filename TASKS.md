@@ -21,6 +21,9 @@
   and a Playwright-CLI-like command superset; these are not completion claims.
 - Improve extraction reliability, speed, website compatibility and legitimate
   challenge handling. Complete the requested top100 popular/agent-used-site checks.
+- Reader extraction now returns MDN Modules, Wikipedia WebRTC and Python asyncio
+  content in live native checks; broader site coverage remains unverified.
+  Stack Overflow still returns a challenge and requires a legitimate handoff.
 - Complete browser-only research on local-LLM hardware, benchmarks, Astra chatter
   and Poe opinions; do not represent unfinished research as completed.
 - Finish validation of secret placeholders with .env/pass providers and passkeys;

@@ -119,7 +119,10 @@ import type { WebSocketTransport } from "./websocket-transport.js";
 
 export interface DocumentLoaderContext {
 	readonly topLevelDocument?: true;
-	readonly initializeDocument?: (tree: DocumentTree) => void;
+	readonly initializeDocument?: (
+		tree: DocumentTree,
+		mode?: "inert-reader",
+	) => void;
 	readonly fetch?: PageFetchTransport;
 	readonly signal: AbortSignal;
 	readonly tabId: string;
@@ -1764,6 +1767,7 @@ export class BrowserSession {
 		let candidate: DocumentTree | undefined;
 		let ownsCandidate = false;
 		let committed = false;
+		let inertReader = false;
 		let resources = 0;
 		let scriptResources = 0;
 		let fetchResources = 0;
@@ -1794,7 +1798,15 @@ export class BrowserSession {
 			.flatMap(
 				(name) => Object.getOwnPropertyDescriptor(scriptHeaders, name)?.value,
 			);
+		const assertSubresourcesAllowed = () => {
+			if (inertReader)
+				throw new AgentBrowserError(
+					"policy-denied",
+					"Reader documents cannot load subresources",
+				);
+		};
 		const assertScriptOwner = () => {
+			assertSubresourcesAllowed();
 			this.ensureOpen();
 			if (fetchLifetime.signal.aborted) throw aborted(fetchLifetime.signal);
 			if (!committed) this.assertCurrent(job);
@@ -1820,6 +1832,7 @@ export class BrowserSession {
 			"style",
 		);
 		const checkStylesheetCsp = (url: string, redirectCount: number) => {
+			assertSubresourcesAllowed();
 			resourcePolicy?.check("style", url, redirectCount);
 			if (candidate)
 				documentImageContentSecurityPolicy(candidate).checkStylesheet(
@@ -1833,6 +1846,7 @@ export class BrowserSession {
 				);
 		};
 		const checkImageCsp = (url: string, redirectCount: number) => {
+			assertSubresourcesAllowed();
 			resourcePolicy?.check("image", url, redirectCount);
 			if (candidate)
 				documentImageContentSecurityPolicy(candidate).check(url, redirectCount);
@@ -1847,13 +1861,23 @@ export class BrowserSession {
 			!response.redirects.some((redirect) =>
 				[301, 302, 303].includes(redirect.status),
 			);
-		const initializeDocument = (document: DocumentTree) => {
+		const initializeDocument = (
+			document: DocumentTree,
+			mode?: "inert-reader",
+		) => {
+			if (mode !== undefined && mode !== "inert-reader")
+				throw new AgentBrowserError("invalid-input", "Invalid document mode");
 			if (!(document instanceof DocumentTree))
 				throw new AgentBrowserError(
 					"invalid-input",
 					"Loader must initialize a document tree",
 				);
 			if (candidate === document) {
+				if (mode === "inert-reader" && !inertReader)
+					throw new AgentBrowserError(
+						"policy-denied",
+						"Reader mode must be selected before document initialization",
+					);
 				this.assertCurrent(job);
 				return;
 			}
@@ -1870,6 +1894,7 @@ export class BrowserSession {
 				);
 			}
 			candidate = document;
+			inertReader = mode === "inert-reader";
 			ownsCandidate = true;
 			ownedDocuments.add(document);
 			try {
@@ -1881,7 +1906,7 @@ export class BrowserSession {
 					);
 				bindDocumentIdentity(document, this.identity);
 				resourcePolicy = bindDocumentResourceCsp(document, scriptHeaders);
-				if (resourcePolicy && !resourcePolicy.supported)
+				if (resourcePolicy && !resourcePolicy.supported && !inertReader)
 					throw new AgentBrowserError(
 						"policy-denied",
 						"Native resource CSP cannot enforce this policy, including inline styles",
@@ -1892,7 +1917,7 @@ export class BrowserSession {
 					true,
 				);
 				if (resourcePolicy) {
-					if (!scriptPolicy || scriptPolicy.unsupported)
+					if (!scriptPolicy || (scriptPolicy.unsupported && !inertReader))
 						throw new AgentBrowserError(
 							"policy-denied",
 							"Native document policy is unsupported",
@@ -1905,7 +1930,7 @@ export class BrowserSession {
 					);
 				}
 				documentImageContentSecurityPolicy(document, imageCspHeaders);
-				if (this.webSocketTransport)
+				if (this.webSocketTransport && !inertReader)
 					bindDocumentWebSockets(document, this.webSocketTransport, {
 						headerValues: imageCspHeaders,
 					});
@@ -2071,6 +2096,7 @@ export class BrowserSession {
 				input.method ?? "GET",
 				async () => {
 					const assertOwner = () => {
+						assertSubresourcesAllowed();
 						if (fetchLifetime.signal.aborted)
 							throw aborted(fetchLifetime.signal);
 						if (!committed) this.assertCurrent(job);
@@ -2183,6 +2209,7 @@ export class BrowserSession {
 		const fetchImage: ImageFetch = (resourceUrl, imageSignal) =>
 			journal.run("image", resourceUrl, "GET", async () => {
 				const assertOwner = () => {
+					assertSubresourcesAllowed();
 					if (fetchLifetime.signal.aborted) throw aborted(fetchLifetime.signal);
 					if (!committed) this.assertCurrent(job);
 					else if (
@@ -2304,6 +2331,7 @@ export class BrowserSession {
 						resourceUrl: string,
 						policy: StylesheetFetchPolicy,
 					) => {
+						assertSubresourcesAllowed();
 						let type: StylesheetFetchResult["type"] = "opaque";
 						const response = await journal.run(
 							"stylesheet",
@@ -2463,6 +2491,7 @@ export class BrowserSession {
 						}),
 					fetchStylesheet: (resourceUrl: string) =>
 						journal.run("stylesheet", resourceUrl, "GET", async () => {
+							assertSubresourcesAllowed();
 							this.assertCurrent(job);
 							if (++resources > this.limits.maxStylesheetRequests)
 								throw new AgentBrowserError(
@@ -2522,7 +2551,7 @@ export class BrowserSession {
 			);
 			const page = Object.freeze({
 				fetch,
-				...(this.webSocketTransport
+				...(this.webSocketTransport && !inertReader
 					? {
 							webSockets: existingDocumentWebSockets(candidate),
 						}
