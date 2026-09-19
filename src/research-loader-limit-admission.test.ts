@@ -338,11 +338,13 @@ const mutations: Mutation[] = [
 		path: "classification.diagnostic",
 		value: {},
 	},
-	...["challenge", "login", "access-denied"].map((value) => ({
-		name: `${value} barrier`,
-		path: "classification.barrier",
-		value,
-	})),
+	...["challenge", "login", "access-denied", "javascript-required"].map(
+		(value) => ({
+			name: `${value} barrier`,
+			path: "classification.barrier",
+			value,
+		}),
+	),
 	{ name: "active transport", path: "metrics.active", value: 1 },
 	{ name: "open transport", path: "metrics.closed", value: false },
 	{ name: "missing active count", path: "metrics.active", remove: true },

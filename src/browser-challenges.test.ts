@@ -7,6 +7,116 @@ import {
 const html = { "content-type": ["text/html; charset=utf-8"] };
 const challenge = { "cf-mitigated": ["challenge"] };
 
+describe("bounded JavaScript-required page diagnostics", () => {
+	const text =
+		"JavaScript is not available. We’ve detected that JavaScript is disabled in this browser. Please enable JavaScript or switch to a supported browser to continue.";
+	const response = { status: 200, headers: html, title: "", text };
+	it.each(["content-security-policy", "content-security-policy-report-only"])(
+		"accepts a bounded large %s without dropping the page diagnostic",
+		(name) => {
+			expect(
+				classifyBrowserChallenge({
+					...response,
+					headers: {
+						...html,
+						[name]: [`script-src ${"https://cdn.example ".repeat(550)}`],
+					},
+				})?.kind,
+			).toBe("javascript-required");
+		},
+	);
+	it.each([
+		`script-src ${"x".repeat(16_384)}`,
+		`${"x".repeat(5000)}\nunsafe`,
+		`${"x".repeat(5000)}\u0100`,
+	])("rejects invalid or oversized CSP instead of ignoring it", (policy) => {
+		expect(
+			classifyBrowserChallenge({
+				...response,
+				headers: { ...html, "content-security-policy": [policy] },
+			}),
+		).toBeNull();
+	});
+	it("retains the aggregate header cap across multiple large policies", () => {
+		expect(
+			classifyBrowserChallenge({
+				...response,
+				headers: {
+					...html,
+					"content-security-policy": ["x".repeat(8500)],
+					"content-security-policy-report-only": ["x".repeat(8500)],
+				},
+			}),
+		).toBeNull();
+	});
+	it.each([200, 403, 503])(
+		"distinguishes a JavaScript requirement from a CAPTCHA for HTTP %s",
+		(status) => {
+			expect(classifyBrowserChallenge({ ...response, status })).toEqual({
+				kind: "javascript-required",
+				provider: "unspecified",
+				confidence: "possible",
+				evidence: ["html-javascript-required"],
+				action: "stop-and-request-user-handoff",
+			});
+		},
+	);
+	it("accepts the matching title and normalized whitespace", () => {
+		expect(
+			classifyBrowserChallenge({
+				...response,
+				title: "JavaScript is not available.",
+				text: text.toUpperCase().replaceAll(" ", "\n"),
+			})?.kind,
+		).toBe("javascript-required");
+	});
+	it.each([
+		{ title: "JavaScript troubleshooting documentation" },
+		{ title: "JavaScript is not available documentation" },
+		{ title: " ".repeat(257) },
+		{ text: text.replace("JavaScript is not available", "An article") },
+		{
+			text: text.replace(
+				"JavaScript is disabled in this browser",
+				"a temporary issue",
+			),
+		},
+		{
+			text: text.replace(
+				"Please enable JavaScript or switch to a supported browser",
+				"See documentation",
+			),
+		},
+		{ text: text.replace("supported browser", "supported browserware") },
+		{ text: `${text}${" ".repeat(8192)}` },
+		{ headers: { "content-type": ["application/json"] } },
+		{ status: 204 },
+		{ status: 205 },
+		{ status: 302 },
+	])(
+		"does not treat a partial, quoted or invalid response as a JavaScript shell: %j",
+		(change) => {
+			expect(classifyBrowserChallenge({ ...response, ...change })).toBeNull();
+		},
+	);
+	it.each([
+		"behavioral-challenge-shell-v1",
+		"continue-shopping-challenge-v1",
+	] as const)("retains %s as stronger evidence", (structure) => {
+		expect(classifyBrowserChallenge({ ...response, structure })?.kind).toBe(
+			"challenge",
+		);
+	});
+	it("retains confirmed challenge headers as stronger evidence", () => {
+		expect(
+			classifyBrowserChallenge({
+				...response,
+				headers: { ...html, ...challenge },
+			})?.provider,
+		).toBe("cloudflare");
+	});
+});
+
 describe("bounded client JavaScript challenge diagnostics", () => {
 	const text =
 		"JavaScript is disabled in your browser. Please enable JavaScript to proceed.";

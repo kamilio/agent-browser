@@ -10,7 +10,11 @@ export interface BrowserChallengeResponse {
 }
 
 export interface BrowserChallengeDiagnostic {
-	readonly kind: "challenge" | "login" | "access-denied";
+	readonly kind:
+		| "challenge"
+		| "login"
+		| "access-denied"
+		| "javascript-required";
 	readonly provider: "cloudflare" | "unspecified";
 	readonly confidence: "confirmed" | "possible";
 	readonly evidence: readonly (
@@ -21,6 +25,7 @@ export interface BrowserChallengeDiagnostic {
 		| "html-login-markers"
 		| "login-url-and-html-markers"
 		| "html-network-security-block"
+		| "html-javascript-required"
 		| "reader-mime-interpretation"
 	)[];
 	readonly action: "stop-and-request-user-handoff";
@@ -44,8 +49,8 @@ function plainRecord(value: unknown): value is Record<string, unknown> {
 	return prototype === Object.prototype || prototype === null;
 }
 
-function validHeaderValue(value: unknown): value is string {
-	if (typeof value !== "string" || value.length > 4096) return false;
+function validHeaderValue(value: unknown, limit: number): value is string {
+	if (typeof value !== "string" || value.length > limit) return false;
 	for (let index = 0; index < value.length; index++) {
 		const code = value.charCodeAt(index);
 		if ((code < 32 && code !== 9) || code === 127 || code > 255) return false;
@@ -77,8 +82,13 @@ function readHeaders(value: unknown): Map<string, string[]> | null {
 				values.push(ownValue(entry, String(index)));
 		} else return null;
 		const key = name.toLowerCase();
+		const valueLimit =
+			key === "content-security-policy" ||
+			key === "content-security-policy-report-only"
+				? maxHeaderUnits
+				: 4096;
 		for (const item of values) {
-			if (!validHeaderValue(item)) return null;
+			if (!validHeaderValue(item, valueLimit)) return null;
 			units += name.length + item.length + 4;
 			if (units > maxHeaderUnits || ++count > maxHeaderValues) return null;
 			if (
@@ -231,6 +241,25 @@ export function classifyBrowserChallenge(
 				"unspecified",
 				"possible",
 				"html-continue-shopping-challenge",
+			);
+		if (
+			!title.truncated &&
+			!text.truncated &&
+			(title.value === "" ||
+				/^javascript is not available[.!…]*$/.test(title.value)) &&
+			hasTextMarker(text, /\bjavascript is not available\b/) &&
+			hasTextMarker(text, /\bjavascript is disabled in this browser\b/) &&
+			hasTextMarker(
+				text,
+				/\bplease enable javascript or switch to a supported browser\b/,
+			)
+		)
+			return diagnostic(
+				headers,
+				"javascript-required",
+				"unspecified",
+				"possible",
+				"html-javascript-required",
 			);
 		if (
 			!title.truncated &&

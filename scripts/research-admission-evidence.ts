@@ -224,6 +224,7 @@ const barriers: readonly unknown[] = [
 	"challenge",
 	"login",
 	"access-denied",
+	"javascript-required",
 ];
 const payloadFields = [
 	["bodyCapture", "data"],

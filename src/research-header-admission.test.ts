@@ -333,7 +333,7 @@ describe.each(profiles)("selected-header evidence under %s", (profile) => {
 		});
 	});
 
-	it.each(["challenge", "login", "access-denied"])(
+	it.each(["challenge", "login", "access-denied", "javascript-required"])(
 		"never upgrades a %s barrier into replayable content",
 		(barrier) => {
 			const report = fixture(profile);

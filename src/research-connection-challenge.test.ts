@@ -17,6 +17,36 @@ const source =
 	"<title>Verifying Connection</title><h1>Verifying your connection...</h1><p>Please wait while we verify your browser.</p><p>Verification failed. Please try again.</p><main><h2>Section</h2><p>Placeholder content</p></main>";
 const encoder = new TextEncoder();
 
+it.each([false, true])(
+	"does not return a JavaScript-required fallback as research content (reader=%s)",
+	async (reader) => {
+		const { report } = await navigate(
+			"<noscript><h1>JavaScript is not available.</h1><p>We’ve detected that JavaScript is disabled in this browser. Please enable JavaScript or switch to a supported browser to continue.</p></noscript>",
+			200,
+			reader,
+			{ minRequestIntervalMs: 0 },
+			undefined,
+			{
+				"content-security-policy": [
+					`script-src ${"https://cdn.example ".repeat(550)}`,
+				],
+			},
+		);
+		expect(report).toMatchObject({
+			outcome: "semantic-barrier",
+			contentSuccess: false,
+			classification: {
+				barrier: "javascript-required",
+				diagnostic: {
+					kind: "javascript-required",
+					evidence: ["html-javascript-required"],
+				},
+			},
+		});
+		expect(report.extraction).toBeUndefined();
+	},
+);
+
 beforeEach(() => {
 	vi.spyOn(NodeNetworkTransport.prototype, "request").mockRejectedValue(
 		new AgentBrowserError("policy-denied", "Unexpected fixture request"),
@@ -35,12 +65,13 @@ async function navigate(
 	reader: boolean,
 	execution: ResearchExecutionOptions,
 	selector?: string,
+	headers: Record<string, string[]> = {},
 ) {
 	const body = encoder.encode(html);
 	vi.mocked(NodeNetworkTransport.prototype.request).mockResolvedValueOnce({
 		url,
 		status,
-		headers: { "content-type": ["text/html; charset=utf-8"] },
+		headers: { "content-type": ["text/html; charset=utf-8"], ...headers },
 		body,
 		encodedBytes: body.length,
 		redirects: [],
