@@ -1,0 +1,146 @@
+--- a/packages/safe-js/src/interp/object-model.ts
++++ b/packages/safe-js/src/interp/object-model.ts
+@@ -47,7 +47,7 @@
+ const guestClosures = new WeakSet<object>();
+ const functionProperties = new WeakMap<object, SandboxObject>();
+ export const hostFunctionPropertyTables = new WeakSet<object>();
+-type PropertyDataProjection = { propertyUnits: number; values: unknown[] };
++type PropertyDataProjection = { propertyUnits: number; stringUnits: number; values: unknown[] };
+ type PropertyTableState = {
+   revision: number;
+   measuredRevision?: number;
+@@ -180,13 +180,16 @@
+   if (state === undefined) return undefined;
+   const captured = includeNonEnumerable ? state.managedProjection : state.enumerableProjection;
+   if (captured !== undefined) return captured;
+-  const projection: PropertyDataProjection = { propertyUnits: 0, values: [] };
+-  for (const [key, descriptor] of intrinsicObjectDataDescriptors(value)!) {
+-    if (!descriptor.enumerable && !includeNonEnumerable) continue;
+-    projection.propertyUnits += key.length + 1;
+-    if ("value" in descriptor) projection.values.push(descriptor.value);
+-    else projection.values.push(...retainedAccessorClosures(descriptor));
+-  }
++  const projection: PropertyDataProjection = { propertyUnits: 0, stringUnits: 0, values: [] };
++  for (const [key, descriptor] of intrinsicObjectDataDescriptors(value)!) {
++    if (!descriptor.enumerable && !includeNonEnumerable) continue;
++    projection.propertyUnits += key.length + 1;
++    if ("value" in descriptor) {
++      const value = descriptor.value;
++      if (typeof value === "string") projection.stringUnits += value.length;
++      else if ((typeof value === "object" && value !== null) || typeof value === "symbol" || typeof value === "bigint") projection.values.push(value);
++    } else projection.values.push(...retainedAccessorClosures(descriptor));
++  }
+   if (includeNonEnumerable) state.managedProjection = projection;
+   else state.enumerableProjection = projection;
+   return projection;
+--- a/packages/safe-js/src/interp/values.ts
++++ b/packages/safe-js/src/interp/values.ts
+@@ -1306,7 +1306,7 @@
+     const metadata = hostFunctionMetadata.get(value);
+     const projection = metadata === undefined ? intrinsicObjectDataProjection(value, includeNonEnumerable) : undefined;
+     if (projection !== undefined) {
+-      usage += projection.propertyUnits;
++      usage += projection.propertyUnits + projection.stringUnits;
+       for (const entry of projection.values) visit(entry, depth + 1);
+       return;
+     }
+--- /dev/null
++++ b/packages/safe-js/src/interp/intrinsic-scalar-projection.test.ts
+@@ -0,0 +1,97 @@
++import { expect, it } from "vitest";
++import { Budget } from "./budget.js";
++import { createIntrinsicObject, intrinsicObjectDataProjection, markDescriptorObject } from "./object-model.js";
++import { createSandboxClosure, measureSandboxData, reconcileCompiledValues } from "./values.js";
++
++it("folds immutable strings and zero-cost primitives out of owned projections", () => {
++  const nested = { text: "live" };
++  const symbol = Symbol("shared");
++  const root = createIntrinsicObject({ text: "a😀", number: 42, boolean: true, nil: null, absent: undefined, nested, symbol, integer: 255n });
++  const projection = intrinsicObjectDataProjection(root, false);
++  expect(projection).toMatchObject({ stringUnits: 3, values: [nested, symbol, 255n] });
++  expect(intrinsicObjectDataProjection(root, false)).toBe(projection);
++  expect(measureSandboxData([root])).toBe(measureSandboxData([{ ...root }]));
++});
++
++it("keeps repeated string occurrences but deduplicates reference identity", () => {
++  const symbol = Symbol("shared");
++  const nested = { text: "mutable" };
++  const first = createIntrinsicObject({ text: "same", nested, symbol });
++  const second = createIntrinsicObject({ text: "same", nested, symbol });
++  const expected = measureSandboxData([{ ...first }, { ...second }]);
++  expect(measureSandboxData([first, second, first, nested, symbol])).toBe(expected);
++  expect(measureSandboxData([second, first])).toBe(expected);
++  nested.text = "mutable data grew";
++  expect(measureSandboxData([first, second])).toBe(expected + 10);
++});
++
++it("refreshes string costs on native assignment, redefinition and deletion", () => {
++  const root = createIntrinsicObject({ text: "abc" });
++  const initial = intrinsicObjectDataProjection(root, false);
++  expect(measureSandboxData([root])).toBe(9);
++  root.text = "longer";
++  expect(intrinsicObjectDataProjection(root, false)).not.toBe(initial);
++  expect(measureSandboxData([root])).toBe(12);
++  Object.defineProperty(root, "text", { value: "short", enumerable: false });
++  expect(measureSandboxData([root])).toBe(1);
++  markDescriptorObject(root);
++  expect(measureSandboxData([root])).toBe(11);
++  expect(Reflect.deleteProperty(root, "text")).toBe(true);
++  expect(measureSandboxData([root])).toBe(1);
++});
++
++it("separates hidden-property and enumerable-only scalar projections", () => {
++  const root = createIntrinsicObject({ visible: "abc" });
++  Object.defineProperty(root, "hidden", { value: "secret", configurable: true });
++  const enumerable = intrinsicObjectDataProjection(root, false);
++  const managed = intrinsicObjectDataProjection(root, true);
++  expect(enumerable).toMatchObject({ stringUnits: 3, values: [] });
++  expect(managed).toMatchObject({ stringUnits: 9, values: [] });
++  expect(intrinsicObjectDataProjection(root, false)).toBe(enumerable);
++  expect(intrinsicObjectDataProjection(root, true)).toBe(managed);
++  expect(measureSandboxData([root])).toBe(12);
++  markDescriptorObject(root);
++  expect(measureSandboxData([root])).toBe(25);
++});
++
++it("preserves captured strings when an earlier retained callback rewrites them", () => {
++  const root = createIntrinsicObject();
++  root.first = createSandboxClosure({ call: () => undefined, retainedValues: () => {
++    root.later = "z".repeat(100);
++    return [];
++  } });
++  root.later = "initial";
++  expect(measureSandboxData([root])).toBe(21);
++  expect(measureSandboxData([root])).toBe(114);
++});
++
++it("still measures bigint conversion at its original traversal position", () => {
++  const bigintToString = BigInt.prototype.toString;
++  const root = createIntrinsicObject();
++  root.first = createSandboxClosure({ call: () => undefined, retainedValues: () => {
++    BigInt.prototype.toString = () => "changed";
++    return [];
++  } });
++  root.integer = 255n;
++  try {
++    expect(measureSandboxData([root])).toBe(23);
++  } finally {
++    BigInt.prototype.toString = bigintToString;
++  }
++});
++
++it("does not freeze mutable descendants or suppress transient quota failures", () => {
++  const budget = new Budget({ dataSize: 100 });
++  const nested = { text: "abc" };
++  const root = createIntrinsicObject({ label: "stable", nested });
++  const projection = intrinsicObjectDataProjection(root, false);
++  budget.setRetainedValues(root, () => [root]);
++  try {
++    reconcileCompiledValues(budget, []);
++    nested.text = "x".repeat(200);
++    expect(intrinsicObjectDataProjection(root, false)).toBe(projection);
++    expect(() => reconcileCompiledValues(budget, [])).toThrow(expect.objectContaining({ budget: "dataSize" }));
++  } finally {
++    budget.setRetainedValues(root, undefined);
++  }
++});
