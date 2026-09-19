@@ -4,10 +4,10 @@
 
 - Run the supplied Zoom meeting in the native browser with SafeJS, without
   substituting Chromium, Firefox or a remote browser.
-- The Zoom launch page now passes module/CSP admission but its 1,196,388-byte
-  bundle exceeds module limits. Add an explicit bounded large-module profile.
-  The web-client route previously hit the 120-second script limit. No usable
-  meeting UI, admission, incoming audio, recording or transcript is demonstrated.
+- The 1,196,388-byte Zoom launch module now passes CSP and size admission under
+  the explicit application profile, but execution still hits the 120-second
+  script limit. No usable meeting UI, admission, incoming audio, recording or
+  transcript is demonstrated.
 - Address repeated retained-graph accounting without weakening memory, depth,
   cancellation or credential isolation. Mutable graphs cannot be cached by identity.
 - Constructor descriptor tracking passes 444 selected SDK tests and eight native

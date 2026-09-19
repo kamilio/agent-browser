@@ -43,6 +43,12 @@ export const pageNetworkModuleLimits = Object.freeze({
 	responseBytes: 1_048_576,
 });
 
+const expandedModuleLimits = Object.freeze({
+	sourceCodeUnits: 4_194_304,
+	totalSourceCodeUnits: 16_777_216,
+	responseBytes: 16_777_216,
+});
+
 const javascriptTypes = new Set([
 	"application/ecmascript",
 	"application/javascript",
@@ -249,14 +255,34 @@ export class PageNetworkModuleRegistry {
 		this.#entryUnits = units;
 	}
 
-	createScope(signal: AbortSignal, maxSourceCodeUnits: number) {
+	createScope(
+		signal: AbortSignal,
+		maxSourceCodeUnits: number,
+		maxTotalSourceCodeUnits?: number,
+	) {
 		checkSignal(signal);
 		if (!Number.isSafeInteger(maxSourceCodeUnits) || maxSourceCodeUnits < 1)
 			throw invalid();
-		const maximum = Math.min(
-			maxSourceCodeUnits,
-			pageNetworkModuleLimits.sourceCodeUnits,
+		if (
+			maxTotalSourceCodeUnits !== undefined &&
+			(!Number.isSafeInteger(maxTotalSourceCodeUnits) ||
+				maxTotalSourceCodeUnits < 1)
+		)
+			throw invalid();
+		const limits =
+			maxTotalSourceCodeUnits === undefined
+				? pageNetworkModuleLimits
+				: expandedModuleLimits;
+		const maximum = Math.min(maxSourceCodeUnits, limits.sourceCodeUnits);
+		const totalMaximum = Math.min(
+			maxTotalSourceCodeUnits ?? pageNetworkModuleLimits.totalSourceCodeUnits,
+			limits.totalSourceCodeUnits,
 		);
+		const responseMaximum = Math.min(
+			limits.responseBytes,
+			Math.max(pageNetworkModuleLimits.responseBytes, maximum * 4),
+		);
+		if (this.#entryUnits > totalMaximum) throw limited();
 		for (const entry of this.#entries.values())
 			if (entry.source.length > maximum) throw limited();
 		const sources = new Map(this.#entries);
@@ -393,8 +419,7 @@ export class PageNetworkModuleRegistry {
 						"Module response MIME is not JavaScript",
 					);
 				if (!(response.body instanceof Uint8Array)) throw invalid();
-				if (response.body.byteLength > pageNetworkModuleLimits.responseBytes)
-					throw limited();
+				if (response.body.byteLength > responseMaximum) throw limited();
 				const source = new TextDecoder("utf-8").decode(response.body);
 				if (source.length > maximum) throw limited();
 				const id = url.href;
@@ -405,7 +430,7 @@ export class PageNetworkModuleRegistry {
 				}
 				if (
 					sources.size >= pageNetworkModuleLimits.sources ||
-					units + source.length > pageNetworkModuleLimits.totalSourceCodeUnits
+					units + source.length > totalMaximum
 				)
 					throw limited();
 				const hashes = this.#htmlEntries
@@ -534,7 +559,7 @@ export class PageNetworkModuleRegistry {
 					}
 					if (
 						sources.size + reservations >= pageNetworkModuleLimits.sources ||
-						units + source.length > pageNetworkModuleLimits.totalSourceCodeUnits
+						units + source.length > totalMaximum
 					)
 						throw limited();
 					const value = Object.freeze({ id, source });

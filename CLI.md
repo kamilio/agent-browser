@@ -34,6 +34,10 @@ Set configuration on the service, not only on a client:
   dynamically inserted modules, with the extension runtime. CSP, CORS, integrity
   and resource limits remain enforced. Use `classic` to omit module execution.
   Script support is incomplete; this does not make Zoom work automatically.
+- `AGENT_BROWSER_SCRIPT_BUDGET_PROFILE=large-source-v1` (or an application
+  profile): allow larger module graphs within the selected page source/data
+  budgets. Hard ceilings remain 4,194,304 code units per module, 16,777,216 total
+  code units, and 16,777,216 response bytes; default limits are unchanged.
 - `AGENT_BROWSER_DOCUMENT_PROFILE=reader`: partial static extraction instead of
   normal rendering. Scripts and styles are omitted and forms are inert. This
   mode cannot be combined with explicit SafeJS/page-runtime/secret configuration.

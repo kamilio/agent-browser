@@ -19,7 +19,7 @@ import {
 	type PageScriptCore,
 	legacyPageRuntime,
 } from "./page-runtime.js";
-import { PageScripts } from "./page-scripts.js";
+import { type PageScriptOptions, PageScripts } from "./page-scripts.js";
 import type {
 	ReleasedContext,
 	ReleasedCore,
@@ -180,13 +180,20 @@ function request(
 	};
 }
 
-function page(factory: PageRuntimeFactory, modules?: PageNetworkModuleOptions) {
+function page(
+	factory: PageRuntimeFactory,
+	modules?: PageNetworkModuleOptions,
+	options: Pick<PageScriptOptions, "budgetProfile" | "limits"> = {},
+) {
 	const tree = new DocumentTree(modules?.documentUrl ?? documentUrl);
 	cleanups.push(() => tree.close());
 	const scripts = new PageScripts(
 		{ document: tree, interactions: documentInteractions(tree) },
 		factory,
-		modules === undefined ? {} : { networkSourceModules: modules },
+		{
+			...options,
+			...(modules === undefined ? {} : { networkSourceModules: modules }),
+		},
 	);
 	cleanups.push(() => scripts.close());
 	return { tree, scripts };
@@ -248,6 +255,155 @@ it.each([inlineSource, ""])(
 		expect(test.modules.fetchWithPolicy).not.toHaveBeenCalled();
 	},
 );
+
+it("keeps the default page budget from admitting an HTML module over 1 MiB", async () => {
+	const test = fixture();
+	test.modules.fetchWithPolicy.mockResolvedValue(
+		fetched(externalSource.padEnd(1_196_388, " ")),
+	);
+	await expect(
+		test.scripts
+			.prepareModule(request({ id: externalId, source: undefined }))
+			.then(() => undefined),
+	).rejects.toMatchObject({ code: "resource-limit" });
+	expect(test.modules.fetchWithPolicy).toHaveBeenCalledOnce();
+	expect(test.setup).not.toHaveBeenCalled();
+	expect(test.realm.evaluate).not.toHaveBeenCalled();
+});
+
+it.each([
+	"large-source-v1",
+	"application-v1",
+	"application-unicode-v1",
+] as const)(
+	"admits an HTML module over 1 MiB with %s for runtime and factory registries",
+	async (budgetProfile) => {
+		const source = externalSource.padEnd(1_196_388, " ");
+		for (const configuredAtFactory of [false, true]) {
+			const test = fakeCore();
+			const modules = configuration();
+			modules.fetchWithPolicy.mockResolvedValue(fetched(source));
+			const factory = extensionPageRuntime(
+				test.core,
+				configuredAtFactory ? { networkSourceModules: modules } : {},
+			);
+			const owner = page(factory, configuredAtFactory ? undefined : modules, {
+				budgetProfile,
+			});
+			const prepared = await owner.scripts.prepareModule(
+				request({ id: externalId, source: undefined }),
+			);
+			expect(prepared.id).toBe(externalId);
+			expect(prepared.source.length).toBe(source.length);
+			expect(prepared.source === source).toBe(true);
+			expect(modules.fetchWithPolicy).toHaveBeenCalledOnce();
+			expect(test.setup).not.toHaveBeenCalled();
+			expect(test.realms[0].evaluate).not.toHaveBeenCalled();
+		}
+	},
+);
+
+it.each(["maxSourceCodeUnits", "maxDataSize"] as const)(
+	"enforces smaller explicit page %s for inline and external HTML modules",
+	async (limit) => {
+		const source = externalSource.padEnd(262_144, " ");
+		for (const inline of [false, true]) {
+			const test = fakeCore();
+			const modules = configuration();
+			modules.fetchWithPolicy.mockResolvedValue(fetched(source));
+			const owner = page(extensionPageRuntime(test.core), modules, {
+				budgetProfile: "application-unicode-v1",
+				limits: { [limit]: source.length - 1 },
+			});
+			await expect(
+				owner.scripts
+					.prepareModule(
+						request({
+							id: inline ? inlineId : externalId,
+							source: inline ? source : undefined,
+						}),
+					)
+					.then(() => undefined),
+			).rejects.toMatchObject({ code: "resource-limit" });
+			expect(modules.fetchWithPolicy).toHaveBeenCalledTimes(inline ? 0 : 1);
+			expect(test.setup).not.toHaveBeenCalled();
+			expect(test.realms[0].evaluate).not.toHaveBeenCalled();
+		}
+	},
+);
+
+it.each([131_072, 600_000])(
+	"accounts for inline roots and cached dependencies in the page aggregate with %i-unit modules",
+	async (moduleSize) => {
+		const test = fakeCore();
+		const modules = configuration();
+		const source = externalSource.padEnd(moduleSize, " ");
+		modules.fetchWithPolicy.mockImplementation(async (url) =>
+			fetched(source, url),
+		);
+		const owner = page(extensionPageRuntime(test.core), modules, {
+			budgetProfile: "application-unicode-v1",
+			limits: { maxDataSize: inlineSource.length + source.length * 2 },
+		});
+		await owner.scripts.prepareModule(request());
+		const resolve = test.realms[0].options.sourceResolver;
+		if (!resolve) throw new Error("Missing fake SDK source resolver");
+		const first = await resolve("./first.js", inlineId, {});
+		expect(first?.source.length).toBe(source.length);
+		expect((await resolve("./first.js", inlineId, {})) === first).toBe(true);
+		const second = await resolve("./second.js", first?.id, {});
+		expect(second?.source.length).toBe(source.length);
+		await expect(
+			Promise.resolve(resolve("./overflow.js", second?.id, {})).then(
+				() => undefined,
+			),
+		).rejects.toMatchObject({ code: "resource-limit" });
+		await expect(
+			owner.scripts
+				.prepareModule(request({ id: `${inlineId}1`, source: " " }))
+				.then(() => undefined),
+		).rejects.toMatchObject({ code: "resource-limit" });
+		expect(modules.fetchWithPolicy).toHaveBeenCalledTimes(3);
+		expect(test.setup).not.toHaveBeenCalled();
+		expect(test.realms[0].evaluate).not.toHaveBeenCalled();
+	},
+);
+
+it("isolates expanded budgets, module caches and aggregate accounting across factory runtimes", async () => {
+	const test = fakeCore();
+	const modules = configuration();
+	const source = externalSource.padEnd(1_196_388, " ");
+	modules.fetchWithPolicy.mockResolvedValue(fetched(source));
+	const factory = extensionPageRuntime(test.core, {
+		networkSourceModules: modules,
+	});
+	const options = {
+		budgetProfile: "application-unicode-v1" as const,
+		limits: { maxDataSize: source.length },
+	};
+	const expanded = page(factory, undefined, options);
+	const bounded = page(factory);
+	const independent = page(factory, undefined, options);
+	const input = request({ id: externalId, source: undefined });
+	const prepared = await expanded.scripts.prepareModule(input);
+	expect(prepared.source.length).toBe(source.length);
+	await expect(
+		bounded.scripts.prepareModule(input).then(() => undefined),
+	).rejects.toMatchObject({
+		code: "resource-limit",
+	});
+	const separatelyPrepared = await independent.scripts.prepareModule(input);
+	expect(separatelyPrepared.source.length).toBe(source.length);
+	await expect(
+		expanded.scripts
+			.prepareModule(request({ source: " " }))
+			.then(() => undefined),
+	).rejects.toMatchObject({ code: "resource-limit" });
+	expect(modules.fetchWithPolicy).toHaveBeenCalledTimes(3);
+	expect(test.setup).not.toHaveBeenCalled();
+	for (const realm of test.realms)
+		expect(realm.evaluate).not.toHaveBeenCalled();
+});
 
 it.each(["unregistered", "changed-source", "changed-identity"])(
 	"rejects %s module evaluation before forwarding source to the fake SDK",

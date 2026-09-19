@@ -1,21 +1,21 @@
 import { AgentBrowserError } from "./errors.js";
-import { PageWindowGlobal } from "./page-window-global.js";
 import type { HtmlModuleRequest } from "./html-module.js";
 import {
 	type PageNetworkModuleOptions,
 	PageNetworkModuleRegistry,
 } from "./page-network-modules.js";
 import {
-	readPageStringCompilation,
 	type PageRuntimeError,
 	type PageRuntimeEvaluationOptions,
 	type PageRuntimeFactory,
 	type PageRuntimeResult,
+	readPageStringCompilation,
 } from "./page-runtime.js";
 import {
 	type PageSourceModuleOptions,
 	PageSourceModuleRegistry,
 } from "./page-source-modules.js";
+import { PageWindowGlobal } from "./page-window-global.js";
 import type {
 	ReleasedContext,
 	ReleasedCore,
@@ -205,10 +205,17 @@ export function extensionPageRuntime(
 			const htmlEntries =
 				(runtimeModuleOptions ?? networkModuleOptions)?.htmlEntries === true;
 			const controller = new AbortController();
-			const moduleScope = selectedModules?.createScope(
-				controller.signal,
-				options.limits.maxSourceCodeUnits,
-			);
+			const moduleScope =
+				selectedModules instanceof PageNetworkModuleRegistry
+					? selectedModules.createScope(
+							controller.signal,
+							options.limits.maxSourceCodeUnits,
+							options.limits.maxDataSize,
+						)
+					: selectedModules?.createScope(
+							controller.signal,
+							options.limits.maxSourceCodeUnits,
+						);
 			let realm: ReleasedRealm | undefined;
 			let context: ReleasedContext | undefined;
 			let closed = false;

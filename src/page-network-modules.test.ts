@@ -8,9 +8,9 @@ import {
 } from "./page-network-modules.js";
 import { pageSourceModuleLimits } from "./page-source-modules.js";
 import {
-	fetchScriptResource,
 	type ScriptFetchPolicy,
 	type ScriptFetchResult,
+	fetchScriptResource,
 } from "./script-fetch.js";
 
 const documentUrl = "https://page.example/docs/index.html";
@@ -57,6 +57,7 @@ function fixture(
 	implementation: PolicyFetch = async (url) => response(url),
 	options: Partial<Omit<RegistryOptions, "fetchWithPolicy">> = {},
 	maxSourceCodeUnits: number = pageSourceModuleLimits.sourceCodeUnits,
+	maxTotalSourceCodeUnits?: number,
 ) {
 	const fetchWithPolicy = vi.fn(implementation);
 	const owner = new AbortController();
@@ -66,7 +67,11 @@ function fixture(
 		...options,
 		fetchWithPolicy,
 	});
-	const scope = registry.createScope(owner.signal, maxSourceCodeUnits);
+	const scope = registry.createScope(
+		owner.signal,
+		maxSourceCodeUnits,
+		maxTotalSourceCodeUnits,
+	);
 	return { fetchWithPolicy, owner, registry, scope };
 }
 
@@ -847,6 +852,239 @@ it("enforces the fixed source limit even when the page requests a larger allowan
 		test.scope.resolve("./over.js", entryId, {}),
 		"resource-limit",
 	);
+});
+
+it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, "1048576", null])(
+	"rejects invalid explicit aggregate module allowance %s",
+	(allowance) => {
+		const test = fixture();
+		try {
+			failure(
+				() =>
+					test.registry.createScope(
+						test.owner.signal,
+						4_194_304,
+						allowance as number,
+					),
+				"invalid-input",
+			);
+		} finally {
+			test.scope.close();
+		}
+	},
+);
+
+it("admits a large module only with explicit per-source and aggregate allowances", async () => {
+	const source = " ".repeat(1_196_388);
+	for (const [perSource, aggregate, accepted] of [
+		[4_194_304, undefined, false],
+		[262_144, 1_048_576, false],
+		[4_194_304, 16_777_216, true],
+	] as const) {
+		const test = fixture(
+			async (url) => response(url, source),
+			{},
+			perSource,
+			aggregate,
+		);
+		try {
+			const pending = test.scope.resolve("./large.js", entryId, {});
+			if (accepted) expect((await pending)?.source.length).toBe(source.length);
+			else await rejection(pending, "resource-limit");
+		} finally {
+			test.scope.close();
+		}
+	}
+});
+
+it("caps explicitly enlarged per-source allowances at four mebibytes of code units", async () => {
+	const maximum = 4_194_304;
+	const test = fixture(
+		async (url) =>
+			response(
+				url,
+				" ".repeat(url.endsWith("over.js") ? maximum + 1 : maximum),
+			),
+		{
+			entries: [{ id: entryId, source: "" }],
+		},
+		Number.MAX_SAFE_INTEGER,
+		Number.MAX_SAFE_INTEGER,
+	);
+	try {
+		expect(
+			(await test.scope.resolve("./exact.js", entryId, {}))?.source.length,
+		).toBe(maximum);
+		await rejection(
+			test.scope.resolve("./over.js", entryId, {}),
+			"resource-limit",
+		);
+	} finally {
+		test.scope.close();
+	}
+});
+
+it("rejects response bytes above the enlarged hard ceiling before decoding", async () => {
+	const test = fixture(
+		async (url) =>
+			response(url, "", {
+				body: new Uint8Array(16_777_217),
+			}),
+		{},
+		4_194_304,
+		16_777_216,
+	);
+	try {
+		await rejection(
+			test.scope.resolve("./bytes.js", entryId, {}),
+			"resource-limit",
+		);
+	} finally {
+		test.scope.close();
+	}
+});
+
+it("caps the aggregate allowance even when callers request the largest safe integer", async () => {
+	const source = " ".repeat(4_194_304);
+	const test = fixture(
+		async (url) => response(url, url.endsWith("over.js") ? " " : source),
+		{
+			entries: [{ id: entryId, source: "" }],
+		},
+		Number.MAX_SAFE_INTEGER,
+		Number.MAX_SAFE_INTEGER,
+	);
+	try {
+		for (let index = 0; index < 4; index++)
+			await test.scope.resolve(`./part-${index}.js`, entryId, {});
+		await test.scope.resolve("./part-0.js", entryId, {});
+		await rejection(
+			test.scope.resolve("./over.js", entryId, {}),
+			"resource-limit",
+		);
+		expect(test.fetchWithPolicy).toHaveBeenCalledTimes(5);
+	} finally {
+		test.scope.close();
+	}
+});
+
+it("keeps byte and UTF-16 source accounting distinct for large Unicode modules", async () => {
+	const source = "😀".repeat(300_000);
+	const test = fixture(
+		async (url) =>
+			response(url, url.endsWith("over.js") ? `${source} ` : source),
+		{
+			entries: [{ id: entryId, source: "" }],
+		},
+		source.length,
+		2_000_000,
+	);
+	try {
+		expect(
+			(await test.scope.resolve("./exact.js", entryId, {}))?.source.length,
+		).toBe(600_000);
+		await rejection(
+			test.scope.resolve("./over.js", entryId, {}),
+			"resource-limit",
+		);
+	} finally {
+		test.scope.close();
+	}
+});
+
+it("enforces an explicit smaller aggregate allowance including configured entries", async () => {
+	const test = fixture(
+		async (url) => response(url, " ".repeat(url.endsWith("over.js") ? 1 : 32)),
+		{
+			entries: [{ id: entryId, source: "" }],
+		},
+		64,
+		64,
+	);
+	try {
+		await test.scope.resolve("./first.js", entryId, {});
+		await test.scope.resolve("./first.js", entryId, {});
+		await test.scope.resolve("./second.js", entryId, {});
+		await rejection(
+			test.scope.resolve("./over.js", entryId, {}),
+			"resource-limit",
+		);
+		expect(test.fetchWithPolicy).toHaveBeenCalledTimes(3);
+		failure(
+			() =>
+				new PageNetworkModuleRegistry({
+					documentUrl,
+					entries: [{ id: entryId, source: "longer" }],
+					fetchWithPolicy: test.fetchWithPolicy,
+				}).createScope(test.owner.signal, 64, 5),
+			"resource-limit",
+		);
+	} finally {
+		test.scope.close();
+	}
+});
+
+it("accounts for inline HTML modules and fetched dependencies in the same allowance", async () => {
+	const test = fixture(
+		async (url) => response(url, " ".repeat(32)),
+		{
+			entries: [],
+			htmlEntries: true,
+		},
+		64,
+		64,
+	);
+	const inlineId = "urn:agent-browser:html-module:1";
+	try {
+		await test.scope.prepareHtmlModule({
+			id: inlineId,
+			source: " ".repeat(32),
+			baseUrl: documentUrl,
+			credentials: "same-origin",
+			signal: test.owner.signal,
+		});
+		await test.scope.resolve("./child.js", inlineId, {});
+		await rejection(
+			test.scope.prepareHtmlModule({
+				id: "urn:agent-browser:html-module:2",
+				source: " ",
+				baseUrl: documentUrl,
+				credentials: "same-origin",
+				signal: test.owner.signal,
+			}),
+			"resource-limit",
+		);
+	} finally {
+		test.scope.close();
+	}
+});
+
+it("does not overbook the aggregate allowance across concurrent module fetches", async () => {
+	const test = fixture(
+		async (url) => response(url, " ".repeat(32)),
+		{
+			entries: [{ id: entryId, source: "" }],
+		},
+		64,
+		64,
+	);
+	try {
+		const results = await Promise.allSettled(
+			["first", "second", "third"].map((name) =>
+				test.scope.resolve(`./${name}.js`, entryId, {}),
+			),
+		);
+		expect(
+			results.filter((result) => result.status === "fulfilled"),
+		).toHaveLength(2);
+		const rejected = results.find((result) => result.status === "rejected");
+		expect(rejected).toMatchObject({
+			status: "rejected",
+			reason: { code: "resource-limit" },
+		});
+	} finally {
+		test.scope.close();
+	}
 });
 
 it("rejects oversized response bytes", async () => {
