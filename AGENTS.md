@@ -11,6 +11,8 @@
 - Use the explicit native test list in `native-tests.json`. Live website, socket,
   real TTY/PTY and SafeJS probes require their own authorization; a native test
   pass is not evidence for those acceptance gates.
-- Historical reports retain their original paths and measurements. Do not rewrite
-  evidence to make the standalone migration look like a new live validation run.
+- Keep validation artifacts ephemeral. Reuse working builds and remove temporary
+  logs, reports and redundant snapshots after validation; do not accumulate them.
+- Do not create run diaries, research inventories or standalone findings documents
+  unless explicitly requested. Keep current status concise in `TASKS.md`.
 - Keep the overall browser goal and outstanding gates in `TASKS.md`.
