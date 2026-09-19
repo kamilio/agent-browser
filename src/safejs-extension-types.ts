@@ -67,10 +67,16 @@ export interface ReleasedContext {
 
 export interface ReleasedRealm {
 	readonly stringCompilation?: "allow" | "deny";
+	readonly classicScriptErrors?: "fatal" | "report";
 	evaluate(
 		source: string,
 		options?: { filename?: string; sourceType?: "module" },
-	): Promise<{ ok: boolean; returnValue?: unknown; error?: unknown }>;
+	): Promise<{
+		ok: boolean;
+		returnValue?: unknown;
+		error?: unknown;
+		recoverable?: true;
+	}>;
 	startCallback: ReleasedContext["startCallback"];
 	releaseCallback: ReleasedContext["releaseCallback"];
 	close(): Promise<void>;
@@ -98,6 +104,7 @@ export interface ReleasedCore {
 	}): unknown;
 	createRealm(options: {
 		classicScripts?: boolean;
+		classicScriptErrors?: "fatal" | "report";
 		callbackScheduling?: "after-prefix";
 		stringCompilation?: "allow" | "deny";
 		sourceResolver?: ReleasedSourceResolver;

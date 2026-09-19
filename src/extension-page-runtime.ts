@@ -34,6 +34,7 @@ const extensionName = "agent-browser-page";
 
 export interface ExtensionPageRuntimeOptions {
 	classicScripts?: boolean;
+	classicScriptErrors?: "fatal" | "report";
 	callbackScheduling?: "after-prefix";
 	stringCompilation?: "allow" | "deny";
 	domExpandos?: "bounded-v1";
@@ -134,6 +135,31 @@ export function extensionPageRuntime(
 			"Invalid classic Script option",
 		);
 	const classicScripts = configuration.classicScripts === true;
+	const scriptErrorDescriptor = Object.getOwnPropertyDescriptor(
+		configuration,
+		"classicScriptErrors",
+	);
+	if (
+		scriptErrorDescriptor
+			? !Object.hasOwn(scriptErrorDescriptor, "value") ||
+				!scriptErrorDescriptor.enumerable
+			: "classicScriptErrors" in configuration
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid classic Script error policy",
+		);
+	const classicScriptErrors = scriptErrorDescriptor?.value;
+	if (
+		(classicScriptErrors !== undefined &&
+			classicScriptErrors !== "fatal" &&
+			classicScriptErrors !== "report") ||
+		(classicScriptErrors === "report" && !classicScripts)
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid classic Script error policy",
+		);
 	const callbackScheduling = configuration.callbackScheduling;
 	if (callbackScheduling !== undefined && callbackScheduling !== "after-prefix")
 		throw new AgentBrowserError(
@@ -342,6 +368,7 @@ export function extensionPageRuntime(
 			try {
 				realm = core.createRealm({
 					...(classicScripts ? { classicScripts: true } : {}),
+					...(classicScriptErrors === undefined ? {} : { classicScriptErrors }),
 					...(callbackScheduling ? { callbackScheduling } : {}),
 					...(effectiveStringCompilation === undefined
 						? {}
@@ -377,6 +404,23 @@ export function extensionPageRuntime(
 						throw new AgentBrowserError(
 							"unsupported",
 							"SafeJS guest string compilation policy is unavailable",
+						);
+				}
+				if (classicScriptErrors !== undefined) {
+					const policy = Object.getOwnPropertyDescriptor(
+						realm,
+						"classicScriptErrors",
+					);
+					if (
+						!policy ||
+						!Object.hasOwn(policy, "value") ||
+						policy.value !== classicScriptErrors ||
+						policy.writable ||
+						policy.configurable
+					)
+						throw new AgentBrowserError(
+							"unsupported",
+							"SafeJS classic Script error policy is unavailable",
 						);
 				}
 				options.signal.addEventListener("abort", abort, { once: true });
@@ -426,8 +470,23 @@ export function extensionPageRuntime(
 							"Invalid public SafeJS realm result",
 						);
 					if (!result.ok) {
-						await close();
-						return { ok: false, error: errorDetails(result.error) };
+						const error = errorDetails(result.error);
+						const recovery = Object.getOwnPropertyDescriptor(
+							result,
+							"recoverable",
+						);
+						if (
+							classicScriptErrors === "report" &&
+							sourceType !== "module" &&
+							recovery &&
+							Object.hasOwn(recovery, "value") &&
+							recovery.value === true &&
+							error.code === "UNCAUGHT_EXCEPTION" &&
+							error.budget === undefined
+						)
+							ensureOpen();
+						else await close();
+						return { ok: false, error };
 					}
 					ensureOpen();
 					return { ok: true, returnValue: result.returnValue };

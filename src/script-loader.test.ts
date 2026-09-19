@@ -127,6 +127,7 @@ async function fixture(
 		) => Promise<ScriptEvaluation>;
 		headers?: Record<string, readonly string[]>;
 		limits?: ScriptLoaderOptions;
+		closed?: boolean;
 	} = {},
 ) {
 	const seen: {
@@ -158,7 +159,9 @@ async function fixture(
 				events.push("window-load");
 			});
 			return {
-				closed: false,
+				get closed() {
+					return options.closed === true && seen.length > 0;
+				},
 				evaluate: async (source) => {
 					seen.push({
 						source,
@@ -330,6 +333,33 @@ it("halts script execution on realm failure without inventing successful executi
 	value.tree.close();
 });
 
+it.each([false, true])(
+	"continues reported guest exceptions only while the realm is open (%s)",
+	async (closed) => {
+		const value = await fixture(
+			"<script>throws</script><script>later</script>",
+			{
+				closed,
+				evaluate: async (source) =>
+					source === "throws"
+						? { ...success, ok: false, error: { code: "UNCAUGHT_EXCEPTION" } }
+						: success,
+			},
+		);
+		expect(value.seen.map((entry) => entry.source)).toEqual(
+			closed ? ["throws"] : ["throws", "later"],
+		);
+		expect(value.report).toMatchObject({
+			failed: 1,
+			executed: closed ? 0 : 1,
+			halted: closed,
+			complete: true,
+		});
+		expect(value.report?.issues["execution-UNCAUGHT_EXCEPTION"]).toBe(1);
+		value.tree.close();
+	},
+);
+
 it("bounds source bytes and script count", async () => {
 	const value = await fixture(
 		"<script>oversized</script><script>later</script>",
@@ -338,6 +368,38 @@ it("bounds source bytes and script count", async () => {
 	expect(value.seen).toEqual([]);
 	expect(value.report?.halted).toBe(true);
 	expect(value.report?.sourceBytes).toBe(0);
+	value.tree.close();
+});
+
+it("keeps successful external loading distinct from a reported script exception", async () => {
+	const resourceEvents: string[] = [];
+	const value = await fixture(
+		'<script>observe</script><script src="/throws.js"></script><script>later</script>',
+		{
+			evaluate: async (source, tree) => {
+				if (source === "observe") {
+					for (const type of ["load", "error"])
+						documentInteractions(tree).events.addEventListener(
+							tree.root,
+							type,
+							(event) => {
+								if (
+									event.target !== null &&
+									tree.get(event.target).tagName === "script"
+								)
+									resourceEvents.push(type);
+							},
+							{ capture: true },
+						);
+				}
+				return source === "/throws.js"
+					? { ...success, ok: false, error: { code: "UNCAUGHT_EXCEPTION" } }
+					: success;
+			},
+		},
+	);
+	expect(resourceEvents).toEqual(["load"]);
+	expect(value.report).toMatchObject({ failed: 1, executed: 2, halted: false });
 	value.tree.close();
 });
 

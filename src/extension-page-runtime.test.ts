@@ -13,15 +13,15 @@ import {
 } from "./page-event-bootstrap.js";
 import { bindPageHistory } from "./page-history.js";
 import type { PageRuntime, PageRuntimeOptions } from "./page-runtime.js";
-import { PageScripts, type PageScriptOptions } from "./page-scripts.js";
+import { type PageScriptOptions, PageScripts } from "./page-scripts.js";
 import { bindPageStorage } from "./page-storage.js";
-import { scriptLimits } from "./safejs.js";
 import type {
 	ReleasedContext,
 	ReleasedCore,
 	ReleasedInvocation,
 	ReleasedRealm,
 } from "./safejs-extension-types.js";
+import { scriptLimits } from "./safejs.js";
 
 type Definition = Parameters<ReleasedCore["defineExtension"]>[0];
 type RealmOptions = Parameters<ReleasedCore["createRealm"]>[0];
@@ -36,7 +36,10 @@ afterEach(async () => {
 	vi.useRealTimers();
 });
 
-function fakeCore(stringPolicy?: PropertyDescriptor) {
+function fakeCore(
+	stringPolicy?: PropertyDescriptor,
+	scriptErrorPolicy?: PropertyDescriptor,
+) {
 	const budgetOptions: ConstructorParameters<ReleasedCore["Budget"]>[0][] = [];
 	class Budget {
 		stepsUsed = 0;
@@ -127,7 +130,8 @@ function fakeCore(stringPolicy?: PropertyDescriptor) {
 						await state.close();
 						throw state.failure;
 					}
-					if (!state.response.ok) await state.close();
+					if (!state.response.ok && state.response.recoverable !== true)
+						await state.close();
 					return state.response;
 				},
 			),
@@ -182,6 +186,8 @@ function fakeCore(stringPolicy?: PropertyDescriptor) {
 		};
 		if (stringPolicy)
 			Object.defineProperty(realm, "stringCompilation", stringPolicy);
+		if (scriptErrorPolicy)
+			Object.defineProperty(realm, "classicScriptErrors", scriptErrorPolicy);
 		return realm;
 	});
 	const core: ReleasedCore = { Budget, defineExtension, createRealm };
@@ -867,6 +873,143 @@ it("keeps tagged public failures instead of masking them as closure or successfu
 	expect(test.scripts.closed).toBe(true);
 	expect(test.scripts.metrics().dom?.classLists.closed).toBe(true);
 	expect(test.interactions.events.metrics().closed).toBe(false);
+});
+
+it("reports an ordinary classic exception without closing an opted-in runtime", async () => {
+	const shared = fakeCore(undefined, { value: "report" });
+	const runtime = extensionPageRuntime(shared.core, {
+		classicScripts: true,
+		classicScriptErrors: "report",
+	}).createPageRuntime(policyPageOptions());
+	pageRuntimes.push(runtime);
+	const state = shared.realms[0];
+	state.response = {
+		ok: false,
+		recoverable: true,
+		error: { code: "UNCAUGHT_EXCEPTION", message: "private detail" },
+	};
+	state.evaluate.mockResolvedValue(state.response);
+	expect(await runtime.evaluate("throw 1")).toEqual({
+		ok: false,
+		error: { code: "UNCAUGHT_EXCEPTION" },
+	});
+	expect(runtime.closed).toBe(false);
+	expect(state.close).not.toHaveBeenCalled();
+	state.response = { ok: true, returnValue: 42 };
+	state.evaluate.mockResolvedValue(state.response);
+	expect(await runtime.evaluate("later")).toMatchObject({ ok: true });
+	expect(state.options.classicScriptErrors).toBe("report");
+});
+
+it.each([
+	undefined,
+	{ value: "fatal" },
+	{ value: "report", writable: true },
+	{ value: "report", configurable: true },
+	{ get: () => "report" },
+])("requires an immutable SDK exception-policy echo %#", async (descriptor) => {
+	const shared = fakeCore(undefined, descriptor);
+	expect(() =>
+		extensionPageRuntime(shared.core, {
+			classicScripts: true,
+			classicScriptErrors: "report",
+		}).createPageRuntime(policyPageOptions()),
+	).toThrow(expect.objectContaining({ code: "unsupported" }));
+	await Promise.resolve();
+	expect(shared.realms[0].disposals).toBe(1);
+	expect(shared.realms[0].evaluate).not.toHaveBeenCalled();
+});
+
+it.each([
+	{ ok: false, error: { code: "UNCAUGHT_EXCEPTION" } },
+	{ ok: false, recoverable: true, error: { code: "budgetExceeded" } },
+	{
+		ok: false,
+		recoverable: true,
+		error: { code: "UNCAUGHT_EXCEPTION", budget: "steps" },
+	},
+])("does not recover unqualified or budget failures %#", async (response) => {
+	const shared = fakeCore(undefined, { value: "report" });
+	const runtime = extensionPageRuntime(shared.core, {
+		classicScripts: true,
+		classicScriptErrors: "report",
+	}).createPageRuntime(policyPageOptions());
+	pageRuntimes.push(runtime);
+	shared.realms[0].response = response;
+	shared.realms[0].evaluate.mockResolvedValue(response);
+	expect(await runtime.evaluate("failure")).toMatchObject({ ok: false });
+	expect(runtime.closed).toBe(true);
+});
+
+it("does not opt into recovery merely because the SDK labels a result recoverable", async () => {
+	const shared = fakeCore();
+	const runtime = extensionPageRuntime(shared.core).createPageRuntime(
+		policyPageOptions(),
+	);
+	pageRuntimes.push(runtime);
+	shared.realms[0].response = {
+		ok: false,
+		recoverable: true,
+		error: { code: "UNCAUGHT_EXCEPTION" },
+	};
+	await runtime.evaluate("failure");
+	expect(runtime.closed).toBe(true);
+});
+
+it.each(["inherited", "accessor"])(
+	"rejects a %s recovery marker without reading getters",
+	async (kind) => {
+		const shared = fakeCore(undefined, { value: "report" });
+		const runtime = extensionPageRuntime(shared.core, {
+			classicScripts: true,
+			classicScriptErrors: "report",
+		}).createPageRuntime(policyPageOptions());
+		pageRuntimes.push(runtime);
+		const getter = vi.fn(() => true);
+		const response = { ok: false, error: { code: "UNCAUGHT_EXCEPTION" } };
+		if (kind === "inherited")
+			Object.setPrototypeOf(response, { recoverable: true });
+		else Object.defineProperty(response, "recoverable", { get: getter });
+		shared.realms[0].evaluate.mockResolvedValue(response);
+		await runtime.evaluate("throw 1");
+		expect(runtime.closed).toBe(true);
+		expect(getter).not.toHaveBeenCalled();
+	},
+);
+
+it("does not recover a module failure under the classic error policy", async () => {
+	const shared = fakeCore(undefined, { value: "report" });
+	const runtime = extensionPageRuntime(shared.core, {
+		classicScripts: true,
+		classicScriptErrors: "report",
+		sourceModules: { sources: [{ id: "fixture", source: "throw 1" }] },
+	}).createPageRuntime(policyPageOptions());
+	pageRuntimes.push(runtime);
+	shared.realms[0].evaluate.mockResolvedValue({
+		ok: false,
+		recoverable: true,
+		error: { code: "UNCAUGHT_EXCEPTION" },
+	});
+	await runtime.evaluate("throw 1", {
+		sourceType: "module",
+		filename: "fixture",
+	});
+	expect(runtime.closed).toBe(true);
+});
+
+it.each([
+	{ classicScriptErrors: "report" },
+	{ classicScripts: true, classicScriptErrors: "ignore" },
+	Object.create({ classicScriptErrors: "report" }),
+	Object.defineProperty({ classicScripts: true }, "classicScriptErrors", {
+		get() {
+			throw new Error("Do not invoke configuration getters");
+		},
+	}),
+])("rejects invalid classic exception configuration %#", (configuration) => {
+	expect(() => extensionPageRuntime(fakeCore().core, configuration)).toThrow(
+		expect.objectContaining({ code: "invalid-input" }),
+	);
 });
 
 it("classifies own public budget fields without importing SDK error constructors", async () => {

@@ -1,8 +1,9 @@
 import { expect, it, vi } from "vitest";
 import {
-	type PageRuntimeConfiguration,
 	type PageRuntimeAdapter,
+	type PageRuntimeConfiguration,
 	pageRuntimeAdapter,
+	pageRuntimeConfiguration,
 	selectPageRuntime,
 } from "./page-runtime-selection.js";
 import type { PageRuntimeOptions, PageScriptCore } from "./page-runtime.js";
@@ -17,6 +18,26 @@ class Budget {
 	peakCallDepth = 0;
 	peakDataSize = 0;
 }
+
+it("snapshots explicit exception reporting for classic extension scripts", () => {
+	const input = { classicScripts: true, classicScriptErrors: "report" };
+	const selected = pageRuntimeConfiguration(input, "extension");
+	expect(selected).toEqual(input);
+	expect(Object.isFrozen(selected)).toBe(true);
+	input.classicScriptErrors = "fatal";
+	expect(selected?.classicScriptErrors).toBe("report");
+});
+
+it.each([
+	{ classicScriptErrors: "report" },
+	{ classicScripts: false, classicScriptErrors: "report" },
+	{ classicScripts: true, classicScriptErrors: "ignore" },
+	{ classicScripts: true, classicScriptErrors: true },
+])("rejects invalid exception reporting selection %#", (input) => {
+	expect(() => pageRuntimeConfiguration(input, "extension")).toThrow(
+		expect.objectContaining({ code: "invalid-input" }),
+	);
+});
 
 it("snapshots explicit DOM expandos without forwarding a realm option", async () => {
 	const test = extensionFixture();

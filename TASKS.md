@@ -3,7 +3,8 @@
 - **Zoom first:** native browser + SafeJS only. The name field and Join button
   render, but Vue initialization times out. Joining, audio and notetaking do not work yet.
 - Reduce retained-graph accounting cost without weakening memory, depth,
-  cancellation or credential isolation. Guest exceptions still close the realm.
+  cancellation or credential isolation. Opt-in ordinary classic-script exception
+  recovery works; syntax, module, callback and resource failures remain fatal.
 - Open test gates: SDK default-stack depth tests and a baseline Promise snapshot
   timeout; existing native capability-metadata and classic-loader limit expectations.
 - Finish extraction/compatibility fixes, legitimate challenge handoffs, top100

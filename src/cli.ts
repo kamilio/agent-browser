@@ -52,6 +52,16 @@ function runtimeConfiguration() {
 	const websiteScripts = process.env.AGENT_BROWSER_PAGE_SCRIPTS;
 	const pageGlobals = process.env.AGENT_BROWSER_PAGE_GLOBALS;
 	const callbackScheduling = process.env.AGENT_BROWSER_CALLBACK_SCHEDULING;
+	const classicScriptErrors = process.env.AGENT_BROWSER_CLASSIC_SCRIPT_ERRORS;
+	if (
+		classicScriptErrors !== undefined &&
+		classicScriptErrors !== "fatal" &&
+		classicScriptErrors !== "report"
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"AGENT_BROWSER_CLASSIC_SCRIPT_ERRORS must be fatal or report when provided",
+		);
 	const expandoDescriptor = Object.getOwnPropertyDescriptor(
 		process.env,
 		"AGENT_BROWSER_DOM_EXPANDOS",
@@ -76,6 +86,7 @@ function runtimeConfiguration() {
 		for (const [name, value] of [
 			["AGENT_BROWSER_PAGE_GLOBALS", pageGlobals],
 			["AGENT_BROWSER_CALLBACK_SCHEDULING", callbackScheduling],
+			["AGENT_BROWSER_CLASSIC_SCRIPT_ERRORS", classicScriptErrors],
 			["AGENT_BROWSER_DOM_EXPANDOS", domExpandos],
 		])
 			if (value !== undefined)
@@ -105,6 +116,7 @@ function runtimeConfiguration() {
 	if (
 		(pageGlobals !== undefined ||
 			callbackScheduling !== undefined ||
+			classicScriptErrors !== undefined ||
 			domExpandos !== undefined) &&
 		!packageRoot
 	)
@@ -116,6 +128,7 @@ function runtimeConfiguration() {
 		{
 			...(pageGlobals === "classic" ? { classicScripts: true } : {}),
 			...(callbackScheduling ? { callbackScheduling } : {}),
+			...(classicScriptErrors === undefined ? {} : { classicScriptErrors }),
 			...(domExpandos === "bounded-v1" ? { domExpandos } : {}),
 		},
 		runtimeAdapter,

@@ -66,6 +66,7 @@ beforeEach(() => {
 		"AGENT_BROWSER_PAGE_SCRIPTS",
 		"AGENT_BROWSER_PAGE_GLOBALS",
 		"AGENT_BROWSER_CALLBACK_SCHEDULING",
+		"AGENT_BROWSER_CLASSIC_SCRIPT_ERRORS",
 		"AGENT_BROWSER_DOM_EXPANDOS",
 		"AGENT_BROWSER_LANGUAGES",
 		"AGENT_BROWSER_DOCUMENT_PROFILE",
@@ -98,6 +99,36 @@ async function invoke() {
 	);
 	return { log, error };
 }
+
+it("forwards explicit classic exception reporting to the service", async () => {
+	vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", "/trusted/fixture");
+	vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", "extension");
+	vi.stubEnv("AGENT_BROWSER_PAGE_GLOBALS", "classic");
+	vi.stubEnv("AGENT_BROWSER_CLASSIC_SCRIPT_ERRORS", "report");
+	const { error } = await invoke();
+	expect(error).not.toHaveBeenCalled();
+	expect(runtime.configured).toHaveBeenCalledWith(
+		expect.objectContaining({
+			process: expect.objectContaining({
+				runtimeOptions: { classicScripts: true, classicScriptErrors: "report" },
+			}),
+		}),
+	);
+});
+
+it.each(["report", "ignore", "true"])(
+	"rejects exception policy without classic globals: %s",
+	async (policy) => {
+		vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", "/trusted/fixture");
+		vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", "extension");
+		vi.stubEnv("AGENT_BROWSER_CLASSIC_SCRIPT_ERRORS", policy);
+		const { error } = await invoke();
+		expect(JSON.parse(error.mock.calls[0][0])).toMatchObject({
+			error: { code: "invalid-input" },
+		});
+		expect(runtime.configured).not.toHaveBeenCalled();
+	},
+);
 
 it.each([
 	["classic", undefined, { classicScripts: true }],
@@ -198,6 +229,7 @@ it.each(["", "true", "false", "immediate", "after-prefix "])(
 it.each([
 	["AGENT_BROWSER_PAGE_GLOBALS", "classic"],
 	["AGENT_BROWSER_CALLBACK_SCHEDULING", "after-prefix"],
+	["AGENT_BROWSER_CLASSIC_SCRIPT_ERRORS", "report"],
 	["AGENT_BROWSER_DOM_EXPANDOS", "bounded-v1"],
 ])(
 	"requires a package root for %s before reusing a connection",

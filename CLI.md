@@ -34,6 +34,10 @@ Set configuration on the service, not only on a client:
 - `AGENT_BROWSER_SAFEJS_ROOT`: a trusted compiled extended-SafeJS package root
   for supervised, process-backed sessions.
 - `AGENT_BROWSER_PAGE_RUNTIME=extension`: select the public SafeJS extension API.
+- `AGENT_BROWSER_CLASSIC_SCRIPT_ERRORS=report`: with
+  `AGENT_BROWSER_PAGE_GLOBALS=classic` and a supporting SafeJS runtime, report
+  uncaught classic-script exceptions and continue later scripts. The default is
+  fatal; syntax, module, callback, budget and timeout failures still stop execution.
 - `AGENT_BROWSER_PAGE_SCRIPTS=module`: load classic and module scripts, including
   dynamically inserted modules, with the extension runtime. CSP, CORS, integrity
   and resource limits remain enforced. Use `classic` to omit module execution.

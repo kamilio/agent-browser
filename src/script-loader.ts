@@ -924,7 +924,9 @@ export class ScriptLoader implements HtmlScriptHooks {
 					this.counts.executed++;
 				} else {
 					this.counts.failed++;
-					this.counts.halted = true;
+					succeeded =
+						!runner.closed && result.error?.code === "UNCAUGHT_EXCEPTION";
+					if (!succeeded) this.counts.halted = true;
 					this.issue(`execution-${result.error?.code ?? "failed"}`);
 				}
 			} catch (error) {

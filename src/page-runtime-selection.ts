@@ -11,6 +11,7 @@ export type PageRuntimeAdapter = "legacy" | "extension";
 
 export interface PageRuntimeConfiguration {
 	classicScripts?: boolean;
+	classicScriptErrors?: "fatal" | "report";
 	callbackScheduling?: "after-prefix";
 	stringCompilation?: "allow" | "deny";
 	domExpandos?: "bounded-v1";
@@ -66,6 +67,7 @@ export function pageRuntimeConfiguration(
 	for (const key of Reflect.ownKeys(descriptors)) {
 		if (
 			key !== "classicScripts" &&
+			key !== "classicScriptErrors" &&
 			key !== "callbackScheduling" &&
 			key !== "stringCompilation" &&
 			key !== "domExpandos"
@@ -76,6 +78,9 @@ export function pageRuntimeConfiguration(
 			throw invalid();
 		if (
 			(key === "classicScripts" && typeof descriptor.value !== "boolean") ||
+			(key === "classicScriptErrors" &&
+				descriptor.value !== "fatal" &&
+				descriptor.value !== "report") ||
 			(key === "callbackScheduling" && descriptor.value !== "after-prefix") ||
 			(key === "stringCompilation" &&
 				descriptor.value !== "allow" &&
@@ -85,6 +90,13 @@ export function pageRuntimeConfiguration(
 			throw invalid();
 	}
 	const runtimeOptions: PageRuntimeConfiguration = {
+		...(descriptors.classicScriptErrors
+			? {
+					classicScriptErrors: descriptors.classicScriptErrors.value as
+						| "fatal"
+						| "report",
+				}
+			: {}),
 		...(descriptors.domExpandos ? { domExpandos: "bounded-v1" as const } : {}),
 		...(descriptors.classicScripts
 			? { classicScripts: descriptors.classicScripts.value as boolean }
@@ -100,6 +112,11 @@ export function pageRuntimeConfiguration(
 				}
 			: {}),
 	};
+	if (
+		runtimeOptions.classicScriptErrors === "report" &&
+		runtimeOptions.classicScripts !== true
+	)
+		throw invalid();
 	if (!Object.keys(runtimeOptions).length) return undefined;
 	if (adapter !== "extension")
 		throw new AgentBrowserError(

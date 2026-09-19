@@ -1,0 +1,391 @@
+--- a/packages/safe-js/src/realm.ts
++++ b/packages/safe-js/src/realm.ts
+@@ -85,6 +85,7 @@
+ export type RealmOptions = {
+   stringCompilation?: "allow" | "deny";
+   classicScripts?: boolean;
++  classicScriptErrors?: "fatal" | "report";
+   callbackScheduling?: "after-prefix";
+   sourceResolver?: SourceResolver;
+   clock?: RunClock;
+@@ -103,9 +104,10 @@
+   | (Omit<Extract<InterpreterResult, { ok: true }>, "snapshot" | "returnValue"> & {
+       returnValue?: unknown;
+     })
+-  | Omit<Extract<InterpreterResult, { ok: false }>, "snapshot">;
++  | (Omit<Extract<InterpreterResult, { ok: false }>, "snapshot"> & { recoverable?: true });
+ export type SafeJSRealm = ExecutionControl & {
+   readonly stringCompilation: "allow" | "deny";
++  readonly classicScriptErrors: "fatal" | "report";
+   readonly extensions: readonly SafeJSExtension["manifest"][];
+   evaluate(source: string, options?: { filename?: string; sourceType?: "module" }): Promise<RealmResult>;
+   startCallback(callback: unknown, options?: CallbackOptions): CallbackInvocation;
+@@ -836,7 +838,8 @@
+     source: string,
+     filename = "<realm>",
+     nested = false,
+-    sourceType?: "module"
++    sourceType?: "module",
++    reportUnhandledThrows = false
+   ): Promise<InterpreterResult> {
+     this.assertOpen();
+     if (typeof source !== "string") throw new TypeError("Realm source must be a string.");
+@@ -901,6 +904,7 @@
+           compilation: this.compilation,
+           signal: this.controller.signal,
+           surfaceUnhandledThrows: true,
++          reportUnhandledThrows: script !== undefined && reportUnhandledThrows,
+           jobs: this.queue,
+           nested,
+           assertActive: this.assertOpen
+@@ -945,17 +949,19 @@
+   };
+ 
+   evaluate = async (source: string, options: { filename?: string; sourceType?: "module" } = {}): Promise<RealmResult> =>
+-    this.perform(async () => {
++    this.perform<RealmResult>(async () => {
+       const scheduled = this.options.callbackScheduling === "after-prefix";
++      const reportUnhandledThrows = options.sourceType !== "module" && this.options.classicScriptErrors === "report";
+       const result = scheduled && options.sourceType !== "module"
+-        ? await this.queue.run(() => this.evaluateRaw(source, options.filename, true))
+-        : await this.evaluateRaw(source, options.filename, false, options.sourceType);
++        ? await this.queue.run(() => this.evaluateRaw(source, options.filename, true, undefined, reportUnhandledThrows))
++        : await this.evaluateRaw(source, options.filename, false, options.sourceType, reportUnhandledThrows);
+       if (!result.ok) {
+-        if (!scheduled) await this.dispose();
+-        return { ok: false, error: result.error, stats: result.stats };
++        const recoverable = reportUnhandledThrows && result.error.code === "UNCAUGHT_EXCEPTION";
++        if (!scheduled && !recoverable) await this.dispose();
++        return { ok: false, error: result.error, stats: result.stats, ...(recoverable ? { recoverable: true } : {}) };
+       }
+       return { ok: true, returnValue: this.exportValue(result.returnValue), stats: result.stats };
+-    }, result => !result.ok);
++    }, result => !result.ok && !result.recoverable);
+ 
+   async checkUnhandledRejection(owner?: object): Promise<void> {
+     const unhandled = await this.tracker.findUnhandledRejection(owner);
+@@ -1130,6 +1136,7 @@
+   const state = new RealmState(readRealmOptions(options));
+   return Object.freeze(attachExecutionControl({
+     stringCompilation: state.options.stringCompilation ?? "allow",
++    classicScriptErrors: state.options.classicScriptErrors ?? "fatal",
+     extensions: Object.freeze(state.extensions.map((extension) => extension.manifest)),
+     evaluate: state.evaluate,
+     startCallback: state.startCallback,
+@@ -1196,6 +1203,7 @@
+   if (!oneShot) {
+     supported.add("stringCompilation");
+     supported.add("classicScripts");
++    supported.add("classicScriptErrors");
+     supported.add("callbackScheduling");
+   }
+   for (const [key, entry] of Object.entries(options)) {
+@@ -1206,5 +1214,9 @@
+     throw new TypeError("Realm callbackScheduling must be 'after-prefix'.");
+   if (options.stringCompilation !== undefined && options.stringCompilation !== "allow" && options.stringCompilation !== "deny")
+     throw new TypeError("Realm stringCompilation must be 'allow' or 'deny'.");
++  if (options.classicScriptErrors !== undefined && options.classicScriptErrors !== "fatal" && options.classicScriptErrors !== "report")
++    throw new TypeError("Realm classicScriptErrors must be 'fatal' or 'report'.");
++  if (options.classicScriptErrors === "report" && options.classicScripts !== true)
++    throw new TypeError("Reporting classic Script errors requires classicScripts:true.");
+   return options as RealmOptions;
+ }
+--- a/packages/safe-js/src/interp/interpreter.ts
++++ b/packages/safe-js/src/interp/interpreter.ts
+@@ -228,7 +228,7 @@
+       values: InterpreterValue[];
+     };
+ 
+-export type InterpreterErrorCode = "LABEL_NOT_FOUND" | "UNBOUND_IDENTIFIER" | "UNSUPPORTED_NODE";
++export type InterpreterErrorCode = "LABEL_NOT_FOUND" | "UNBOUND_IDENTIFIER" | "UNSUPPORTED_NODE" | "UNCAUGHT_EXCEPTION";
+ 
+ export type InterpreterError = {
+   code: InterpreterErrorCode;
+@@ -270,6 +270,7 @@
+   scope?: Scope;
+   signal?: AbortSignal;
+   surfaceUnhandledThrows?: boolean;
++  reportUnhandledThrows?: boolean;
+   useScopeDirectly?: boolean;
+   generatorYield?: (value?: SandboxValue, yieldNodeId?: number, yieldedResult?: SandboxValue) => Promise<GeneratorCompletion>;
+   asyncGenerator?: boolean;
+@@ -566,6 +567,22 @@
+     }
+ 
+     if (evaluation.kind === "throw") {
++      if (options.reportUnhandledThrows === true) {
++        const surfaced = surfaceThrownValue(evaluation.value, budget, evaluation.stackFrames, evaluation.span);
++        return {
++          ok: false,
++          error: {
++            code: "UNCAUGHT_EXCEPTION",
++            name: surfaced.name as string,
++            message: surfaced.message as string,
++            stack: surfaced.stack as string,
++            span: evaluation.span ?? node.span,
++            nodeType: node.type
++          },
++          snapshot,
++          stats
++        };
++      }
+       if (options.surfaceUnhandledThrows === true) {
+         throw surfaceThrownValue(evaluation.value, budget, evaluation.stackFrames, evaluation.span);
+       }
+--- /dev/null
++++ b/packages/safe-js/src/realm-classic-script-errors.test.ts
+@@ -0,0 +1,199 @@
++import { describe, expect, it, vi } from "vitest";
++import { Budget, createRealm, defineExtension, type RealmOptions } from "./core.js";
++import { runResources } from "./interp/resources.js";
++import * as interpreter from "./interp/interpreter.js";
++
++it("exposes an immutable resolved policy and snapshots caller options", async () => {
++  const defaults = createRealm();
++  const options: RealmOptions = { classicScripts: true, classicScriptErrors: "report" };
++  const reporting = createRealm(options);
++  options.classicScriptErrors = "fatal";
++  try {
++    expect(defaults.classicScriptErrors).toBe("fatal");
++    expect(reporting.classicScriptErrors).toBe("report");
++    expect(Object.getOwnPropertyDescriptor(reporting, "classicScriptErrors"))
++      .toMatchObject({ writable: false, configurable: false, value: "report" });
++    expect(Reflect.set(reporting, "classicScriptErrors", "fatal")).toBe(false);
++    expect(await reporting.evaluate('throw "ordinary"')).toMatchObject({ ok: false, recoverable: true });
++  } finally { await defaults.close(); await reporting.close(); }
++});
++
++it.each([undefined, false])("requires classicScripts:true for reporting (%s)", classicScripts => {
++  expect(() => createRealm({ classicScripts, classicScriptErrors: "report" })).toThrow(TypeError);
++});
++
++it.each([null, true, 1, "continue", {}, []])("rejects malformed policies (%s)", classicScriptErrors => {
++  expect(() => createRealm({ classicScripts: true, classicScriptErrors } as RealmOptions)).toThrow(TypeError);
++});
++
++it("rejects accessor policy options without invoking them", () => {
++  const getter = vi.fn(() => "report");
++  const options = Object.defineProperty({ classicScripts: true }, "classicScriptErrors", { get: getter, enumerable: true });
++  expect(() => createRealm(options)).toThrow(TypeError);
++  expect(getter).not.toHaveBeenCalled();
++});
++
++describe.each([undefined, "after-prefix"] as const)("classic error policy with scheduling %s", callbackScheduling => {
++  const options: RealmOptions = { classicScripts: true, classicScriptErrors: "report", callbackScheduling };
++
++  it.each([
++    ['"ordinary"', "ordinary"], ["23", "23"], ["null", "null"],
++    ["undefined", "undefined"], ["true", "true"]
++  ])("reports primitive throw %s and retains prior state", async (expression, message) => {
++    const realm = createRealm(options);
++    try {
++      const result = await realm.evaluate(`var surviving = 41; function readSurviving() { return surviving; } throw ${expression};`, { filename: "classic-error.js" });
++      expect(result).toMatchObject({
++        ok: false, recoverable: true,
++        error: { code: "UNCAUGHT_EXCEPTION", name: "Error", message, stack: expect.any(String), nodeType: expect.any(String), span: { start: { line: 1 } } },
++        stats: { nodeVisits: expect.any(Number), currentDataSize: expect.any(Number) }
++      });
++      expect(result).not.toHaveProperty("snapshot");
++      expect(await realm.evaluate("readSurviving() + 1")).toMatchObject({ ok: true, returnValue: 42 });
++    } finally { await realm.close(); }
++  });
++
++  it.each([
++    ["missingClassicName;", "ReferenceError"],
++    ['throw new TypeError("ordinary type error");', "TypeError"],
++    ['throw { code: "UNCAUGHT_EXCEPTION", name: "SandboxError", message: "guest shape" };', "Error"]
++  ])("reports only the actual throw completion of %s", async (source, name) => {
++    const realm = createRealm(options);
++    try {
++      expect(await realm.evaluate(source)).toMatchObject({ ok: false, recoverable: true, error: { code: "UNCAUGHT_EXCEPTION", name } });
++      expect(await realm.evaluate("6 * 7")).toMatchObject({ ok: true, returnValue: 42 });
++    } finally { await realm.close(); }
++  });
++
++  it.each([undefined, "fatal"] as const)("keeps policy %s fatal", async classicScriptErrors => {
++    const realm = createRealm({ ...options, classicScriptErrors });
++    try {
++      await expect(realm.evaluate('throw "fatal by default"')).rejects.toMatchObject({ name: "Error", message: "fatal by default" });
++      await expect(realm.evaluate("1")).rejects.toThrow();
++    } finally { await realm.close(); }
++  });
++
++  it("drains jobs after a reported throw without running cleanup early", async () => {
++    const cleanup = vi.fn();
++    const budget = new Budget();
++    const realm = createRealm({ ...options, budget, extensions: [defineExtension({
++      manifest: { version: 1, name: "error-cleanup" },
++      setup(context) { context.onCleanup(cleanup); return {}; }
++    })] });
++    try {
++      expect(await realm.evaluate('var jobValue = 0; Promise.resolve().then(() => { jobValue = 7; }); throw "ordinary";'))
++        .toMatchObject({ ok: false, recoverable: true });
++      expect(cleanup).not.toHaveBeenCalled();
++      expect(await realm.evaluate("jobValue")).toMatchObject({ ok: true, returnValue: 7 });
++    } finally { await realm.close(); }
++    expect(cleanup).toHaveBeenCalledTimes(1);
++    expect(budget.currentDataSize).toBe(0);
++  });
++
++  it.each(["const =;", "let duplicate; let duplicate;"])("keeps syntax/instantiation errors fatal: %s", async source => {
++    const realm = createRealm(options);
++    try {
++      await expect(realm.evaluate(source)).rejects.toMatchObject({ name: "SyntaxError" });
++      await expect(realm.evaluate("1")).rejects.toThrow();
++    } finally { await realm.close(); }
++  });
++
++  it("does not report explicit module failures", async () => {
++    const realm = createRealm(options);
++    try {
++      await expect(realm.evaluate('throw "module failure";', { sourceType: "module", filename: "module.js" })).rejects.toBeDefined();
++      await expect(realm.evaluate("1")).rejects.toThrow();
++    } finally { await realm.close(); }
++  });
++
++  it("keeps nested evaluation rejecting while reporting only the escaped outer completion", async () => {
++    const nestedFailure = vi.fn();
++    const interpreted = vi.spyOn(interpreter, "interpret");
++    const realm = createRealm({ ...options, grants: ["source:nested"], extensions: [defineExtension({
++      manifest: { version: 1, name: "nested-errors", globals: ["nested"], capabilities: ["source:nested"] },
++      setup(context) { return { globals: { nested: context.nestedOperation(async () => {
++        try { await context.evaluateNested('throw "nested failure";'); }
++        catch (error) { nestedFailure(error); throw error; }
++      }) } }; }
++    })] });
++    try {
++      await expect(realm.evaluate("nested(); 1;")).resolves.toMatchObject({
++        ok: false, recoverable: true, error: { code: "UNCAUGHT_EXCEPTION", message: "nested failure" }
++      });
++      expect(nestedFailure).toHaveBeenCalledOnce();
++      expect(nestedFailure.mock.calls[0][0]).not.toHaveProperty("recoverable");
++      expect(interpreted.mock.calls.map(([, options]) => options?.reportUnhandledThrows)).toEqual([true, false]);
++      expect(await realm.evaluate("1")).toMatchObject({ ok: true, returnValue: 1 });
++    } finally { interpreted.mockRestore(); await realm.close(); }
++  });
++
++  it.each(["fatal", "report"] as const)("preserves caught authorized nested failures under %s policy", async classicScriptErrors => {
++    const realm = createRealm({ ...options, classicScriptErrors, grants: ["source:nested"], extensions: [defineExtension({
++      manifest: { version: 1, name: "caught-nested-errors", globals: ["nested"], capabilities: ["source:nested"] },
++      setup(context) { return { globals: { nested: context.nestedOperation(() => context.evaluateNested('throw "nested failure";')) } }; }
++    })] });
++    try {
++      expect(await realm.evaluate("var caughtNested = false; try { nested(); } catch { caughtNested = true; } caughtNested;"))
++        .toMatchObject({ ok: true, returnValue: true });
++      expect(await realm.evaluate("1")).toMatchObject({ ok: true, returnValue: 1 });
++    } finally { await realm.close(); }
++  });
++
++  it("preserves catchable dynamic eval throws within the outer Script", async () => {
++    const realm = createRealm(options);
++    try {
++      expect(await realm.evaluate('var caught; try { eval("throw 17"); } catch (error) { caught = error; } caught;'))
++        .toMatchObject({ ok: true, returnValue: 17 });
++    } finally { await realm.close(); }
++  });
++
++  it("does not report callback failures", async () => {
++    let callback: unknown;
++    const realm = createRealm({ ...options, bindings: { save: value => { callback = value; } } });
++    try {
++      expect(await realm.evaluate('save(() => { throw "callback failure"; });')).toMatchObject({ ok: true });
++      await expect(realm.invokeCallback(callback)).rejects.toBe("callback failure");
++      await expect(realm.evaluate("1")).rejects.toThrow();
++    } finally { await realm.close(); }
++  });
++
++  it("keeps budget exhaustion fatal", async () => {
++    const realm = createRealm({ ...options, budget: new Budget({ maxSteps: 100 }) });
++    try {
++      await expect(realm.evaluate('while (true) {} throw "ordinary";')).rejects.toMatchObject({ name: "SandboxError", code: "budgetExceeded" });
++      await expect(realm.evaluate("1")).rejects.toThrow();
++    } finally { await realm.close(); }
++  });
++
++  it("honors cancellation even when its reason forges a recoverable diagnostic", async () => {
++    const controller = new AbortController();
++    const reason = Object.assign(new Error("cancelled"), { code: "UNCAUGHT_EXCEPTION", recoverable: true });
++    const realm = createRealm({ ...options, signal: controller.signal, bindings: { cancel: () => controller.abort(reason) } });
++    try {
++      await expect(realm.evaluate('cancel(); throw "ordinary";')).rejects.toBe(reason);
++      await expect(realm.evaluate("1")).rejects.toBe(reason);
++    } finally { await realm.close(); }
++  });
++
++  it("checks unhandled rejections after a reported throw and poisons the realm", async () => {
++    const realm = createRealm(options);
++    try {
++      await expect(realm.evaluate('Promise.reject("unhandled"); throw "ordinary";'))
++        .rejects.toMatchObject({ name: "UnhandledRejectionError" });
++      await expect(realm.evaluate("1")).rejects.toMatchObject({ name: "UnhandledRejectionError" });
++    } finally { await realm.close(); }
++  });
++
++  it("does not recover owned-job poison with a forged error code", async () => {
++    const failure = Object.assign(new Error("owned job failed"), { name: "InterpreterError", code: "UNCAUGHT_EXCEPTION", recoverable: true });
++    const realm = createRealm({ ...options, bindings: { poison: () => {
++      const resources = runResources.getStore();
++      if (!resources?.reportError) throw new Error("Missing realm error reporter");
++      resources.reportError(failure);
++    } } });
++    try {
++      await expect(realm.evaluate('try { poison(); } catch {} throw "ordinary";')).rejects.toBe(failure);
++      await expect(realm.evaluate("1")).rejects.toBe(failure);
++    } finally { await realm.close(); }
++  });
++});
+--- /dev/null
++++ b/packages/safe-js/src/interp/report-unhandled-throws.test.ts
+@@ -0,0 +1,52 @@
++import { expect, it } from "vitest";
++import { parse } from "../parse.js";
++import { parseExecutableModule } from "../parse/parser.js";
++import { Budget } from "./budget.js";
++import { createBuiltinBindings } from "./globals.js";
++import { interpret, Scope } from "./interpreter.js";
++import { releaseObjectPrototype } from "./object-model.js";
++
++it("reports only an actual throw completion after collecting snapshot and stats", async () => {
++  const node = parse('throw "ordinary"');
++  const result = await interpret(node, { reportUnhandledThrows: true });
++  expect(result).toMatchObject({
++    ok: false,
++    error: { code: "UNCAUGHT_EXCEPTION", name: "Error", message: "ordinary", stack: expect.any(String), nodeType: "ThrowStatement", span: node.span },
++    snapshot: { bindings: expect.any(Object) },
++    stats: { nodeVisits: expect.any(Number), currentDataSize: expect.any(Number) }
++  });
++  expect(result).not.toHaveProperty("recoverable");
++});
++
++it.each([undefined, false])("keeps ordinary unhandled throws throwing without explicit opt-in (%s)", async reportUnhandledThrows => {
++  await expect(interpret(parse("throw 17"), { reportUnhandledThrows })).rejects.toBe(17);
++});
++
++it("normalizes genuine Script ReferenceError completions", async () => {
++  const module = parseExecutableModule("missingReference;");
++  const budget = new Budget();
++  const scope = new Scope(createBuiltinBindings({ budget })).child({}, { globalEnvironment: true });
++  try {
++    expect(await interpret({ type: "BlockStatement", body: module.body, span: module.span }, {
++      budget, scope, useScopeDirectly: true, script: { strict: false }, reportUnhandledThrows: true
++    })).toMatchObject({ ok: false, error: { code: "UNCAUGHT_EXCEPTION", name: "ReferenceError" } });
++  } finally { releaseObjectPrototype(budget); }
++});
++
++it("leaves non-throw interpreter diagnostics unchanged", async () => {
++  expect(await interpret(parse("missingReference"), { reportUnhandledThrows: true }))
++    .toMatchObject({ ok: false, error: { code: "UNBOUND_IDENTIFIER" } });
++});
++
++it("does not turn snapshot/quota reconciliation failures into reported throws", async () => {
++  await expect(interpret(parse('throw "x".repeat(2000)'), {
++    reportUnhandledThrows: true, budget: new Budget({ dataSize: 100 })
++  })).rejects.toMatchObject({ name: "SandboxError", code: "budgetExceeded" });
++});
++
++it("does not recover a forged diagnostic thrown by the activity guard", async () => {
++  const failure = Object.assign(new Error("guard failed"), { code: "UNCAUGHT_EXCEPTION", name: "InterpreterError" });
++  await expect(interpret(parse('throw "ordinary"'), {
++    reportUnhandledThrows: true, assertActive: () => { throw failure; }
++  })).rejects.toBe(failure);
++});
