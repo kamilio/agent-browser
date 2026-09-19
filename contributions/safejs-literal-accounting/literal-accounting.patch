@@ -1,0 +1,249 @@
+--- a/packages/safe-js/src/interp/interpreter.ts
++++ b/packages/safe-js/src/interp/interpreter.ts
+@@ -124,7 +124,7 @@
+   type ArrayMethodOptions
+ } from "./methods/array.js";
+ import { getFunctionMember, type FunctionMethodOptions } from "./methods/function.js";
+-import { getBoxedPrototype, getSandboxPropertyDescriptor, getSandboxPrototype, hasExplicitSandboxPrototype, isDefaultArrayMethod, isDefaultBoxedMethod, isGuestClosure, materializeFunctionProperties, setSandboxPrototype } from "./object-model.js";
++import { createIntrinsicObject, getBoxedPrototype, getSandboxPropertyDescriptor, getSandboxPrototype, hasExplicitSandboxPrototype, isDefaultArrayMethod, isDefaultBoxedMethod, isGuestClosure, materializeFunctionProperties, setSandboxPrototype } from "./object-model.js";
+ import { guestProxyStates } from "./guest-proxy.js";
+ import { callGuestProxy } from "./guest-proxy-call.js";
+ import { constructGuestProxy } from "./guest-proxy-construct.js";
+@@ -840,7 +840,7 @@
+   if (restored !== undefined && (restored.kind !== "object" || restored.value === null ||
+       typeof restored.value !== "object" || Array.isArray(restored.value)))
+     throw new TypeError("Invalid object expression continuation.");
+-  const object = restored?.kind === "object" ? restored.value as SandboxObject : Object.create(null) as SandboxObject;
++  const object = restored?.kind === "object" ? restored.value as SandboxObject : createIntrinsicObject();
+   if (restored === undefined) {
+     const prototype = getSandboxPrototype(object, context.budget);
+     if (prototype !== null) setSandboxPrototype(object, prototype, context.budget);
+--- /dev/null
++++ b/packages/safe-js/src/interp/object-literal-descriptor-reuse.test.ts
+@@ -0,0 +1,89 @@
++import { expect, it, vi } from "vitest";
++import { parse } from "../parse.js";
++import { Budget } from "./budget.js";
++import { interpret } from "./interpreter.js";
++import { markDescriptorObject, setSandboxPrototype } from "./object-model.js";
++import { deepCopyFromSandbox, measureSandboxData, type SandboxObject } from "./values.js";
++
++async function literal(source = "return { text: 'abc', nested: { text: 'initial' } }"): Promise<SandboxObject> {
++  const result = await interpret(parse(source), { budget: new Budget() });
++  expect(result.ok).toBe(true);
++  if (!result.ok || result.returnValue === null || typeof result.returnValue !== "object") throw new Error("Expected object literal");
++  return result.returnValue as SandboxObject;
++}
++
++it("does not recapture unchanged literal string descriptors on repeated measurement", async () => {
++  const value = await literal();
++  const before = measureSandboxData([value]);
++  const descriptors = vi.spyOn(Object, "getOwnPropertyDescriptor");
++  try {
++    expect(measureSandboxData([value])).toBe(before);
++    expect(descriptors.mock.calls.filter(([owner, key]) => owner === value && typeof key === "string")).toHaveLength(0);
++  } finally { descriptors.mockRestore(); }
++});
++
++it("observes replacement, addition and deletion without stale projections", async () => {
++  const value = await literal();
++  const before = measureSandboxData([value]);
++  value.text = "longer";
++  expect(measureSandboxData([value])).toBe(before + 3);
++  value.extra = "new";
++  expect(measureSandboxData([value])).toBe(before + 12);
++  delete value.extra;
++  delete value.text;
++  expect(measureSandboxData([value])).toBe(before - 8);
++});
++
++it("remeasures nested growth and deduplicates shared descendants", async () => {
++  const value = await literal();
++  const nested = value.nested as SandboxObject;
++  const before = measureSandboxData([value]);
++  nested.text = "x".repeat(1000);
++  expect(measureSandboxData([value])).toBe(before + 993);
++  value.alias = nested;
++  expect(measureSandboxData([value, nested])).toBe(before + 999);
++  const budget = new Budget({ dataSize: 100 });
++  expect(() => budget.reconcileDataUsage(measureSandboxData([value]))).toThrow(expect.objectContaining({ budget: "dataSize" }));
++  nested.text = "initial";
++  expect(measureSandboxData([value])).toBe(before + 6);
++});
++
++it("preserves hidden descriptor and symbol changes after an initial capture", async () => {
++  const value = await literal("return { text: 'abc' }");
++  const before = measureSandboxData([value]);
++  Object.defineProperty(value, "hidden", { value: "abc", configurable: true });
++  expect(measureSandboxData([value])).toBe(before);
++  markDescriptorObject(value);
++  expect(measureSandboxData([value])).toBe(before + 10);
++  Object.defineProperty(value, "hidden", { value: "longer", enumerable: true });
++  expect(measureSandboxData([value])).toBe(before + 13);
++  const key = Symbol("owned");
++  value[key] = "abc";
++  expect(measureSandboxData([value])).toBe(before + 23);
++  delete value[key];
++  delete value.hidden;
++  expect(measureSandboxData([value])).toBe(before);
++});
++
++it("keeps prototype data live and exports ordinary records", async () => {
++  const value = await literal("return { text: 'abc' }");
++  const prototype = { extra: "abc" };
++  const before = measureSandboxData([value]);
++  expect(deepCopyFromSandbox(value)).toEqual({ text: "abc" });
++  setSandboxPrototype(value, prototype);
++  expect(measureSandboxData([value])).toBe(before + 10);
++  prototype.extra = "longer";
++  expect(measureSandboxData([value])).toBe(before + 13);
++  expect(() => deepCopyFromSandbox(value)).toThrow("Guest prototype links and custom descriptors cannot be copied as data");
++});
++
++it("does not trust an outer host proxy or omit its descriptor observations", async () => {
++  const value = await literal("return { text: 'abc' }");
++  const reads = vi.fn(Reflect.getOwnPropertyDescriptor);
++  const proxy = new Proxy<SandboxObject>(value, { getOwnPropertyDescriptor: reads });
++  const before = measureSandboxData([proxy]);
++  reads.mockClear();
++  expect(measureSandboxData([proxy])).toBe(before);
++  expect(reads.mock.calls.some(([, key]) => key === "text")).toBe(true);
++  expect(() => deepCopyFromSandbox(proxy)).toThrow("Unsupported proxy sandbox value");
++});
+--- a/packages/safe-js/src/snapshot/validation.ts
++++ b/packages/safe-js/src/snapshot/validation.ts
+@@ -16,7 +16,7 @@
+ import { validateDataViewStorage } from "./data-view.js";
+ import { restoreDateTime } from "../interp/date.js";
+ import { validateBoxedProperties } from "./boxed.js";
+-import { hasGuestObjectState, isGuestClosure } from "../interp/object-model.js";
++import { hasGuestObjectState, isGuestClosure, isTrackedIntrinsicObject } from "../interp/object-model.js";
+ import { getIntrinsicIdentity } from "../interp/intrinsics.js";
+ import { isSandboxModuleNamespace } from "../interp/module-namespace.js";
+ import { isSandboxClosure, snapshotRuntimeGetters } from "../interp/values.js";
+@@ -1016,7 +1016,7 @@
+   state: ValidationState
+ ): void {
+   if (types.isProxy(value) && (state.dataPropertiesOnly ||
+-      (getIntrinsicIdentity(value as object) === undefined && !isSandboxModuleNamespace(value)))) {
++      (getIntrinsicIdentity(value as object) === undefined && !isSandboxModuleNamespace(value) && !isTrackedIntrinsicObject(value as object)))) {
+     fail("invalidType", path, "proxy objects are not snapshot data");
+   }
+   if (typeof value === "object" && value !== null && hasGuestObjectState(value) &&
+@@ -1106,7 +1106,7 @@
+   let entries = 0;
+   while (pending.length > 0) {
+     const { value, path, depth } = pending.pop()!;
+-    if (types.isProxy(value) && getIntrinsicIdentity(value) === undefined && !isSandboxModuleNamespace(value))
++    if (types.isProxy(value) && getIntrinsicIdentity(value) === undefined && !isSandboxModuleNamespace(value) && !isTrackedIntrinsicObject(value))
+       fail("invalidType", path, "proxy objects are not snapshot data");
+     if (seen.has(value)) continue;
+     seen.add(value);
+--- /dev/null
++++ b/packages/safe-js/src/tracked-literal-snapshot.test.ts
+@@ -0,0 +1,105 @@
++import { expect, it, vi } from "vitest";
++import { dump } from "./dump.js";
++import { createIntrinsicObject, isTrackedIntrinsicObject } from "./interp/object-model.js";
++import { restore } from "./restore.js";
++import { run } from "./run.js";
++import { validateRuntimeSnapshotDescriptors, validateSnapshotData } from "./snapshot/validation.js";
++
++it("restores an in-memory snapshot containing a newly created literal", async () => {
++  const source = "const value={text:'abc'};return value.text";
++  const first = await run(source);
++  expect(first).toMatchObject({ ok: true, returnValue: "abc" });
++  const snapshot = restore(first.snapshot, { source });
++  expect(await run(source, { snapshot })).toMatchObject({ ok: true, returnValue: "abc" });
++});
++
++it.each([
++  ["const child={text:'abc'};const value={left:child,right:child};return value.left===value.right&&value.right.text", "abc"],
++  ["const value={text:'abc'};Object.defineProperty(value,'hidden',{value:{text:'hidden'}});return value.hidden.text", "hidden"],
++  ["const base={text:'inherited'};const value={__proto__:base};return value.text", "inherited"],
++  ["let reads=0;const value={get text(){reads++;return 'abc'}};return reads", 0]
++])("roundtrips nested and descriptor literal state: %s", async (source, expected) => {
++  const first = await run(source);
++  expect(first).toMatchObject({ ok: true, returnValue: expected });
++  expect(isTrackedIntrinsicObject(first.snapshot.bindings.value as object)).toBe(true);
++  const runtime = restore(first.snapshot, { source });
++  expect(await run(source, { snapshot: runtime })).toMatchObject({ ok: true, returnValue: expected });
++  const portable = JSON.parse(await dump(first));
++  const restored = restore(portable, { source });
++  expect(await run(source, { snapshot: restored })).toMatchObject({ ok: true, returnValue: expected });
++});
++
++it("keeps descriptor state on the invalidState portable fallback", async () => {
++  const source = "const value={text:'abc'};Object.defineProperty(value,'hidden',{value:'kept'});return value.hidden";
++  const first = await run(source);
++  const restored = restore(first.snapshot, { source });
++  expect(restored).not.toBe(first.snapshot);
++  expect(await run(source, { snapshot: restored })).toMatchObject({ ok: true, returnValue: "kept" });
++});
++
++it("does not transfer runtime trust to copied or forged envelopes", async () => {
++  const source = "return 1";
++  const first = await run(source);
++  const wrapper = createIntrinsicObject({ text: "abc" });
++  first.snapshot.extra = wrapper;
++  expect(restore(first.snapshot, { source })).toBe(first.snapshot);
++  expect(() => restore({ ...first.snapshot }, { source })).toThrow(expect.objectContaining({ code: "invalidType" }));
++  const forged = JSON.parse(await dump(first));
++  forged.extra = wrapper;
++  expect(() => restore(forged, { source })).toThrow(expect.objectContaining({ code: "invalidType", path: "$.extra" }));
++});
++
++it.each([false, true])("rejects exact branded wrappers in plain data, nested=%s", nested => {
++  const wrapper = createIntrinsicObject({ text: "abc" });
++  expect(() => validateSnapshotData(nested ? { wrapper } : wrapper)).toThrow(expect.objectContaining({
++    code: "invalidType", path: nested ? "$.wrapper" : "$"
++  }));
++});
++
++it.each(["unknown", "outer", "revoked"])("rejects %s host proxies without traps on both runtime paths", async kind => {
++  const source = "return 1";
++  const first = await run(source);
++  const trap = vi.fn((): never => { throw new Error("Host proxy trap ran"); });
++  const target = kind === "unknown" ? {} : createIntrinsicObject({ text: "abc" });
++  const pair = Proxy.revocable(target, {
++    get: trap, has: trap, ownKeys: trap, getPrototypeOf: trap, getOwnPropertyDescriptor: trap
++  });
++  if (kind === "revoked") pair.revoke();
++  expect(isTrackedIntrinsicObject(pair.proxy)).toBe(false);
++  first.snapshot.extra = pair.proxy;
++  expect(() => restore(first.snapshot, { source })).toThrow(expect.objectContaining({ code: "invalidType", path: "$.extra" }));
++  expect(() => validateRuntimeSnapshotDescriptors(first.snapshot)).toThrow(expect.objectContaining({ code: "invalidType", path: "$.extra" }));
++  expect(trap).not.toHaveBeenCalled();
++});
++
++it.each([false, true])("rejects caller getters on tracked literals without reading them, enumerable=%s", async enumerable => {
++  const source = "const value={text:'abc'};return value.text";
++  const first = await run(source);
++  const getter = vi.fn((): never => { throw new Error("Host getter ran"); });
++  Object.defineProperty(first.snapshot.bindings.value, "caller", { get: getter, enumerable });
++  expect(() => restore(first.snapshot, { source })).toThrow(expect.objectContaining({
++    code: "invalidType", path: "$.bindings.value.caller"
++  }));
++  expect(getter).not.toHaveBeenCalled();
++});
++
++it.each(["getter", "outer-proxy"])("keeps rejecting caller %s after guest descriptor fallback", async kind => {
++  const source = "const value={get text(){return 'abc'}};return 1";
++  const first = await run(source);
++  const callback = vi.fn((): never => { throw new Error("Caller code ran"); });
++  const value = first.snapshot.bindings.value as object;
++  if (kind === "getter") Object.defineProperty(value, "caller", { get: callback });
++  else Object.defineProperty(value, "caller", { value: new Proxy(createIntrinsicObject(), {
++    get: callback, ownKeys: callback, getPrototypeOf: callback, getOwnPropertyDescriptor: callback
++  }), enumerable: true });
++  expect(() => restore(first.snapshot, { source })).toThrow(expect.objectContaining({
++    code: "invalidType", path: "$.bindings.value.caller"
++  }));
++  expect(callback).not.toHaveBeenCalled();
++});
++
++it("still checks source identity after accepting a tracked literal", async () => {
++  const source = "const value={text:'abc'};return value.text";
++  const first = await run(source);
++  expect(() => restore(first.snapshot, { source: "const value={text:'changed'};return value.text" })).toThrow(expect.objectContaining({ name: "SnapshotMismatchError" }));
++});
