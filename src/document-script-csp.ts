@@ -43,7 +43,7 @@ export interface DocumentScriptAdmission {
 const owners = new WeakMap<DocumentTree, DocumentScriptCsp>();
 const ownerInputs = new WeakMap<
 	DocumentTree,
-	{ url: string; headers: string }
+	{ url: string; headers: string; topLevelDocument: boolean }
 >();
 
 export function snapshotDocumentScriptCspHeaders(headers: unknown): unknown {
@@ -132,34 +132,38 @@ export function initializeDocumentScriptCsp(
 	headers: unknown,
 	topLevelDocument = false,
 ): DocumentScriptCsp | undefined {
+	const topLevel = topLevelDocument === true;
 	const snapshot = snapshotDocumentScriptCspHeaders(headers);
 	const key = headerKey(snapshot);
 	const existing = owners.get(tree);
 	if (existing) {
 		const input = ownerInputs.get(tree);
-		if (!input || input.url !== tree.url || input.headers !== key)
+		if (
+			!input ||
+			input.url !== tree.url ||
+			input.headers !== key ||
+			(input.topLevelDocument !== topLevel &&
+				createNativeDocumentScriptCspPolicy(tree, snapshot).unsupported)
+		)
 			throw new AgentBrowserError(
 				"policy-denied",
 				"Document script policy does not match the response",
 			);
 		return existing;
 	}
-	const parsed = createNativeDocumentScriptCspPolicy(tree, snapshot);
+	const parsed = createNativeDocumentScriptCspPolicy(tree, snapshot, topLevel);
 	const enforced = hasUnsupportedExecutionCsp(
 		snapshot as NetworkResponse["headers"],
-		topLevelDocument,
+		topLevel,
 	);
-	if (
-		!enforced &&
-		parsed.unsupported &&
-		parsed.issues.every(
-			(issue) =>
-				issue.code === "unsupported-directive" &&
-				issue.directive === "frame-ancestors",
-		)
-	)
-		return undefined;
-	return bindPolicy(tree, parsed, {}, enforced || parsed.unsupported, key);
+	return bindPolicy(
+		tree,
+		parsed,
+		{},
+		enforced || parsed.unsupported,
+		key,
+		topLevel,
+	);
 }
 const defaultLimits: DocumentScriptCspLimits = Object.freeze({
 	maxScanWork: 2_000_000,
@@ -225,6 +229,7 @@ function bindPolicy(
 	limitOverrides: Partial<DocumentScriptCspLimits>,
 	enforced: boolean,
 	headers: string,
+	topLevelDocument = false,
 ): DocumentScriptCsp {
 	tree.get(tree.root);
 	if (owners.has(tree))
@@ -447,7 +452,7 @@ function bindPolicy(
 		close: Object.freeze(close),
 	});
 	owners.set(tree, owner);
-	ownerInputs.set(tree, { url: tree.url, headers });
+	ownerInputs.set(tree, { url: tree.url, headers, topLevelDocument });
 	try {
 		unregisterMutation = tree.onMutation(changed);
 		unregisterClose = tree.onClose(close);

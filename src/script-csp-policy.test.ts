@@ -1,8 +1,10 @@
 import { expect, it, vi } from "vitest";
 import { ContentSecurityPolicy } from "./content-security-policy.js";
+import { DocumentTree } from "./document.js";
 import {
 	type ScriptCspPolicyLimits,
 	type ScriptCspRequest,
+	createNativeDocumentScriptCspPolicy,
 	createScriptCspPolicy,
 	scriptCspPolicyLimits,
 } from "./script-csp-policy.js";
@@ -36,6 +38,134 @@ function external(
 ): ScriptCspRequest {
 	return request({ kind: "external", url, redirectCount, ...changes });
 }
+
+it("ignores frame ancestors only for exact true native top-level compilation", () => {
+	const tree = new DocumentTree(documentUrl);
+	try {
+		const input = headers(
+			`script-src ${source} 'unsafe-eval'; frame-ancestors 'none'; base-uri 'none'; report-to fixture`,
+			`FRAME-ANCESTORS 'self', script-src ${source}`,
+		);
+		for (const context of [true, false, undefined, null, "true", 1, {}, []]) {
+			const result = createNativeDocumentScriptCspPolicy(
+				tree,
+				input,
+				context as boolean,
+			);
+			expect(result.unsupported).toBe(context !== true);
+			expect(result.allowsScript(request({ nonce }))).toBe(context === true);
+			expect(result.allowsScript(request())).toBe(false);
+			expect(result.allowsScript(external("https://example.com/app.js"))).toBe(
+				false,
+			);
+			expect(result.allowsBase(documentUrl)).toBe(false);
+			expect(result.stringCompilation).toBe("deny");
+			expect(result.policyCount).toBe(3);
+		}
+		const generic = Reflect.apply(createScriptCspPolicy, undefined, [
+			documentUrl,
+			input,
+			{},
+			true,
+		]);
+		expect(generic.unsupported).toBe(true);
+		expect(generic.allowsScript(request({ nonce }))).toBe(false);
+	} finally {
+		tree.close();
+	}
+});
+
+it("does not derive native top-level privileges from getters or mutable objects", () => {
+	const tree = new DocumentTree(documentUrl);
+	const read = vi.fn(() => true);
+	const mutable = { topLevelDocument: false };
+	try {
+		for (const context of [
+			mutable,
+			Object.defineProperty({}, "topLevelDocument", { get: read }),
+			{ valueOf: read, [Symbol.toPrimitive]: read },
+			new Boolean(true),
+		]) {
+			const result = createNativeDocumentScriptCspPolicy(
+				tree,
+				headers(`script-src ${source}; frame-ancestors 'none'`),
+				context as unknown as boolean,
+			);
+			mutable.topLevelDocument = true;
+			expect(result.unsupported).toBe(true);
+			expect(result.allowsScript(request({ nonce }))).toBe(false);
+		}
+		expect(read).not.toHaveBeenCalled();
+	} finally {
+		tree.close();
+	}
+});
+
+it.each(["worker-src", "form-action", "unknown-directive", "img-src"])(
+	"does not grant unbacked %s enforcement through top-level compilation",
+	(directive) => {
+		const tree = new DocumentTree(documentUrl);
+		try {
+			const result = createNativeDocumentScriptCspPolicy(
+				tree,
+				headers(
+					`script-src ${source}; frame-ancestors 'none'; ${directive} 'none'`,
+				),
+				true,
+			);
+			expect(result.issues).toContainEqual({
+				code: "unsupported-directive",
+				directive,
+			});
+			expect(result.allowsScript(request({ nonce }))).toBe(false);
+		} finally {
+			tree.close();
+		}
+	},
+);
+
+it("retains malformed input and hard limits when ignoring top-level frame ancestors", () => {
+	const tree = new DocumentTree(documentUrl);
+	const read = vi.fn(() => true);
+	try {
+		const inputs = [
+			null,
+			Object.defineProperty({}, "content-security-policy", { get: read }),
+			{
+				"content-security-policy": Object.defineProperty([""], "0", {
+					get: read,
+				}),
+			},
+			...["\0", "\n", "\r", "\x7f", "\u0100", "frame_ancestors 'none'"].map(
+				(value) =>
+					headers(`script-src ${source}; frame-ancestors 'none'; ${value}`),
+			),
+			headers(...Array(65).fill("frame-ancestors 'none'")),
+			headers("frame-ancestors 'none',".repeat(64)),
+			headers("frame-ancestors;".repeat(1024)),
+			headers(`frame-ancestors ${"* ".repeat(4097)}`),
+			headers(`frame-ancestors ${"*".repeat(32768)}`),
+			headers(`frame-ancestors 'none'; script-src 'nonce-${"a".repeat(1025)}'`),
+			Object.fromEntries([
+				["content-security-policy", ["frame-ancestors 'none'"]],
+				...Array.from({ length: 64 }, (_, index) => [`x-${index}`, []]),
+			]),
+		];
+		for (const input of inputs) {
+			const result = createNativeDocumentScriptCspPolicy(tree, input, true);
+			expect(result.unsupported).toBe(true);
+			expect(result.issues).toEqual(
+				createScriptCspPolicy(documentUrl, input).issues.filter(
+					(issue) => issue.directive !== "frame-ancestors",
+				),
+			);
+			expect(result.allowsScript(request({ nonce }))).toBe(false);
+		}
+		expect(read).not.toHaveBeenCalled();
+	} finally {
+		tree.close();
+	}
+});
 
 it("admits valid script metadata without enforced CSP and keeps report-only inert", () => {
 	const read = vi.fn(() => {

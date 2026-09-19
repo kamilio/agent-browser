@@ -216,10 +216,49 @@ it.each([
 	},
 );
 
-it.each(["worker-src 'self'", "form-action 'self'", "frame-ancestors 'none'"])(
+it.each(
+	[
+		[`${policy}; frame-ancestors 'none'; report-to fixture`],
+		["frame-ancestors 'none'", policy],
+		[`${policy}, FRAME-ANCESTORS 'none'`],
+	].map((policies) => ({ policies })),
+)(
+	"composes top-level frame ancestors with native restrictions: $policies",
+	async ({ policies }) => {
+		const test = fixture({
+			policies,
+			html: '<script nonce="native">admitted</script><script>blocked</script><script src="/blocked.js"></script>',
+		});
+		await test.load();
+		expect(test.evaluated).toEqual(["admitted"]);
+		expect(test.runtimePolicies).toEqual(["allow"]);
+		const owner = required(documentScriptCsp(test.tree()));
+		expect(owner.unsupported).toBe(false);
+		expect(owner.allowsBase(pageUrl)).toBe(false);
+		expect(documentResourceCsp(test.tree())?.active).toBe(true);
+		await expect(pageFetch(test).fetch("/data")).resolves.toMatchObject({
+			status: 200,
+		});
+		await expect(
+			pageFetch(test).fetch("https://blocked.example/data"),
+		).rejects.toMatchObject({ code: "policy-denied" });
+		expect(test.requests.map(({ url }) => url)).toEqual([
+			pageUrl,
+			"https://example.com/data",
+		]);
+	},
+);
+
+it.each([
+	"worker-src 'self'",
+	"form-action 'self'",
+	"unknown-directive 'none'",
+])(
 	"does not ignore unsupported restrictions appended to a backed policy: %s",
 	async (directive) => {
-		const test = fixture({ policies: [`${policy}; ${directive}`] });
+		const test = fixture({
+			policies: [`${policy}; frame-ancestors 'none'; ${directive}`],
+		});
 		await expect(test.load()).rejects.toMatchObject({ code: "policy-denied" });
 		expect(test.runtimePolicies).toEqual([]);
 	},

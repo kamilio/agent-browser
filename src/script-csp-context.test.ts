@@ -2,8 +2,12 @@ import { createHash } from "node:crypto";
 import { getEventListeners } from "node:events";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadBrowserDocument } from "./document-loader.js";
+import {
+	bindDocumentScriptCsp,
+	initializeDocumentScriptCsp,
+} from "./document-script-csp.js";
 import { documentScriptState } from "./document-script-state.js";
-import type { DocumentTree } from "./document.js";
+import { DocumentTree } from "./document.js";
 import { documentInteractions } from "./interactions.js";
 import type {
 	NetworkRequest,
@@ -180,7 +184,192 @@ afterEach(() => {
 	for (const tree of documents.splice(0)) tree.close();
 });
 
+it.each([
+	{},
+	{ "content-security-policy-report-only": ["frame-ancestors 'none'"] },
+	{ "content-security-policy": [""] },
+	{ "content-security-policy": ["report-to fixture"] },
+	{ "content-security-policy": ["script-src 'nonce-native'"] },
+	{ "content-security-policy": ["default-src 'self'; base-uri 'none'"] },
+])(
+	"reuses context-independent owners without granting new privileges: %j",
+	(headers) => {
+		for (const initial of [true, false, undefined]) {
+			const tree = new DocumentTree(pageUrl);
+			documents.push(tree);
+			const owner = initializeDocumentScriptCsp(tree, headers, initial);
+			expect(owner?.unsupported).toBe(false);
+			const compilation = owner?.stringCompilation;
+			const baseAllowed = owner?.allowsBase(pageUrl);
+			for (const context of [undefined, false, true]) {
+				expect(initializeDocumentScriptCsp(tree, headers, context)).toBe(owner);
+				expect(owner?.unsupported).toBe(false);
+				expect(owner?.stringCompilation).toBe(compilation);
+				expect(owner?.allowsBase(pageUrl)).toBe(baseAllowed);
+			}
+		}
+	},
+);
+
+it("rejects header changes that add or remove top-level-only privileges", () => {
+	for (const initial of [true, false]) {
+		const tree = new DocumentTree(pageUrl);
+		documents.push(tree);
+		const script = "script-src 'nonce-native'";
+		const framing = `${script}; frame-ancestors 'none'`;
+		const headers = { "content-security-policy": [initial ? framing : script] };
+		const owner = initializeDocumentScriptCsp(tree, headers, initial);
+		expect(owner?.unsupported).toBe(false);
+		headers["content-security-policy"][0] = initial ? script : framing;
+		expect(() => initializeDocumentScriptCsp(tree, headers, !initial)).toThrow(
+			expect.objectContaining({ code: "policy-denied" }),
+		);
+	}
+});
+
+it.each([
+	"frame-ancestors 'none'",
+	"script-src 'nonce-native'; frame-ancestors 'none'",
+])("binds native owner context without cross-context reuse: %s", (policy) => {
+	for (const initial of [true, false, undefined]) {
+		const tree = new DocumentTree(pageUrl);
+		documents.push(tree);
+		const headers = { "content-security-policy": [policy] };
+		const owner = initializeDocumentScriptCsp(tree, headers, initial);
+		expect(owner?.unsupported).toBe(initial !== true);
+		expect(initializeDocumentScriptCsp(tree, headers, initial)).toBe(owner);
+		for (const context of initial === true ? [false, undefined] : [true])
+			expect(() => initializeDocumentScriptCsp(tree, headers, context)).toThrow(
+				expect.objectContaining({ code: "policy-denied" }),
+			);
+		expect(owner?.unsupported).toBe(initial !== true);
+	}
+});
+
+it("does not coerce, read getters or mutate a bound native context", () => {
+	const read = vi.fn(() => true);
+	const mutable = { topLevelDocument: false };
+	const headers = {
+		"content-security-policy": [
+			"script-src 'nonce-native'; frame-ancestors 'none'",
+		],
+	};
+	for (const context of [
+		null,
+		"true",
+		1,
+		[],
+		mutable,
+		new Boolean(true),
+		Object.defineProperty({}, "topLevelDocument", { get: read }),
+		{ valueOf: read, [Symbol.toPrimitive]: read },
+	]) {
+		const tree = new DocumentTree(pageUrl);
+		documents.push(tree);
+		mutable.topLevelDocument = false;
+		const owner = initializeDocumentScriptCsp(
+			tree,
+			headers,
+			context as boolean,
+		);
+		expect(owner?.unsupported).toBe(true);
+		mutable.topLevelDocument = true;
+		expect(initializeDocumentScriptCsp(tree, headers, context as boolean)).toBe(
+			owner,
+		);
+		expect(() => initializeDocumentScriptCsp(tree, headers, true)).toThrow(
+			expect.objectContaining({ code: "policy-denied" }),
+		);
+	}
+	expect(read).not.toHaveBeenCalled();
+});
+
+it("does not upgrade a generic owner through native top-level initialization", () => {
+	const tree = new DocumentTree(pageUrl);
+	documents.push(tree);
+	const headers = {
+		"content-security-policy": [
+			"script-src 'nonce-native'; frame-ancestors 'none'",
+		],
+	};
+	const owner = bindDocumentScriptCsp(tree, headers);
+	expect(owner.unsupported).toBe(true);
+	expect(initializeDocumentScriptCsp(tree, headers)).toBe(owner);
+	expect(() => initializeDocumentScriptCsp(tree, headers, true)).toThrow(
+		expect.objectContaining({ code: "policy-denied" }),
+	);
+	expect(owner.unsupported).toBe(true);
+});
+
+it("does not invoke header getters to initialize or rebind a top-level owner", () => {
+	const read = vi.fn(() => ["frame-ancestors 'none'"]);
+	const headers = Object.defineProperty({}, "content-security-policy", {
+		get: read,
+	});
+	const invalid = new DocumentTree(pageUrl);
+	const valid = new DocumentTree(pageUrl);
+	documents.push(invalid, valid);
+	expect(initializeDocumentScriptCsp(invalid, headers, true)?.unsupported).toBe(
+		true,
+	);
+	initializeDocumentScriptCsp(
+		valid,
+		{ "content-security-policy": ["frame-ancestors 'none'"] },
+		true,
+	);
+	expect(() => initializeDocumentScriptCsp(valid, headers, true)).toThrow(
+		expect.objectContaining({ code: "policy-denied" }),
+	);
+	expect(read).not.toHaveBeenCalled();
+});
+
+it("keeps native owner header and URL bindings strict with top-level frame ancestors", () => {
+	const tree = new DocumentTree(pageUrl);
+	documents.push(tree);
+	const headers = {
+		"content-security-policy": [
+			"script-src 'nonce-native'; frame-ancestors 'none'",
+		],
+	};
+	const owner = initializeDocumentScriptCsp(tree, headers, true);
+	expect(owner?.unsupported).toBe(false);
+	headers["content-security-policy"][0] = "script-src 'unsafe-inline'";
+	expect(() => initializeDocumentScriptCsp(tree, headers, true)).toThrow(
+		expect.objectContaining({ code: "policy-denied" }),
+	);
+
+	headers["content-security-policy"][0] =
+		"script-src 'nonce-native'; frame-ancestors 'none'";
+	Object.defineProperty(tree, "url", { value: "https://other.example/page" });
+	expect(() => initializeDocumentScriptCsp(tree, headers, true)).toThrow(
+		expect.objectContaining({ code: "policy-denied" }),
+	);
+});
+
 describe("native top-level execution CSP context with a fake script runner", () => {
+	it.each([
+		{ "content-security-policy": [recordedTargetPolicy, "default-src *"] },
+		{ "content-security-policy": [`${recordedTargetPolicy}, script-src *`] },
+		{
+			"content-security-policy": [recordedTargetPolicy],
+			"Content-Security-Policy": ["script-src *"],
+		},
+	])(
+		"composes framing and script restrictions across header policies: %j",
+		async (headers) => {
+			const test = fixture(headers);
+			await test.session.navigate(test.tab, pageUrl);
+			expect(test.seen.map(({ source }) => source)).toEqual([
+				"ordinary-source",
+				"crossorigin-source",
+			]);
+			expect(test.requests.map(({ url }) => url)).toEqual([
+				pageUrl,
+				ordinaryUrl,
+				crossOriginUrl,
+			]);
+		},
+	);
 	it.each<[string, NetworkResponse["headers"]]>([
 		[
 			"recorded September 17 Target policy",
@@ -269,7 +458,12 @@ describe("native top-level execution CSP context with a fake script runner", () 
 
 	it.each([
 		["script-src *", ["ordinary-source", "crossorigin-source"]],
+		[
+			"script-src *; frame-ancestors 'none'",
+			["ordinary-source", "crossorigin-source"],
+		],
 		["default-src 'self'", ["ordinary-source"]],
+		["default-src 'self'; frame-ancestors 'none'", ["ordinary-source"]],
 	] as const)(
 		"admits only matching external scripts for %s",
 		async (policy, sources) => {
@@ -283,32 +477,33 @@ describe("native top-level execution CSP context with a fake script runner", () 
 	it.each(["omitted", false] as const)(
 		"retains conservative loader behavior with %s context",
 		async (loaderContext) => {
-			for (const policy of [recordedTargetPolicy, ""]) {
+			for (const policy of [
+				recordedTargetPolicy,
+				"script-src *; frame-ancestors 'none'",
+				"",
+			]) {
 				const test = fixture(
 					{ "content-security-policy": [policy] },
 					{ loaderContext },
 				);
-				await test.session.navigate(test.tab, pageUrl);
-				expect(test.contexts[0].topLevelDocument).toBe(true);
-				if (policy === "") {
-					expect(test.seen.map((entry) => entry.source)).toEqual([
-						"inline-source",
-						"ordinary-source",
-						"crossorigin-source",
-					]);
+				if (policy !== "") {
+					await expect(
+						test.session.navigate(test.tab, pageUrl),
+					).rejects.toMatchObject({
+						code: "policy-denied",
+					});
+					expect(test.seen).toEqual([]);
+					expect(test.requests.map(({ url }) => url)).toEqual([pageUrl]);
+					expect(test.events).toEqual([]);
 					continue;
 				}
-				expect(test.seen).toEqual([]);
-				expect(test.requests.map(({ url }) => url)).toEqual([pageUrl]);
-				expect(
-					documentScriptState(test.session.page(test.tab).document)?.report,
-				).toMatchObject({
-					executed: 0,
-					skipped: 3,
-					complete: true,
-					issues: { "csp-not-supported": 3 },
-				});
-				expect(test.events).toEqual([]);
+				await test.session.navigate(test.tab, pageUrl);
+				expect(test.contexts[0].topLevelDocument).toBe(true);
+				expect(test.seen.map((entry) => entry.source)).toEqual([
+					"inline-source",
+					"ordinary-source",
+					"crossorigin-source",
+				]);
 			}
 		},
 	);
@@ -346,7 +541,7 @@ describe("native top-level execution CSP context with a fake script runner", () 
 			{ "content-security-policy": ["future-directive allow"] },
 		],
 		[
-			"mixed directives",
+			"supported script denial with framing",
 			{
 				"content-security-policy": [
 					`${recordedTargetPolicy} script-src 'none'`,
@@ -354,19 +549,28 @@ describe("native top-level execution CSP context with a fake script runner", () 
 			},
 		],
 		[
-			"mixed values",
-			{ "content-security-policy": [recordedTargetPolicy, "default-src *"] },
+			"unsupported worker with native resources and framing",
+			{
+				"content-security-policy": [
+					recordedTargetPolicy,
+					"default-src *; worker-src 'self'",
+				],
+			},
 			true,
 		],
 		[
-			"mixed policy list",
-			{ "content-security-policy": [`${recordedTargetPolicy}, script-src *`] },
+			"unsupported form action with framing",
+			{
+				"content-security-policy": [
+					`${recordedTargetPolicy}, form-action 'self'`,
+				],
+			},
 		],
 		[
-			"mixed case aliases",
+			"unknown restriction with framing",
 			{
 				"content-security-policy": [recordedTargetPolicy],
-				"Content-Security-Policy": ["script-src *"],
+				"Content-Security-Policy": ["future-directive allow"],
 			},
 		],
 		[
@@ -440,7 +644,8 @@ describe("native top-level execution CSP context with a fake script runner", () 
 				issues: { "csp-not-supported": 3 },
 			});
 			expect(test.events).toEqual(
-				_name === "report-only alongside enforced"
+				_name === "report-only alongside enforced" ||
+					_name === "supported script denial with framing"
 					? ["DOMContentLoaded", "window-load"]
 					: [],
 			);

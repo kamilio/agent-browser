@@ -266,6 +266,7 @@ export function createScriptCspPolicy(
 export function createNativeDocumentScriptCspPolicy(
 	tree: DocumentTree,
 	headers: unknown,
+	topLevelDocument = false,
 ): ScriptCspPolicy {
 	const resource = documentResourceCsp(tree);
 	return compileScriptCspPolicy(
@@ -273,6 +274,7 @@ export function createNativeDocumentScriptCspPolicy(
 		headers,
 		{},
 		resource?.matches(headers) ? resource : undefined,
+		topLevelDocument === true,
 	);
 }
 
@@ -281,6 +283,7 @@ function compileScriptCspPolicy(
 	headers: unknown,
 	limitOverrides: Partial<ScriptCspPolicyLimits>,
 	resource?: DocumentResourceCsp,
+	topLevelDocument = false,
 ): ScriptCspPolicy {
 	const issues: ScriptCspIssue[] = [];
 	const policies: Policy[] = [];
@@ -329,6 +332,7 @@ function compileScriptCspPolicy(
 					if (names.has(name)) continue;
 					names.add(name);
 					if (name === "report-uri" || name === "report-to") continue;
+					if (name === "frame-ancestors" && topLevelDocument === true) continue;
 					if (name === "base-uri") {
 						base = "none";
 						for (const expression of expressions) {
