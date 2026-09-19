@@ -1,0 +1,105 @@
+--- a/packages/safe-js/src/modules/empty-environment.ts
++++ b/packages/safe-js/src/modules/empty-environment.ts
+@@ -6,3 +6,4 @@
+ export function hasEmptyOwnedModuleEnvironment(environment: ModuleEnvironment): boolean {
++  if (immutableEmptyModuleEnvironments.has(environment)) return true;
+   const namespaces = ownedModuleNamespaces.get(environment);
+   if (namespaces === undefined) return false;
+--- /dev/null
++++ b/packages/safe-js/src/modules/empty-environment-fast-path.test.ts
+@@ -0,0 +1,95 @@
++import { expect, it, vi } from "vitest";
++import { Budget } from "../interp/budget.js";
++import { hasEmptyOwnedModuleEnvironment, immutableEmptyModuleEnvironments } from "./empty-environment.js";
++import { attachSourceLoader, createImmutableEmptyModuleEnvironment, createModuleEnvironment, type ModuleEnvironment } from "./registry.js";
++
++function inspectNamespaceChecks(environment: ModuleEnvironment) {
++  const keys = vi.spyOn(Object, "keys");
++  const descriptors = vi.spyOn(Object, "getOwnPropertyDescriptor");
++  try {
++    keys.mockClear();
++    descriptors.mockClear();
++    const results = [hasEmptyOwnedModuleEnvironment(environment), hasEmptyOwnedModuleEnvironment(environment)];
++    return { results, keys: keys.mock.calls.length, descriptors: descriptors.mock.calls.length };
++  } finally {
++    descriptors.mockRestore();
++    keys.mockRestore();
++  }
++}
++
++it("does not inspect namespaces for registry-certified immutable empty environments", () => {
++  const environment = createImmutableEmptyModuleEnvironment({ budget: new Budget() });
++  expect(immutableEmptyModuleEnvironments.has(environment)).toBe(true);
++  expect(Object.isFrozen(environment)).toBe(true);
++  expect(Object.isFrozen(environment.namespaces)).toBe(true);
++  expect(Object.isFrozen(environment.available)).toBe(true);
++  expect(inspectNamespaceChecks(environment)).toEqual({ results: [true, true], keys: 0, descriptors: 0 });
++});
++
++it.each([false, true])("keeps checking uncertified owned environments, frozen=%s", frozen => {
++  const environment = createModuleEnvironment(undefined, { budget: new Budget() });
++  if (frozen) {
++    Object.freeze(environment.available);
++    Object.freeze(environment.namespaces);
++    Object.freeze(environment);
++  }
++  expect(immutableEmptyModuleEnvironments.has(environment)).toBe(false);
++  expect(inspectNamespaceChecks(environment)).toEqual({ results: [true, true], keys: 2, descriptors: 2 });
++});
++
++it("detects mutable namespace growth and does not recertify after deletion", () => {
++  const environment = createModuleEnvironment(undefined, { budget: new Budget() });
++  expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(true);
++  environment.namespaces.late = { text: "module" };
++  expect(inspectNamespaceChecks(environment)).toEqual({ results: [false, false], keys: 1, descriptors: 1 });
++  delete environment.namespaces.late;
++  expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(false);
++});
++
++it.each([false, true])("detects namespace replacement even when empty=%s", empty => {
++  const environment = createModuleEnvironment(undefined, { budget: new Budget() });
++  const original = environment.namespaces;
++  expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(true);
++  environment.namespaces = empty ? {} : { late: { text: "module" } };
++  expect(inspectNamespaceChecks(environment)).toEqual({ results: [false, false], keys: 0, descriptors: 1 });
++  environment.namespaces = original;
++  expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(false);
++});
++
++it("rejects replacement namespace accessors without invoking them", () => {
++  const environment = createModuleEnvironment(undefined, { budget: new Budget() });
++  expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(true);
++  const getter = vi.fn(() => ({}));
++  Object.defineProperty(environment, "namespaces", { get: getter });
++  expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(false);
++  expect(getter).not.toHaveBeenCalled();
++});
++
++it.each([false, true])("does not certify arbitrary unowned or restored environments, frozen=%s", frozen => {
++  const environment: ModuleEnvironment = { available: [], namespaces: {} };
++  if (frozen) {
++    Object.freeze(environment.available);
++    Object.freeze(environment.namespaces);
++    Object.freeze(environment);
++  }
++  expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(false);
++  expect(createModuleEnvironment(undefined, { budget: new Budget() }, environment)).toBe(environment);
++  expect(immutableEmptyModuleEnvironments.has(environment)).toBe(false);
++  expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(false);
++});
++
++it("returns to checked fallback when a certified environment is reattached", () => {
++  const environment = createImmutableEmptyModuleEnvironment({ budget: new Budget() });
++  expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(true);
++  expect(createModuleEnvironment(undefined, { budget: new Budget() }, environment)).toBe(environment);
++  expect(immutableEmptyModuleEnvironments.has(environment)).toBe(false);
++  expect(inspectNamespaceChecks(environment)).toEqual({ results: [true, true], keys: 2, descriptors: 2 });
++});
++
++it("returns to checked fallback when a source loader is attached", () => {
++  const environment = createImmutableEmptyModuleEnvironment({ budget: new Budget() });
++  expect(hasEmptyOwnedModuleEnvironment(environment)).toBe(true);
++  attachSourceLoader(environment, async () => ({}));
++  expect(immutableEmptyModuleEnvironments.has(environment)).toBe(false);
++  expect(inspectNamespaceChecks(environment)).toEqual({ results: [true, true], keys: 2, descriptors: 2 });
++});
