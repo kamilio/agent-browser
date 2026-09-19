@@ -54,6 +54,7 @@ beforeEach(() => {
 	vi.stubEnv("AGENT_BROWSER_LANGUAGES", undefined);
 	vi.stubEnv("AGENT_BROWSER_DOCUMENT_PROFILE", undefined);
 	vi.stubEnv("AGENT_BROWSER_RESOURCE_CACHE", undefined);
+	vi.stubEnv("AGENT_BROWSER_BLOCKED_ORIGINS", undefined);
 	vi.stubEnv("AGENT_BROWSER_SESSION", undefined);
 	vi.stubEnv("PLAYWRIGHT_CLI_SESSION", undefined);
 	process.exitCode = 0;
@@ -194,3 +195,27 @@ it("preserves rejection of unsupported website-script modes", async () => {
 	});
 	expect(runtime.configured).not.toHaveBeenCalled();
 });
+
+it.each(["legacy", "extension"])(
+	"forwards explicit origin blocks to the %s process runtime",
+	async (adapter) => {
+		vi.stubEnv("AGENT_BROWSER_SAFEJS_ROOT", "/trusted/fixture");
+		vi.stubEnv("AGENT_BROWSER_PAGE_RUNTIME", adapter);
+		vi.stubEnv(
+			"AGENT_BROWSER_BLOCKED_ORIGINS",
+			'["https://TRACKER.example:443/","https://tracker.example"]',
+		);
+		const { error } = await invoke();
+		expect(error).not.toHaveBeenCalled();
+		expect(runtime.configured).toHaveBeenCalledExactlyOnceWith({
+			process: {
+				packageRoot: "/trusted/fixture",
+				runtimeAdapter: adapter,
+				websiteScripts: undefined,
+				identity: { languages: ["en-US"] },
+				network: { blockedOrigins: ["https://tracker.example"] },
+			},
+		});
+		expect(runtime.closed).toHaveBeenCalledOnce();
+	},
+);

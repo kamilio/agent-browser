@@ -15,6 +15,7 @@ import {
 } from "./node-cookie-policy.js";
 import { documentProfileFromEnvironment } from "./node-document-profile.js";
 import { identityFromEnvironment } from "./node-identity-config.js";
+import { blockedOriginsFromEnvironment } from "./node-network-policy-config.js";
 import { loadPlaygroundAssets } from "./node-playground-assets.js";
 import { resourceCacheFromEnvironment } from "./node-resource-cache-config.js";
 import {
@@ -41,6 +42,9 @@ import {
 import { type SemanticSnapshot, renderSnapshot } from "./snapshot.js";
 
 function runtimeConfiguration() {
+	const network = blockedOriginsFromEnvironment(
+		process.env.AGENT_BROWSER_BLOCKED_ORIGINS,
+	);
 	const scriptProfile = scriptProfileFromEnvironment(process.env);
 	const cookiePolicy = cookiePolicySelection(
 		process.env,
@@ -165,6 +169,7 @@ function runtimeConfiguration() {
 			"Website scripts require an explicit SafeJS process runtime",
 		);
 	return {
+		network,
 		scriptProfile,
 		cookiePolicy,
 		packageRoot,
@@ -180,6 +185,7 @@ function runtimeConfiguration() {
 
 async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 	const {
+		network,
 		scriptProfile,
 		cookiePolicy,
 		packageRoot,
@@ -202,6 +208,7 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 		return new SessionProcessHost({
 			process: {
 				packageRoot,
+				...(network ? { network } : {}),
 				...scriptProfile,
 				...(cookiePolicy ? { cookiePolicy } : {}),
 				websiteScripts,
@@ -235,6 +242,7 @@ async function host(configuration: ReturnType<typeof runtimeConfiguration>) {
 				...(resourceCache ? { resourceCredentials: "omit" as const } : {}),
 				createTransport: (cookieJar) =>
 					new NodeNetworkTransport({
+						...network,
 						cookieJar,
 						...(resourceCache ? { resourceCache: {} } : {}),
 					}),

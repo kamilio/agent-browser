@@ -45,6 +45,12 @@ source-derived, not verified rendering, hydration or proof of interactive suppor
 
 Set configuration on the service, not only on a client:
 
+- `AGENT_BROWSER_BLOCKED_ORIGINS`: a JSON array of up to 128 HTTP(S) origins
+  to deny, for example `'["https://tracker.example"]'`. Applies to native, reader
+  and process-backed sessions, including redirects and subresource requests.
+  Paths, query strings and credentials are rejected. Nothing is blocked by default;
+  this does not relax network safety rules or solve access challenges. Restart the
+  service to change its policy; setting it on a client does not change a running service.
 - `AGENT_BROWSER_SAFEJS_ROOT`: a trusted compiled extended-SafeJS package root
   for supervised, process-backed sessions.
 - `AGENT_BROWSER_PAGE_RUNTIME=extension`: select the public SafeJS extension API.

@@ -288,6 +288,7 @@
   "src/node-session-child-runtime.test.ts",
   "src/cli-runtime-selection.test.ts",
   "src/cli-resource-cache.test.ts",
+  "src/node-network-policy-config.test.ts",
   "src/cli-document-profile.test.ts",
   "src/double-click.test.ts",
   "src/double-click-command.test.ts",

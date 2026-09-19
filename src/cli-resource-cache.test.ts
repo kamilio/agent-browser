@@ -145,6 +145,7 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	for (const setting of [
 		"AGENT_BROWSER_RESOURCE_CACHE",
+		"AGENT_BROWSER_BLOCKED_ORIGINS",
 		"AGENT_BROWSER_DOCUMENT_PROFILE",
 		"AGENT_BROWSER_SAFEJS_ROOT",
 		"AGENT_BROWSER_PAGE_RUNTIME",
@@ -174,8 +175,74 @@ afterEach(() => {
 	expect(fixture.readerLoader).not.toHaveBeenCalled();
 });
 
-async function invoke() {
-	process.argv = ["node", "agent-browser", "capabilities"];
+it.each([undefined, "reader"])(
+	"forwards origin blocks to the native transport (profile=%s)",
+	async (profile) => {
+		vi.stubEnv("AGENT_BROWSER_DOCUMENT_PROFILE", profile);
+		vi.stubEnv(
+			"AGENT_BROWSER_BLOCKED_ORIGINS",
+			'["https://TRACKER.example:443/"]',
+		);
+		fixture.onRead = () =>
+			vi.stubEnv(
+				"AGENT_BROWSER_BLOCKED_ORIGINS",
+				'["https://changed.example"]',
+			);
+		const { error } = await invoke();
+		expect(error).not.toHaveBeenCalled();
+		fixture.host.mock.calls[0][0].createSession("synthetic");
+		expect(fixture.session.mock.calls[0][0].loadDocument).toBe(
+			profile === "reader" ? fixture.readerLoader : fixture.nativeLoader,
+		);
+		const cookieJar = createCookieJar();
+		fixture.session.mock.calls[0][0].createTransport(cookieJar);
+		expect(fixture.transport).toHaveBeenCalledExactlyOnceWith({
+			cookieJar,
+			blockedOrigins: ["https://tracker.example"],
+		});
+		expect(fixture.request).not.toHaveBeenCalled();
+	},
+);
+
+it("rejects malformed origin blocks before contacting a service or accessing secret configuration", async () => {
+	vi.stubEnv(
+		"AGENT_BROWSER_BLOCKED_ORIGINS",
+		'["https://user:PRIVATE_SENTINEL@tracker.example"]',
+	);
+	vi.stubEnv("AGENT_BROWSER_SECRET_CONFIG", "/synthetic/private-config");
+	fixture.connection = { synthetic: "existing-service" };
+	const { error } = await expectRejected(
+		"invalid-input",
+		"AGENT_BROWSER_BLOCKED_ORIGINS",
+	);
+	for (const secret of [
+		"PRIVATE_SENTINEL",
+		"tracker.example",
+		"/synthetic/private-config",
+	])
+		expect(JSON.stringify(error.mock.calls)).not.toContain(secret);
+});
+
+it.each(["capabilities", "open"])(
+	"does not replace a running service's origin policy from a %s client invocation",
+	async (command) => {
+		vi.stubEnv("AGENT_BROWSER_BLOCKED_ORIGINS", '["https://tracker.example"]');
+		fixture.connection = { synthetic: "existing-service" };
+		const argv =
+			command === "open" ? [command, "https://fixture.invalid/"] : [command];
+		const { error } = await invoke(argv);
+		expect(error).not.toHaveBeenCalled();
+		expect(fixture.request).toHaveBeenCalledExactlyOnceWith(
+			fixture.connection,
+			{ argv, session: "default" },
+			...(command === "open" ? [35_000] : []),
+		);
+		expectNoLocalResources();
+	},
+);
+
+async function invoke(argv = ["capabilities"]) {
+	process.argv = ["node", "agent-browser", ...argv];
 	const log = vi.spyOn(console, "log").mockImplementation(() => {});
 	const error = vi.spyOn(console, "error").mockImplementation(() => {});
 	await import("./cli.js");
@@ -212,6 +279,7 @@ async function expectRejected(code: string, message?: string) {
 	expect(fixture.read).not.toHaveBeenCalled();
 	expect(fixture.request).not.toHaveBeenCalled();
 	expectNoLocalResources();
+	return { log, error };
 }
 
 describe("pure resource cache configuration", () => {
