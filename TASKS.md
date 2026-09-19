@@ -4,18 +4,18 @@
 
 - Run the supplied Zoom meeting in the native browser with SafeJS, without
   substituting Chromium, Firefox or a remote browser.
-- The 1,196,388-byte Zoom launch module now passes CSP and size admission under
-  the explicit application profile, but execution still hits the 120-second
-  script limit. No usable meeting UI, admission, incoming audio, recording or
-  transcript is demonstrated.
+- The direct web-client route returns HTTP 200 and exposes the name field and
+  Join button. With optional analytics blocked, 17 scripts execute before the
+  417,914-byte Vue bundle hits the 120-second execution limit. No functioning
+  join handler, admission, incoming audio, recording or transcript is demonstrated.
 - Address repeated retained-graph accounting without weakening memory, depth,
   cancellation or credential isolation. Mutable graphs cannot be cached by identity.
 - Empty owned module environments and object import metadata now reuse shallow
   scope snapshots; owned-graph accounting is faster, but Zoom still times out.
 - Cold SDK depth-limit tests exhaust the default Node stack. They pass with a
   larger test stack; production stack settings are unchanged and this gate remains open.
-- Constructor descriptor tracking passes 444 selected SDK tests and eight native
-  fixture checks; synthetic accounting improved, but Zoom speed remains unverified.
+- Uncaught guest exceptions close the SafeJS realm; loader-only recovery cannot
+  restore execution. Preserve shutdown on budget failures and cancellation.
 - Complete legitimate admission, incoming audio, permitted recording, transcription,
   summary and verified delivery using the automations notetaker behavior.
 
@@ -28,6 +28,10 @@
 - Reader extraction now returns MDN Modules, Wikipedia WebRTC and Python asyncio
   content in live native checks; broader site coverage remains unverified.
   Stack Overflow still returns a challenge and requires a legitimate handoff.
+- Node.js filesystem docs now load without exceeding the node cap. Whole-page
+  output still exceeds 256,000 bytes; explicit text-prefix extraction works.
+- X search is identified as JavaScript-required, not research content or CAPTCHA.
+  Reddit denies access; GitHub research pages yield text, not completed research.
 - Complete browser-only research on local-LLM hardware, benchmarks, Astra chatter
   and Poe opinions; do not represent unfinished research as completed.
 - Finish validation of secret placeholders with .env/pass providers and passkeys;
