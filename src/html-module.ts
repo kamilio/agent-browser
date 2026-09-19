@@ -1,5 +1,6 @@
 import { types } from "node:util";
 import type { FetchCredentials } from "./cors.js";
+import type { DocumentScriptAdmission } from "./document-script-csp.js";
 import { AgentBrowserError } from "./errors.js";
 
 export interface HtmlModuleRequest {
@@ -8,6 +9,7 @@ export interface HtmlModuleRequest {
 	readonly baseUrl: string;
 	readonly credentials: FetchCredentials;
 	readonly integrity?: string;
+	readonly admission?: DocumentScriptAdmission;
 	readonly signal: AbortSignal;
 }
 

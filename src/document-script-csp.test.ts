@@ -75,10 +75,53 @@ it.each([
 	['<script nonce="native" title="safe" TITLE="<SCRIPT"></script>', false],
 	['<script nonce="native" data-<StYle="x"></script>', false],
 	['<script nonce="native" title="&lt;script"></script>', false],
-	['<script nonce="native" type="module"></script>', false],
+	['<script nonce="native" type="module"></script>', true],
 ])("uses trusted parser nonceability for %s", async (source, allowed) => {
 	const { decisions } = await parsedScripts(source);
 	expect(decisions).toEqual([allowed]);
+});
+
+it.each(["", ' src="https://cdn.example/root.js"'])(
+	"carries a module nonce into descendant fetch checks: %s",
+	async (external) => {
+		const { tree, owner } = await parsedScripts(
+			`<script type="module" nonce="native"${external}></script>`,
+			"script-src 'nonce-native'",
+		);
+		const entry = [...tree.walk()].find(
+			({ node }) => node.tagName === "script",
+		);
+		if (!entry) throw new Error("Missing module element");
+		const admission = owner.prepareScript(entry.node.id);
+		if (!admission) throw new Error("Missing module admission");
+		expect(
+			owner.allowsRequest(admission, "https://cdn.example/child.js", 0),
+		).toBe(true);
+		expect(
+			owner.allowsRequest(admission, "https://other.example/final.js", 1),
+		).toBe(true);
+		owner.close();
+		expect(
+			owner.allowsRequest(admission, "https://cdn.example/child.js", 0),
+		).toBe(false);
+	},
+);
+
+it("keeps host restrictions for module graphs without an authorized nonce", async () => {
+	const { tree, owner } = await parsedScripts(
+		'<script type="module" src="/root.js"></script>',
+		"script-src 'self'",
+	);
+	const entry = [...tree.walk()].find(({ node }) => node.tagName === "script");
+	if (!entry) throw new Error("Missing module element");
+	const admission = owner.prepareScript(entry.node.id);
+	if (!admission) throw new Error("Missing module admission");
+	expect(
+		owner.allowsRequest(admission, "https://example.com/child.js", 0),
+	).toBe(true);
+	expect(
+		owner.allowsRequest(admission, "https://other.example/child.js", 0),
+	).toBe(false);
 });
 
 it("keeps parse-time refusal sticky and rechecks current attributes and connection", async () => {
@@ -178,7 +221,7 @@ it("derives external/inline and nonceability from native state without relaxing 
 	).toBe(false);
 	expect(
 		owner.allowsScript(script(tree, { nonce: "native", type: "module" })),
-	).toBe(false);
+	).toBe(true);
 });
 
 it("refuses unknown, parser, inert, foreign and detached eligibility rather than trusting missing parser evidence", () => {

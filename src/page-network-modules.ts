@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { FetchCredentials } from "./cors.js";
+import type { DocumentScriptAdmission } from "./document-script-csp.js";
 import { AgentBrowserError } from "./errors.js";
 import {
 	type HtmlModuleRequest,
@@ -29,6 +30,7 @@ export interface PageNetworkModuleOptions {
 		url: string,
 		policy: ScriptFetchPolicy,
 		signal: AbortSignal,
+		admission?: DocumentScriptAdmission,
 	) => Promise<Readonly<ScriptFetchResult>>;
 	readonly credentials?: FetchCredentials;
 	readonly htmlEntries?: boolean;
@@ -152,6 +154,21 @@ function integrityDenied(): AgentBrowserError {
 	);
 }
 
+function checkAdmission(
+	admission: DocumentScriptAdmission | undefined,
+	url?: string,
+	redirectCount?: number,
+): void {
+	if (admission === undefined) return;
+	const allows = data(admission, "allows");
+	if (typeof allows !== "function") throw invalid();
+	if (Reflect.apply(allows, admission, [url, redirectCount]) !== true)
+		throw new AgentBrowserError(
+			"policy-denied",
+			"Module Content Security Policy denied",
+		);
+}
+
 type IntegrityDigests = Readonly<Record<IntegrityAlgorithm, string>>;
 
 function checkIntegrity(
@@ -248,6 +265,11 @@ export class PageNetworkModuleRegistry {
 			Array.from(sources.keys(), (id) => [id, this.#policy] as const),
 		);
 		const digests = new Map<string, IntegrityDigests>();
+		const admissions = new Map<string, DocumentScriptAdmission | undefined>();
+		const paths = new Map<
+			string,
+			readonly { url: string; redirectCount: number }[]
+		>();
 		const requests = new Map<string, Promise<Readonly<PageSourceModule>>>();
 		const waiters: { resolve(): void; reject(error: unknown): void }[] = [];
 		const lifetime = new AbortController();
@@ -268,6 +290,8 @@ export class PageNetworkModuleRegistry {
 			bases.clear();
 			policies.clear();
 			digests.clear();
+			admissions.clear();
+			paths.clear();
 			requests.clear();
 			for (const waiter of waiters.splice(0)) waiter.reject(aborted());
 			lifetime.abort();
@@ -295,15 +319,17 @@ export class PageNetworkModuleRegistry {
 			url: URL,
 			policy: Readonly<ScriptFetchPolicy>,
 			integrity: Readonly<IntegrityMetadata> | null,
+			admission: DocumentScriptAdmission | undefined,
 		): Promise<Readonly<PageSourceModule>> => {
 			await acquire();
 			try {
 				live();
-				const operation = Reflect.apply(this.#fetch, undefined, [
-					url.href,
-					policy,
-					lifetime.signal,
-				]);
+				checkAdmission(admission, url.href, 0);
+				const fetchArguments: Parameters<
+					PageNetworkModuleOptions["fetchWithPolicy"]
+				> = [url.href, policy, lifetime.signal];
+				if (admission !== undefined) fetchArguments[3] = admission;
+				const operation = Reflect.apply(this.#fetch, undefined, fetchArguments);
 				const result = await awaitResult(operation, lifetime.signal);
 				live();
 				if (!result || !["basic", "cors"].includes(result.type))
@@ -314,6 +340,21 @@ export class PageNetworkModuleRegistry {
 				const response = result.response;
 				const finalUrl = moduleUrl(response.url, this.#document);
 				if (finalUrl.href !== response.url) throw invalid();
+				if (
+					!Array.isArray(response.redirects) ||
+					response.redirects.length > 20
+				)
+					throw invalid();
+				const path = [
+					{ url: url.href, redirectCount: 0 },
+					...response.redirects.map((redirect, redirectCount) => ({
+						url: moduleUrl(redirect.url, this.#document).href,
+						redirectCount,
+					})),
+					{ url: finalUrl.href, redirectCount: response.redirects.length },
+				];
+				for (const target of path)
+					checkAdmission(admission, target.url, target.redirectCount);
 				if (
 					result.type === "basic" &&
 					(url.origin !== this.#document.origin ||
@@ -386,17 +427,32 @@ export class PageNetworkModuleRegistry {
 				sources.set(id, value);
 				bases.set(id, finalUrl.href);
 				policies.set(id, policy);
+				admissions.set(id, admission);
+				paths.set(id, path);
 				if (hashes) digests.set(id, hashes);
 				return value;
 			} finally {
 				release();
 			}
 		};
+		const checkSourceAdmission = (
+			id: string,
+			admission: DocumentScriptAdmission | undefined,
+		) => {
+			if (inlineIdentity(id)) checkAdmission(admission);
+			else {
+				checkAdmission(admission, id, 0);
+				for (const target of paths.get(id) ?? [])
+					checkAdmission(admission, target.url, target.redirectCount);
+			}
+		};
 		const request = (
 			url: URL,
 			policy: Readonly<ScriptFetchPolicy>,
 			integrity: Readonly<IntegrityMetadata> | null = null,
+			admission?: DocumentScriptAdmission,
 		): Promise<Readonly<PageSourceModule>> => {
+			checkSourceAdmission(url.href, admission);
 			let operation = requests.get(url.href);
 			if (!operation) {
 				const known = sources.get(url.href);
@@ -407,13 +463,17 @@ export class PageNetworkModuleRegistry {
 				)
 					throw limited();
 				reservations++;
-				operation = load(url, policy, integrity).finally(() => {
+				operation = load(url, policy, integrity, admission).finally(() => {
 					reservations--;
 				});
 				requests.set(url.href, operation);
 				void operation.catch(() => undefined);
 			}
-			return operation;
+			return operation.then((value) => {
+				live();
+				checkSourceAdmission(url.href, admission);
+				return value;
+			});
 		};
 		return Object.freeze({
 			close,
@@ -449,6 +509,9 @@ export class PageNetworkModuleRegistry {
 					credentials: credentials as FetchCredentials,
 				});
 				const metadata = data(input, "integrity", true);
+				const admission = data(input, "admission", true) as
+					| DocumentScriptAdmission
+					| undefined;
 				const integrity = parseIntegrityMetadata(
 					metadata === undefined ? "" : (metadata as string),
 				);
@@ -458,6 +521,7 @@ export class PageNetworkModuleRegistry {
 					throw limited();
 				if (source !== undefined) {
 					if (!inlineIdentity(id)) throw invalid();
+					checkAdmission(admission);
 					const known = sources.get(id);
 					if (known) {
 						if (
@@ -478,17 +542,19 @@ export class PageNetworkModuleRegistry {
 					sources.set(id, value);
 					bases.set(id, base);
 					policies.set(id, policy);
+					admissions.set(id, admission);
 					return value;
 				}
 				const url = moduleUrl(id, this.#document);
 				if (url.href !== id) throw invalid();
 				const operation = awaitResult(
-					request(url, policy, integrity),
+					request(url, policy, integrity, admission),
 					lifetime.signal,
 				);
 				const value = await awaitResult(operation, caller);
 				live();
 				checkSignal(caller);
+				checkSourceAdmission(id, admission);
 				checkIntegrity(digests.get(id), integrity);
 				return value;
 			},
@@ -507,6 +573,7 @@ export class PageNetworkModuleRegistry {
 					sources.get(id)?.source !== text(source, maximum, true)
 				)
 					throw invalid();
+				checkSourceAdmission(id, admissions.get(id));
 			},
 			resolve: async (
 				specifier: string,
@@ -530,7 +597,14 @@ export class PageNetworkModuleRegistry {
 				if (!/^(?:\.{0,2}\/|[A-Za-z][A-Za-z0-9+.-]*:)/.test(requested))
 					return undefined;
 				const url = moduleUrl(requested, this.#document, bases.get(parent));
-				const operation = request(url, policies.get(parent) ?? this.#policy);
+				const admission = admissions.get(parent);
+				checkSourceAdmission(parent, admission);
+				const operation = request(
+					url,
+					policies.get(parent) ?? this.#policy,
+					null,
+					admission,
+				);
 				const shared = awaitResult(operation, lifetime.signal);
 				return contextSignal === undefined
 					? shared

@@ -29,9 +29,11 @@ Set configuration on the service, not only on a client:
 
 - `AGENT_BROWSER_SAFEJS_ROOT`: a trusted compiled extended-SafeJS package root
   for supervised, process-backed sessions.
-- `AGENT_BROWSER_PAGE_SCRIPTS=classic`: opt into the partial classic-page loader
-  with process-backed SafeJS. Script support is incomplete; this does not make
-  Zoom work automatically.
+- `AGENT_BROWSER_PAGE_RUNTIME=extension`: select the public SafeJS extension API.
+- `AGENT_BROWSER_PAGE_SCRIPTS=module`: load classic and module scripts, including
+  dynamically inserted modules, with the extension runtime. CSP, CORS, integrity
+  and resource limits remain enforced. Use `classic` to omit module execution.
+  Script support is incomplete; this does not make Zoom work automatically.
 - `AGENT_BROWSER_DOCUMENT_PROFILE=reader`: partial static extraction instead of
   normal rendering. Scripts and styles are omitted and forms are inert. This
   mode cannot be combined with explicit SafeJS/page-runtime/secret configuration.

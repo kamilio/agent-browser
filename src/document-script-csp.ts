@@ -365,7 +365,11 @@ function bindPolicy(
 					return undefined;
 			}
 			const type = (node.attributes.type ?? "").trim().toLowerCase();
-			if (!["", "text/javascript", "application/javascript"].includes(type))
+			if (
+				!["", "text/javascript", "application/javascript", "module"].includes(
+					type,
+				)
+			)
 				return undefined;
 			const nonce = documentNonce(tree, id);
 			if (
@@ -387,6 +391,9 @@ function bindPolicy(
 						current() &&
 						parsed.allowsScript({
 							...metadata,
+							...(type === "module" && url !== undefined
+								? { kind: "external" as const }
+								: {}),
 							...(url === undefined && redirectCount === undefined
 								? {}
 								: { url, redirectCount }),

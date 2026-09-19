@@ -1,5 +1,9 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { loadBrowserDocument } from "./document-loader.js";
+import {
+	type DocumentScriptAdmission,
+	documentScriptCsp,
+} from "./document-script-csp.js";
 import { documentScriptState } from "./document-script-state.js";
 import { writeDocument } from "./document-write.js";
 import type { DocumentTree } from "./document.js";
@@ -8,6 +12,10 @@ import type { HtmlModuleRequest, HtmlModuleSource } from "./html-module.js";
 import { documentInteractions } from "./interactions.js";
 import type { NetworkResponse } from "./network.js";
 import type { ScriptEvaluation } from "./safejs.js";
+import {
+	initializeScriptElement,
+	setScriptElementAsync,
+} from "./script-element-state.js";
 import { ScriptLoader, type ScriptLoaderOptions } from "./script-loader.js";
 
 const documents: DocumentTree[] = [];
@@ -177,6 +185,7 @@ function fixture(
 	void loading.catch(() => undefined);
 	return {
 		loading,
+		scripts,
 		created: created.promise,
 		interactive: interactive.promise,
 		domReady: domReady.promise,
@@ -189,6 +198,367 @@ function fixture(
 		events,
 	};
 }
+
+function insertModule(
+	tree: DocumentTree,
+	attributes: Record<string, string> = {},
+	text = "",
+	async?: boolean,
+) {
+	const id = tree.createElement("script", { type: "module", ...attributes });
+	initializeScriptElement(tree, id, "dynamic");
+	if (async !== undefined) setScriptElementAsync(tree, id, async);
+	if (text) tree.setTextContent(id, text);
+	tree.append(tree.root, id);
+	return id;
+}
+
+it.each(["external", "inline"])(
+	"loads a post-parse dynamic %s module with insertion-time inputs",
+	async (kind) => {
+		const value = fixture('<base href="/modules/">', {
+			async evaluate(_source, tree) {
+				expect(documentScriptState(tree)?.currentScript).toBeNull();
+				expect(() => writeDocument(tree, "forbidden")).toThrow();
+				return success;
+			},
+		});
+		const tree = await value.loading;
+		const external = kind === "external";
+		const id = insertModule(
+			tree,
+			{
+				id: "entry",
+				nomodule: "",
+				crossorigin: "use-credentials",
+				integrity: "entry-integrity",
+				...(external ? { src: "entry.js" } : {}),
+			},
+			external ? "" : "inline-entry",
+		);
+		tree.setAttribute(id, "src", "/replacement.js");
+		tree.setTextContent(id, "replacement");
+		await value.scripts.settle();
+		expect(value.prepare).toHaveBeenCalledTimes(1);
+		expect(value.requests[0]).toMatchObject({
+			id: external
+				? "https://example.com/modules/entry.js"
+				: `urn:agent-browser:html-module:${id}`,
+			baseUrl: "https://example.com/modules/",
+			credentials: "include",
+			...(external
+				? { integrity: "entry-integrity" }
+				: { source: "inline-entry" }),
+		});
+		expect(value.requests[0]).not.toHaveProperty(
+			external ? "source" : "integrity",
+		);
+		expect(value.requests[0]).not.toHaveProperty("admission");
+		expect(value.seen).toEqual([
+			expect.objectContaining({
+				source: external ? value.requests[0].id : "inline-entry",
+				current: null,
+				state: "complete",
+				options: {
+					signal: value.requests[0].signal,
+					filename: value.requests[0].id,
+					discardResult: true,
+					sourceType: "module",
+				},
+			}),
+		]);
+		expect(value.fetch).not.toHaveBeenCalled();
+		expect(value.fetchWithPolicy).not.toHaveBeenCalled();
+		expect(
+			value.events.filter((event) => /^(load|error):/.test(event)),
+		).toEqual(["load:entry"]);
+		expect(documentScriptState(tree)?.report).toMatchObject({
+			discovered: 1,
+			executed: 1,
+			external: external ? 1 : 0,
+			failed: 0,
+			complete: true,
+		});
+	},
+);
+
+it.each(["external", "inline"])(
+	"runs dynamic %s modules asynchronously by default without delaying DOMContentLoaded",
+	async (kind) => {
+		const pending = deferred<HtmlModuleSource>();
+		const fastRan = deferred<void>();
+		const value = fixture("<script>bootstrap</script><p>parsed tail</p>", {
+			prepare: async (request) =>
+				request.source === "slow" || request.id.endsWith("/slow.js")
+					? pending.promise
+					: { id: request.id, source: "fast" },
+			async evaluate(source, tree) {
+				if (source === "bootstrap") {
+					for (const name of ["slow", "fast"])
+						insertModule(
+							tree,
+							{
+								id: name,
+								defer: "",
+								...(kind === "external" ? { src: `/${name}.js` } : {}),
+							},
+							kind === "inline" ? name : "",
+						);
+					await Promise.resolve();
+					expect(value.seen.map((entry) => entry.source)).toEqual([
+						"bootstrap",
+					]);
+				} else if (source === "fast") fastRan.resolve();
+				return success;
+			},
+		});
+		await value.domReady;
+		expect(value.requests).toHaveLength(2);
+		await fastRan.promise;
+		expect(value.seen.map((entry) => entry.source)).toEqual([
+			"bootstrap",
+			"fast",
+		]);
+		expect(value.events).not.toContain("window-load");
+		pending.resolve({ id: value.requests[0].id, source: "slow" });
+		await value.loading;
+		expect(value.seen.map((entry) => entry.source)).toEqual([
+			"bootstrap",
+			"fast",
+			"slow",
+		]);
+		expect(value.events.indexOf("DOMContentLoaded")).toBeLessThan(
+			value.events.indexOf("load:slow"),
+		);
+		expect(value.events.indexOf("load:slow")).toBeLessThan(
+			value.events.indexOf("window-load"),
+		);
+	},
+);
+
+it.each(["external", "inline"])(
+	"orders dynamic async=false %s modules with classic scripts while async modules proceed",
+	async (kind) => {
+		const pending = deferred<HtmlModuleSource>();
+		const independentRan = deferred<void>();
+		const value = fixture("", {
+			prepare: async (request) =>
+				request.source === "first" || request.id.endsWith("/first.js")
+					? pending.promise
+					: { id: request.id, source: request.source ?? "second" },
+			async evaluate(source) {
+				if (source === "independent") independentRan.resolve();
+				return success;
+			},
+		});
+		const tree = await value.loading;
+		for (const name of ["first", "second"]) {
+			insertModule(
+				tree,
+				kind === "external" ? { src: `/${name}.js` } : {},
+				kind === "inline" ? name : "",
+				false,
+			);
+			if (name === "first")
+				insertModule(tree, { type: "", src: "/classic.js" }, "", false);
+		}
+		insertModule(tree, {}, "independent");
+		expect(value.requests).toHaveLength(3);
+		await independentRan.promise;
+		expect(value.seen.map((entry) => entry.source)).toEqual(["independent"]);
+		pending.resolve({ id: value.requests[0].id, source: "first" });
+		await value.scripts.settle();
+		expect(value.seen.map((entry) => entry.source)).toEqual([
+			"independent",
+			"first",
+			"/classic.js",
+			"second",
+		]);
+	},
+);
+
+it("executes dynamic module identities once across parser entries, duplicate elements and moves", async () => {
+	const value = fixture('<script type="module" src="/parser.js"></script>');
+	const tree = await value.loading;
+	insertModule(tree, { src: "/parser.js", id: "parser-copy" });
+	const external = insertModule(tree, { src: "/dynamic.js", id: "dynamic" });
+	insertModule(tree, {
+		src: "https://EXAMPLE.com:443/dynamic.js",
+		id: "dynamic-copy",
+	});
+	const inline = insertModule(tree, { id: "inline" }, "same");
+	insertModule(tree, { id: "inline-copy" }, "same");
+	for (const id of [external, inline]) {
+		tree.remove(id);
+		tree.append(tree.root, id);
+		tree.setAttribute(id, "src", "/replacement.js");
+		tree.setTextContent(id, "replacement");
+	}
+	await value.scripts.settle();
+	for (const id of [external, inline]) {
+		tree.remove(id);
+		tree.append(tree.root, id);
+	}
+	await value.scripts.settle();
+	expect(value.prepare).toHaveBeenCalledTimes(6);
+	expect(value.seen.map((entry) => entry.source)).toEqual([
+		"https://example.com/parser.js",
+		"https://example.com/dynamic.js",
+		"same",
+		"same",
+	]);
+	expect(value.events.filter((event) => event.startsWith("load:"))).toEqual([
+		"load:/parser.js",
+		"load:parser-copy",
+		"load:dynamic",
+		"load:dynamic-copy",
+		"load:inline",
+		"load:inline-copy",
+	]);
+	expect(documentScriptState(tree)?.report).toMatchObject({
+		discovered: 6,
+		executed: 4,
+		skipped: 2,
+		issues: { "module-already-evaluated": 2 },
+	});
+});
+
+it("releases failed dynamic module preparation and continues the ordered queue", async () => {
+	const pending = deferred<HtmlModuleSource>();
+	const value = fixture("", {
+		prepare: async (request) =>
+			request.id.endsWith("/failed.js")
+				? pending.promise
+				: { id: request.id, source: request.source ?? "good" },
+	});
+	const tree = await value.loading;
+	const failed = insertModule(
+		tree,
+		{ src: "/failed.js", id: "failed" },
+		"",
+		false,
+	);
+	insertModule(tree, { id: "good" }, "good", false);
+	expect(value.requests).toHaveLength(2);
+	pending.reject(
+		new AgentBrowserError("policy-denied", "Registry rejected entry"),
+	);
+	await value.scripts.settle();
+	tree.remove(failed);
+	tree.append(tree.root, failed);
+	insertModule(tree, { id: "later" }, "later");
+	await value.scripts.settle();
+	expect(value.prepare).toHaveBeenCalledTimes(3);
+	expect(value.seen.map((entry) => entry.source)).toEqual(["good", "later"]);
+	expect(value.events.filter((event) => /^(load|error):/.test(event))).toEqual([
+		"error:failed",
+		"load:good",
+		"load:later",
+	]);
+	expect(value.fetch).not.toHaveBeenCalled();
+	expect(value.fetchWithPolicy).not.toHaveBeenCalled();
+	expect(documentScriptState(tree)?.report).toMatchObject({
+		failed: 1,
+		executed: 2,
+		halted: false,
+		complete: true,
+		issues: { "fetch-policy-denied": 1 },
+	});
+});
+
+it.each([
+	{ method: "abort", async: true, reject: false },
+	{ method: "close", async: true, reject: true },
+	{ method: "abort", async: false, reject: true },
+	{ method: "close", async: false, reject: false },
+])(
+	"cancels post-parse dynamic module preparation and queued work: %j",
+	async (options) => {
+		const pending = deferred<HtmlModuleSource>();
+		const value = fixture("", { prepare: () => pending.promise });
+		const tree = await value.loading;
+		insertModule(
+			tree,
+			{ src: "/pending.js", id: "pending" },
+			"",
+			options.async,
+		);
+		insertModule(tree, { id: "queued" }, "queued", options.async);
+		expect(value.requests).toHaveLength(2);
+		const settled = expect(value.scripts.settle()).rejects.toMatchObject({
+			code: "aborted",
+		});
+		if (options.method === "close") tree.close();
+		else value.controller.abort();
+		await settled;
+		expect(value.requests.every((request) => request.signal.aborted)).toBe(
+			true,
+		);
+		if (options.reject)
+			pending.reject(new AgentBrowserError("network-error", "Late rejection"));
+		else pending.resolve({ id: value.requests[0].id, source: "late" });
+		await pending.promise.catch(() => undefined);
+		await expect(value.scripts.settle()).rejects.toMatchObject({
+			code: "aborted",
+		});
+		expect(value.seen).toEqual([]);
+		expect(
+			value.events.filter((event) => /^(load|error):/.test(event)),
+		).toEqual([]);
+	},
+);
+
+it("does not evaluate dynamic modules when the runner closes during preparation", async () => {
+	let closed = false;
+	const pending = deferred<HtmlModuleSource>();
+	const value = fixture("", {
+		closed: () => closed,
+		prepare: () => pending.promise,
+	});
+	const tree = await value.loading;
+	insertModule(tree, { src: "/pending.js" });
+	expect(value.requests).toHaveLength(1);
+	closed = true;
+	pending.resolve({ id: value.requests[0].id, source: "late" });
+	await value.scripts.settle();
+	expect(value.seen).toEqual([]);
+	expect(value.events.filter((event) => /^(load|error):/.test(event))).toEqual(
+		[],
+	);
+	expect(documentScriptState(tree)?.report).toMatchObject({
+		halted: true,
+		skipped: 1,
+		issues: { "realm-halted": 1 },
+	});
+});
+
+it.each([
+	{ limits: { maxScripts: 1 }, issue: "script-count-limit" },
+	{ limits: { maxExternal: 1 }, issue: "external-count-limit" },
+	{ limits: { maxSourceBytes: 3 }, issue: "source-byte-limit" },
+])(
+	"shares parser and dynamic module resource limits: %j",
+	async ({ limits, issue }) => {
+		const value = fixture('<script type="module" src="/parser.js"></script>', {
+			limits: { modules: true, ...limits },
+			prepare: async (request) => ({ id: request.id, source: "é" }),
+		});
+		const tree = await value.loading;
+		insertModule(tree, { src: "/dynamic.js" });
+		await value.scripts.settle();
+		expect(value.prepare).toHaveBeenCalledTimes(
+			issue === "source-byte-limit" ? 2 : 1,
+		);
+		expect(value.seen.map((entry) => entry.source)).toEqual(["é"]);
+		expect(documentScriptState(tree)?.report).toMatchObject({
+			executed: 1,
+			skipped: 1,
+			sourceBytes: 2,
+			halted: true,
+			issues: { [issue]: 1 },
+		});
+	},
+);
 
 it.each([
 	{ limits: {} },
@@ -742,6 +1112,187 @@ it("checks prepared external source bytes before evaluation", async () => {
 		sourceBytes: 0,
 		halted: true,
 		issues: { "source-byte-limit": 1 },
+	});
+});
+
+it.each([
+	{ dynamic: false, external: false },
+	{ dynamic: false, external: true },
+	{ dynamic: true, external: false },
+	{ dynamic: true, external: true },
+])(
+	"carries the exact nonce module admission through preparation and evaluation: %j",
+	async ({ dynamic, external }) => {
+		let captured: DocumentScriptAdmission | undefined;
+		const value = fixture(
+			dynamic
+				? ""
+				: `<script type="module" id="entry" nonce="native"${external ? ' src="/entry.js"' : ""}>entry</script>`,
+			{
+				headers: { "content-security-policy": ["script-src 'nonce-native'"] },
+				async prepare(request) {
+					const tree = await value.created;
+					captured = request.admission;
+					expect(
+						captured &&
+							documentScriptCsp(tree)?.allowsRequest(
+								captured,
+								"https://example.com/entry.js",
+								0,
+							),
+					).toBe(true);
+					for (const { node } of tree.walk())
+						if (node.attributes.id === "entry")
+							tree.setAttribute(node.id, "nonce", "changed");
+					return { id: request.id, source: "entry" };
+				},
+				async evaluate(_source, tree) {
+					expect(value.requests[0].admission).toBe(captured);
+					expect(
+						captured &&
+							documentScriptCsp(tree)?.allowsRequest(
+								captured,
+								"https://example.com/entry.js",
+								0,
+							),
+					).toBe(true);
+					return success;
+				},
+			},
+		);
+		const tree = await value.loading;
+		if (dynamic) {
+			insertModule(
+				tree,
+				{
+					id: "entry",
+					nonce: "native",
+					...(external ? { src: "/entry.js" } : {}),
+				},
+				external ? "" : "entry",
+			);
+			await value.scripts.settle();
+		}
+		expect(value.prepare).toHaveBeenCalledTimes(1);
+		expect(captured).toBeDefined();
+		expect(value.seen.map((entry) => entry.source)).toEqual(["entry"]);
+		expect(value.seen[0].options.sourceType).toBe("module");
+		expect(
+			value.events.filter((event) => /^(load|error):/.test(event)),
+		).toEqual(["load:entry"]);
+		expect(value.fetch).not.toHaveBeenCalled();
+		expect(value.fetchWithPolicy).not.toHaveBeenCalled();
+		expect(documentScriptState(tree)?.report).toMatchObject({
+			executed: 1,
+			failed: 0,
+			skipped: 0,
+		});
+	},
+);
+
+it.each([
+	{ dynamic: false, external: false },
+	{ dynamic: false, external: true },
+	{ dynamic: true, external: false },
+	{ dynamic: true, external: true },
+])(
+	"blocks wrong-nonce modules before preparation: %j",
+	async ({ dynamic, external }) => {
+		const value = fixture(
+			dynamic
+				? ""
+				: `<script type="module" nonce="wrong"${external ? ' src="/entry.js"' : ""}>entry</script>`,
+			{ headers: { "content-security-policy": ["script-src 'nonce-native'"] } },
+		);
+		const tree = await value.loading;
+		if (dynamic) {
+			insertModule(
+				tree,
+				{ nonce: "wrong", ...(external ? { src: "/entry.js" } : {}) },
+				external ? "" : "entry",
+			);
+			await value.scripts.settle();
+		}
+		expect(value.prepare).not.toHaveBeenCalled();
+		expect(value.seen).toEqual([]);
+		expect(
+			value.events.filter((event) => /^(load|error):/.test(event)),
+		).toEqual([]);
+		expect(documentScriptState(tree)?.report).toMatchObject({
+			executed: 0,
+			skipped: 1,
+			issues: { "csp-not-supported": 1 },
+		});
+	},
+);
+
+it.each([false, true])(
+	"blocks a prepared dynamic module after CSP invalidation (external=%s)",
+	async (external) => {
+		const value = fixture('<script nonce="native">bootstrap</script>', {
+			headers: { "content-security-policy": ["script-src 'nonce-native'"] },
+			async evaluate(source, tree) {
+				if (source === "bootstrap") {
+					insertModule(
+						tree,
+						{
+							id: "entry",
+							nonce: "native",
+							...(external ? { src: "/entry.js" } : {}),
+						},
+						external ? "" : "entry",
+					);
+					expect(value.prepare).toHaveBeenCalledTimes(1);
+					await value.prepare.mock.results[0].value;
+					expect(value.requests[0].admission).toBeDefined();
+					expect(value.seen.map((entry) => entry.source)).toEqual([
+						"bootstrap",
+					]);
+					documentScriptCsp(tree)?.close();
+				}
+				return success;
+			},
+		});
+		const tree = await value.loading;
+		expect(
+			value.requests[0].admission?.allows("https://example.com/entry.js", 0),
+		).toBe(false);
+		expect(value.seen.map((entry) => entry.source)).toEqual(["bootstrap"]);
+		expect(
+			value.events.filter((event) => /^(load|error):/.test(event)),
+		).toEqual([]);
+		expect(documentScriptState(tree)?.report).toMatchObject({
+			executed: 1,
+			failed: 0,
+			skipped: 1,
+			issues: { "csp-not-supported": 1 },
+		});
+	},
+);
+
+it("rechecks the captured module admission against the prepared external URL", async () => {
+	const value = fixture("", {
+		headers: {
+			"content-security-policy": ["script-src https://example.com/allowed/"],
+		},
+		prepare: async () => ({
+			id: "https://other.example/entry.js",
+			source: "blocked",
+		}),
+	});
+	const tree = await value.loading;
+	insertModule(tree, { src: "/allowed/entry.js" });
+	await value.scripts.settle();
+	expect(value.prepare).toHaveBeenCalledTimes(1);
+	expect(documentScriptCsp(tree)?.unsupported).toBe(false);
+	expect(value.seen).toEqual([]);
+	expect(value.events.filter((event) => /^(load|error):/.test(event))).toEqual(
+		[],
+	);
+	expect(documentScriptState(tree)?.report).toMatchObject({
+		executed: 0,
+		skipped: 1,
+		issues: { "csp-not-supported": 1 },
 	});
 });
 

@@ -455,7 +455,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 		const node = tree.get(id);
 		const attributes = node.attributes;
 		const type = scriptType(attributes);
-		const module = type === "module" && this.modules && !dynamic;
+		const module = type === "module" && this.modules;
 		if (type && !javascriptTypes.has(type) && !module) {
 			this.skip(
 				["module", "importmap", "speculationrules"].includes(type)
@@ -501,8 +501,20 @@ export class ScriptLoader implements HtmlScriptHooks {
 				return { mode: "skip" };
 			}
 			return {
-				mode: Object.hasOwn(attributes, "async") ? "async" : "defer",
-				source: this.prepareModuleSource(tree, id, attributes, external),
+				mode: dynamic
+					? scriptElementAsync(tree, id)
+						? "async"
+						: "ordered"
+					: Object.hasOwn(attributes, "async")
+						? "async"
+						: "defer",
+				source: this.prepareModuleSource(
+					tree,
+					id,
+					attributes,
+					external,
+					admission,
+				),
 			};
 		}
 		if (!Object.hasOwn(attributes, "src")) {
@@ -600,6 +612,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 		id: number,
 		attributes: Readonly<Record<string, string>>,
 		external: boolean,
+		admission?: DocumentScriptAdmission,
 	): Promise<Source> {
 		let url = `urn:agent-browser:html-module:${id}`;
 		try {
@@ -626,6 +639,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 					...(!external || attributes.integrity === undefined
 						? {}
 						: { integrity: attributes.integrity }),
+					...(admission ? { admission } : {}),
 					signal: this.controller.signal,
 				}),
 			);
@@ -636,6 +650,8 @@ export class ScriptLoader implements HtmlScriptHooks {
 				text: prepared.source,
 				external,
 				module: true,
+				admission,
+				redirectCount: 0,
 			};
 		} catch (error) {
 			return {
@@ -643,6 +659,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 				url,
 				external,
 				module: true,
+				admission,
 				error:
 					error instanceof AgentBrowserError ? error.code : "network-error",
 			};

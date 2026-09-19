@@ -1,11 +1,12 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { loadBrowserDocument } from "./document-loader.js";
+import { documentScriptCsp } from "./document-script-csp.js";
 import { documentScriptState } from "./document-script-state.js";
 import { writeDocument } from "./document-write.js";
 import { DocumentTree } from "./document.js";
 import {
-	extensionPageRuntime,
 	type ExtensionPageRuntimeOptions,
+	extensionPageRuntime,
 } from "./extension-page-runtime.js";
 import type { HtmlModuleRequest } from "./html-module.js";
 import { documentInteractions } from "./interactions.js";
@@ -13,19 +14,19 @@ import type { NetworkResponse } from "./network.js";
 import { pageEventBootstrapSource } from "./page-event-bootstrap.js";
 import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 import {
-	legacyPageRuntime,
 	type PageRuntimeFactory,
 	type PageRuntimeOptions,
 	type PageScriptCore,
+	legacyPageRuntime,
 } from "./page-runtime.js";
 import { PageScripts } from "./page-scripts.js";
-import { scriptLimits } from "./safejs.js";
 import type {
 	ReleasedContext,
 	ReleasedCore,
 	ReleasedHostDefinition,
 	ReleasedRealm,
 } from "./safejs-extension-types.js";
+import { scriptLimits } from "./safejs.js";
 import type { ScriptFetchResult } from "./script-fetch.js";
 import { ScriptLoader } from "./script-loader.js";
 
@@ -124,6 +125,9 @@ function fakeCore(
 		defineExtension: vi.fn((definition) => definition),
 		createRealm: vi.fn((options) => {
 			const realm = makeRealm(options);
+			Object.defineProperty(realm, "stringCompilation", {
+				value: options.stringCompilation ?? "allow",
+			});
 			realms.push(realm);
 			return realm;
 		}),
@@ -639,102 +643,119 @@ it("rejects accessor-backed HTML source without invoking it or setting up the re
 	expect(test.setup).not.toHaveBeenCalled();
 });
 
-it("routes synthetic HTML modules through the loader and PageScripts using fake SDK operations only", async () => {
-	let owner: DocumentTree | undefined;
-	const dependencyId = "https://example.com/assets/child.js";
-	const dependencySource = 'export const marker = "dependency-contract";';
-	const test = fakeCore(async (source, evaluation, options) => {
-		if (evaluation?.sourceType !== "module") return;
-		const tree = owner;
-		if (!tree) throw new Error("Missing synthetic document owner");
-		expect(documentScriptState(tree)).toMatchObject({
-			currentScript: null,
-			readyState: "interactive",
+it.each([false, true])(
+	"routes synthetic HTML modules through the loader and PageScripts with CSP=%s using fake SDK operations only",
+	async (csp) => {
+		let owner: DocumentTree | undefined;
+		const dependencyId = "https://example.com/assets/child.js";
+		const dependencySource = 'export const marker = "dependency-contract";';
+		const test = fakeCore(async (source, evaluation, options) => {
+			if (evaluation?.sourceType !== "module") return;
+			const tree = owner;
+			if (!tree) throw new Error("Missing synthetic document owner");
+			expect(documentScriptState(tree)).toMatchObject({
+				currentScript: null,
+				readyState: "interactive",
+			});
+			expect(tree.textContent(tree.root)).toContain("after modules");
+			expect(() => writeDocument(tree, "forbidden insertion")).toThrow();
+			if (source === inlineSource) {
+				if (!evaluation.filename)
+					throw new Error("Missing inline module identity");
+				await expect(
+					options.sourceResolver?.("./child.js", evaluation.filename, {}),
+				).resolves.toEqual({ id: dependencyId, source: dependencySource });
+			}
 		});
-		expect(tree.textContent(tree.root)).toContain("after modules");
-		expect(() => writeDocument(tree, "forbidden insertion")).toThrow();
-		if (source === inlineSource) {
-			if (!evaluation.filename)
-				throw new Error("Missing inline module identity");
-			await expect(
-				options.sourceResolver?.("./child.js", evaluation.filename, {}),
-			).resolves.toEqual({ id: dependencyId, source: dependencySource });
-		}
-	});
-	const factory = extensionPageRuntime(test.core);
-	const modules = configuration();
-	modules.fetchWithPolicy.mockImplementation(async (url) => {
-		if (url === externalId) return fetched(externalSource, url);
-		if (url === dependencyId) return fetched(dependencySource, url);
-		throw new Error(`Unexpected in-memory module URL: ${url}`);
-	});
-	const controller = new AbortController();
-	cleanups.push(() => controller.abort());
-	const input = response(
-		`<base href="/assets/"><script nomodule>legacy-contract</script><script type="module">${inlineSource}</script><script type="module" src="/app/entry.js"></script><p>after modules</p>`,
-		documentUrl,
-		"text/html; charset=utf-8",
-	);
-	const classicFetch = vi.fn(async (): Promise<NetworkResponse> => {
-		throw new Error("Unexpected classic fetch in module-only fixture");
-	});
-	const loader = new ScriptLoader({
-		response: input,
-		signal: controller.signal,
-		fetch: classicFetch,
-		fetchWithPolicy: modules.fetchWithPolicy,
-		limits: { modules: true },
-		owner: (tree) => {
-			owner = tree;
-			cleanups.push(() => tree.close());
-			const scripts = new PageScripts(
-				{ document: tree, interactions: documentInteractions(tree) },
-				factory,
-				{ networkSourceModules: modules },
-			);
-			cleanups.push(() => scripts.close());
-			return scripts;
-		},
-	});
-	const tree = await loadBrowserDocument(input, {
-		scripts: loader,
-		signal: controller.signal,
-		tabId: "html-module-runtime-contract",
-		limits: {
-			maxNodes: 1000,
-			maxDepth: 64,
-			maxTextCodeUnits: 100_000,
-			maxChanges: 100,
-		},
-	});
-	const inline = [...tree.walk()].find(
-		({ node }) =>
-			node.tagName === "script" &&
-			node.attributes.type === "module" &&
-			!node.attributes.src,
-	);
-	if (!inline) throw new Error("Missing inline script node");
-	expect(test.realms[0].evaluate.mock.calls).toEqual([
-		[pageEventBootstrapSource, { filename: "agent-browser:page-bootstrap" }],
-		[
-			inlineSource,
-			{
-				sourceType: "module",
-				filename: `urn:agent-browser:html-module:${inline.node.id}`,
+		const factory = extensionPageRuntime(test.core);
+		const modules = configuration();
+		modules.fetchWithPolicy.mockImplementation(
+			async (url, _policy, _signal, admission) => {
+				if (csp) {
+					if (!owner || !admission)
+						throw new Error("Missing module CSP owner or admission");
+					expect(
+						documentScriptCsp(owner)?.allowsRequest(admission, url, 0),
+					).toBe(true);
+				} else expect(admission).toBeUndefined();
+				if (url === externalId) return fetched(externalSource, url);
+				if (url === dependencyId) return fetched(dependencySource, url);
+				throw new Error(`Unexpected in-memory module URL: ${url}`);
 			},
-		],
-		[externalSource, { sourceType: "module", filename: externalId }],
-	]);
-	expect(documentScriptState(tree)?.report).toMatchObject({
-		mode: "classic-and-module",
-		discovered: 3,
-		executed: 2,
-		skipped: 1,
-		failed: 0,
-		complete: true,
-	});
-	expect(modules.fetchWithPolicy.mock.calls.map(([url]) => url).sort()).toEqual(
-		[externalId, dependencyId].sort(),
-	);
-	expect(classicFetch).not.toHaveBeenCalled();
-});
+		);
+		const controller = new AbortController();
+		cleanups.push(() => controller.abort());
+		const input = response(
+			`<base href="/assets/"><script nomodule>legacy-contract</script><script type="module" nonce="native">${inlineSource}</script><script type="module" nonce="native" src="/app/entry.js"></script><p>after modules</p>`,
+			documentUrl,
+			"text/html; charset=utf-8",
+		);
+		if (csp)
+			input.headers = {
+				...input.headers,
+				"content-security-policy": ["script-src 'nonce-native'"],
+			};
+		const classicFetch = vi.fn(async (): Promise<NetworkResponse> => {
+			throw new Error("Unexpected classic fetch in module-only fixture");
+		});
+		const loader = new ScriptLoader({
+			response: input,
+			signal: controller.signal,
+			fetch: classicFetch,
+			fetchWithPolicy: modules.fetchWithPolicy,
+			limits: { modules: true },
+			owner: (tree) => {
+				owner = tree;
+				cleanups.push(() => tree.close());
+				const scripts = new PageScripts(
+					{ document: tree, interactions: documentInteractions(tree) },
+					factory,
+					{ networkSourceModules: modules },
+				);
+				cleanups.push(() => scripts.close());
+				return scripts;
+			},
+		});
+		const tree = await loadBrowserDocument(input, {
+			scripts: loader,
+			signal: controller.signal,
+			tabId: "html-module-runtime-contract",
+			limits: {
+				maxNodes: 1000,
+				maxDepth: 64,
+				maxTextCodeUnits: 100_000,
+				maxChanges: 100,
+			},
+		});
+		const inline = [...tree.walk()].find(
+			({ node }) =>
+				node.tagName === "script" &&
+				node.attributes.type === "module" &&
+				!node.attributes.src,
+		);
+		if (!inline) throw new Error("Missing inline script node");
+		expect(test.realms[0].evaluate.mock.calls).toEqual([
+			[pageEventBootstrapSource, { filename: "agent-browser:page-bootstrap" }],
+			[
+				inlineSource,
+				{
+					sourceType: "module",
+					filename: `urn:agent-browser:html-module:${inline.node.id}`,
+				},
+			],
+			[externalSource, { sourceType: "module", filename: externalId }],
+		]);
+		expect(documentScriptState(tree)?.report).toMatchObject({
+			mode: "classic-and-module",
+			discovered: 3,
+			executed: 2,
+			skipped: 1,
+			failed: 0,
+			complete: true,
+		});
+		expect(
+			modules.fetchWithPolicy.mock.calls.map(([url]) => url).sort(),
+		).toEqual([externalId, dependencyId].sort());
+		expect(classicFetch).not.toHaveBeenCalled();
+	},
+);

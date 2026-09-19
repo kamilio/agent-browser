@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { afterEach, expect, it, vi } from "vitest";
 import type { FetchCredentials } from "./cors.js";
+import type { DocumentScriptAdmission } from "./document-script-csp.js";
 import { AgentBrowserError } from "./errors.js";
 import type { HtmlModuleRequest } from "./html-module.js";
 import type { NetworkResponse } from "./network.js";
@@ -103,6 +104,109 @@ function deferred<Value>() {
 async function flush() {
 	for (let turn = 0; turn < 32; turn++) await Promise.resolve();
 }
+
+it("propagates the HTML module admission to its entire dependency graph", async () => {
+	const admission: DocumentScriptAdmission = { allows: () => true };
+	const test = fixture();
+	await test.scope.prepareHtmlModule(request({ admission }));
+	const child = await test.scope.resolve("./child.js", rootId, {});
+	if (!child) throw new Error("Missing child module");
+	await test.scope.resolve("./grandchild.js", child.id, {});
+	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(3);
+	for (const call of test.fetchWithPolicy.mock.calls)
+		expect(call[3]).toBe(admission);
+});
+
+it("carries inline module admission into external imports", async () => {
+	const admission: DocumentScriptAdmission = { allows: () => true };
+	const test = fixture();
+	await test.scope.prepareHtmlModule(inline({ admission }));
+	await test.scope.resolve("./child.js", inlineId, {});
+	expect(test.fetchWithPolicy.mock.calls[0][3]).toBe(admission);
+});
+
+it.each(["inline", "external"])(
+	"refuses a denied %s module before admission",
+	async (kind) => {
+		const admission: DocumentScriptAdmission = { allows: () => false };
+		const test = fixture();
+		await expect(
+			test.scope.prepareHtmlModule(
+				kind === "inline" ? inline({ admission }) : request({ admission }),
+			),
+		).rejects.toMatchObject({ code: "policy-denied" });
+		expect(test.fetchWithPolicy).not.toHaveBeenCalled();
+	},
+);
+
+it("rechecks policy revocation for cached modules, dependencies and evaluation", async () => {
+	let allowed = true;
+	const admission: DocumentScriptAdmission = { allows: () => allowed };
+	const test = fixture();
+	await test.scope.prepareHtmlModule(request({ admission }));
+	await test.scope.resolve("./child.js", rootId, {});
+	allowed = false;
+	await expect(
+		test.scope.prepareHtmlModule(request({ admission })),
+	).rejects.toMatchObject({ code: "policy-denied" });
+	await expect(
+		test.scope.resolve("./child.js", rootId, {}),
+	).rejects.toMatchObject({ code: "policy-denied" });
+	expect(() => test.scope.validateEntry(moduleSource, rootId)).toThrow(
+		expect.objectContaining({ code: "policy-denied" }),
+	);
+	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(2);
+});
+
+it("rejects an admission revoked while a module fetch is pending", async () => {
+	let allowed = true;
+	const admission: DocumentScriptAdmission = { allows: () => allowed };
+	const pending = deferred<Readonly<ScriptFetchResult>>();
+	const test = fixture(() => pending.promise);
+	const preparation = test.scope.prepareHtmlModule(request({ admission }));
+	await flush();
+	allowed = false;
+	pending.resolve(response(rootId));
+	await expect(preparation).rejects.toMatchObject({ code: "policy-denied" });
+	expect(() => test.scope.validateEntry(moduleSource, rootId)).toThrow();
+});
+
+it("rechecks every cached redirect for a different module admission", async () => {
+	const middle = "https://page.example/forbidden/redirect.js";
+	const final = "https://page.example/final.js";
+	const test = fixture(async () => ({
+		...response(final),
+		response: {
+			...response(final).response,
+			redirects: [
+				{ url: rootId, status: 302, location: middle },
+				{ url: middle, status: 302, location: final },
+			],
+		},
+	}));
+	await test.scope.prepareHtmlModule(
+		request({ admission: { allows: () => true } }),
+	);
+	const allows = vi.fn((url?: string) => url !== middle);
+	await expect(
+		test.scope.prepareHtmlModule(request({ admission: { allows } })),
+	).rejects.toMatchObject({ code: "policy-denied" });
+	expect(allows).toHaveBeenCalledWith(middle, 1);
+	expect(test.fetchWithPolicy).toHaveBeenCalledTimes(1);
+});
+
+it("does not invoke accessor-valued module admission checks", async () => {
+	const allows = vi.fn(() => () => true);
+	const admission = Object.defineProperty({}, "allows", {
+		get: allows,
+	}) as DocumentScriptAdmission;
+	const test = fixture();
+	await expect(
+		test.scope.prepareHtmlModule(request({ admission })),
+	).rejects.toMatchObject({ code: "invalid-input" });
+	expect(allows).not.toHaveBeenCalled();
+	expect(test.fetchWithPolicy).not.toHaveBeenCalled();
+});
 
 it.each([undefined, false])(
 	"requires explicit HTML admission, not %s",
