@@ -4,7 +4,8 @@
   render, but Vue initialization times out. Joining, audio and notetaking do not work yet.
 - Reduce retained-graph accounting cost without weakening memory, depth,
   cancellation or credential isolation. Guest exceptions still close the realm.
-- Open SDK gates: default-stack depth tests and a baseline Promise snapshot timeout.
+- Open test gates: SDK default-stack depth tests and a baseline Promise snapshot
+  timeout; existing native capability-metadata and classic-loader limit expectations.
 - Finish extraction/compatibility fixes, legitimate challenge handoffs, top100
   checks, browser-only research, playground/terminal and command coverage.
 - Validate secret placeholders with extensible .env/pass providers and passkeys.

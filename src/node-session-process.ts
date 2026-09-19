@@ -383,8 +383,17 @@ export class BrowserSessionProcess {
 				"Pending session command limit exceeded",
 			);
 		const id = this.commands + 1;
-		const frame = scriptFrame({ schemaVersion: 1, type: "command", id, argv });
-		if (Buffer.byteLength(frame) > 262_144)
+		const commandArgv =
+			invocation.options.timeout === undefined
+				? [`--timeout=${requestedTimeout}`, ...argv]
+				: argv;
+		const frame = scriptFrame({
+			schemaVersion: 1,
+			type: "command",
+			id,
+			argv: commandArgv,
+		});
+		if (commandArgv.length > 256 || Buffer.byteLength(frame) > 262_144)
 			throw new AgentBrowserError(
 				"resource-limit",
 				"Session command input limit exceeded",

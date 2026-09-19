@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { parseInvocation } from "./cli-parser.js";
 import {
 	BrowserSessionProcess,
 	type SessionProcessOptions,
@@ -92,18 +93,153 @@ function emitFrame(child: FakeChild, frame: Record<string, unknown>) {
 	);
 }
 
-function completeCommand(child: FakeChild, id: number) {
+function completeCommand(
+	child: FakeChild,
+	id: number,
+	command = "capabilities",
+) {
 	emitFrame(child, {
 		type: "result",
 		id,
 		result: {
 			schemaVersion: 1,
-			command: "capabilities",
+			command,
 			session: "runtime",
 			data: {},
 		},
 	});
 }
+
+it("forwards the configured timeout before literal arguments without mutating them", async () => {
+	vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+	const { actor, child } = await fixture({
+		heartbeatPolicy: "idle-only",
+		commandTimeoutMs: 75_000,
+	});
+	const argv = Object.freeze(["open", "--", "https://zoom.us/"]);
+	const result = actor.execute(argv).catch((error) => error);
+	const forwarded = child.frames[1].argv as string[];
+	expect(parseInvocation(forwarded)).toMatchObject({
+		command: "open",
+		arguments: ["https://zoom.us/"],
+		options: { timeout: 75_000 },
+	});
+	expect(argv).toEqual(["open", "--", "https://zoom.us/"]);
+	await vi.advanceTimersByTimeAsync(65_000);
+	expect(child.kill).not.toHaveBeenCalled();
+	completeCommand(child, 1, "open");
+	await expect(result).resolves.toMatchObject({ command: "open" });
+});
+
+it.each([undefined, 500])(
+	"forwards the default timeout and retains its hard deadline (%s)",
+	async (commandTimeoutMs) => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		const { actor, child } = await fixture({
+			heartbeatPolicy: "idle-only",
+			commandTimeoutMs,
+		});
+		const timeout = commandTimeoutMs ?? 30_000;
+		const result = actor.execute(["capabilities"]).catch((error) => error);
+		expect(
+			parseInvocation(child.frames[1].argv as string[]).options.timeout,
+		).toBe(timeout);
+		await vi.advanceTimersByTimeAsync(timeout - 1);
+		expect(child.kill).not.toHaveBeenCalled();
+		await vi.advanceTimersByTimeAsync(1);
+		expect(await result).toMatchObject({
+			code: "timeout",
+			message: "Session command hard deadline exceeded",
+		});
+		expect(child.kill).toHaveBeenCalledExactlyOnceWith("SIGKILL");
+		expect(vi.getTimerCount()).toBe(0);
+	},
+);
+
+it.each([
+	["--timeout=200", "capabilities"],
+	["capabilities", "--timeout", "200"],
+	["capabilities", "--timeout=75000"],
+	["--timeout", "75000", "capabilities"],
+])(
+	"preserves explicit timeout arguments and the outer cap (%j)",
+	async (...argv) => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		const { actor, child } = await fixture({
+			heartbeatPolicy: "idle-only",
+			commandTimeoutMs: 500,
+		});
+		const result = actor.execute(argv).catch((error) => error);
+		expect(child.frames[1].argv).toEqual(argv);
+		const deadline = Math.min(
+			500,
+			Number(parseInvocation(argv).options.timeout),
+		);
+		await vi.advanceTimersByTimeAsync(deadline - 1);
+		expect(child.kill).not.toHaveBeenCalled();
+		await vi.advanceTimersByTimeAsync(1);
+		expect(await result).toMatchObject({ code: "timeout" });
+		expect(child.kill).toHaveBeenCalledExactlyOnceWith("SIGKILL");
+		expect(vi.getTimerCount()).toBe(0);
+	},
+);
+
+it.each([
+	["capabilities", "--timeout=0"],
+	["capabilities", "--timeout=300001"],
+	["capabilities", "--timeout=NaN"],
+	["capabilities", "--timeout=1.5"],
+	["capabilities", "--timeout"],
+	["capabilities", "--timeout=200", "--timeout=300"],
+])(
+	"rejects malformed timeout arguments before writing (%j)",
+	async (...argv) => {
+		const { actor, child } = await fixture();
+		await expect(actor.execute(argv)).rejects.toMatchObject({
+			code: "invalid-input",
+		});
+		expect(child.frames).toHaveLength(1);
+		expect(child.kill).not.toHaveBeenCalled();
+		expect(actor.metrics()).toMatchObject({ pending: 0, closed: false });
+	},
+);
+
+it("rejects an injected timeout that exceeds the child argument limit", async () => {
+	const { actor, child } = await fixture();
+	const result = actor
+		.execute(["route", "**/*", ...Array<string>(254).fill("--header=x:y")])
+		.catch((error) => error);
+	expect(child.frames).toHaveLength(1);
+	expect(await result).toMatchObject({ code: "resource-limit" });
+	expect(child.kill).not.toHaveBeenCalled();
+	expect(actor.metrics()).toMatchObject({ pending: 0, closed: false });
+});
+
+it("keeps the argument boundary valid when an explicit timeout is present", async () => {
+	const { actor, child } = await fixture();
+	const argv = [
+		"route",
+		"**/*",
+		"--timeout=500",
+		...Array<string>(253).fill("--header=x:y"),
+	];
+	const result = actor.execute(argv).catch((error) => error);
+	expect(child.frames[1].argv).toEqual(argv);
+	completeCommand(child, 1, "route");
+	await expect(result).resolves.toMatchObject({ command: "route" });
+});
+
+it("rejects a pre-aborted command without writing or terminating the child", async () => {
+	const { actor, child } = await fixture({ commandTimeoutMs: 75_000 });
+	await expect(
+		actor.execute(["capabilities"], {
+			signal: AbortSignal.abort(),
+		}),
+	).rejects.toMatchObject({ code: "aborted" });
+	expect(child.frames).toHaveLength(1);
+	expect(child.kill).not.toHaveBeenCalled();
+	expect(actor.metrics()).toMatchObject({ pending: 0, closed: false });
+});
 
 it("keeps the default heartbeat deadline active during a command", async () => {
 	vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
