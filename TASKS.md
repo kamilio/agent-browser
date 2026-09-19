@@ -12,6 +12,21 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September19,01:08UTC: tracked literal accounting and its runtime snapshot repair
+pass the supported core tests and nine native/runtime cases; three CLI-related
+suites remain unavailable. Undefined-only capture visitor pruning passes seven
+correctness tests,125 related tests/types/build and all nine native/runtime cases.
+Its deterministic helper removes1000 unnecessary visitor calls without changing
+charges or provider/iterator behavior. The exact vendor still times out120.278s,
+825291 steps/800003 peak data: no initialization fix or end-to-end speedup.
+Parent verifies7084 inputs and complete observed closure. The separate30s
+aggregate observer reports160508785 visits, including54043965 already-seen
+returns; it deliberately aborts and is not a normal timeout replay. Its AST spans
+are null and cannot locate the suspended instruction. See
+`reports/zoom-accounting-trials-2026-09-19.md`. The latest live attempt is unchanged;
+usable meeting UI, admission, audio, recording, transcription and delivery remain
+OPEN. Continue the measured accounting bottleneck without weakening guards.
+
 Scope-only integration follow-up: all nine actual native/runtime cases pass
 in11.735s on unchanged core50. The exact-vendor replay still times out at120.322s,
 with824987 steps and800076 peak data; no Zoom initialization fix is claimed.
