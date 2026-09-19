@@ -171,7 +171,10 @@ function fixture(timeoutMs = 1000, maxPendingCallbacks = 128) {
 			synchronous: Promise.resolve(),
 			result: Promise.resolve(undefined),
 		})),
-		errorDetails: vi.fn(() => ({ code: "runtime-failure", budget: "Steps" })),
+		errorDetails: vi.fn<PageRuntime["errorDetails"]>(() => ({
+			code: "runtime-failure",
+			budget: "Steps",
+		})),
 		close: vi.fn(async () => {
 			runtime.closed = true;
 		}),
@@ -505,6 +508,56 @@ it("sanitizes tagged diagnostics without exposing arbitrary error text", async (
 	expect(JSON.stringify(readPageConsole(test.tree))).not.toContain("secret");
 });
 
+for (const source of ["callback", "evaluation"] as const) {
+	it.each([
+		{ budget: "Steps", suffix: " (Steps)" },
+		{ budget: "steps", suffix: " (steps)" },
+		{ budget: "CallDepth", suffix: " (CallDepth)" },
+		{ budget: "DataSize", suffix: " (DataSize)" },
+		{ budget: undefined, suffix: "" },
+		{ budget: "", suffix: "" },
+		{ budget: "private token=secret", suffix: "" },
+		{ budget: "Steps\nprivate", suffix: "" },
+		{ budget: "A".repeat(33), suffix: "" },
+		{ budget: 42, suffix: "" },
+		{ budget: null, suffix: "" },
+		{ budget: { secret: "private raw value" }, suffix: "" },
+	])(
+		`records only sanitized ${source} budget diagnostics: $budget`,
+		async ({ budget, suffix }) => {
+			const test = fixture();
+			const error = Object.assign(new Error("private error message"), {
+				code: "budget",
+				stack: "private error stack",
+				value: "private raw value",
+			});
+			Object.assign(error, { budget });
+			if (source === "callback") {
+				await test.scripts.evaluate("initialize");
+				const dispatch = callbackDispatch(test);
+				test.runtime.errorDetails.mockReturnValue(error);
+				test.runtime.startCallback.mockImplementationOnce(() => ({
+					synchronous: Promise.resolve(),
+					result: Promise.reject(error),
+				}));
+				await dispatch();
+			} else {
+				test.runtime.evaluate.mockResolvedValue({ ok: false, error });
+				const result = await test.scripts.evaluate("failed");
+				expect(result).toMatchObject({ ok: false });
+				if (!result.ok)
+					expect(result.error).toEqual({
+						code: "budget",
+						...(suffix ? { budget } : {}),
+					});
+			}
+			expect(readPageConsole(test.tree, "error").entries).toMatchObject([
+				{ source, text: `Page ${source} failed: budget${suffix}` },
+			]);
+		},
+	);
+}
+
 it("uses the adapter's public error classification without requiring an SDK error class", async () => {
 	const test = fixture();
 	test.runtime.evaluate.mockRejectedValue(new Error("sensitive cause"));
@@ -513,6 +566,12 @@ it("uses the adapter's public error classification without requiring an SDK erro
 		error: { code: "runtime-failure", budget: "Steps" },
 	});
 	expect(test.runtime.errorDetails).toHaveBeenCalled();
+	expect(readPageConsole(test.tree, "error").entries).toMatchObject([
+		{
+			source: "evaluation",
+			text: "Page evaluation failed: runtime-failure (Steps)",
+		},
+	]);
 });
 
 it("closes partially initialized bindings after setup failure", async () => {

@@ -560,9 +560,10 @@ export class PageScripts {
 		error: PageRuntimeError,
 	) {
 		if (this.closedValue) return;
+		const budget = error.budget ? ` (${error.budget})` : "";
 		this.bindings?.console.buffer.write(
 			"error",
-			[`Page ${source} failed: ${error.code}`],
+			[`Page ${source} failed: ${error.code}${budget}`],
 			source,
 		);
 	}
