@@ -1,0 +1,232 @@
+diff --git a/packages/safe-js/src/interp/object-model.ts b/packages/safe-js/src/interp/object-model.ts
+--- a/packages/safe-js/src/interp/object-model.ts
++++ b/packages/safe-js/src/interp/object-model.ts
+@@ -134,7 +134,7 @@
+     name: { value: closure.name ?? "", configurable: true }
+   });
+   if (isGuestClosure(closure) && closure.construct !== undefined && closure.boundTarget === undefined) {
+-    const prototype = Object.create(null) as SandboxObject;
++    const prototype = createIntrinsicObject();
+     Object.defineProperty(prototype, "constructor", {
+       value: closure,
+       writable: true,
+diff --git a/packages/safe-js/src/interp/async.ts b/packages/safe-js/src/interp/async.ts
+--- a/packages/safe-js/src/interp/async.ts
++++ b/packages/safe-js/src/interp/async.ts
+@@ -29,7 +29,7 @@
+ import { hoistVarDeclarations } from "./var-hoist.js";
+ import { prepareLegacyBlockFunctions } from "./legacy-block-functions.js";
+ import { createCoercionContext, createPatternContext } from "./interpreter.js";
+-import { getGuestFunctionProperty, getSandboxPrototype, markDescriptorObject, materializeFunctionProperties, setSandboxPrototype } from "./object-model.js";
++import { createIntrinsicObject, getGuestFunctionProperty, getSandboxPrototype, markDescriptorObject, materializeFunctionProperties, setSandboxPrototype } from "./object-model.js";
+ import { getFunctionRealmPrototype } from "./function-realm.js";
+ import { generatorPrototypes } from "./generator-prototypes.js";
+ import { retainValues, runResources } from "./resources.js";
+@@ -210,7 +210,7 @@
+     !(node.type === "FunctionExpression" && node.method === true) &&
+     !node.async
+       ? async (args: readonly SandboxValue[], callContext?: SandboxCallContext) => {
+-          const thisValue = {};
++          const thisValue = createIntrinsicObject({});
+           const newTarget = callContext?.newTarget ?? closure;
+           const prototype = callContext?.getProperty === undefined
+             ? getGuestFunctionProperty(newTarget, "prototype")
+diff --git a/packages/safe-js/src/interp/classes.ts b/packages/safe-js/src/interp/classes.ts
+--- a/packages/safe-js/src/interp/classes.ts
++++ b/packages/safe-js/src/interp/classes.ts
+@@ -6,7 +6,7 @@
+ import { accessorAdapter } from "./accessors.js";
+ import { createInterpretedClosure, executeClosure, type AsyncEvaluationContext, type AsyncEvaluationResult, type EvaluateAsyncNode } from "./async.js";
+ import { retainValues } from "./resources.js";
+-import { getSandboxPrototype, materializeFunctionProperties, setSandboxPrototype } from "./object-model.js";
++import { createIntrinsicObject, getSandboxPrototype, materializeFunctionProperties, setSandboxPrototype } from "./object-model.js";
+ import { defineDataProperty } from "./globals/object-array.js";
+ import { createCoercionContext, createPatternContext } from "./interpreter.js";
+ import type { Scope } from "./scope.js";
+@@ -155,7 +155,7 @@
+       try {
+         const construction = createConstructionEnvironment(state, classContext, evaluateNode, invocation);
+         if (!derived) {
+-          state.thisValue = {};
++          state.thisValue = createIntrinsicObject({});
+           const targetPrototype = await invocation!.getProperty!(newTarget, "prototype");
+           const selected = typeof targetPrototype === "object" && targetPrototype !== null ? targetPrototype
+             : getFunctionRealmPrototype(newTarget, "Object", getSandboxPrototype(state.thisValue, context.budget));
+diff --git a/packages/safe-js/src/interp/constructor-descriptor-reuse.test.ts b/packages/safe-js/src/interp/constructor-descriptor-reuse.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/interp/constructor-descriptor-reuse.test.ts
+@@ -0,0 +1,173 @@
++import { expect, it, vi } from "vitest";
++import { MAX_DATA_DEPTH } from "../graph-depth.js";
++import { parseExecutableModule } from "../parse/parser.js";
++import { run } from "../run.js";
++import { restore } from "../snapshot/restore.js";
++import { serialize, type RuntimeSnapshotValue } from "../snapshot/serialize.js";
++import { Budget } from "./budget.js";
++import { interpret } from "./interpreter.js";
++import { isTrackedIntrinsicObject, materializeFunctionProperties, setSandboxPrototype } from "./object-model.js";
++import { addPrivateElement, type PrivateElement } from "./private-state.js";
++import { createSandboxClosure, isSandboxClosure, measureSandboxData, type SandboxObject } from "./values.js";
++
++const constructors = [
++  { name: "ordinary function", source: "function Value() { this.text = 'abc'; }" },
++  { name: "base class", source: "class Value { text = 'abc'; }" },
++  { name: "derived class", source: "class Base { text = 'abc'; } class Value extends Base {}" }
++];
++
++async function construct(source: string): Promise<[SandboxObject, SandboxObject]> {
++  const parsed = parseExecutableModule(`${source}; return [Value.prototype, new Value()];`);
++  const result = await interpret({ type: "BlockStatement", body: parsed.body, span: parsed.span }, { budget: new Budget() });
++  expect(result.ok).toBe(true);
++  if (!result.ok || !Array.isArray(result.returnValue)) throw new Error("Expected constructor results");
++  return result.returnValue as [SandboxObject, SandboxObject];
++}
++
++it.each(constructors)("tracks only owned allocations for $name", async ({ source }) => {
++  const [prototype, instance] = await construct(source);
++  expect(isTrackedIntrinsicObject(prototype)).toBe(true);
++  expect(isTrackedIntrinsicObject(instance)).toBe(true);
++  expect(Object.getPrototypeOf(prototype)).toBe(null);
++  expect(Object.getPrototypeOf(instance)).toBe(Object.prototype);
++});
++
++it.each(constructors)("reuses unchanged own string descriptors for $name", async ({ source }) => {
++  const [prototype, instance] = await construct(source);
++  const before = measureSandboxData([instance]);
++  const descriptors = vi.spyOn(Object, "getOwnPropertyDescriptor");
++  try {
++    expect(measureSandboxData([instance])).toBe(before);
++    expect(descriptors.mock.calls.filter(([owner, key]) =>
++      (owner === prototype || owner === instance) && typeof key === "string"
++    )).toHaveLength(0);
++  } finally { descriptors.mockRestore(); }
++});
++
++it.each(constructors)("invalidates descriptor changes and traverses aliased children for $name", async ({ source }) => {
++  const [, instance] = await construct(source);
++  const before = measureSandboxData([instance]);
++  instance.text = "longer";
++  expect(measureSandboxData([instance])).toBe(before + 3);
++  const child = { text: "abc" };
++  instance.child = child;
++  const withChild = measureSandboxData([instance]);
++  child.text = "x".repeat(1000);
++  expect(measureSandboxData([instance])).toBe(withChild + 997);
++  instance.alias = child;
++  expect(measureSandboxData([instance, child])).toBe(withChild + 1003);
++  const budget = new Budget({ dataSize: withChild + 996 });
++  expect(() => budget.reconcileDataUsage(measureSandboxData([instance]))).toThrow(expect.objectContaining({ budget: "dataSize" }));
++  delete instance.alias;
++  delete instance.child;
++  instance.text = "abc";
++  expect(measureSandboxData([instance])).toBe(before);
++});
++
++it.each(constructors)("keeps prototype descriptors, symbols and replacement links live for $name", async ({ source }) => {
++  const [prototype, instance] = await construct(source);
++  const before = measureSandboxData([instance]);
++  Object.defineProperty(prototype, "hidden", { value: "abc", configurable: true });
++  expect(measureSandboxData([instance])).toBe(before + 10);
++  Object.defineProperty(prototype, "hidden", { value: "longer" });
++  expect(measureSandboxData([instance])).toBe(before + 13);
++  const key = Symbol("owned");
++  prototype[key] = "abc";
++  expect(measureSandboxData([instance])).toBe(before + 23);
++  delete prototype[key];
++  delete prototype.hidden;
++  expect(measureSandboxData([instance])).toBe(before);
++  const replacement = { extra: "abc" };
++  setSandboxPrototype(instance, replacement);
++  const replaced = measureSandboxData([instance]);
++  replacement.extra = "longer";
++  expect(measureSandboxData([instance])).toBe(replaced + 3);
++});
++
++it.each([
++  "function Value() { return provided; }",
++  "class Value { constructor() { return provided; } }",
++  "class Base { constructor() { return provided; } } class Value extends Base {}"
++])("does not copy or enroll externally returned constructor values: %s", async source => {
++  const provided = { text: "abc" };
++  const parsed = parseExecutableModule(`${source}; return new Value();`);
++  const result = await interpret({ type: "BlockStatement", body: parsed.body, span: parsed.span }, { bindings: { provided } });
++  expect(result.ok).toBe(true);
++  if (!result.ok) throw new Error("Expected external constructor result");
++  expect(result.returnValue).toBe(provided);
++  expect(isTrackedIntrinsicObject(provided)).toBe(false);
++  const before = measureSandboxData([provided]);
++  provided.text = "longer";
++  expect(measureSandboxData([provided])).toBe(before + 3);
++});
++
++it("preserves externally supplied function-property table identity", () => {
++  const properties = { prototype: { text: "abc" } };
++  const closure = createSandboxClosure({ guest: true, call: () => undefined, construct: () => ({}) });
++  expect(materializeFunctionProperties(closure, properties)).toBe(properties);
++  expect(isTrackedIntrinsicObject(properties.prototype)).toBe(false);
++  const before = measureSandboxData([closure]);
++  properties.prototype.text = "longer";
++  expect(measureSandboxData([closure])).toBe(before + 3);
++});
++
++it.each(constructors)("remeasures private state without descriptor mutations for $name", async ({ source }) => {
++  const [, instance] = await construct(source);
++  const element: PrivateElement = { kind: "field", value: "abc" };
++  addPrivateElement(instance, { description: "secret" }, element);
++  const before = measureSandboxData([instance]);
++  element.value = "longer";
++  expect(measureSandboxData([instance])).toBe(before + 3);
++});
++
++it("does not hide excessive descendant depth behind a warmed projection", async () => {
++  const [, instance] = await construct(constructors[0]!.source);
++  measureSandboxData([instance]);
++  let nested: SandboxObject = {};
++  for (let depth = 0; depth <= MAX_DATA_DEPTH; depth++) nested = { child: nested };
++  instance.child = nested;
++  expect(() => measureSandboxData([instance])).toThrow(expect.objectContaining({ budget: "dataDepth" }));
++});
++
++it.each(constructors)("does not trust an outer host proxy for $name", async ({ source }) => {
++  const [, instance] = await construct(source);
++  const descriptors = vi.fn(Reflect.getOwnPropertyDescriptor);
++  const proxy = new Proxy(instance, { getOwnPropertyDescriptor: descriptors });
++  const before = measureSandboxData([proxy]);
++  descriptors.mockClear();
++  expect(measureSandboxData([proxy])).toBe(before);
++  expect(descriptors.mock.calls.some(([, key]) => key === "text")).toBe(true);
++});
++
++it.each([
++  {
++    name: "private field and inherited accessor",
++    source: "class Base { #value = 7; get value() { return this.#value; } } class Value extends Base {} const instance = new Value(); return () => [instance.value, instance instanceof Base, instance instanceof Value];",
++    expected: [7, true, true]
++  },
++  {
++    name: "sealed function instance",
++    source: "function Value() { this.value = 7; } const instance = new Value(); Object.seal(instance); return () => { instance.value = 8; return [instance.value, Object.isSealed(instance), instance instanceof Value]; };",
++    expected: [8, true, true]
++  },
++  {
++    name: "frozen class instance",
++    source: "class Value { value = 7; } const instance = new Value(); Object.freeze(instance); return () => [instance.value, Object.isFrozen(instance), instance instanceof Value];",
++    expected: [7, true, true]
++  }
++])("round trips constructor state: $name", async ({ source, expected }) => {
++  const original = await run(source);
++  expect(original.ok).toBe(true);
++  if (!original.ok) throw new Error("Expected successful execution");
++  const saved = serialize({
++    source,
++    currentAstNodeId: 1,
++    scopeChain: [{ id: "external", bindings: { read: original.returnValue as RuntimeSnapshotValue } }],
++    callStack: [],
++    pendingPromises: [],
++    moduleBindings: {}
++  });
++  const restored = restore(JSON.parse(JSON.stringify(saved)), { source }).currentScope.lookup("read");
++  if (!restored.found || !isSandboxClosure(restored.value)) throw new Error("Expected restored closure");
++  expect(await restored.value.call([])).toEqual(expected);
++});

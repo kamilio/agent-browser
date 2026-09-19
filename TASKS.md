@@ -8,6 +8,8 @@
   admission, incoming audio, recording or transcript has been demonstrated.
 - Address repeated retained-graph accounting without weakening memory, depth,
   cancellation or credential isolation. Mutable graphs cannot be cached by identity.
+- Constructor descriptor tracking passes 444 selected SDK tests and eight native
+  fixture checks; synthetic accounting improved, but Zoom speed remains unverified.
 - Complete legitimate admission, incoming audio, permitted recording, transcription,
   summary and verified delivery using the automations notetaker behavior.
 
