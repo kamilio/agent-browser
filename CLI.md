@@ -66,6 +66,10 @@ Set configuration on the service, not only on a client:
   profile): allow larger module graphs within the selected page source/data
   budgets. Hard ceilings remain 4,194,304 code units per module, 16,777,216 total
   code units, and 16,777,216 response bytes; default limits are unchanged.
+  `application-v1` allows 120 seconds per evaluation; `application-unicode-v1`
+  also raises the per-pattern regex-compilation allowance from 32,768 to 65,536
+  units without increasing the page heap or time limits. Neither guarantees
+  successful application startup.
 - `AGENT_BROWSER_DOCUMENT_PROFILE=reader`: partial static extraction instead of
   normal rendering. Scripts and styles are omitted and forms are inert. This
   mode disables subresource requests and WebSockets while retaining document CSP

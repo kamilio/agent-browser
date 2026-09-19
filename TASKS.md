@@ -1,8 +1,10 @@
 # Browser priorities
 
-- **Zoom first:** native browser + SafeJS only. The name field and Join button
-  render, but startup scripts time out before a usable meeting state. Joining,
-  audio and notetaking do not work yet.
+- **Zoom first:** native browser + SafeJS only. With optional analytics blocked,
+  `application-v1` hits the regex-compilation quota, not the page heap limit.
+  `application-unicode-v1` avoids that failure, but Vue still times out at 120 s;
+  retained-data accounting dominates its CPU profile. Joining, audio and
+  notetaking do not work yet. No challenge or meeting access is bypassed.
 - Reduce retained-graph accounting cost without weakening memory, depth,
   cancellation or credential isolation. Opt-in ordinary classic-script exception
   recovery works; syntax, module, callback and resource failures remain fatal.
