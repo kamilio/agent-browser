@@ -1,5 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { BrowserCommandHost } from "./command-host.js";
+import { loadBrowserDocument } from "./document-loader.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { BrowserSession } from "./session.js";
 
@@ -16,6 +17,118 @@ vi.mock("./node-runtime.js", () => ({
 	}),
 	writeCommandConnection: vi.fn(),
 }));
+
+function partialStylesFixture(markup: string) {
+	const requests: string[] = [];
+	let closed = false;
+	const host = new BrowserCommandHost({
+		createSession: () =>
+			new BrowserSession({
+				createTransport: () => ({
+					async request(input) {
+						requests.push(input.url);
+						const html =
+							requests.length === 1
+								? `<style>@unimplemented {}</style>${markup}`
+								: "<h1>Destination content</h1>";
+						const body = new TextEncoder().encode(html);
+						return {
+							url: input.url,
+							status: 200,
+							headers: { "content-type": ["text/html; charset=utf-8"] },
+							body,
+							redirects: [],
+							encodedBytes: body.length,
+							elapsedMs: 0,
+						};
+					},
+					metrics: () => ({
+						requests: requests.length,
+						active: 0,
+						redirects: 0,
+						encodedBytes: 0,
+						decodedBytes: 0,
+						closed,
+					}),
+					close() {
+						closed = true;
+					},
+				}),
+				loadDocument: loadBrowserDocument,
+			}),
+	});
+	return { host, requests };
+}
+
+it("activates links by explicit keyboard input when unsupported CSS blocks pointer geometry", async () => {
+	const { host, requests } = partialStylesFixture(
+		'<a id="next" href="/page-2">Next page</a>',
+	);
+	try {
+		await host.execute(["open", "https://fixture.invalid/"]);
+		await expect(host.execute(["click", "#next"])).rejects.toMatchObject({
+			code: "unsupported",
+		});
+		expect(requests).toHaveLength(1);
+		const result = await host.execute(["press", "Enter", "--target=#next"]);
+		expect(result.data).toMatchObject({
+			keyboard: { canceled: false, key: "Enter" },
+			navigation: { url: "https://fixture.invalid/page-2" },
+		});
+		expect(requests).toEqual([
+			"https://fixture.invalid/",
+			"https://fixture.invalid/page-2",
+		]);
+		expect(JSON.stringify((await host.execute(["snapshot"])).data)).toContain(
+			"Destination content",
+		);
+	} finally {
+		host.close();
+	}
+});
+
+it("submits GET search forms without requiring supported pointer layout", async () => {
+	const { host, requests } = partialStylesFixture(
+		'<form action="/search/"><input id="query" name="q"><button name="submit">Search</button></form>',
+	);
+	try {
+		await host.execute(["open", "https://fixture.invalid/"]);
+		const result = await host.execute([
+			"fill",
+			"#query",
+			"asyncio & tasks",
+			"--submit",
+		]);
+		expect(result.data).toMatchObject({
+			form: { canceled: false, invalid: [] },
+			navigation: {
+				url: "https://fixture.invalid/search/?q=asyncio+%26+tasks&submit=",
+			},
+		});
+		expect(requests).toHaveLength(2);
+	} finally {
+		host.close();
+	}
+});
+
+it.each([
+	'<a id="target" href="/next" hidden>Hidden link</a>',
+	'<button id="target" disabled>Disabled button</button>',
+])(
+	"keeps focus restrictions for explicit keyboard activation: %s",
+	async (markup) => {
+		const { host, requests } = partialStylesFixture(markup);
+		try {
+			await host.execute(["open", "https://fixture.invalid/"]);
+			await expect(
+				host.execute(["press", "Enter", "--target=#target"]),
+			).rejects.toMatchObject({ code: "not-actionable" });
+			expect(requests).toHaveLength(1);
+		} finally {
+			host.close();
+		}
+	},
+);
 
 it("executes held-key commands through the actual CLI entry with an injected service", async () => {
 	const host = new BrowserCommandHost({

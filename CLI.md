@@ -23,6 +23,10 @@ start the service automatically. The service binds an ephemeral loopback port;
 its authentication token is not printed. `close-all` closes sessions, while
 `stop-server` shuts down the owned service.
 
+When unsupported CSS prevents pointer clicks, explicit keyboard activation can
+still navigate a focusable link: `press Enter --target=e123` using its snapshot
+reference. This respects focus restrictions; it does not validate pointer geometry.
+
 ## Runtime configuration
 
 Set configuration on the service, not only on a client:
