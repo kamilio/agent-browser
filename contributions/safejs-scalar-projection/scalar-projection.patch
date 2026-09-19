@@ -144,3 +144,14 @@
 +    budget.setRetainedValues(root, undefined);
 +  }
 +});
+--- a/packages/safe-js/src/interp/property-projection.test.ts
++++ b/packages/safe-js/src/interp/property-projection.test.ts
+@@ -8,7 +8,7 @@
+   const nested = { text: "abc" };
+   const value = objectModel.createIntrinsicObject({ first: nested, second: "abc" });
+   const before = objectModel.intrinsicObjectDataProjection(value, false);
+-  expect(before).toEqual({ propertyUnits: 13, values: [nested, "abc"] });
++  expect(before).toEqual({ propertyUnits: 13, stringUnits: 3, values: [nested] });
+   const units = measureSandboxData([value]);
+   nested.text = "abcdef";
+   expect(objectModel.intrinsicObjectDataProjection(value, false)).toBe(before);
