@@ -1,0 +1,186 @@
+--- a/packages/safe-js/src/interp/scope.ts
++++ b/packages/safe-js/src/interp/scope.ts
+@@ -287,20 +287,29 @@
+ 
+   retainedDataRoots(): InterpreterValue[] {
+     const captured = this.#retainedDataSnapshot?.deref();
+-    let scopes: Array<{ scope: Scope; revision: object }> | undefined = [];
++    let scopes: Array<{ scope: Scope; revision: object }> | undefined = captured === undefined ? [] : undefined;
+     let unchanged = captured !== undefined;
++    let scopeCount = 0;
+     for (let scope: Scope | undefined = this; scope !== undefined; scope = scope.parent) {
+       const moduleEnvironment = scope.moduleEnvironment;
+       if ((moduleEnvironment !== undefined && (scope.options.globalEnvironment !== true || !immutableEmptyModuleEnvironments.has(moduleEnvironment))) || scope.resourceState !== undefined ||
+           scope.privateNames !== undefined || scope.importMeta !== undefined || scope.withEnvironment) {
+         scopes = undefined;
++        unchanged = false;
+         break;
+       }
+-      const previous = captured?.scopes[scopes.length];
+-      unchanged &&= previous?.scope === scope && previous.revision === scope.#dataRevision;
+-      scopes.push({ scope, revision: scope.#dataRevision });
+-    }
+-    if (scopes !== undefined && unchanged && captured!.scopes.length === scopes.length) return [...captured!.roots];
++      const previous = captured?.scopes[scopeCount];
++      if (unchanged && (previous?.scope !== scope || previous.revision !== scope.#dataRevision)) {
++        unchanged = false;
++        scopes = captured!.scopes.slice(0, scopeCount);
++      }
++      scopes?.push({ scope, revision: scope.#dataRevision });
++      scopeCount++;
++    }
++    if (unchanged) {
++      if (captured!.scopes.length === scopeCount) return [...captured!.roots];
++      scopes = captured!.scopes.slice(0, scopeCount);
++    }
+     const values = this.parent?.retainedDataRoots() ?? [];
+     if (this.#globalVarNames !== undefined) values.push(this.#globalVarNameValues ??= [...this.#globalVarNames]);
+     if (this.withEnvironment && this.objectEnvironment !== undefined) values.push(this.objectEnvironment);
+--- /dev/null
++++ b/packages/safe-js/src/interp/scope-cache-hit-allocation.test.ts
+@@ -0,0 +1,145 @@
++import { expect, it } from "vitest";
++import { Scope } from "./scope.js";
++import { measureSandboxData } from "./values.js";
++
++it("does not append newly allocated ancestry records on cache hits", () => {
++  let scope = new Scope({ outer: "abc" });
++  for (let depth = 0; depth < 12; depth++) scope = scope.child({ inner: "def" });
++  const before = scope.retainedDataRoots();
++  const push = Array.prototype.push;
++  let ancestryRecords = 0;
++  let emptyAncestryArrays = 0;
++  let after = before;
++  try {
++    Array.prototype.push = function (this: unknown[], ...entries: unknown[]): number {
++      for (const entry of entries) {
++        if (typeof entry === "object" && entry !== null && "scope" in entry &&
++            entry.scope instanceof Scope && "revision" in entry) {
++          ancestryRecords++;
++          if (this.length === 0) emptyAncestryArrays++;
++        }
++      }
++      return Reflect.apply(push, this, entries);
++    };
++    for (let repeat = 0; repeat < 8; repeat++) after = scope.retainedDataRoots();
++  } finally { Array.prototype.push = push; }
++  expect(ancestryRecords).toBe(0);
++  expect(emptyAncestryArrays).toBe(0);
++  expect(after).not.toBe(before);
++  expect(after[0]).toBe(before[0]);
++  expect(measureSandboxData(after)).toBe(39);
++});
++
++it("invalidates a later revision without altering earlier snapshots or returned arrays", () => {
++  const parent = new Scope();
++  parent.declare("text", "let", "abc");
++  const child = parent.child({ local: "x" }).child({ leaf: "y" });
++  const before = child.retainedDataRoots();
++  parent.assign("text", "longer");
++  const after = child.retainedDataRoots();
++  expect(measureSandboxData(before)).toBe(5);
++  expect(measureSandboxData(after)).toBe(8);
++  expect(after[0]).not.toBe(before[0]);
++  after.push("extra");
++  expect(measureSandboxData(after)).toBe(13);
++  expect(measureSandboxData(child.retainedDataRoots())).toBe(8);
++});
++
++it("keeps shared descendants live and equal primitive bindings distinct", () => {
++  const shared = { text: "abc" };
++  const child = new Scope({ shared, outer: "same" }).child({ shared, inner: "same" });
++  const before = child.retainedDataRoots();
++  expect(measureSandboxData(before)).toBe(measureSandboxData([shared]) + 8);
++  shared.text = "longer";
++  const after = child.retainedDataRoots();
++  expect(after[0]).toBe(before[0]);
++  expect(measureSandboxData([...before, ...after])).toBe(measureSandboxData([shared]) + 8);
++});
++
++it("declines the cache for added ancestor metadata and its later mutations", () => {
++  const parent = new Scope({ outer: "abc" });
++  const child = parent.child({ local: "x" });
++  const before = child.retainedDataRoots();
++  parent.moduleEnvironment = { available: [], namespaces: { first: { text: "one" } } };
++  const withMetadata = child.retainedDataRoots();
++  expect(measureSandboxData(withMetadata)).toBe(4 + measureSandboxData([{ text: "one" }]));
++  parent.moduleEnvironment.namespaces.second = { text: "two" };
++  expect(measureSandboxData(child.retainedDataRoots())).toBe(4 + measureSandboxData([{ text: "one" }, { text: "two" }]));
++  expect(measureSandboxData(withMetadata)).toBe(4 + measureSandboxData([{ text: "one" }]));
++  expect(measureSandboxData(before)).toBe(4);
++  parent.moduleEnvironment = undefined;
++  expect(measureSandboxData(child.retainedDataRoots())).toBe(4);
++});
++
++it("preserves the single validation traversal and metadata read order on a miss", () => {
++  const parent = new Scope({ outer: "abc" });
++  const middle = parent.child();
++  middle.declare("text", "let", "def");
++  const child = middle.child({ local: "x" });
++  child.retainedDataRoots();
++  middle.assign("text", "longer");
++  const reads: string[] = [];
++  for (const [name, scope] of [["child", child], ["middle", middle], ["parent", parent]] as const) {
++    Object.defineProperty(scope, "moduleEnvironment", { get: () => { reads.push(name); return undefined; } });
++  }
++  const after = child.retainedDataRoots();
++  expect(reads).toEqual(["child", "middle", "parent", "middle", "parent", "parent", "middle", "child"]);
++  expect(measureSandboxData(after)).toBe(10);
++});
++
++it("preserves already checked revisions when an ancestor getter mutates a child", () => {
++  const parent = new Scope();
++  parent.declare("outer", "let", "abc");
++  const child = parent.child();
++  child.declare("local", "let", "x");
++  child.retainedDataRoots();
++  parent.assign("outer", "longer");
++  let mutate = true;
++  Object.defineProperty(parent, "moduleEnvironment", { get: () => {
++    if (mutate) {
++      mutate = false;
++      child.assign("local", "changed");
++    }
++    return undefined;
++  } });
++  const after = child.retainedDataRoots();
++  expect(measureSandboxData(after)).toBe(13);
++  const next = child.retainedDataRoots();
++  expect(next[0]).not.toBe(after[0]);
++  expect(measureSandboxData(next)).toBe(13);
++  expect(child.retainedDataRoots()[0]).toBe(next[0]);
++});
++
++it("invalidates shortened and extended ancestry with unchanged prefix revisions", () => {
++  const parent = new Scope({ outer: "abc" });
++  const middle = parent.child({ local: "x" });
++  const child = middle.child({ leaf: "y" });
++  const before = child.retainedDataRoots();
++  Object.defineProperty(middle, "parent", { value: undefined });
++  const shortened = child.retainedDataRoots();
++  expect(measureSandboxData(shortened)).toBe(2);
++  expect(measureSandboxData(before)).toBe(5);
++  expect(child.retainedDataRoots()[0]).toBe(shortened[0]);
++  Object.defineProperty(middle, "parent", { value: new Scope({ replacement: "longer" }) });
++  const extended = child.retainedDataRoots();
++  expect(measureSandboxData(extended)).toBe(8);
++  expect(measureSandboxData(shortened)).toBe(2);
++  expect(child.retainedDataRoots()[0]).toBe(extended[0]);
++});
++
++it("follows ancestry changed by a metadata getter before reading the parent", () => {
++  const previousParent = new Scope({ outer: "abc" });
++  const nextParent = new Scope({ outer: "longer" });
++  const child = previousParent.child({ local: "x" });
++  const before = child.retainedDataRoots();
++  let reads = 0;
++  Object.defineProperty(child, "moduleEnvironment", { get: () => {
++    reads++;
++    Object.defineProperty(child, "parent", { value: nextParent });
++    return undefined;
++  } });
++  const after = child.retainedDataRoots();
++  expect(reads).toBe(2);
++  expect(measureSandboxData(after)).toBe(7);
++  expect(measureSandboxData(before)).toBe(4);
++});

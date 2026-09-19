@@ -12,6 +12,18 @@ UI, legitimate admission, native incoming audio reception and decoding,
 permitted recording, notetaker transcription/summary and verified delivery.
 Use no Chromium/Firefox/remote-browser substitution or access-control bypass.
 
+September19,00:10UTC: the isolated vendor's V8 profile identifies repeated
+retained-data accounting:22,776/23,860 samples include reconcileCompiledValues.
+All original runtime/deadline/isolation bounds remain; the sole change is an
+explicit tick-profiler observer. Parent verifies7085 input hashes/modes and26
+artifacts, with complete observed closure. A focused scope-cache contribution
+avoids104 redundant ancestry-record appends in its deterministic fixture and
+passes167 related tests/types/build; browser performance is not yet measured.
+An independent object-literal descriptor-reuse trial is under regression test.
+See `reports/zoom-accounting-profile-2026-09-19.md` and
+`contributions/safejs-scope-cache/README.md`. Zoom remains unjoined; UI,
+admission, audio, recording, transcription and delivery remain OPEN.
+
 September18,23:53UTC: an offline minimal-document run reproduces the exact vendor
 timeout at120.287s with continuing SDK steps and166.407s aggregate process CPU.
 This is not an idle-only wait, but no CPU profile is emitted and no function-level
