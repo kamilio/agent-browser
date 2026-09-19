@@ -1,0 +1,339 @@
+--- a/packages/safe-js/src/interp/object-model.ts
++++ b/packages/safe-js/src/interp/object-model.ts
+@@ -50,6 +50,7 @@
+ type PropertyDataProjection = { propertyUnits: number; stringUnits: number; values: unknown[] };
+ type PropertyTableState = {
+   revision: number;
++  retained?: boolean;
+   measuredRevision?: number;
+   measuredDescriptors?: Array<[string, PropertyDescriptor]>;
+   dataDescriptors?: Array<[string, PropertyDescriptor]>;
+@@ -200,26 +201,37 @@
+   const state: PropertyTableState = { revision: 0 };
+   const tracked = new Proxy(properties, {
+     defineProperty(target, key, descriptor) {
++      const before = state.retained || state.dataDescriptors !== undefined || state.symbolDescriptors !== undefined || state.measuredRevision === state.revision
++        ? Reflect.getOwnPropertyDescriptor(target, key) : undefined;
+       const changed = Reflect.defineProperty(target, key, descriptor);
+-      if (changed) {
++      const unchanged = before !== undefined &&
++        (!("value" in descriptor) || ("value" in before && Object.is(before.value, descriptor.value))) &&
++        (!("get" in descriptor) || ("get" in before && before.get === descriptor.get)) &&
++        (!("set" in descriptor) || ("set" in before && before.set === descriptor.set)) &&
++        (!("writable" in descriptor) || before.writable === descriptor.writable) &&
++        (!("enumerable" in descriptor) || before.enumerable === descriptor.enumerable) &&
++        (!("configurable" in descriptor) || before.configurable === descriptor.configurable);
++      if (changed && !unchanged) {
+         state.revision++;
+         state.dataDescriptors = undefined;
+         state.symbolDescriptors = undefined;
+         state.enumerableProjection = undefined;
+         state.managedProjection = undefined;
+-        intrinsicMutationToken = {};
++        if (state.retained) intrinsicMutationToken = {};
+       }
+       return changed;
+     },
+     deleteProperty(target, key) {
++      const existed = state.retained || state.dataDescriptors !== undefined || state.symbolDescriptors !== undefined || state.measuredRevision === state.revision
++        ? Object.hasOwn(target, key) : true;
+       const changed = Reflect.deleteProperty(target, key);
+-      if (changed) {
++      if (changed && existed) {
+         state.revision++;
+         state.dataDescriptors = undefined;
+         state.symbolDescriptors = undefined;
+         state.enumerableProjection = undefined;
+         state.managedProjection = undefined;
+-        intrinsicMutationToken = {};
++        if (state.retained) intrinsicMutationToken = {};
+       }
+       return changed;
+     }
+@@ -414,8 +426,10 @@
+   if (roots === undefined) intrinsicPrototypeRoots.set(budget, (roots = new Set()));
+   roots.add(root);
+   const records = captureIntrinsicRecords(targets);
+-  for (const { target } of records)
++  for (const { target, revision } of records) {
++    if (revision !== undefined) revision.retained = true;
+     if (isGuestClosure(target)) intrinsicFunctions.add(target);
++  }
+   const unchanged = (
+     before: PropertyDescriptor | undefined,
+     after: PropertyDescriptor | undefined
+--- /dev/null
++++ b/packages/safe-js/src/interp/owned-property-noop.test.ts
+@@ -0,0 +1,272 @@
++import { afterEach, expect, it, vi } from "vitest";
++import { accessorAdapter } from "./accessors.js";
++import { Budget, SandboxError } from "./budget.js";
++import {
++  createIntrinsicObject,
++  intrinsicFunctionDataDescriptors,
++  intrinsicObjectDataDescriptors,
++  intrinsicObjectDataProjection,
++  intrinsicObjectSymbolDescriptors,
++  materializeFunctionProperties,
++  registerIntrinsicObject,
++  releaseObjectPrototype
++} from "./object-model.js";
++import { createSandboxClosure, measureSandboxData, reconcileCompiledValues, type SandboxObject } from "./values.js";
++
++afterEach(() => vi.restoreAllMocks());
++
++function capture(value: SandboxObject) {
++  return [
++    intrinsicFunctionDataDescriptors(value),
++    intrinsicObjectDataDescriptors(value),
++    intrinsicObjectSymbolDescriptors(value),
++    intrinsicObjectDataProjection(value, false),
++    intrinsicObjectDataProjection(value, true)
++  ];
++}
++
++const symbol = Symbol("owned");
++const reference = { nested: "live" };
++
++it.each([Number.NaN, 0, -0, undefined, null, false, "text", symbol, reference])(
++  "keeps captures for an identical data value (%s)", value => {
++    const root = createIntrinsicObject({ value });
++    const before = capture(root);
++    expect(Reflect.defineProperty(root, "value", { value })).toBe(true);
++    capture(root).forEach((projection, index) => expect(projection).toBe(before[index]));
++    root.value = value;
++    capture(root).forEach((projection, index) => expect(projection).toBe(before[index]));
++  }
++);
++
++it.each(["value", symbol])("keeps captures for full, partial and empty descriptors (%s)", key => {
++  const root = createIntrinsicObject();
++  const descriptor = { value: "same", writable: true, configurable: true, enumerable: true };
++  Object.defineProperty(root, key, descriptor);
++  const before = capture(root);
++  for (const update of [descriptor, {}, { writable: true }, { configurable: true, enumerable: true }]) {
++    expect(Reflect.defineProperty(root, key, update)).toBe(true);
++    capture(root).forEach((projection, index) => expect(projection).toBe(before[index]));
++  }
++});
++
++it.each(["missing", Symbol("missing")])("keeps captures when deleting an absent key (%s)", key => {
++  const root = createIntrinsicObject({ value: "same" });
++  const before = capture(root);
++  expect(Reflect.deleteProperty(root, key)).toBe(true);
++  capture(root).forEach((projection, index) => expect(projection).toBe(before[index]));
++});
++
++it("preserves accessor identity without invoking getters or setters", () => {
++  const getter = vi.fn(() => "must not run");
++  const setter = vi.fn();
++  const root = createIntrinsicObject();
++  Object.defineProperty(root, "value", { get: getter, set: setter, configurable: true });
++  const before = capture(root);
++  for (const descriptor of [{ get: getter }, { set: setter }, {}]) {
++    expect(Reflect.defineProperty(root, "value", descriptor)).toBe(true);
++    capture(root).forEach((projection, index) => expect(projection).toBe(before[index]));
++  }
++  expect(getter).not.toHaveBeenCalled();
++  expect(setter).not.toHaveBeenCalled();
++});
++
++it.each([
++  [{ value: 0 }, { value: -0 }],
++  [{ value: -0 }, { value: 0 }],
++  [{ value: "same" }, { value: "different" }],
++  [{ value: undefined }, { get: undefined }],
++  [{ get: undefined }, { value: undefined }],
++  [{ value: "same", writable: true }, { writable: false }],
++  [{ value: "same", enumerable: true }, { enumerable: false }],
++  [{ value: "same" }, { configurable: false }],
++  [{ get: () => undefined }, { get: () => undefined }],
++  [{ set: () => undefined }, { set: () => undefined }]
++])("invalidates actual descriptor changes %#", (initial, update) => {
++  const root = createIntrinsicObject();
++  const native = Object.create(null);
++  Object.defineProperty(root, symbol, { ...initial, configurable: true });
++  Object.defineProperty(native, symbol, { ...initial, configurable: true });
++  const before = capture(root);
++  expect(Reflect.defineProperty(root, symbol, update)).toBe(Reflect.defineProperty(native, symbol, update));
++  expect(Object.getOwnPropertyDescriptor(root, symbol)).toEqual(Object.getOwnPropertyDescriptor(native, symbol));
++  capture(root).forEach((projection, index) => expect(projection).not.toBe(before[index]));
++});
++
++it("invalidates successful new definitions and actual deletions", () => {
++  const root = createIntrinsicObject();
++  const before = capture(root);
++  expect(Reflect.defineProperty(root, "value", { configurable: true })).toBe(true);
++  expect(Object.hasOwn(root, "value")).toBe(true);
++  const defined = capture(root);
++  defined.forEach((projection, index) => expect(projection).not.toBe(before[index]));
++  expect(Reflect.deleteProperty(root, "value")).toBe(true);
++  capture(root).forEach((projection, index) => expect(projection).not.toBe(defined[index]));
++});
++
++it("does not invalidate failed writes, deletes, or definitions on a sealed table", () => {
++  const root = createIntrinsicObject();
++  Object.defineProperty(root, "value", { value: Number.NaN });
++  Object.preventExtensions(root);
++  const before = capture(root);
++  expect(Reflect.defineProperty(root, "value", { value: 1 })).toBe(false);
++  expect(Reflect.set(root, "value", 1)).toBe(false);
++  expect(Reflect.deleteProperty(root, "value")).toBe(false);
++  expect(Reflect.defineProperty(root, "new", {})).toBe(false);
++  expect(Reflect.defineProperty(root, "value", { value: Number.NaN })).toBe(true);
++  expect(Reflect.deleteProperty(root, "missing")).toBe(true);
++  capture(root).forEach((projection, index) => expect(projection).toBe(before[index]));
++});
++
++it("keeps materialized function property snapshots on no-op writes", () => {
++  const closure = createSandboxClosure({ guest: true, call: () => undefined });
++  const root = materializeFunctionProperties(closure);
++  root.extra = "same";
++  const before = intrinsicFunctionDataDescriptors(root);
++  root.extra = "same";
++  expect(intrinsicFunctionDataDescriptors(root)).toBe(before);
++  expect(Reflect.deleteProperty(root, "missing")).toBe(true);
++  expect(intrinsicFunctionDataDescriptors(root)).toBe(before);
++});
++
++it("preserves every retention group on no-op writes while still measuring nested growth", () => {
++  const budget = new Budget({ dataSize: 100 });
++  const first = createIntrinsicObject();
++  const second = createIntrinsicObject();
++  const registration = vi.spyOn(budget, "setRetainedValues");
++  registerIntrinsicObject(budget, first);
++  registerIntrinsicObject(budget, second);
++  const captures = registration.mock.calls.map(([, collect]) => {
++    if (!collect) throw new Error("Missing retained-value collector");
++    return collect;
++  });
++  const nested = { text: "small" };
++  first.extra = nested;
++  second.extra = "same";
++  try {
++    const before = captures.map(collect => collect());
++    expect(before.every(value => value !== undefined)).toBe(true);
++    first.extra = nested;
++    expect(Reflect.deleteProperty(second, "missing")).toBe(true);
++    captures.forEach((collect, index) => expect(collect()).toBe(before[index]));
++    nested.text = "x".repeat(200);
++    captures.forEach((collect, index) => expect(collect()).toBe(before[index]));
++    expect(() => reconcileCompiledValues(budget, [])).toThrow(SandboxError);
++    first.extra = "replacement";
++    expect(captures[0]()).not.toBe(before[0]);
++    expect([...(captures[0]() ?? [])]).toContain("replacement");
++  } finally { releaseObjectPrototype(budget); }
++});
++
++it("preserves retained callback order and observes mutations on the next measurement", () => {
++  const order: string[] = [];
++  const root = createIntrinsicObject({ later: "abc" });
++  const getter = createSandboxClosure({ call: () => { throw new Error("must not call"); }, retainedValues: () => {
++    order.push("retained");
++    root.later = "abcdef";
++    return [root.later];
++  } });
++  const adapter = accessorAdapter(getter, "get");
++  Object.defineProperty(root, "first", { get: adapter, enumerable: true, configurable: true });
++  const before = capture(root);
++  Object.defineProperty(root, "first", { get: adapter });
++  capture(root).forEach((projection, index) => expect(projection).toBe(before[index]));
++  expect(order).toEqual([]);
++  expect(measureSandboxData([root])).toBe(23);
++  expect(measureSandboxData([root])).toBe(26);
++  expect(order).toEqual(["retained", "retained"]);
++});
++
++it("starts invalidating retained groups only after an owned table is registered", () => {
++  const budget = new Budget();
++  const root = createIntrinsicObject();
++  const registration = vi.spyOn(budget, "setRetainedValues");
++  registerIntrinsicObject(budget, root);
++  root.extra = "retained";
++  const collect = registration.mock.calls.at(-1)?.[1];
++  if (!collect) throw new Error("Missing retained-value collector");
++  const unrelated = createIntrinsicObject();
++  try {
++    const before = collect();
++    expect(before).toBeDefined();
++    unrelated.extra = "new";
++    expect(Reflect.deleteProperty(unrelated, "missing")).toBe(true);
++    expect(Reflect.deleteProperty(unrelated, "extra")).toBe(true);
++    expect(collect()).toBe(before);
++    registerIntrinsicObject(budget, unrelated);
++    const newlyRegistered = registration.mock.calls.at(-1)?.[1];
++    if (!newlyRegistered) throw new Error("Missing newly registered collector");
++    expect(newlyRegistered()).toBeUndefined();
++    const nested = { text: "small" };
++    unrelated.extra = nested;
++    expect(collect()).not.toBe(before);
++    const roots = newlyRegistered();
++    expect([...(roots ?? [])]).toEqual(["extra", nested]);
++    const units = measureSandboxData(budget.retainedValues());
++    nested.text = "small but growing";
++    expect(newlyRegistered()).toBe(roots);
++    expect(measureSandboxData(budget.retainedValues())).toBe(units + 12);
++    unrelated.extra = "replacement";
++    expect(newlyRegistered()).not.toBe(roots);
++    expect([...(newlyRegistered() ?? [])]).toEqual(["extra", "replacement"]);
++  } finally { releaseObjectPrototype(budget); }
++});
++
++it("observes descriptor conversion side effects before capturing the current descriptor", () => {
++  const order: string[] = [];
++  const root = createIntrinsicObject({ value: "same", later: "before" });
++  const before = capture(root);
++  const descriptor = {
++    get value() {
++      order.push("descriptor");
++      root.later = "after";
++      return "same";
++    }
++  };
++  expect(Reflect.defineProperty(root, "value", descriptor)).toBe(true);
++  expect(order).toEqual(["descriptor"]);
++  expect(root.later).toBe("after");
++  expect(intrinsicObjectDataDescriptors(root)).not.toBe(before[1]);
++  expect(measureSandboxData([root])).toBe(measureSandboxData([{ value: "same", later: "after" }]));
++});
++
++it("does not suppress setters for assignments that happen to use the current value", () => {
++  const order: string[] = [];
++  const root = createIntrinsicObject({ later: "before" });
++  Object.defineProperty(root, "value", {
++    get: () => "same",
++    set: value => { order.push(String(value)); root.later = "after"; },
++    configurable: true
++  });
++  const before = capture(root);
++  expect(Reflect.set(root, "value", "same")).toBe(true);
++  expect(order).toEqual(["same"]);
++  expect(root.later).toBe("after");
++  expect(intrinsicObjectDataDescriptors(root)).not.toBe(before[1]);
++});
++
++it("does not invalidate captures when descriptor conversion throws", () => {
++  const root = createIntrinsicObject({ value: "same" });
++  const before = capture(root);
++  expect(() => Reflect.defineProperty(root, "value", { value: "same", get: () => "same" })).toThrow(TypeError);
++  expect(() => Reflect.defineProperty(root, "value", { get value() { throw new Error("conversion"); } })).toThrow("conversion");
++  capture(root).forEach((projection, index) => expect(projection).toBe(before[index]));
++});
++
++it("does not add descriptor reads to cold property tables", () => {
++  const root = createIntrinsicObject();
++  const objectRead = vi.spyOn(Object, "getOwnPropertyDescriptor");
++  const reflectRead = vi.spyOn(Reflect, "getOwnPropertyDescriptor");
++  objectRead.mockClear();
++  reflectRead.mockClear();
++  for (let index = 0; index < 10; index++) {
++    Reflect.defineProperty(root, `key${index}`, { value: index, configurable: true });
++    Reflect.deleteProperty(root, `key${index}`);
++  }
++  const objectCalls = objectRead.mock.calls.length;
++  const reflectCalls = reflectRead.mock.calls.length;
++  reflectRead.mockRestore();
++  objectRead.mockRestore();
++  expect(objectCalls).toBe(0);
++  expect(reflectCalls).toBe(0);
++});
