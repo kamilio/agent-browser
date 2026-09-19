@@ -7,8 +7,9 @@
   recovery works; syntax, module, callback and resource failures remain fatal.
 - Open test gates: SDK default-stack depth tests and a baseline Promise snapshot
   timeout; existing native capability-metadata and classic-loader limit expectations.
-- Finish extraction/compatibility fixes, legitimate challenge handoffs, top100
-  checks, browser-only research, playground/terminal and command coverage.
+- Fix large-HTML admission and React streaming-boundary extraction; finish other
+  compatibility work, legitimate challenge handoffs, top100 checks, browser-only
+  research, playground/terminal and command coverage.
 - Validate secret placeholders with extensible .env/pass providers and passkeys.
 - Keep native, SafeJS, live-network, socket and TTY gates separate. Native tests
   must come from `native-tests.json`; do not claim unverified acceptance.
