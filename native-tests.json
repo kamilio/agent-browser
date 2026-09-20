@@ -1,4 +1,5 @@
 [
+	"src/canvas-raster.test.ts",
 	"src/native-canvas.test.ts",
 	"src/page-xml-http-requests.test.ts",
 	"src/page-xml-http-request-bootstrap.test.ts",

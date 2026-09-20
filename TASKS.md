@@ -23,16 +23,18 @@
 
 ## Current verified state
 
-- Native HTML canvas now has a bounded 2D rectangle/readback subset: stable context
-  identity, fillStyle/globalAlpha, save/restore, fillRect/clearRect and independent
-  Uint8ClampedArray getImageData. Resize resets pixels/state; close revokes access.
-  One runtime and its child documents share a 4M-pixel / 64-context cap. Nine new
-  checks plus 46 existing manifest-listed DOM checks pass; TypeScript/build and
-  new-file lint/format pass. Existing script-dom assignment-expression/import-order
-  lint remains. Actual native + SafeJS drawing/clear/readback/resize probe passes,
-  with cleanup data zero. WebGL, paths, text, transforms, image/video drawing,
-  canvas export and viewport compositing remain missing. This does not resolve
-  Vue initialization or establish Zoom join/media readiness.
+- Native HTML canvas has bounded 2D rectangles/readback and viewport compositing:
+  stable context, color/alpha state, save/restore, fillRect/clearRect/getImageData;
+  resize clears pixels/state and close revokes access. Normal-flow inline/block
+  layout uses bitmap intrinsics and CSS scaling; nearest-neighbor painting follows
+  padding, borders, background, overflow, opacity and screenshot crop. Unpainted
+  canvases allocate no backing store. One runtime/child documents share 4M pixels
+  and 64 contexts. Eighteen added API/rendering checks plus 335 existing manifest
+  checks pass; TypeScript/build and new-file lint/format pass. Actual native + SafeJS
+  drawing-to-PNG pixel assertions pass, cleanup data zero. WebGL, paths, text,
+  transforms, image/video drawing and canvas export remain missing. Existing
+  script-dom import-order/assignment-expression lint remains. Vue initialization
+  and Zoom join/media readiness remain unverified.
 - Fresh line-sampled baseline profile has 21937 visitor self samples: 1501 at seen
   lookup, 1487 at insertion (13.6% combined), 925 at capture-provider reads and 869
   at closure-property reads. Cost is spread across identity, metadata and descriptor

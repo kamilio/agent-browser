@@ -42,6 +42,7 @@ import { documentSvgScene } from "./svg-scene.js";
 import { svgIntrinsicSize } from "./svg-projection.js";
 import type { SvgScene } from "./svg-scene-types.js";
 import { documentImages } from "./document-images.js";
+import { canvasIntrinsicSize } from "./document-canvases.js";
 import { imageIntrinsicSize } from "./image-decoder.js";
 import {
 	brokenImageAlternative,
@@ -187,6 +188,7 @@ export interface FormattingNode {
 	intrinsicRatio?: boolean;
 	imageAlternative?: Readonly<ImageAlternative>;
 	emptyImage?: true;
+	canvas?: true;
 	svg?: SvgScene;
 	control?: SoftwareControl;
 	marker?: DisclosureMarker;
@@ -1199,7 +1201,9 @@ export function buildFormattingTree(
 					!(name === "align" && supportsTextAlignmentHint(node)) &&
 					!(name === "border" && supportsImageBorderHint(node)) &&
 					!(
-						(node.tagName === "img" || embeddedSvg) &&
+						(node.tagName === "img" ||
+							node.tagName === "canvas" ||
+							embeddedSvg) &&
 						(name === "width" || name === "height")
 					),
 			)
@@ -1770,6 +1774,25 @@ export function buildFormattingTree(
 					visible: visibility.visible,
 				}),
 			];
+		if (isHtmlElement(node, "canvas") && (block || inline || atomicBlock)) {
+			const intrinsic = canvasIntrinsicSize(node);
+			return [
+				create({
+					kind: "replaced",
+					level: block ? "block" : "inline",
+					ref,
+					display,
+					visible: visibility.visible,
+					box: styles.box(id),
+					paint: styles.paint(id),
+					typography: styles.text(id),
+					intrinsic: Object.freeze(intrinsic),
+					intrinsicRatio: intrinsic.width > 0 && intrinsic.height > 0,
+					canvas: true,
+					...itemFields,
+				}),
+			];
+		}
 		if (
 			node.tagName === "img" &&
 			(block ||

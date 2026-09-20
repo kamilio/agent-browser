@@ -1,5 +1,5 @@
 import { parseCssColor } from "./css-color.js";
-import type { DocumentTree } from "./document.js";
+import type { DocumentNode, DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import {
@@ -56,6 +56,18 @@ export function canvasDimension(
 	return value <= 2_147_483_647 ? value : fallback;
 }
 
+export function canvasIntrinsicSize(node: Readonly<DocumentNode>): {
+	width: number;
+	height: number;
+} {
+	if (!isHtmlElement(node, "canvas"))
+		throw new TypeError("Expected an HTML canvas element");
+	return {
+		width: canvasDimension(node.attributes.width, 300),
+		height: canvasDimension(node.attributes.height, 150),
+	};
+}
+
 function numeric(value: unknown): number {
 	if (
 		(typeof value === "object" && value !== null) ||
@@ -79,6 +91,10 @@ export class NativeCanvas2D {
 		this.image = undefined;
 		this.state = initialState();
 		this.saved.length = 0;
+	}
+	bitmap(): Readonly<RasterImage> | undefined {
+		this.owner.assertOpen();
+		return this.image;
 	}
 	get fillStyle(): string {
 		this.owner.assertOpen();
@@ -281,13 +297,11 @@ export class DocumentCanvases {
 	}
 	dimensions(id: number): { width: number; height: number } {
 		this.assertOpen();
-		const node = this.tree.get(id);
-		if (!isHtmlElement(node, "canvas"))
-			throw new TypeError("Expected an HTML canvas element");
-		return {
-			width: canvasDimension(node.attributes.width, 300),
-			height: canvasDimension(node.attributes.height, 150),
-		};
+		return canvasIntrinsicSize(this.tree.get(id));
+	}
+	bitmap(id: number): Readonly<RasterImage> | undefined {
+		this.dimensions(id);
+		return this.contexts.get(id)?.bitmap();
 	}
 	get(id: number): NativeCanvas2D {
 		this.dimensions(id);
@@ -339,6 +353,11 @@ export class DocumentCanvases {
 	}
 }
 const owners = new WeakMap<DocumentTree, DocumentCanvases>();
+export function existingDocumentCanvases(
+	tree: DocumentTree,
+): DocumentCanvases | undefined {
+	return owners.get(tree);
+}
 export function documentCanvases(tree: DocumentTree): DocumentCanvases {
 	let owner = owners.get(tree);
 	if (!owner) {

@@ -20,6 +20,7 @@ import { rasterizeDisclosureMarker } from "./disclosure-marker.js";
 import { rasterizeSvgScene } from "./svg-projection.js";
 import { LayoutGeometry } from "./document-geometry.js";
 import { documentImages } from "./document-images.js";
+import { existingDocumentCanvases } from "./document-canvases.js";
 import { projectScrollLayout } from "./document-overflow.js";
 import { paintImageAlternative } from "./image-alternative.js";
 import {
@@ -862,8 +863,12 @@ function paintDocumentLayout(
 		)
 			return;
 		if (node.emptyImage) documentImages(tree).get(tree.resolve(used.ref).id);
+		const canvasBitmap = node.canvas
+			? existingDocumentCanvases(tree)?.bitmap(tree.resolve(used.ref).id)
+			: undefined;
 		const source =
 			node.control ||
+			node.canvas ||
 			node.marker ||
 			node.svg ||
 			node.imageAlternative ||
@@ -872,6 +877,7 @@ function paintDocumentLayout(
 				: documentImages(tree).decoded(tree.resolve(used.ref).id);
 		if (
 			!source &&
+			!node.canvas &&
 			!node.control &&
 			!node.marker &&
 			!node.svg &&
@@ -903,7 +909,7 @@ function paintDocumentLayout(
 				undefined,
 				localCurve(decoration?.outer),
 			);
-		if (node.emptyImage) {
+		if (node.emptyImage || (node.canvas && !canvasBitmap)) {
 			drawOutline(
 				node.ref,
 				borderX,
@@ -989,7 +995,7 @@ function paintDocumentLayout(
 									used.contentHeight,
 									charge,
 								)
-							: (source as NonNullable<typeof source>).image,
+							: (canvasBitmap ?? (source as NonNullable<typeof source>).image),
 				originX,
 				originY,
 				used.contentWidth,
