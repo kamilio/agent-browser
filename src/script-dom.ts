@@ -749,6 +749,20 @@ export class ScriptDom {
 						initializeScriptElement(this.tree, created, "dynamic");
 					return this.node(created);
 				},
+				createElementNS: (...args: readonly unknown[]) => {
+					this.read(id);
+					if (args.length < 2)
+						throw new TypeError("createElementNS requires two arguments");
+					const namespace =
+						args[0] === null || args[0] === undefined ? "" : domString(args[0]);
+					const created = this.tree.createElementNS(
+						namespace,
+						domString(args[1]),
+					);
+					if (isHtmlElement(this.tree.get(created), "script"))
+						initializeScriptElement(this.tree, created, "dynamic");
+					return this.node(created);
+				},
 				createTextNode: (data: unknown) => {
 					this.read(id);
 					return this.node(this.tree.createText(domString(data)));

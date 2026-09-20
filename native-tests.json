@@ -675,6 +675,7 @@
   "src/script-node-publication.test.ts",
   "src/script-node-publications.test.ts",
   "src/script-dom-brands.test.ts",
+  "src/script-create-element-ns.test.ts",
   "src/script-events.test.ts",
   "src/script-form.test.ts",
   "src/script-geometry.test.ts",

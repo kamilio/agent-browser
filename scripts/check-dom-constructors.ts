@@ -38,7 +38,9 @@ try {
 			!({nodeType: 1, namespaceURI: "http://www.w3.org/2000/svg"} instanceof SVGElement),
 			!(Object.create(SVGElement.prototype) instanceof SVGElement),
 			!(html instanceof SubElement), window.SVGElement === SVGElement,
-			SVGElement.prototype.constructor === SVGElement, Node.ELEMENT_NODE === 1, illegal
+			SVGElement.prototype.constructor === SVGElement, Node.ELEMENT_NODE === 1, illegal,
+			document.createElementNS("http://www.w3.org/2000/svg", "linearGradient") instanceof SVGElement,
+			document.createElementNS("http://www.w3.org/1999/xhtml", "MiXeD").localName === "MiXeD"
 		];
 		})()
 	`);
@@ -49,7 +51,7 @@ try {
 				"Actual SafeJS DOM constructor brands in an in-memory native document; no network, media or meeting join",
 			ok:
 				result.ok &&
-				checks.length === 23 &&
+				checks.length === 25 &&
 				checks.every((value) => value === true),
 			checks: checks.length,
 			metrics: result.metrics,
@@ -58,7 +60,7 @@ try {
 	);
 	if (
 		!result.ok ||
-		checks.length !== 23 ||
+		checks.length !== 25 ||
 		!checks.every((value) => value === true)
 	)
 		process.exitCode = 1;

@@ -596,6 +596,23 @@ export class DocumentTree {
 		return this.createElementWithAttributes(tagName, attributes, false);
 	}
 
+	// The native tree currently supports unprefixed HTML, SVG and MathML names.
+	// Reject other namespace shapes rather than publish nodes with false branding.
+	createElementNS(namespaceURI: string, tagName: string) {
+		if (typeof tagName === "string" && tagName.includes(":"))
+			throw new AgentBrowserError(
+				"unsupported",
+				"Prefixed element names are not implemented",
+			);
+		return this.createElementWithAttributes(
+			tagName,
+			{},
+			false,
+			namespaceURI,
+			true,
+		);
+	}
+
 	createParserElement(
 		tagName: string,
 		attributes: Record<string, string> = {},
@@ -614,6 +631,7 @@ export class DocumentTree {
 		attributes: Record<string, string>,
 		parsed: boolean,
 		namespaceURI = htmlNamespace,
+		preserveCase = false,
 	) {
 		if (![htmlNamespace, svgNamespace, mathmlNamespace].includes(namespaceURI))
 			throw new AgentBrowserError(
@@ -641,19 +659,20 @@ export class DocumentTree {
 			(total, [name, value]) => total + name.length + value.length,
 			tagName.length,
 		);
+		const localName = preserveCase ? tagName : tagName.toLowerCase();
 		const initiallyOpen =
 			namespaceURI === htmlNamespace &&
-			tagName.toLowerCase() === "details" &&
+			localName === "details" &&
 			entries.some(([name]) => htmlAttributeName(name) === "open");
 		if (initiallyOpen) this.detailsToggleTasks.checkAdditional(1);
 		this.checkTextBudget(length);
 		const templateOwner =
-			namespaceURI === htmlNamespace && tagName.toLowerCase() === "template"
+			namespaceURI === htmlNamespace && localName === "template"
 				? this.prepareTemplate(length)
 				: undefined;
 		const id = this.allocate(
 			"element",
-			namespaceURI === htmlNamespace ? tagName.toLowerCase() : tagName,
+			namespaceURI === htmlNamespace ? localName : tagName,
 			"",
 			namespaceURI,
 		);
