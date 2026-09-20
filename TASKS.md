@@ -7,15 +7,17 @@
   after converting idle timeout dictionaries in the guest and resolving bare
   requestIdleCallback through its Window property. Vue's replacement of
   Object.getOwnPropertyNames had made ordinary options fail strict data export.
-  General SafeJS record copying stays strict. Initialization now stalls in the
-  352872-character Zoom component library. The latest 220 s diagnostic still
-  timed out there after Vue completed in 24 s (preceding run: 48 s). SDK-owned
-  property tables now cache own string-field accounting, remeasure descendants,
-  and release invalidated captures. This preserves the conservative path for
-  untracked and exotic values; the SDK contribution is saved in contributions/.
-  V8 sampling identified retained-data traversal as a major cost. Continue
-  investigating component evaluation and timeout responsiveness: the earlier
-  240 s profiled run needed forced shutdown at 250 s despite the 120 s window.
+  General SafeJS record copying stays strict. Time-aware SDK checkpoints now
+  sample host time every 128 nodes and yield when elapsed time reaches 16 ms, keeping the
+  4096-node backstop and guest job ownership. Two live runs completed Vue in
+  10–12 s and the previously stalled component library in 10–14 s. The first
+  run then timed out in the 171510-character CAPTCHA popup library; the page
+  reported execution-timeout and cleaned up normally at 194 s, without a forced
+  kill. A repeat took a different script path and exhausted the 192 MB Node heap
+  in the 243575-character all.min.js; the intended popup profile was not captured.
+  Investigate retained-data accounting cost and host-memory use across these
+  paths. SDK-owned tables cache own string-field accounting, remeasure descendants
+  and release invalidated captures; untracked/exotic values stay conservative.
   Interactive joining remains unverified. The full replacement gates also include
   presence/admission, roster/chat, audio capture and transcription, playback/live
   microphone/avatar support, leaving and cleanup. DOM branding does not implement
@@ -56,6 +58,12 @@
   checks and all 9 actual SafeJS idle adapter checks pass. A fresh SDK probe of
   1100 nested tracked records still raises RangeError on the default Node stack,
   rather than the required dataDepth budget error; that gate remains open.
+  Timed host checkpoints: 73 focused scheduling/control/cancellation checks and
+  SDK core compilation pass; the new timer-order regression fails on the baseline.
+  A broader five-file run passes 78/82 checks; all four failures reproduce with
+  baseline checkpoints (joined rejection handling and shared tail data limits).
+  All 9 actual idle adapter checks pass serially; a concurrent run hit its default
+  1 s initialization timeout. New-test formatting and patch round-trip checks pass.
   Broader native setup also found an onload non-callable-handler failure;
   the full native suite has not been claimed green. Live diagnostics block optional
   file-paa.zoom.us and cdn.cookielaw.org origins and use a direct process;

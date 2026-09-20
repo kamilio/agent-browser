@@ -1,0 +1,105 @@
+diff --git a/packages/safe-js/src/interp/jobs.ts b/packages/safe-js/src/interp/jobs.ts
+--- a/packages/safe-js/src/interp/jobs.ts
++++ b/packages/safe-js/src/interp/jobs.ts
+@@ -64,6 +64,8 @@
+   private generation = 0;
+   private controlled = false;
+   private nodesUntilHostTurn = 4096;
++  private nodesUntilTimeCheck = 128;
++  private lastHostTurn = Date.now();
+   private pauseRequest?: PauseRequest;
+   private finished = false;
+   private interruption?: { reason: unknown };
+@@ -157,9 +159,19 @@
+       queue.pauseRequest.acknowledge();
+       return queue.pauseRequest.continuation;
+     }
+-    if (--queue.nodesUntilHostTurn > 0) return;
++    // One node can reconcile a large retained graph. Sample elapsed host time
++    // as well as work, without releasing ownership to another guest job.
++    const nodeLimit = --queue.nodesUntilHostTurn <= 0;
++    let timeLimit = false;
++    if (--queue.nodesUntilTimeCheck <= 0) {
++      queue.nodesUntilTimeCheck = 128;
++      timeLimit = Date.now() - queue.lastHostTurn >= 16;
++    }
++    if (!nodeLimit && !timeLimit) return;
+     queue.nodesUntilHostTurn = 4096;
++    queue.nodesUntilTimeCheck = 128;
+     return yieldToHost().then(() => {
++      queue.lastHostTurn = Date.now();
+       if (queue.pauseRequest === undefined) return;
+       queue.pauseRequest.acknowledged = true;
+       queue.pauseRequest.acknowledge();
+diff --git a/packages/safe-js/src/interp/jobs-host-turn.test.ts b/packages/safe-js/src/interp/jobs-host-turn.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/interp/jobs-host-turn.test.ts
+@@ -0,0 +1,67 @@
++import { expect, it, vi } from "vitest";
++import { SandboxJobQueue } from "./jobs.js";
++
++it("serves host timers during expensive short execution without releasing guest ownership", async () => {
++  let now = 0;
++  const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
++  const queue = new SandboxJobQueue();
++  queue.enableControl();
++  const order: string[] = [];
++  let timerRan = false;
++  let siblingRan = false;
++  const timer = new Promise<void>((resolve) =>
++    setImmediate(() => {
++      timerRan = true;
++      order.push("host timer");
++      resolve();
++    }),
++  );
++  try {
++    const parent = queue.run(async () => {
++      for (let index = 0; index < 512; index++) {
++        now++;
++        const checkpoint = SandboxJobQueue.checkpoint();
++        if (checkpoint !== undefined) await checkpoint;
++        expect(siblingRan).toBe(false);
++      }
++      expect(timerRan).toBe(true);
++      order.push("parent complete");
++    });
++    const sibling = queue.run(() => {
++      siblingRan = true;
++      order.push("sibling");
++    });
++    await Promise.all([parent, sibling, timer]);
++    expect(order).toEqual(["host timer", "parent complete", "sibling"]);
++  } finally {
++    clock.mockRestore();
++    queue.finish();
++    await timer;
++  }
++});
++
++it("still serves host timers when the host clock does not advance", async () => {
++  const clock = vi.spyOn(Date, "now").mockReturnValue(0);
++  const queue = new SandboxJobQueue();
++  queue.enableControl();
++  let timerRan = false;
++  const timer = new Promise<void>((resolve) =>
++    setImmediate(() => {
++      timerRan = true;
++      resolve();
++    }),
++  );
++  try {
++    await queue.run(async () => {
++      for (let index = 0; index < 8192; index++) {
++        const checkpoint = SandboxJobQueue.checkpoint();
++        if (checkpoint !== undefined) await checkpoint;
++      }
++      expect(timerRan).toBe(true);
++    });
++  } finally {
++    clock.mockRestore();
++    queue.finish();
++    await timer;
++  }
++});
