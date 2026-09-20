@@ -81,7 +81,19 @@
   would undercount retention. Investigate execution-context/capture compaction with
   shared cells, conservative eval/with handling and snapshot alias preservation.
   Existing lint scanners resolve lexical reads, but expose no reusable capture
-  analysis. No experimental caches or diagnostic instrumentation remain.
+  analysis. A static Vue scan finds 116 conservative parameter-only return
+  candidates among 1765 functions; runtime scope/callback eligibility is unmeasured.
+  A phase probe attributes 13.2 of 14.1 s in the first script and 28.5 of 30.5 s
+  in Vue to reconciliation. Sampled locations advance through normal Vue CSP
+  parser/AST-type setup; no alternate compatibility fallback was established.
+- SDK-owned literal/constructor array projections are rejected and reverted:
+  large array-only CPU gains did not improve live initialization. Final candidate
+  and baseline both reach 957340 steps / 890986 peak units in serial 30 s runs;
+  first-script CPU is 17.2 s versus 17.0 s. Unrelated builds compete for CPU, so
+  mixed wall times prove no speedup. Scoped compilation and focused preservation
+  checks pass, including partial failed length writes, mutable child graphs,
+  snapshot recovery and intrinsic records. Exact SDK source/build baseline is
+  restored; no candidate code, caches or diagnostic artifacts remain.
 
 ## Outstanding gates
 
