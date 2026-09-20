@@ -8,10 +8,14 @@
   requestIdleCallback through its Window property. Vue's replacement of
   Object.getOwnPropertyNames had made ordinary options fail strict data export.
   General SafeJS record copying stays strict. Initialization now stalls in the
-  352872-character Zoom component library: a 170 s diagnostic timed out, and a
-  240 s profiled run needed forced shutdown at 250 s despite the 120 s evaluation
-  window. V8 sampling identifies retained-data traversal as the leading identified
-  JavaScript hot path; investigate graph measurement cost and timeout responsiveness.
+  352872-character Zoom component library. The latest 220 s diagnostic still
+  timed out there after Vue completed in 24 s (preceding run: 48 s). SDK-owned
+  property tables now cache own string-field accounting, remeasure descendants,
+  and release invalidated captures. This preserves the conservative path for
+  untracked and exotic values; the SDK contribution is saved in contributions/.
+  V8 sampling identified retained-data traversal as a major cost. Continue
+  investigating component evaluation and timeout responsiveness: the earlier
+  240 s profiled run needed forced shutdown at 250 s despite the 120 s window.
   Interactive joining remains unverified. The full replacement gates also include
   presence/admission, roster/chat, audio capture and transcription, playback/live
   microphone/avatar support, leaving and cleanup. DOM branding does not implement
@@ -46,8 +50,12 @@
   passed. Idle dictionary conversion: native build and formatter, 157 manifest-listed
   native tests and 9 actual SafeJS checks passed. SDK core compilation passes;
   a fresh full-package build currently fails resolving tiny-mcp-client types through
-  the shared local dependency tree. The unchanged object-literal descriptor-reuse
-  SDK tests pass 5/6; repeated literal descriptor capture still fails its expectation.
+  the shared local dependency tree. String-field projections: 111 selected SDK
+  tests across 13 files, including all 6 literal descriptor-reuse checks, pass;
+  SDK core compilation, new-test formatting, contribution forward/reverse apply
+  checks and all 9 actual SafeJS idle adapter checks pass. A fresh SDK probe of
+  1100 nested tracked records still raises RangeError on the default Node stack,
+  rather than the required dataDepth budget error; that gate remains open.
   Broader native setup also found an onload non-callable-handler failure;
   the full native suite has not been claimed green. Live diagnostics block optional
   file-paa.zoom.us and cdn.cookielaw.org origins and use a direct process;

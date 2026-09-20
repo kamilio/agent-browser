@@ -1,0 +1,377 @@
+diff --git a/packages/safe-js/src/interp/object-model.ts b/packages/safe-js/src/interp/object-model.ts
+--- a/packages/safe-js/src/interp/object-model.ts
++++ b/packages/safe-js/src/interp/object-model.ts
+@@ -47,11 +47,16 @@
+ const guestClosures = new WeakSet<object>();
+ const functionProperties = new WeakMap<object, SandboxObject>();
+ export const hostFunctionPropertyTables = new WeakSet<object>();
+-const functionPropertyRevisions = new WeakMap<object, {
++type StringDataProjection = { units: number; references: unknown[] };
++type TrackedPropertyState = {
+   revision: number;
+   measuredRevision?: number;
+   measuredDescriptors?: Array<[string, PropertyDescriptor]>;
+-}>();
++  measuredStringRevision?: number;
++  enumerableStrings?: StringDataProjection;
++  allStrings?: StringDataProjection;
++};
++const functionPropertyRevisions = new WeakMap<object, TrackedPropertyState>();
+ const trackedIntrinsicObjects = new WeakSet<object>();
+ const prototypes = new WeakMap<object, object | null>();
+ const defaultPrototypeLinks = new WeakMap<object, object>();
+@@ -112,6 +117,38 @@
+   return descriptors;
+ }
+
++// Only SDK-owned proxies have exhaustive mutation tracking. Cache their own
++// string fields, never the recursive sizes of their mutable descendants.
++export function trackedObjectStringData(value: object, includeNonEnumerable: boolean): StringDataProjection | undefined {
++  const state = functionPropertyRevisions.get(value);
++  if (state === undefined) return undefined;
++  if (state.measuredStringRevision !== state.revision) {
++    const enumerable: StringDataProjection = { units: 0, references: [] };
++    const all: StringDataProjection = { units: 0, references: [] };
++    for (const key of Object.getOwnPropertyNames(value)) {
++      const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
++      let units = 1 + key.length;
++      let references: unknown[];
++      if ("value" in descriptor) {
++        const item = descriptor.value;
++        if (typeof item === "string") units += item.length;
++        else if (typeof item === "bigint") units += item.toString(16).length;
++        references = ((typeof item === "object" && item !== null) || typeof item === "symbol") ? [item] : [];
++      } else references = retainedAccessorClosures(descriptor);
++      all.units += units;
++      all.references.push(...references);
++      if (descriptor.enumerable) {
++        enumerable.units += units;
++        enumerable.references.push(...references);
++      }
++    }
++    state.enumerableStrings = enumerable;
++    state.allStrings = all;
++    state.measuredStringRevision = state.revision;
++  }
++  return includeNonEnumerable ? state.allStrings : state.enumerableStrings;
++}
++
+ export function materializeFunctionProperties(closure: SandboxClosure, initialProperties?: SandboxObject): SandboxObject {
+   const existing = functionProperties.get(closure);
+   if (existing !== undefined) return existing;
+@@ -151,27 +188,40 @@
+   return tracked;
+ }
+
++// These tables are fresh plain records, distinct from every exotic payload.
++export function isTrackedPropertyTable(value: object): boolean {
++  return functionPropertyRevisions.has(value);
++}
++
+ export function isTrackedIntrinsicObject(value: object): boolean {
+   return trackedIntrinsicObjects.has(value);
+ }
+
+ function trackPropertyTable(properties: SandboxObject): SandboxObject {
+   // Never expose the raw table: native callers must invalidate captures too.
+-  const state = { revision: 0 };
++  const state: TrackedPropertyState = { revision: 0 };
++  const invalidate = () => {
++    state.revision++;
++    // Release deleted/replaced descendants immediately, even if this table is
++    // never measured again. Ongoing visitors keep their local captured snapshot.
++    state.measuredDescriptors = undefined;
++    state.enumerableStrings = undefined;
++    state.allStrings = undefined;
++    state.measuredStringRevision = undefined;
++    intrinsicMutationToken = {};
++  };
+   const tracked = new Proxy(properties, {
+     defineProperty(target, key, descriptor) {
+       const changed = Reflect.defineProperty(target, key, descriptor);
+       if (changed) {
+-        state.revision++;
+-        intrinsicMutationToken = {};
++        invalidate();
+       }
+       return changed;
+     },
+     deleteProperty(target, key) {
+       const changed = Reflect.deleteProperty(target, key);
+       if (changed) {
+-        state.revision++;
+-        intrinsicMutationToken = {};
++        invalidate();
+       }
+       return changed;
+     }
+diff --git a/packages/safe-js/src/interp/values.ts b/packages/safe-js/src/interp/values.ts
+--- a/packages/safe-js/src/interp/values.ts
++++ b/packages/safe-js/src/interp/values.ts
+@@ -86,7 +86,7 @@
+ import { parseRegex, type RegexPattern } from "./regex/parse.js";
+ import { assertSandboxDataDepth } from "../graph-depth.js";
+ import { sandboxErrorTypes } from "../error/shape.js";
+-import { getGuestFunctionProperties, materializeFunctionProperties, getSandboxPropertyDescriptor, getSandboxPrototype, hasExplicitSandboxPrototype, hasGuestObjectState, hasManagedDescriptors, hasNullObjectPrototype, intrinsicFunctionDataDescriptors, isIntrinsicFunction, isTrackedIntrinsicObject, registerGuestClosure, setSandboxPrototype } from "./object-model.js";
++import { getGuestFunctionProperties, materializeFunctionProperties, getSandboxPropertyDescriptor, getSandboxPrototype, hasExplicitSandboxPrototype, hasGuestObjectState, hasManagedDescriptors, hasNullObjectPrototype, intrinsicFunctionDataDescriptors, trackedObjectStringData, isIntrinsicFunction, isTrackedIntrinsicObject, isTrackedPropertyTable, registerGuestClosure, setSandboxPrototype } from "./object-model.js";
+ import type { FunctionSource } from "../parse/function-source.js";
+ import { dynamicSourceRecords, dynamicValueSources, type DynamicSource } from "../parse/function-source.js";
+ import {
+@@ -875,6 +875,19 @@
+     }
+     const dynamicSource = dynamicValueSources.get(value);
+     if (dynamicSource !== undefined) visit(dynamicSource, depth + 1);
++    // SDK-owned property tables are plain records, so their private slots,
++    // symbols, prototype and own fields fully describe their retained graph.
++    // Exotic instances have separate identities; untracked/restored/outer-proxy
++    // values keep the conservative classification path below.
++    if (isTrackedPropertyTable(value) && !hostFunctionMetadata.has(value)) {
++      visitPrivateAndSymbols(value, depth);
++      const prototype = getSandboxPrototype(value);
++      if (prototype !== null) visit(prototype, depth + 1);
++      const projection = trackedObjectStringData(value, hasManagedDescriptors(value))!;
++      usage += projection.units;
++      for (const entry of projection.references) visit(entry, depth + 1);
++      return;
++    }
+     const weakState = weakCollectionStates.get(value);
+     if (weakState !== undefined) {
+       for (const reference of weakState.references) {
+@@ -936,32 +949,7 @@
+         }
+       }
+     }
+-    const privateSlots = privateElements.get(value);
+-    if (privateSlots !== undefined) {
+-      for (const [name, element] of privateSlots) {
+-        visit(name, depth + 1);
+-        if (element.kind === "accessor") {
+-          visit(element.get, depth + 1);
+-          visit(element.set, depth + 1);
+-        } else visit(element.value, depth + 1);
+-      }
+-    }
+-    if (!isGuestHostObject(value)) {
+-      const symbols = Object.getOwnPropertySymbols(value);
+-      let descriptors: Array<readonly [symbol, PropertyDescriptor]> | undefined;
+-      // Capture before visiting: retained callbacks can mutate later properties.
+-      for (const key of symbols) {
+-        if (internalSymbols.has(key)) continue;
+-        const descriptor = Object.getOwnPropertyDescriptor(value, key);
+-        if (descriptor !== undefined) (descriptors ??= []).push([key, descriptor]);
+-      }
+-      if (descriptors !== undefined) for (const [key, descriptor] of descriptors) {
+-        usage += 1;
+-        visit(key, depth + 1);
+-        if ("value" in descriptor) visit(descriptor.value, depth + 1);
+-        else for (const closure of retainedAccessorClosures(descriptor)) visit(closure, depth + 1);
+-      }
+-    }
++    visitPrivateAndSymbols(value, depth);
+     if (isSandboxClosure(value)) {
+       const prototype = getSandboxPrototype(value);
+       if (prototype !== null) visit(prototype, depth + 1);
+@@ -1259,11 +1247,11 @@
+     // Capture values before any retained callback can mutate later properties.
+     // Plain transport records do not charge hidden fields. Preserve proxy trap
+     // ordering, including managed-state changes during descriptor capture.
++    const includeNonEnumerable = isSandboxDate(value) || isSandboxArrayBuffer(value) || isSandboxSharedArrayBuffer(value) || isSandboxDataView(value) || sandboxErrorTypes.has(value) || hasManagedDescriptors(value);
++    const metadata = hostFunctionMetadata.get(value);
+     const proxyKeys = nodeTypes.isProxy(value) ? Object.getOwnPropertyNames(value) : undefined;
+     const proxyDescriptors = proxyKeys?.map(key => Object.getOwnPropertyDescriptor(value,key));
+-    const includeNonEnumerable = isSandboxDate(value) || isSandboxArrayBuffer(value) || isSandboxSharedArrayBuffer(value) || isSandboxDataView(value) || sandboxErrorTypes.has(value) || hasManagedDescriptors(value);
+     const keys = proxyKeys ?? (includeNonEnumerable ? Object.getOwnPropertyNames(value) : Object.keys(value));
+-    const metadata = hostFunctionMetadata.get(value);
+     const retained: unknown[] = [];
+     for (let index = 0; index < keys.length; index++) {
+       const key = keys[index]!;
+@@ -1281,6 +1269,35 @@
+     }
+     for (const entry of retained) visit(entry, depth + 1);
+   };
++
++  function visitPrivateAndSymbols(value: object, depth: number): void {
++    const privateSlots = privateElements.get(value);
++    if (privateSlots !== undefined) {
++      for (const [name, element] of privateSlots) {
++        visit(name, depth + 1);
++        if (element.kind === "accessor") {
++          visit(element.get, depth + 1);
++          visit(element.set, depth + 1);
++        } else visit(element.value, depth + 1);
++      }
++    }
++    if (!isGuestHostObject(value)) {
++      const symbols = Object.getOwnPropertySymbols(value);
++      let descriptors: Array<readonly [symbol, PropertyDescriptor]> | undefined;
++      // Capture before visiting: retained callbacks can mutate later properties.
++      for (const key of symbols) {
++        if (internalSymbols.has(key)) continue;
++        const descriptor = Object.getOwnPropertyDescriptor(value, key);
++        if (descriptor !== undefined) (descriptors ??= []).push([key, descriptor]);
++      }
++      if (descriptors !== undefined) for (const [key, descriptor] of descriptors) {
++        usage += 1;
++        visit(key, depth + 1);
++        if ("value" in descriptor) visit(descriptor.value, depth + 1);
++        else for (const closure of retainedAccessorClosures(descriptor)) visit(closure, depth + 1);
++      }
++    }
++  }
+
+   for (const value of values) visit(value);
+   // Weak values may expose further keys or collections. Newly unlocked entries
+diff --git a/packages/safe-js/src/interp/tracked-object-string-data.test.ts b/packages/safe-js/src/interp/tracked-object-string-data.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/interp/tracked-object-string-data.test.ts
+@@ -0,0 +1,149 @@
++import { expect, it, vi } from "vitest";
++import { Budget } from "./budget.js";
++import { run } from "../run.js";
++import { accessorAdapter } from "./accessors.js";
++import {
++  createIntrinsicObject,
++  markDescriptorObject,
++  materializeFunctionProperties,
++  setSandboxPrototype,
++} from "./object-model.js";
++import { createSandboxClosure, measureSandboxData } from "./values.js";
++
++it("captures string primitive data before descendant callbacks mutate later fields", () => {
++  const root = createIntrinsicObject();
++  root.first = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => {
++      root.later = "longer";
++      return [];
++    },
++  });
++  root.later = "a";
++  expect(measureSandboxData([root])).toBe(15);
++  expect(measureSandboxData([root])).toBe(20);
++});
++
++it("deduplicates live symbol descendants without conflating same-description symbols", () => {
++  const first = Symbol("same"),
++    second = Symbol("same");
++  const root = createIntrinsicObject({
++    first,
++    second,
++    shared: first,
++    integer: -123n,
++  });
++  expect(measureSandboxData([root, first])).toBe(42);
++  root.second = first;
++  expect(measureSandboxData([root, first])).toBe(37);
++});
++
++it("keeps descriptor-only visibility changes and accessor captures live without calling getters", () => {
++  const getter = vi.fn();
++  const closure = createSandboxClosure({
++    call: getter,
++    retainedValues: () => ["owned"],
++  });
++  const root = createIntrinsicObject();
++  Object.defineProperty(root, "hidden", {
++    configurable: true,
++    get: accessorAdapter(closure, "get"),
++  });
++  const before = measureSandboxData([root]);
++  markDescriptorObject(root);
++  expect(measureSandboxData([root])).toBe(before + 13);
++  Object.defineProperty(root, "hidden", {
++    value: "replacement",
++    enumerable: true,
++  });
++  expect(measureSandboxData([root])).toBe(19);
++  expect(getter).not.toHaveBeenCalled();
++});
++
++it("observes shared descendant growth and still enforces data limits", () => {
++  const nested = createIntrinsicObject({ text: "a" });
++  const root = createIntrinsicObject({ first: nested, second: nested });
++  const before = measureSandboxData([root]);
++  nested.text = "x".repeat(1000);
++  expect(measureSandboxData([root, nested])).toBe(before + 999);
++  expect(() =>
++    new Budget({ dataSize: 100 }).reconcileDataUsage(
++      measureSandboxData([root]),
++    ),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it("keeps prototype growth visible after an unchanged own-field capture", () => {
++  const root = createIntrinsicObject({ text: "a" });
++  const before = measureSandboxData([root]);
++  const prototype = createIntrinsicObject({ text: "prototype" });
++  setSandboxPrototype(root, prototype);
++  expect(measureSandboxData([root])).toBe(before + 15);
++  prototype.text = "larger prototype";
++  expect(measureSandboxData([root])).toBe(before + 22);
++});
++
++it("reuses guest function property snapshots while remeasuring nested values", () => {
++  const closure = createSandboxClosure({
++    guest: true,
++    name: "example",
++    call: () => undefined,
++  });
++  const properties = materializeFunctionProperties(closure);
++  const nested = createIntrinsicObject({ text: "a" });
++  properties.box = nested;
++  const before = measureSandboxData([closure]);
++  const descriptors = vi.spyOn(Object, "getOwnPropertyDescriptor");
++  try {
++    expect(measureSandboxData([closure])).toBe(before);
++    expect(
++      descriptors.mock.calls.filter(
++        ([owner, key]) => owner === properties && typeof key === "string",
++      ),
++    ).toHaveLength(0);
++  } finally {
++    descriptors.mockRestore();
++  }
++  nested.text = "longer";
++  expect(measureSandboxData([closure])).toBe(before + 5);
++  delete properties.box;
++  expect(measureSandboxData([closure])).toBeLessThan(before);
++});
++
++it("matches conservative accounting for exotic descendants and later payload growth", async () => {
++  const result = await run(`return {
++    array: ["a", "b"], map: new Map([["a", {text: "one"}]]),
++    set: new Set(["shared"]), regex: new RegExp("a", "g"), date: new Date(0),
++    bytes: new Uint8Array([1, 2]), box: Object("a")
++  }`);
++  expect(result.ok, result.ok ? undefined : result.error.message).toBe(true);
++  if (!result.ok) throw new Error("Guest setup failed");
++  const payload = result.returnValue;
++  const fast = createIntrinsicObject({ payload });
++  const conservative = Object.assign(Object.create(null), { payload });
++  const before = measureSandboxData([conservative]);
++  expect(measureSandboxData([fast])).toBe(before);
++  const values = payload as Record<string, unknown>;
++  (values.array as string[]).push("longer");
++  expect(measureSandboxData([fast])).toBe(measureSandboxData([conservative]));
++  expect(measureSandboxData([fast])).toBeGreaterThan(before);
++});
++
++it("preserves private fields and rooted weak payloads through tracked tables", async () => {
++  const result = await run(`
++    class Holder { #text = "private retained text"; }
++    const key = {};
++    return { holder: new Holder(), key,
++      weak: new WeakMap([[key, {text: "weak retained text"}]]) };
++  `);
++  expect(result.ok, result.ok ? undefined : result.error.message).toBe(true);
++  if (!result.ok) throw new Error("Guest setup failed");
++  const payload = result.returnValue as Record<string, unknown>;
++  const fast = createIntrinsicObject({ payload });
++  const conservative = Object.assign(Object.create(null), { payload });
++  const before = measureSandboxData([conservative]);
++  expect(measureSandboxData([fast])).toBe(before);
++  delete payload.key;
++  expect(measureSandboxData([fast])).toBe(measureSandboxData([conservative]));
++  expect(measureSandboxData([fast])).toBeLessThan(before);
++});
