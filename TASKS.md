@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Duplicate-capture entry filtering is rejected and reverted: seven new and 23
+  existing SDK checks, scoped core/new-test compilation and the actual native
+  class retention/limit/cleanup probe pass, but serial 30 s Vue reaches 957785
+  versus 957965 baseline steps; both timeout and close at zero. Exact source/build
+  restoration and baseline core compilation pass; temporary artifacts are removed.
+  Separate V8 probe finds the 26733-byte visitor below the 61440-byte optimization
+  limit, with visitor/measurement functions TurboFan-optimized at both checkpoints.
+  Baseline Vue steps split into 588470 before interpretation and 154460 execution;
+  bootstrap splits 120175 / 31581. Compare execution work as well as total steps
+  in future experiments. No useful initialization improvement or meeting join.
 - Chain-wide local capture projection is rejected and reverted. Twelve new and
   156 existing SDK checks pass, including GC, future bindings, shared writes, TDZ,
   recursion, classic scripts, held limits and snapshot preservation; scoped core/
