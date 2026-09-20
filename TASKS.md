@@ -23,6 +23,21 @@
 
 ## Current verified state
 
+- Opaque compiler-scope metadata with revision-tracked private-name maps is rejected
+  and reverted. Thirteen new and 58 existing focused SDK checks pass (one GC check
+  skipped), along with scoped core/new-test compilation. The actual native adapter
+  matches restored baseline: identity/private fields/captured writes, 150355 retained
+  units, 30355 after clearing (120000 released), dataSize rejection at 400000 and
+  close data zero. Serial live candidate/baseline both execute 16 scripts and time
+  out in Vue: 959920/959687 steps, 892782/892630 peak units, cleanup data zero;
+  233 extra total steps (0.024%) establish no useful initialization gain or join.
+  A supplemental foreign
+  parent-replacement probe fails candidate (25 versus 28 units; one versus two
+  provider calls) and passes exact baseline. Sealed writable fields and tracked
+  private-map membership do not prove ownership of the entire ancestor/provider
+  chain; an exact graph reuse design needs that provenance too. All eight original
+  SDK source/build files are restored byte-for-byte; helper/test/config/probe and
+  backup removed. No candidate foundation remains.
 - Creator-origin census attributes 19.71 million interpreted capture reads to
   browser bootstrap (4.85 million, 127 functions created), join-page inline scripts
   (8.69 million, 400), Vue (5.75 million, 960) and smaller assets (0.42 million).
