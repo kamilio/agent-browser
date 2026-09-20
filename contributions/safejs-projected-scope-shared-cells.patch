@@ -1,0 +1,676 @@
+--- a/src/interp/scope.ts
++++ b/src/interp/scope.ts
+@@ -17,6 +17,8 @@
+   importTarget?: {scope: Scope; name: string};
+   value: InterpreterValue | typeof uninitialized;
+   accounting?: { value: InterpreterValue; root: SandboxObject };
++  identity?: object;
++  views?: Set<WeakRef<Scope>>;
+ };
+
+ type ScopeLookupResult =
+@@ -69,6 +71,10 @@
+   )>;
+   restoredBindings?: Array<[string, InterpreterValue]>;
+ };
++
++// Opaque identities never refer back to bindings or scopes. A captured frame
++// remains a value snapshot, even when another view later changes the binding.
++export const scopeFrameCellIdentities = new WeakMap<object, object>();
+
+ export class Scope {
+   moduleId?: string;
+@@ -117,6 +123,32 @@
+     });
+   }
+
++  // The caller must prove which bindings a closure needs. This operation only
++  // projects one plain local frame and keeps its original lexical parent.
++  projectOwnBindings(names: readonly string[]): Scope | undefined {
++    if (this.parent === undefined || this.options.globalEnvironment === true ||
++        this.options.chargeData === false || this.options.simpleCatchParameter !== undefined ||
++        this.objectEnvironment !== undefined || this.moduleEnvironment !== undefined || this.moduleId !== undefined ||
++        this.importMeta !== undefined || this.privateNames !== undefined ||
++        this.resourceState !== undefined || this.#globalVarNames !== undefined ||
++        this.#restoredBindings.size !== 0)
++      return undefined;
++    const bindings = new Map<string, ScopeBinding>();
++    for (const name of names) {
++      const binding = this.#bindings.get(name);
++      if (bindings.has(name) || binding === undefined || binding.importTarget !== undefined ||
++          binding.deletable || binding.silentImmutable) return undefined;
++      bindings.set(name, binding);
++    }
++    const view = new Scope({}, this.parent, undefined, {...this.options});
++    for (const [name, binding] of bindings) view.#bindings.set(name, binding);
++    for (const binding of new Set(bindings.values())) {
++      if (binding.views === undefined) this.registerBindingView(binding);
++      view.registerBindingView(binding);
++    }
++    return view;
++  }
++
+   withObject(object: SandboxObject): Scope {
+     const scope = this.child();
+     scope.objectEnvironment = object;
+@@ -648,11 +680,13 @@
+       if (id === undefined) {
+         id = cells.length;
+         ids.set(binding, id);
+-        cells.push(binding.value === uninitialized
++        const cell: ScopeFrame["cells"][number] = binding.value === uninitialized
+           ? { kind: binding.kind, initialized: false }
+           : { kind: binding.kind, initialized: true, value: binding.value,
+               ...(binding.deletable ? {deletable: true} : {}),
+-              ...(binding.silentImmutable ? {silentImmutable: true} : {}) });
++              ...(binding.silentImmutable ? {silentImmutable: true} : {}) };
++        cells.push(cell);
++        if (binding.identity !== undefined) scopeFrameCellIdentities.set(cell, binding.identity);
+       }
+       bindings.push([name, id]);
+     }
+@@ -675,7 +709,7 @@
+     };
+   }
+
+-  hydrateFrame(frame: ScopeFrame): void {
++  hydrateFrame(frame: ScopeFrame, sharedCells = new WeakMap<ScopeFrame["cells"][number], ScopeBinding>()): void {
+     if (this.#frameHydrated || this.#bindings.size !== 0 || this.#globalVarNames !== undefined || this.importMeta !== undefined ||
+         (this.parent === undefined && this.#restoredBindings.size !== 0))
+       throw new TypeError("Frame hydration requires a fresh scope.");
+@@ -686,12 +720,19 @@
+       throw new TypeError("Scope frame does not match its allocation.");
+     if (this.parent !== undefined && frame.restoredBindings !== undefined)
+       throw new TypeError("Only root scopes own restored bindings.");
+-    const cells: ScopeBinding[] = frame.cells.map(cell => ({
+-      kind: cell.kind,
+-      ...(cell.deletable ? {deletable: true as const} : {}),
+-      ...(cell.silentImmutable ? {silentImmutable: true as const} : {}),
+-      value: cell.initialized ? cell.value : uninitialized
+-    }));
++    const cells: ScopeBinding[] = frame.cells.map(cell => {
++      let binding = sharedCells.get(cell);
++      if (binding === undefined) {
++        binding = {
++          kind: cell.kind,
++          ...(cell.deletable ? {deletable: true as const} : {}),
++          ...(cell.silentImmutable ? {silentImmutable: true as const} : {}),
++          value: cell.initialized ? cell.value : uninitialized
++        };
++        sharedCells.set(cell, binding);
++      }
++      return binding;
++    });
+     const bindings = new Map<string, ScopeBinding>();
+     const referenced = new Set<number>();
+     for (const [name, id] of frame.bindings) {
+@@ -728,6 +769,8 @@
+       this.#bindings.set(name, binding);
+       this.trackReplacement(name, binding);
+     }
++    for (let index = 0; index < frame.cells.length; index++)
++      if (scopeFrameCellIdentities.has(frame.cells[index])) this.registerBindingView(cells[index]);
+     if (this.parent === undefined)
+       for (const [name, value] of restored) this.#restoredBindings.set(name, value);
+     this.#globalVarNames = globalVarNames?.size ? globalVarNames : undefined;
+@@ -759,11 +802,29 @@
+
+   private writeBindingValue(binding: ScopeBinding, value: InterpreterValue): void {
+     if (!Object.is(binding.value, value)) {
+-      if (isChargedBindingValue(binding.value) || isChargedBindingValue(value)) this.invalidateDataRoots();
++      if (isChargedBindingValue(binding.value) || isChargedBindingValue(value)) {
++        if (binding.views === undefined) this.invalidateDataRoots();
++        else for (const reference of binding.views) {
++          const view = reference.deref();
++          if (view === undefined) binding.views.delete(reference);
++          else view.invalidateDataRoots();
++        }
++      }
+       // Release obsolete snapshots even without another accounting pass.
+       binding.accounting = undefined;
+     }
+     binding.value = value;
++  }
++
++  private registerBindingView(binding: ScopeBinding): void {
++    binding.identity ??= {};
++    const views = binding.views ??= new Set();
++    for (const reference of views) {
++      const scope = reference.deref();
++      if (scope === this) return;
++      if (scope === undefined) views.delete(reference);
++    }
++    views.add(new WeakRef(this));
+   }
+
+   private resolveScope(name: string): Scope | undefined {
+--- a/src/snapshot/guest-heap.ts
++++ b/src/snapshot/guest-heap.ts
+@@ -191,12 +191,14 @@
+       cells: Array<{ kind: ScopeFrame["cells"][number]["kind"]; silentImmutable?: true; deletable?: true } & (
+         { initialized: false } | { initialized: true; value: T }
+       )>;
++      cellIds?: number[];
+       restoredBindings?: Array<[string, T]> };
+
+ // The enclosing graph serializer allocates the reference before calling this
+ // function, so self-referential properties and captured environments can cycle.
+ export function captureGuestHeapNode<T>(value: object, encode: (value: unknown) => T, weakEntries: ReadonlyArray<readonly [unknown, unknown]> = [], weakTarget?: object | symbol,
+-  finalizationTargets: ReadonlyArray<{target?:object | symbol;token?:object | symbol}> = []): GuestHeapNode<T> | undefined {
++  finalizationTargets: ReadonlyArray<{target?:object | symbol;token?:object | symbol}> = [],
++  cellId?: (cell: object) => number | undefined): GuestHeapNode<T> | undefined {
+   const finalization = finalizationRegistryStates.get(value);
+   if (finalization !== undefined) return {
+     kind:"guest-finalization-registry", callback:encode(finalization.callback),
+@@ -517,6 +519,7 @@
+   }
+   if (value instanceof Scope) {
+     const frame = value.captureFrame();
++    const cellIds = frame.cells.map(cell => cellId?.(cell) ?? 0);
+     return {
+       kind: "scope-frame", parent: encode(frame.parent), importMeta: encode(frame.importMeta),
+       functionBoundary: frame.functionBoundary, chargeData: frame.chargeData,
+@@ -524,6 +527,7 @@
+       ...(frame.globalEnvironment === true ? {globalEnvironment: true} : {}),
+       ...(frame.globalVarNames === undefined ? {} : {globalVarNames: frame.globalVarNames}),
+       bindings: frame.bindings,
++      ...(cellIds.some(id => id !== 0) ? {cellIds} : {}),
+       ...(frame.moduleEnvironment === undefined ? {} : {moduleEnvironment: {
+         available: [...frame.moduleEnvironment.available], namespaces: encode(frame.moduleEnvironment.namespaces)
+       }}),
+--- a/src/snapshot/serialize.ts
++++ b/src/snapshot/serialize.ts
+@@ -1,4 +1,5 @@
+ import { weakReferenceStates } from "../interp/weak-reference.js";
++import { scopeFrameCellIdentities } from "../interp/scope.js";
+ import { getIntrinsicRealmIdentity } from "../interp/intrinsics.js";
+ import { getFunctionRealmPrototype } from "../interp/function-realm.js";
+ import { finalizationRegistryStates } from "../interp/finalization-registry-state.js";
+@@ -243,6 +244,7 @@
+ };
+
+ type SerializationState = {
++  scopeCellIds: Map<object, number>;
+   source: string;
+   moduleSources: Map<string, number>;
+   intrinsicRealms: Map<object, number>;
+@@ -284,6 +286,7 @@
+     }
+   }
+   const state: SerializationState = {
++    scopeCellIds: new Map(),
+     source: input.source,
+     moduleSources: new Map(),
+     intrinsicRealms: new Map(),
+@@ -374,7 +377,16 @@
+     const id = state.heapIds.get(value)!;
+     if (!state.serializedHeapIds.has(id)) {
+       state.serializedHeapIds.add(id);
+-      const node = captureGuestHeapNode(value, entry => serializeValue(entry as RuntimeSnapshotValue, `${path}.<guest>`, state), state.weakEntries.get(value), state.weakTargets.get(value), state.finalizationTargets.get(value));
++      const node = captureGuestHeapNode(value, entry => serializeValue(entry as RuntimeSnapshotValue, `${path}.<guest>`, state), state.weakEntries.get(value), state.weakTargets.get(value), state.finalizationTargets.get(value), cell => {
++        const identity = scopeFrameCellIdentities.get(cell);
++        if (identity === undefined) return undefined;
++        let id = state.scopeCellIds.get(identity);
++        if (id === undefined) {
++          id = state.scopeCellIds.size + 1;
++          state.scopeCellIds.set(identity, id);
++        }
++        return id;
++      });
+       if (node === undefined) throw new TypeError(`Missing guest heap state at ${path}.`);
+       if ((node.kind === "guest-function" || node.kind === "guest-class" || node.kind === "guest-generator" || node.kind === "guest-array") && node.dynamicSource === undefined) {
+         const origin = getClosureOrigin(value) ?? classOrigins.get(value) ?? getGeneratorOrigin(value);
+--- a/src/snapshot/scope-frames.ts
++++ b/src/snapshot/scope-frames.ts
+@@ -1,6 +1,6 @@
+ import type { Budget } from "../interp/budget.js";
+ import { assertSnapshotDataDepth } from "../graph-depth.js";
+-import { Scope } from "../interp/scope.js";
++import { Scope, scopeFrameCellIdentities, type ScopeFrame } from "../interp/scope.js";
+ import type { SandboxObject, SandboxValue } from "../interp/values.js";
+ import type { PrivateName } from "../interp/private-state.js";
+ import type { ResourceScopeState } from "../interp/resource-management.js";
+@@ -57,6 +57,8 @@
+   decode: (value: unknown) => SandboxValue,
+   budget: Budget
+ ): void {
++  const cells = new Map<number, ScopeFrame["cells"][number]>();
++  const sharedCells: NonNullable<Parameters<Scope["hydrateFrame"]>[1]> = new WeakMap();
+   for (const [id, frame] of frames) {
+     budget.visitNode(1 + frame.bindings.length + frame.cells.length);
+     const scope = scopes.get(id);
+@@ -91,10 +93,21 @@
+       ...(frame.withObject === undefined ? {} : {withObject: decode(frame.withObject) as SandboxObject}),
+       ...(resourceState === undefined ? {} : {resourceState: resourceState as ResourceScopeState}),
+       ...(frame.privateNames === undefined ? {} : { privateNames: frame.privateNames.map(([name, identity]) => [name, decode(identity) as PrivateName] as [string, PrivateName]) }),
+-      cells: frame.cells.map(cell => cell.initialized ? { ...cell, value: decode(cell.value) } : cell),
++      cells: frame.cells.map((cell, index) => {
++        const identity = frame.cellIds?.[index] ?? 0;
++        const existing = identity === 0 ? undefined : cells.get(identity);
++        if (existing !== undefined) return existing;
++        const snapshot: ScopeFrame["cells"][number] = cell.initialized
++          ? {...cell, value: decode(cell.value)} : {...cell};
++        if (identity !== 0) {
++          cells.set(identity, snapshot);
++          scopeFrameCellIdentities.set(snapshot, {});
++        }
++        return snapshot;
++      }),
+       ...(frame.restoredBindings === undefined ? {} : {
+         restoredBindings: frame.restoredBindings.map(([name, value]) => [name, decode(value)] as [string, SandboxValue])
+       })
+-    });
++    }, sharedCells);
+   }
+ }
+--- a/src/snapshot/guest-heap-validation.ts
++++ b/src/snapshot/guest-heap-validation.ts
+@@ -1,4 +1,5 @@
+ import { Budget } from "../interp/budget.js";
++import { isDeepStrictEqual } from "node:util";
+ import { sandboxErrorNames, type SandboxErrorName } from "../error/shape.js";
+ import { createRawJson } from "../interp/raw-json.js";
+ import { createSandboxLocale, localeTag } from "../interp/intl-locale.js";
+@@ -1377,7 +1378,7 @@
+       if (Object.hasOwn(environment, "construction")) reference(environment.construction, ["construction-environment"]);
+     }
+   } else {
+-    fields(node, ["kind", "parent", "importMeta", "functionBoundary", "chargeData", "bindings", "cells"], ["restoredBindings", "privateNames", "resourceState", "objectEnvironment", "withObject", "moduleEnvironment", "globalEnvironment", "globalVarNames", "simpleCatchParameter"]);
++    fields(node, ["kind", "parent", "importMeta", "functionBoundary", "chargeData", "bindings", "cells"], ["restoredBindings", "privateNames", "resourceState", "objectEnvironment", "withObject", "moduleEnvironment", "globalEnvironment", "globalVarNames", "simpleCatchParameter", "cellIds"]);
+     if (node.simpleCatchParameter !== undefined) {
+       const bindings = array(node.bindings);
+       const cells = array(node.cells);
+@@ -1426,6 +1427,23 @@
+     if (!absent(node.parent)) reference(node.parent, ["scope-frame"]);
+     if (typeof node.functionBoundary !== "boolean" || typeof node.chargeData !== "boolean") throw new TypeError("Invalid guest frame flags.");
+     const cells = array(node.cells);
++    if (Object.hasOwn(node, "cellIds")) {
++      const identities = array(node.cellIds);
++      if (identities.length !== cells.length) throw new TypeError("Invalid shared binding identities.");
++      const used = new Set<number>();
++      for (let index = 0; index < identities.length; index++) {
++        const id = integer(identities[index]);
++        if (id !== 0 && used.has(id)) throw new TypeError("Duplicate shared binding identity.");
++        if (id !== 0) {
++          const cell = record(cells[index]);
++          if (absent(node.parent) || node.chargeData !== true || node.globalEnvironment === true ||
++              node.objectEnvironment !== undefined || node.withObject !== undefined ||
++              cell.deletable !== undefined || cell.silentImmutable !== undefined)
++            throw new TypeError("Invalid shared local binding cell.");
++        }
++        used.add(id);
++      }
++    }
+     for (const rawCell of cells) {
+       const cell = record(rawCell);
+       if (typeof cell.initialized !== "boolean" || !["var", "let", "const"].includes(String(cell.kind))) throw new TypeError("Invalid guest binding cell.");
+@@ -1477,6 +1495,20 @@
+ }
+
+ export function validateGuestHeapGraphs(heap: Record<string, unknown>): void {
++  const cells = new Map<number, unknown>();
++  for (const raw of Object.values(heap)) {
++    const frame = record(raw);
++    if (frame.kind !== "scope-frame" || frame.cellIds === undefined) continue;
++    const identities = array(frame.cellIds);
++    const values = array(frame.cells);
++    for (let index = 0; index < identities.length; index++) {
++      const id = integer(identities[index]);
++      if (id === 0) continue;
++      if (cells.has(id) && !isDeepStrictEqual(cells.get(id), values[index]))
++        throw new TypeError("Conflicting shared binding cell.");
++      cells.set(id, values[index]);
++    }
++  }
+   for (const [kind, edge, message] of [
+     ["scope-frame", "parent", "Cyclic guest scope parent graph."],
+     ["promise-reaction", "source", "Cyclic promise reaction source graph."]
+--- /dev/null
++++ b/src/interp/scope-projection.test.ts
+@@ -0,0 +1,136 @@
++import { setImmediate } from "node:timers/promises";
++import { expect, it } from "vitest";
++import { Scope } from "./scope.js";
++import { Budget } from "./budget.js";
++import { interpret } from "./interpreter.js";
++import { parseModule } from "../parse/parser.js";
++import { measureSandboxData } from "./values.js";
++
++function fixture() {
++  const root = new Scope();
++  root.declare("global", "let", "global");
++  const scope = root.child({}, { functionBoundary: true });
++  scope.declare("value", "let", "a");
++  scope.declare("discard", "const", { text: "x".repeat(60000) });
++  scope.declareAlias("alias", "value");
++  return { scope, root };
++}
++
++it("enforces the interpreter data limit after another view grows a captured value", async () => {
++  const { scope } = fixture();
++  const view = scope.projectOwnBindings(["value"])!;
++  const previous = view.retainedDataRoots();
++  expect(measureSandboxData(previous)).toBe(7);
++  scope.assign("value", "x".repeat(3000));
++  await expect(
++    interpret(parseModule("{return 0}").body[0], {
++      scope: view,
++      budget: new Budget({ dataSize: 2000 }),
++    }),
++  ).rejects.toMatchObject({ code: "budgetExceeded", budget: "dataSize" });
++});
++
++it("projects selected live cells without retaining the original local frame", () => {
++  const { scope, root } = fixture();
++  const view = scope.projectOwnBindings(["value", "alias"])!;
++  expect(view).toBeDefined();
++  expect(view.captureFrame().parent).toBe(root);
++  expect(view.lookup("discard")).toEqual({ found: false });
++  expect(view.lookup("global")).toMatchObject({ value: "global" });
++  scope.assign("alias", "before");
++  expect(view.lookup("value")).toMatchObject({ value: "before" });
++  view.assign("value", "after");
++  expect(scope.lookup("alias")).toMatchObject({ value: "after" });
++  expect(view.captureFrame().cells).toHaveLength(1);
++});
++
++it.each(["original", "view", "second-view"])(
++  "invalidates every data cache after writes through %s",
++  (writer) => {
++    const { scope } = fixture();
++    const view = scope.projectOwnBindings(["value"])!;
++    const second = view.projectOwnBindings(["value"])!;
++    const snapshots = [scope, view, second].map((value) =>
++      value.retainedDataRoots(),
++    );
++    const sizes = snapshots.map((value) => measureSandboxData(value));
++    const target =
++      writer === "original" ? scope : writer === "view" ? view : second;
++    target.assign("value", "longer value");
++    expect(
++      [scope, view, second].map((value) =>
++        measureSandboxData(value.retainedDataRoots()),
++      ),
++    ).toEqual(sizes.map((value) => value + 11));
++    target.assign("value", 0);
++    expect(
++      [scope, view, second].map((value) =>
++        measureSandboxData(value.retainedDataRoots()),
++      ),
++    ).toEqual(sizes.map((value) => value - 1));
++    expect(snapshots.map((value) => measureSandboxData(value))).toEqual(sizes);
++  },
++);
++
++it("preserves TDZ initialization and immutable binding rules", () => {
++  const scope = new Scope().child();
++  scope.predeclare("pending", "const");
++  const view = scope.projectOwnBindings(["pending"])!;
++  expect(() => view.lookup("pending")).toThrow("before initialization");
++  scope.declare("pending", "const", undefined);
++  expect(view.lookup("pending")).toMatchObject({ value: undefined });
++  expect(() => view.assign("pending", 7)).toThrow("const binding");
++});
++
++it("declines global, imported, dynamic and incomplete selections", () => {
++  const root = new Scope();
++  expect(root.projectOwnBindings([])).toBeUndefined();
++  const pending = new Scope({}, undefined, undefined, undefined, {
++    pending: 7,
++  });
++  expect(pending.child().projectOwnBindings([])).toBeUndefined();
++  expect(
++    root.child({}, { globalEnvironment: true }).projectOwnBindings([]),
++  ).toBeUndefined();
++  expect(
++    root.child({}, { chargeData: false }).projectOwnBindings([]),
++  ).toBeUndefined();
++  expect(root.withObject({}).projectOwnBindings([])).toBeUndefined();
++  const scope = root.child();
++  scope.declare("value", "let", 1);
++  scope.declareImport("imported", scope, "value");
++  expect(scope.projectOwnBindings(["imported"])).toBeUndefined();
++  expect(scope.projectOwnBindings(["missing"])).toBeUndefined();
++  scope.moduleId = "safe:local";
++  expect(scope.projectOwnBindings(["value"])).toBeUndefined();
++  scope.moduleId = undefined;
++  expect(scope.projectOwnBindings(["value", "value"])).toBeUndefined();
++  scope.declarePrivateName("secret");
++  expect(scope.projectOwnBindings(["value"])).toBeUndefined();
++});
++
++it.skipIf(typeof global.gc !== "function")(
++  "physically releases omitted data and the creating local scope",
++  async () => {
++    const setup = () => {
++      const { scope } = fixture();
++      const data = scope.lookup("discard");
++      if (!data.found) throw new Error("Missing omitted data");
++      return {
++        scopeRef: new WeakRef(scope),
++        dataRef: new WeakRef(data.value as object),
++        view: scope.projectOwnBindings(["value"])!,
++      };
++    };
++    const { scopeRef, dataRef, view } = setup();
++    for (let index = 0; index < 8; index++) {
++      await setImmediate();
++      global.gc!();
++    }
++    expect(scopeRef.deref()).toBeUndefined();
++    expect(dataRef.deref()).toBeUndefined();
++    expect(view.lookup("value")).toMatchObject({ value: "a" });
++    view.assign("value", "changed");
++    expect(measureSandboxData(view.retainedDataRoots())).toBe(13);
++  },
++);
+--- /dev/null
++++ b/src/snapshot/projected-scope-cells.test.ts
+@@ -0,0 +1,207 @@
++import { expect, it } from "vitest";
++import { parseModule } from "../parse/parser.js";
++import { Scope } from "../interp/scope.js";
++import { createMappedSandboxArguments } from "../interp/arguments.js";
++import { getClosureOrigin } from "../interp/closure-origin.js";
++import { interpret } from "../interp/interpreter.js";
++import { measureSandboxData, type SandboxClosure } from "../interp/values.js";
++import { serialize, type RuntimeSnapshotValue } from "./serialize.js";
++import { restore } from "./restore.js";
++
++const source = "{return [()=>++count,()=>count,()=>count]}";
++const ast = parseModule(source);
++const statement = ast.body[0];
++if (statement.type !== "BlockStatement")
++  throw new Error("Missing source block");
++const returned = statement.body[0];
++if (
++  returned.type !== "ReturnStatement" ||
++  returned.argument?.type !== "ArrayExpression"
++)
++  throw new Error("Missing source closures");
++const nodes = returned.argument.elements;
++
++async function closure(index: number, scope: Scope) {
++  const node = nodes[index];
++  if (node === null || node.type === "SpreadElement")
++    throw new Error("Missing closure node");
++  const result = await interpret(node, { scope, useScopeDirectly: true });
++  if (!result.ok) throw new Error(result.error.message);
++  return result.returnValue as SandboxClosure;
++}
++
++function capture(functions: SandboxClosure[]) {
++  return serialize({
++    source,
++    currentAstNodeId: statement.nodeId!,
++    scopeChain: [
++      {
++        id: "external",
++        bindings: { functions: functions as RuntimeSnapshotValue },
++      },
++    ],
++    callStack: [],
++    pendingPromises: [],
++    moduleBindings: {},
++  });
++}
++
++function recover(wire: ReturnType<typeof capture>) {
++  const restored = restore(JSON.parse(JSON.stringify(wire)), { source });
++  const binding = restored.currentScope.lookup("functions");
++  if (!binding.found) throw new Error("Missing recovered closures");
++  return binding.value as SandboxClosure[];
++}
++
++it("preserves mapped-argument writes shared with projected closure cells", async () => {
++  const original = new Scope().child({}, { functionBoundary: true });
++  original.declare("count", "var", 3);
++  const args = createMappedSandboxArguments(
++    [3],
++    ["count"],
++    original,
++    undefined,
++  );
++  original.declare("arguments", "var", args);
++  const functions = recover(
++    capture([
++      await closure(0, original.projectOwnBindings(["count"])!),
++      await closure(1, original.projectOwnBindings(["count"])!),
++      await closure(2, original),
++    ]),
++  );
++  const scopes = functions.map((value) => getClosureOrigin(value)!.scope);
++  const argumentBinding = scopes[2].lookup("arguments");
++  if (!argumentBinding.found) throw new Error("Missing recovered arguments");
++  const recoveredArgs = argumentBinding.value as Record<string, unknown>;
++  expect(await functions[0].call([])).toBe(4);
++  expect(recoveredArgs["0"]).toBe(4);
++  const previous = scopes[1].retainedDataRoots();
++  expect(measureSandboxData(previous)).toBe(0);
++  recoveredArgs["0"] = "grown";
++  expect(await functions[1].call([])).toBe("grown");
++  expect(measureSandboxData(scopes[1].retainedDataRoots())).toBe(5);
++});
++
++it("preserves mutable cells shared by distinct projected and original scopes through repeated recovery", async () => {
++  const original = new Scope().child();
++  original.declare("count", "let", 3);
++  original.declare("discard", "const", "x".repeat(60000));
++  let functions = [
++    await closure(0, original.projectOwnBindings(["count"])!),
++    await closure(1, original.projectOwnBindings(["count"])!),
++    await closure(2, original),
++  ];
++  const originalRead = functions[1];
++  for (let iteration = 0; iteration < 3; iteration++) {
++    functions = recover(capture(functions));
++    expect(getClosureOrigin(functions[0])!.scope).not.toBe(
++      getClosureOrigin(functions[1])!.scope,
++    );
++    const scopes = functions.map((value) => getClosureOrigin(value)!.scope);
++    const snapshots = scopes.map((value) => value.retainedDataRoots());
++    const sizes = snapshots.map((value) => measureSandboxData(value));
++    expect(await functions[0].call([])).toBe(4 + iteration);
++    expect(await functions[1].call([])).toBe(4 + iteration);
++    expect(await functions[2].call([])).toBe(4 + iteration);
++    scopes[1].assign("count", "changed");
++    expect(
++      scopes.map((value) => measureSandboxData(value.retainedDataRoots())),
++    ).toEqual(sizes.map((value) => value + 7));
++    expect(await functions[2].call([])).toBe("changed");
++    scopes[2].assign("count", 4 + iteration);
++  }
++  expect(await originalRead.call([])).toBe(3);
++});
++
++it("does not merge independent cells with equal values", async () => {
++  const first = new Scope().child();
++  first.declare("count", "let", 3);
++  const second = new Scope().child();
++  second.declare("count", "let", 3);
++  const functions = recover(
++    capture([
++      await closure(0, first.projectOwnBindings(["count"])!),
++      await closure(1, second.projectOwnBindings(["count"])!),
++    ]),
++  );
++  expect(await functions[0].call([])).toBe(4);
++  expect(await functions[1].call([])).toBe(3);
++});
++
++it("preserves shared TDZ initialization and const rejection after recovery", async () => {
++  const original = new Scope().child();
++  original.predeclare("count", "const");
++  const functions = recover(
++    capture([
++      await closure(1, original.projectOwnBindings(["count"])!),
++      await closure(1, original.projectOwnBindings(["count"])!),
++    ]),
++  );
++  const first = getClosureOrigin(functions[0])!.scope;
++  const second = getClosureOrigin(functions[1])!.scope;
++  expect(() => second.lookup("count")).toThrow("before initialization");
++  first.declare("count", "const", undefined);
++  expect(await functions[1].call([])).toBeUndefined();
++  expect(() => second.assign("count", 3)).toThrow("const binding");
++});
++
++it.each([
++  "length",
++  "negative",
++  "fractional",
++  "duplicate",
++  "conflicting-value",
++  "conflicting-kind",
++  "uncharged",
++  "global",
++])("rejects forged projected-cell metadata: %s", async (alteration) => {
++  const original = new Scope().child();
++  original.declare("count", "let", 3);
++  original.declare("other", "let", 4);
++  const wire = JSON.parse(
++    JSON.stringify(
++      capture([
++        await closure(0, original.projectOwnBindings(["count", "other"])!),
++        await closure(1, original.projectOwnBindings(["count"])!),
++      ]),
++    ),
++  );
++  const frames = Object.values(wire.heap) as Array<{
++    kind: string;
++    cellIds?: number[];
++    cells: Array<{ kind: string; value?: unknown }>;
++    chargeData: boolean;
++    globalEnvironment?: boolean;
++  }>;
++  const shared = frames.filter(
++    (value) => value.kind === "scope-frame" && value.cellIds !== undefined,
++  );
++  const target = shared.find((value) => value.cells.length === 2)!;
++  if (alteration === "length") target.cellIds = [];
++  if (alteration === "negative") target.cellIds![0] = -1;
++  if (alteration === "fractional") target.cellIds![0] = 0.5;
++  if (alteration === "duplicate") target.cellIds![1] = target.cellIds![0];
++  if (alteration === "conflicting-value") target.cells[0].value = 9;
++  if (alteration === "conflicting-kind") target.cells[0].kind = "const";
++  if (alteration === "uncharged") target.chargeData = false;
++  if (alteration === "global") target.globalEnvironment = true;
++  expect(() => restore(wire, { source })).toThrow();
++});
++
++it("keeps legacy unprojected frames readable without cell identities", async () => {
++  const original = new Scope().child();
++  original.declare("count", "let", 3);
++  const wire = capture([
++    await closure(0, original),
++    await closure(1, original),
++  ]);
++  expect(
++    Object.values(wire.heap!)
++      .filter((value) => value.kind === "scope-frame")
++      .every((value) => value.cellIds === undefined),
++  ).toBe(true);
++  const functions = recover(wire);
++  expect(await functions[0].call([])).toBe(4);
++  expect(await functions[1].call([])).toBe(4);
++});

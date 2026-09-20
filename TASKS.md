@@ -20,6 +20,18 @@
 
 ## Current verified state
 
+- Internal plain-local scope projections now share mutable binding cells without
+  retaining the original local frame or omitted data. Weak view tracking propagates
+  accounting-cache invalidation; opaque snapshot cell IDs preserve sharing across
+  distinct frames and repeated recovery. Legacy frames remain readable. Retained
+  contribution: safejs-projected-scope-shared-cells.patch. Validation: 21 new SDK
+  checks (including explicit GC), 200 existing checks, scoped core/new-test TypeScript,
+  new-test formatting and exact seven-file patch forward/reverse verification pass.
+  Two recovery checks fail without IDs; five cache/limit checks fail without shared
+  invalidation. One Promise-subclass constructor snapshot timeout reproduces on the
+  saved baseline. Automatic capture selection remains disabled: conservative lexical
+  analysis, stable syntax and caller/continuation retention still need resolution.
+  No new Zoom initialization, join or media acceptance is claimed.
 - Closures now discard the creating invocation's callee, which every invocation
   replaces. The retained contribution is safejs-release-creating-callee.patch;
   lexical scopes, arguments, constructor metadata and primary accounting stay intact.
