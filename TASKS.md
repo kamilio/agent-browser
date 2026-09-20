@@ -23,6 +23,21 @@
 
 ## Current verified state
 
+- Internal read-only scope roots are rejected and reverted: 160 SDK checks across
+  20 files (13 new), scoped core/new-test compilation and new-test formatting pass.
+  Native probe creates 124780 roots arrays versus 149720 baseline; both return
+  1200000, retain 90236 units / peak 150245, clear to 29988, reject excessive data
+  at the 200000 limit and close at zero. Serial live 30 s Vue reaches 959469 steps
+  candidate versus 959277 baseline; both time out, 16 scripts executed, cleanup zero.
+  No useful initialization improvement. Separate live numeric probes find 47.9 million
+  closure-capture reads across initialization plus a 60 s Vue window, and 30.5 million
+  scope reads / 7.05 million private-name cache fallbacks across initialization plus
+  a 30 s Vue window; zero namespace/resource/with/raw-metadata fallbacks. Instrumented
+  runs are not speed comparisons. Investigate scope snapshots for native private-name
+  maps while preserving actual membership, raw primitive multiplicity, custom iterator
+  fallback, metadata read order and primary held limits. Exact source/build restoration
+  and baseline core compilation pass; all experiment/probe/config/backup artifacts
+  removed. No join/media acceptance.
 - Automatic anonymous/deferred declaration scope selection is rejected and reverted.
   Owned frozen syntax, conservative analysis and delayed declaration-cell selection
   pass 288 focused SDK checks across 20 files, scoped core/new-test compilation and
