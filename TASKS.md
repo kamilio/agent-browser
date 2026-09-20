@@ -23,6 +23,15 @@
 
 ## Current verified state
 
+- Opt-in fixed Scope metadata/snapshot sharing is rejected and reverted. Serial
+  30 s Vue runs reach 959687 candidate versus 959469 baseline steps (less than
+  0.03% difference); both execute 16 preceding scripts, timeout and close at zero.
+  Candidate checks: 232 manifest-listed native checks, 13 new SDK checks including
+  deleted-private-name GC, native build/format and scoped SDK compilation pass.
+  Broader SDK checks reproduce the existing empty-child root-identity failure;
+  no full-suite pass is claimed. Actual native class retention/limit/cleanup probe
+  matches baseline. Experiment source/build changes are restored exactly; restored
+  native build and scoped SDK compilation pass. No initialization/join acceptance.
 - Private-table ownership alone is rejected and reverted. Eleven new and 240
   existing SDK checks pass, including explicit GC, class/snapshot/held-memory
   preservation; scoped core/new-test compilation and new-file formatting pass.
