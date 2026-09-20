@@ -23,6 +23,15 @@
 
 ## Current verified state
 
+- Traversal-span census disfavors small segment caches: 188.63 million visits over
+  42212 measurements, 58.7% in spans of 1–3 visits and 13.8% in spans of at least
+  16, maximum 319. Boundaries mark closure handling, retained providers, capture
+  iteration and foreign values; these availability counts do not prove ownership
+  or mutation safety. Broader replay needs complete mutation witnesses across fresh
+  callbacks. Eight compiled preservation fixtures match before/during/after census.
+  Live HTTP 200, 16 scripts then Vue timeout at 956742 steps / 892250 peak units,
+  zero sockets and cleanup zero; no join. Source unchanged, compiled module restored
+  byte-for-byte and temporary artifacts removed. No speed claim from instrumentation.
 - Manual capture-iterator records are rejected and removed. All-depth records slow
   warmed shallow/shared fixtures by 23–28%; preserving shallow loops speeds the
   depth-512 fixture by about 19% only. Eighteen new and 85 existing focused SDK
