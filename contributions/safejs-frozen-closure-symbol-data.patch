@@ -1,0 +1,192 @@
+diff --git a/packages/safe-js/src/interp/values.ts b/packages/safe-js/src/interp/values.ts
+--- a/packages/safe-js/src/interp/values.ts
++++ b/packages/safe-js/src/interp/values.ts
+@@ -107,6 +107,11 @@
+ const sandboxRegexBrand = Symbol("SandboxRegex");
+ const sandboxRegexPattern = Symbol("SandboxRegexPattern");
+ const sandboxRetainedValues = Symbol("SandboxRetainedValues");
++// Only direct factory results are frozen here. Restored records, derived
++// closures and proxy wrappers keep their conservative descriptor inspection.
++const frozenClosureSymbolData = new WeakMap<object, {
++  descriptors?: Array<readonly [symbol, PropertyDescriptor]>;
++}>();
+ export const snapshotRuntimeGetters = new WeakSet<() => unknown>();
+ for (const marker of [sandboxClosureBrand, sandboxGeneratorBrand, sandboxPromiseBrand, sandboxRegexBrand, sandboxRegexPattern, sandboxRetainedValues]) internalSymbols.add(marker);
+
+@@ -358,7 +363,9 @@
+     });
+   }
+
+-  return Object.freeze(closure);
++  Object.freeze(closure);
++  frozenClosureSymbolData.set(closure, {});
++  return closure;
+ }
+
+ export function ownEnumerableSandboxEntries(
+@@ -1288,14 +1295,18 @@
+       }
+     }
+     if (!isGuestHostObject(value)) {
+-      let descriptors = trackedObjectSymbolDescriptors(value);
++      const frozen = frozenClosureSymbolData.get(value);
++      let descriptors = frozen?.descriptors ?? trackedObjectSymbolDescriptors(value);
+       // Capture before visiting: retained callbacks can mutate later properties.
+       if (descriptors === undefined) {
+         for (const key of Object.getOwnPropertySymbols(value)) {
+-          if (internalSymbols.has(key)) continue;
++          // Frozen factory records have no proxy traps. Capture all their
++          // symbols so a later internal-symbol registration is still observed.
++          if (frozen === undefined && internalSymbols.has(key)) continue;
+           const descriptor = Object.getOwnPropertyDescriptor(value, key);
+           if (descriptor !== undefined) (descriptors ??= []).push([key, descriptor]);
+         }
++        if (frozen !== undefined) frozen.descriptors = descriptors ??= [];
+       }
+       if (descriptors !== undefined) for (const [key, descriptor] of descriptors) {
+         if (internalSymbols.has(key)) continue;
+diff --git a/packages/safe-js/src/interp/frozen-closure-symbol-data.test.ts b/packages/safe-js/src/interp/frozen-closure-symbol-data.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/interp/frozen-closure-symbol-data.test.ts
+@@ -0,0 +1,140 @@
++import { expect, it, vi } from "vitest";
++import { accessorAdapter } from "./accessors.js";
++import { Budget } from "./budget.js";
++import { internalSymbols } from "./internal-symbols.js";
++import {
++  createIntrinsicObject,
++  materializeFunctionProperties,
++  setSandboxPrototype,
++} from "./object-model.js";
++import { addPrivateElement } from "./private-state.js";
++import { createSandboxClosure, measureSandboxData } from "./values.js";
++
++it("inspects a frozen factory closure once while remeasuring its captures", () => {
++  const captured = createIntrinsicObject({ text: "a" });
++  const retainedValues = vi.fn(() => [captured]);
++  const closure = createSandboxClosure({
++    call: () => undefined,
++    retainedValues,
++  });
++  const inspect = vi.spyOn(Object, "getOwnPropertySymbols");
++  try {
++    const before = measureSandboxData([closure]);
++    captured.text = "x".repeat(1000);
++    expect(measureSandboxData([closure])).toBe(before + 999);
++    expect(
++      inspect.mock.calls.filter(([value]) => value === closure),
++    ).toHaveLength(1);
++    expect(retainedValues).toHaveBeenCalledTimes(2);
++    expect(() =>
++      new Budget({ dataSize: 100 }).reconcileDataUsage(
++        measureSandboxData([closure]),
++      ),
++    ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++  } finally {
++    inspect.mockRestore();
++  }
++});
++
++it("accounts for custom symbols attached by factory property setup", () => {
++  const key = Symbol("payload");
++  const child = createIntrinsicObject({ text: "a" });
++  const closure = createSandboxClosure({
++    call: () => undefined,
++    properties: (value) => {
++      Object.defineProperty(value, key, { value: child });
++      return createIntrinsicObject();
++    },
++  });
++  expect(Object.isFrozen(closure)).toBe(true);
++  const before = measureSandboxData([closure]);
++  child.text = "x".repeat(1000);
++  expect(measureSandboxData([closure])).toBe(before + 999);
++});
++
++it("keeps private fields visible after symbol inspection is cached", () => {
++  const closure = createSandboxClosure({ call: () => undefined });
++  const field = { kind: "field" as const, value: "a" };
++  addPrivateElement(closure, { description: "payload" }, field);
++  const before = measureSandboxData([closure]);
++  field.value = "x".repeat(1000);
++  expect(measureSandboxData([closure])).toBe(before + 999);
++});
++
++it("remeasures function properties and sandbox prototype links", () => {
++  const closure = createSandboxClosure({ call: () => undefined, guest: true });
++  const before = measureSandboxData([closure]);
++  const properties = materializeFunctionProperties(closure);
++  properties.payload = "x".repeat(1000);
++  const withProperties = measureSandboxData([closure]);
++  expect(withProperties).toBeGreaterThan(before + 1000);
++  setSandboxPrototype(
++    closure,
++    createIntrinsicObject({ text: "y".repeat(1000) }),
++  );
++  expect(measureSandboxData([closure])).toBeGreaterThan(withProperties + 1000);
++});
++
++it("captures custom accessor symbols without invoking their getters", () => {
++  const key = Symbol("accessor");
++  const child = createIntrinsicObject({ text: "a" });
++  const getter = vi.fn();
++  const accessor = createSandboxClosure({
++    call: getter,
++    retainedValues: () => [child],
++  });
++  const closure = createSandboxClosure({
++    call: () => undefined,
++    properties: (value) => {
++      Object.defineProperty(value, key, {
++        get: accessorAdapter(accessor, "get"),
++      });
++      return createIntrinsicObject();
++    },
++  });
++  const before = measureSandboxData([closure]);
++  child.text = "x".repeat(1000);
++  expect(measureSandboxData([closure])).toBe(before + 999);
++  expect(getter).not.toHaveBeenCalled();
++});
++
++it("does not trust a derived closure's mutable own symbols", () => {
++  const key = Symbol("payload");
++  const closure = Object.create(
++    createSandboxClosure({ call: () => undefined }),
++  );
++  closure[key] = "a";
++  const before = measureSandboxData([closure]);
++  closure[key] = "longer";
++  expect(measureSandboxData([closure])).toBe(before + 5);
++});
++
++it("preserves symbol inspection traps on a proxy around a frozen closure", () => {
++  const closure = createSandboxClosure({ call: () => undefined });
++  const ownKeys = vi.fn(Reflect.ownKeys);
++  const wrapper = new Proxy(closure, { ownKeys });
++  const before = measureSandboxData([wrapper]);
++  const firstWalkCalls = ownKeys.mock.calls.length;
++  expect(firstWalkCalls).toBeGreaterThan(0);
++  expect(measureSandboxData([wrapper])).toBe(before);
++  expect(ownKeys.mock.calls.length).toBe(firstWalkCalls * 2);
++});
++
++it("filters internal symbols on each walk rather than at snapshot creation", () => {
++  const key = Symbol("later-internal");
++  const closure = createSandboxClosure({
++    call: () => undefined,
++    properties: (value) => {
++      Object.defineProperty(value, key, { value: "owned" });
++      return createIntrinsicObject();
++    },
++  });
++  const before = measureSandboxData([closure]);
++  internalSymbols.add(key);
++  try {
++    expect(measureSandboxData([closure])).toBe(before - 21);
++  } finally {
++    internalSymbols.delete(key);
++  }
++  expect(measureSandboxData([closure])).toBe(before);
++});

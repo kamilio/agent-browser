@@ -13,10 +13,10 @@
   The SDK now enforces data limits during those holds, avoids double charging
   included compile tickets and keeps suspended async frames/scopes visible until
   settlement or disposal. With these checks, the latest 192 MB live run timed out
-  in Vue at its 120 s window (976630 steps, peak data 901563 units; 16 scripts
-  executed; cleanup errors 0). A bounded 256 MB diagnostic captured a
-  component-library profile before the hold fix: retained-graph visitation dominates
-  identified JavaScript samples; allocations include parser metadata and inspector
+  in Vue at its 120 s window (964493 steps, peak data 894821 units; 16 scripts
+  executed; cleanup at 150 s with errors 0). A bounded 256 MB diagnostic captured
+  a component-library profile before the hold fix: retained-graph visitation
+  dominates identified JavaScript samples; allocations include parser metadata and inspector
   overhead. Optimize graph visitation and investigate host-memory use; an earlier
   alternate script path exhausted the 192 MB heap in all.min.js. SDK-owned tables
   cache own string-field accounting and remeasure descendants; other paths stay
@@ -80,15 +80,18 @@
   no measurable benefit. Alternating default idle checks passed 2/3 with each
   visitor, so the 1 s timing gate is intermittent and remains open. The metadata
   depth failure also reproduces with baseline WeakSet visitation.
-  Symbol descriptor snapshots now reuse SDK-owned table inspection and invalidate
-  on symbol writes; mutable descendants are remeasured and outer proxies stay
-  conservative. SDK checks: 322/324 pass; the two failures reproduce on baseline
-  (proxy managed-state capture and default-stack descendant depth). All 6 new
-  checks pass; the inspection-reuse regression fails on baseline. Core compilation,
-  test formatting and patch round-trip checks pass. A wide-table benchmark improves
-  34 ms to 3 ms; the completed-build live run still times out in Vue at 120 s.
-  A follow-up Vue profile still shows untracked symbol inspection, visitation and
-  scope-root collection as major costs; investigate immutable closure records.
+  Symbol snapshots reuse SDK-owned table inspection and invalidate on symbol
+  writes. Frozen factory closures cache their actual symbol descriptors, including
+  custom factory fields; private fields, properties, prototypes and captured
+  descendants are remeasured. Derived/restored records and proxies stay conservative.
+  SDK checks: 330/332 pass; two baseline failures remain (proxy managed-state
+  capture and default-stack descendant depth). All 8 new closure checks pass;
+  inspection reuse fails on baseline. Core compilation, new-test formatting and
+  patch round trips pass. Wide-table benchmark: 34 ms to 3 ms; closure benchmark:
+  115 ms to 92 ms. Latest live run still times out in Vue after 120 s. Follow-up
+  profiling reduces symbol inspection, but graph visitation dominates and GC is
+  roughly 10% of samples. Attribute allocation callers before the next optimization.
+  Actual idle semantics: 9/9 pass with the explicit 16 s profile; default 1 s times out.
   Native extension adapter still rejects suspended 60000 plus later 60000 at
   data limit 100000 and releases data on close. The separate PageScripts timer
   version reaches suspension but closes with a generic callback script-error
