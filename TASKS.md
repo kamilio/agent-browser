@@ -12,14 +12,16 @@
   evidence: pending callback tails had skipped retained-graph reconciliation.
   The SDK now enforces data limits during those holds, avoids double charging
   included compile tickets and keeps suspended async frames/scopes visible until
-  settlement or disposal. With these checks, the latest 192 MB live run timed out
+  settlement or disposal. The retained build's last 192 MB live run timed out
   in Vue at its 120 s window (986118 steps, peak data 906074 units; 16 scripts
   executed; total 139 s; cleanup closed with no pending loads or errors). A bounded
   256 MB allocation diagnostic estimates cumulative churn falling from 17.8 GB to
   13.1 GB after private-array indexing and removal of a per-visit callback context.
   These totals include collected allocations, not live RAM; initialization still
-  times out. Fresh visited-set entries and scope-root collection are the next
-  measured optimization candidates; an earlier
+  times out. A subsequent weak-map membership experiment was reverted: it removed
+  fresh visited-set allocation callers but did not improve initialization or show
+  a reliable benchmark gain; corrected paired samples increased total churn. Investigate
+  scope-root collection and graph traversal rather than visitation-set reuse; an earlier
   alternate script path exhausted the 192 MB heap in all.min.js. SDK-owned tables
   cache own string-field accounting and remeasure descendants; other paths stay
   conservative. Neither those faster runs nor profiling proves live acceptance.
@@ -101,6 +103,12 @@
   remain intact. Bytecode confirms removal of the per-visit function context.
   Latest actual idle checks pass 9/9 at both default 1 s and explicit 16 s; prior
   default failures keep timing reliability open. No full native-suite pass is claimed.
+  Weak-map visitation experiment reverted: no initialization gain; paired 15 s
+  cumulative churn estimates 11.4 GB baseline versus 12.1 GB experiment; final
+  closure benchmark 13.6 versus 13.4 ms with equal 25000 units. Focused SDK checks
+  showed only the three baseline failures. Corrected diagnostic wiring must supply
+  the existing session fetch transport to enable XMLHttpRequest; CSRF succeeds on
+  both builds with that wiring. Experimental patch and test removed.
   Native extension adapter still rejects suspended 60000 plus later 60000 at
   data limit 100000 and releases data on close. The separate PageScripts timer
   version reaches suspension but closes with a generic callback script-error
