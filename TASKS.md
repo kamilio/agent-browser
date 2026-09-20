@@ -23,10 +23,20 @@
 
 ## Current verified state
 
-- Scratch SDK automatic closure-selection experiment: 25 focused checks across
-  two files pass, including GC, conservative exclusions and snapshot recovery.
-  The experiment is unaccepted; compilation, broader regressions and actual native
-  usefulness remain unverified. No contribution patch or live run for this candidate.
+- Automatic anonymous/deferred declaration scope selection is rejected and reverted.
+  Owned frozen syntax, conservative analysis and delayed declaration-cell selection
+  pass 288 focused SDK checks across 20 files, scoped core/new-test compilation and
+  new-test formatting. The Promise-subclass snapshot timeout reproduces on the exact
+  baseline. Actual native declared capture: 90189 retained units baseline versus
+  30180 candidate; both return 7, clear to 29988, reject at dataSize 200000 and close
+  at zero. Serial live 30 s Vue: baseline 958127 execution steps / 891790 peak units;
+  anonymous candidate 956381 / 881930; deferred declaration candidate 958575 / 883278.
+  New freeze/scan work is subtracted from candidate steps; concurrent background
+  builds limit timing comparisons. All time out with 16 scripts executed and cleanup
+  zero; no useful initialization improvement or join established. Primary accounting
+  still includes active invocation scopes. Investigate that reconciliation cost rather
+  than escaped captures alone. Exact seven-stem source/build restoration and baseline
+  core compilation pass; experiment helpers/tests/config/probes/backups are removed.
 - Internal plain-local scope projections now share mutable binding cells without
   retaining the original local frame or omitted data. Weak view tracking propagates
   accounting-cache invalidation; opaque snapshot cell IDs preserve sharing across
@@ -36,8 +46,8 @@
   new-test formatting and exact seven-file patch forward/reverse verification pass.
   Two recovery checks fail without IDs; five cache/limit checks fail without shared
   invalidation. One Promise-subclass constructor snapshot timeout reproduces on the
-  saved baseline. Automatic capture selection remains disabled: conservative lexical
-  analysis, stable syntax and caller/continuation retention still need resolution.
+  saved baseline. Automatic capture selection remains disabled after the reverted
+  frozen-syntax/conservative-analysis experiment failed to improve initialization.
   No new Zoom initialization, join or media acceptance is claimed.
 - Closures now discard the creating invocation's callee, which every invocation
   replaces. The retained contribution is safejs-release-creating-callee.patch;
