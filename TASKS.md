@@ -23,6 +23,20 @@
 
 ## Current verified state
 
+- Guarded private-name scope snapshot caching is rejected and reverted. The
+  candidate passes 195 focused SDK checks across 21 files (10 new), scoped
+  core/new-test compilation and new-test formatting. Nine preservation checks
+  pass on the exact baseline; only whole-frame cache reuse fails there. Actual
+  native adapter outcomes match: return 60007, retain 90274 units / peak 150274,
+  clear to 29974, reject excessive data at 200000 and close at zero. Serial live
+  30 s Vue reaches 957082 candidate versus 956381 baseline steps; both time out
+  with 16 scripts executed and cleanup zero. First-script CPU is 18.3 s versus
+  17.2 s; competing builds limit timing conclusions. No useful initialization
+  gain established. Exact baseline source/build restoration and scoped core
+  compilation pass; experiment tests/configs/probes/backups are removed. Next,
+  measure eager declaration closures in active invocation scopes before choosing
+  another optimization; lazy instantiation needs identity, ownership, snapshot and
+  memory-accounting guarantees. No initialization/join/media acceptance.
 - Internal read-only scope roots are rejected and reverted: 160 SDK checks across
   20 files (13 new), scoped core/new-test compilation and new-test formatting pass.
   Native probe creates 124780 roots arrays versus 149720 baseline; both return
@@ -33,9 +47,9 @@
   closure-capture reads across initialization plus a 60 s Vue window, and 30.5 million
   scope reads / 7.05 million private-name cache fallbacks across initialization plus
   a 30 s Vue window; zero namespace/resource/with/raw-metadata fallbacks. Instrumented
-  runs are not speed comparisons. Investigate scope snapshots for native private-name
-  maps while preserving actual membership, raw primitive multiplicity, custom iterator
-  fallback, metadata read order and primary held limits. Exact source/build restoration
+  runs are not speed comparisons. The guarded private-name snapshot follow-up above
+  preserves membership/read ordering but also fails to establish a useful live gain.
+  Exact source/build restoration
   and baseline core compilation pass; all experiment/probe/config/backup artifacts
   removed. No join/media acceptance.
 - Automatic anonymous/deferred declaration scope selection is rejected and reverted.
