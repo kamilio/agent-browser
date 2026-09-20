@@ -23,11 +23,13 @@
 
 ## Current verified state
 
-- Duplicate-capture entry filtering is rejected and reverted: seven new and 23
+- Factory closure classification is rejected and reverted: eight new and 44
   existing SDK checks, scoped core/new-test compilation and the actual native
   class retention/limit/cleanup probe pass, but serial 30 s Vue reaches 957785
-  versus 957965 baseline steps; both timeout and close at zero. Exact source/build
-  restoration and baseline core compilation pass; temporary artifacts are removed.
+  versus 957965 baseline steps; both timeout and close at zero, matching the earlier
+  duplicate-entry experiment. Proxy/dynamic source retention and foreign weak/
+  resource metadata observations are preserved. Exact source/build restoration
+  and baseline core compilation pass; temporary artifacts are removed.
   Separate V8 probe finds the 26733-byte visitor below the 61440-byte optimization
   limit, with visitor/measurement functions TurboFan-optimized at both checkpoints.
   Baseline Vue steps split into 588470 before interpretation and 154460 execution;
