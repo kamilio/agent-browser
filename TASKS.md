@@ -23,6 +23,14 @@
 
 ## Current verified state
 
+- Actual SafeJS + local WSS passes with a process-local test CA: original-host SNI
+  and Origin, protocol negotiation, fragmented UTF-8, 64 KiB binary echo with
+  64-bit frame length, and send snapshots surviving subsequent guest mutation.
+  Wrong-host and untrusted certificates fail before HTTP upgrade. Clean close and
+  document closure with another socket open leave zero peers/pending/active sockets,
+  no cleanup failures and close data zero. Probe/certificates removed; no runtime
+  change needed. Production trust, authenticated Zoom WSS and meeting media remain
+  unverified; interactive initialization remains the immediate blocker.
 - WebSocket bootstrap keeps its constructor local: global `var WebSocket` hoisting
   previously made the classic Window accessor definition fail before any socket.
   All 295 focused manifest-listed native checks, native build/noEmit and changed-code
