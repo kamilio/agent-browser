@@ -36,6 +36,7 @@ const blockedOrigins = [
 	"https://cdn.cookielaw.org",
 ];
 const loaderLimits = {
+	modules: true,
 	maxScripts: 256,
 	maxExternal: 64,
 	maxSourceBytes: 8388608,
@@ -54,6 +55,15 @@ const runtimes: PageRuntime[] = [];
 function currentDataSize(runtime: PageRuntime): number | undefined {
 	return (runtime.budget as { currentDataSize?: number }).currentDataSize;
 }
+function scriptLabel(filename: string | undefined): string | undefined {
+	if (filename === undefined) return undefined;
+	try {
+		const parsed = new URL(filename);
+		return `${parsed.origin}${parsed.pathname}`;
+	} catch {
+		return filename;
+	}
+}
 const observed: PageRuntimeFactory = {
 	...factory,
 	createPageRuntime(options) {
@@ -65,6 +75,15 @@ const observed: PageRuntimeFactory = {
 		) => {
 			const start = performance.now();
 			const cpu = process.cpuUsage();
+			const stepsBefore = runtime.budget.stepsUsed;
+			const filename = scriptLabel(evaluationOptions.filename);
+			console.log(
+				JSON.stringify({
+					event: "script-start",
+					filename,
+					characters: source.length,
+				}),
+			);
 			let ok = false;
 			let error: PageRuntimeError | undefined;
 			try {
@@ -76,19 +95,20 @@ const observed: PageRuntimeFactory = {
 				error = runtime.errorDetails(failure);
 				throw failure;
 			} finally {
-				if (source.length > 100000)
-					console.log(
-						JSON.stringify({
-							event: "script",
-							characters: source.length,
-							elapsedMs: Math.round(performance.now() - start),
-							cpu: process.cpuUsage(cpu),
-							ok,
-							error,
-							stepsUsed: runtime.budget.stepsUsed,
-							peakDataSize: runtime.budget.peakDataSize,
-						}),
-					);
+				console.log(
+					JSON.stringify({
+						event: "script",
+						filename,
+						characters: source.length,
+						elapsedMs: Math.round(performance.now() - start),
+						cpu: process.cpuUsage(cpu),
+						ok,
+						error,
+						stepsUsed: runtime.budget.stepsUsed,
+						stepsDelta: runtime.budget.stepsUsed - stepsBefore,
+						peakDataSize: runtime.budget.peakDataSize,
+					}),
+				);
 			}
 		};
 		return new Proxy(runtime, {
@@ -115,11 +135,22 @@ const browser = new BrowserSession({
 				fetchWithPolicy: context.fetchScriptWithPolicy,
 				limits: loaderLimits,
 				owner(document) {
+					if (!context.fetchScriptWithPolicy)
+						throw new AgentBrowserError(
+							"unsupported",
+							"Zoom modules require policy-aware script fetching",
+						);
 					const owner = new PageScripts(
 						{ document, interactions: documentInteractions(document) },
 						observed,
 						{
 							fetch: context.fetch,
+							networkSourceModules: {
+								documentUrl: response.url,
+								entries: [],
+								htmlEntries: true,
+								fetchWithPolicy: context.fetchScriptWithPolicy,
+							},
 							budgetProfile: "application-unicode-v1",
 							limits: { timeoutMs },
 						},
@@ -161,7 +192,7 @@ try {
 			timeoutMs,
 			loaderLimits,
 			blockedOrigins,
-			moduleScripts: "unsupported in this diagnostic",
+			moduleScripts: "enabled through the policy-aware native loader",
 			status,
 			navigationError,
 			report,

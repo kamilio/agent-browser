@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Zoom initialization diagnostic now enables existing policy-aware HTML/network
+  modules and logs every script's start/result, URL path and execution-step delta;
+  URL credentials, queries and fragments are omitted. TypeScript/build and formatter
+  checks pass, along with 176 manifest-listed native module checks. Actual SafeJS
+  in-memory probe executes imported and inline modules, skips nomodule/duplicate
+  entries, performs two fetches and closes at data zero. Live module-enabled route
+  returns HTTP 200; all 16 pre-Vue scripts pass, then Vue times out at 30.8 s /
+  951257 total steps / 878318 peak units. Module-not-supported issues disappear;
+  deferred modules remain unexecuted after the halt. Cleanup data is zero. Vue
+  initialization remains the next blocker; no readiness, join or media acceptance.
 - Guarded per-measurement scope-read sharing is rejected and reverted. Seventeen
   new SDK checks and 27 existing focused checks pass; broader coverage passes 124
   checks across 15 files, including seven initially skipped GC checks rerun with
