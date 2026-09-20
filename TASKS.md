@@ -37,13 +37,21 @@
   saved baseline's redundant capture calls; primary-capture hold release passes on
   both versions. The actual native extension adapter rejects suspended 60000 units
   plus a later 60000-unit value at data limit 100000 and releases data on close.
-- Latest 192 MB live diagnostic: initial 107111-character script completes in
+- Last 120 s, 192 MB live diagnostic: initial 107111-character script completes in
   14.6 s; Vue still times out at 120315 ms, peak data 912839 units, 16 scripts
   executed. Cleanup completes. Loader completion and existing controls do not prove
   application readiness or joining. No reliable initialization speedup is claimed.
 - Rejected scope-root grouping/reuse and weak-map visitation experiments were
-  reverted after mixed benchmarks and no initialization gain. No experimental
-  caches or diagnostic instrumentation remain in the retained build.
+  reverted after mixed benchmarks and no initialization gain. Extending snapshots
+  to native private-name maps also failed to establish a useful live improvement:
+  30 s Vue diagnostics reached 957965 baseline versus 958575 candidate steps, both
+  timed out. Synthetic warmed measurements fell from 0.45 to 0.36 ms, but the
+  experiment is reverted. Its 113 focused SDK checks, native suspended private-field
+  data limit and removed-value GC probes passed. No experimental caches remain.
+- Current 49 s CPU profile: graph visitor 25.4 s, private/symbol traversal 5.7 s,
+  scope-root collection 4.2 s and GC 1.9 s of self samples. Investigate visitor
+  traversal/capture continuations next; repeated scope snapshot experiments have
+  not resolved live initialization. The diagnostic profile and harness are removed.
 
 ## Outstanding gates
 
