@@ -117,10 +117,10 @@
 +  try {
 +    expect(
 +      await realm.evaluate(
-+        `let errorName; try { ${source}; } catch (error) { errorName = error.name; } [errorName, globalThis.ran === undefined];`,
++        `let errorName; try { ${source}; } catch (error) { errorName = error.name; } return [errorName, globalThis.ran === undefined];`,
 +      ),
 +    ).toMatchObject({ ok: true, returnValue: ["EvalError", true] });
-+    expect(await realm.evaluate("6 * 7")).toMatchObject({ ok: true, returnValue: 42 });
++    expect(await realm.evaluate("return 6 * 7")).toMatchObject({ ok: true, returnValue: 42 });
 +  } finally {
 +    await realm.close();
 +  }
@@ -131,7 +131,7 @@
 +  async (stringCompilation) => {
 +    const realm = createRealm({ stringCompilation });
 +    try {
-+      expect(await realm.evaluate('eval("20 + 1") + Function("return 21")()')).toMatchObject({
++      expect(await realm.evaluate('return eval("20 + 1") + Function("return 21")()')).toMatchObject({
 +        ok: true,
 +        returnValue: 42,
 +      });
@@ -148,11 +148,11 @@
 +  try {
 +    expect(
 +      await denied.evaluate(
-+        'let errorName; try { eval("1"); } catch (error) { errorName = error.name; } errorName;',
++        'let errorName; try { eval("1"); } catch (error) { errorName = error.name; } return errorName;',
 +      ),
 +    ).toMatchObject({ ok: true, returnValue: "EvalError" });
-+    expect(await allowed.evaluate('eval("42")')).toMatchObject({ ok: true, returnValue: 42 });
-+    expect(await denied.evaluate("eval({ value:42 }).value")).toMatchObject({
++    expect(await allowed.evaluate('return eval("42")')).toMatchObject({ ok: true, returnValue: 42 });
++    expect(await denied.evaluate("return eval({ value:42 }).value")).toMatchObject({
 +      ok: true,
 +      returnValue: 42,
 +    });
@@ -174,7 +174,7 @@
 +    });
 +    expect(
 +      await realm.evaluate(
-+        'let errorName; try { Function("return 42"); } catch (error) { errorName = error.name; } errorName;',
++        'let errorName; try { Function("return 42"); } catch (error) { errorName = error.name; } return errorName;',
 +      ),
 +    ).toMatchObject({ ok: true, returnValue: "EvalError" });
 +  } finally {
