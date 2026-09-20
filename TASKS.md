@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Fresh-read vector sharing is also rejected. A temporary native array index setter
+  exposes a fresh object-only scope-root vector and restores the prototype before
+  validation; later provider code appends 1000 units. Both frozen and reused-live
+  carriers measure 19 versus baseline 1019, wrongly admitting under quota 100.
+  Native push/iterator identities, dense data entries and provider/scope read counts
+  all match. Twelve compiled SDK model cases pass their counterexample assertions;
+  a fresh unshared live carrier preserves units/rejection in these cases only.
+  Sharing needs proof against escape and late mutation, beyond fresh membership
+  reads. Earlier binding/private-name carrier failures remain 29 versus 1028/1034
+  under quota 900. No SDK edits, live run or join; temporary probe removed.
 - Traversal-span census disfavors small segment caches: 188.63 million visits over
   42212 measurements, 58.7% in spans of 1–3 visits and 13.8% in spans of at least
   16, maximum 319. Boundaries mark closure handling, retained providers, capture
@@ -80,13 +90,6 @@
   units; both execute 16 scripts then Vue times out. About 0.7% extra interpreted
   Vue work and slightly higher CPU establish no useful initialization gain or join.
   Original source/build verified byte-for-byte; helpers/tests/probes/backups removed.
-- Shared method-carrier model is rejected: a callback mutating a binding or private
-  name during measurement leaves the carrier at 29 units versus 1028/1034 baseline,
-  incorrectly admitting both under a 900-unit quota. The actual SDK measurer probe
-  passes its counterexample assertions. Fresh-read root-vector sharing matches
-  baseline units, provider reads and quota rejection in these cases only; foreign
-  iterables, primitive multiplicity, depth/holds, GC and performance are unverified.
-  No implementation retained, no live run or join claim; temporary probe removed.
 - True local declaration deferral is rejected and reverted. Functions are created
   on first exposure rather than behind an existing shell; the full lexical payload
   remains measured. Sixteen new SDK checks and 87 existing focused checks pass,
