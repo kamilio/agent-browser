@@ -23,6 +23,25 @@
 
 ## Current verified state
 
+- True local declaration deferral is rejected and reverted. Functions are created
+  on first exposure rather than behind an existing shell; the full lexical payload
+  remains measured. Sixteen new SDK checks and 87 existing focused checks pass,
+  along with scoped compilation and new-file lint/format; nine preservation checks
+  and scoped compilation pass the restored baseline. Copying inherited bindings
+  invalidates their actual owner; snapshot/frame/copy boundaries materialize one
+  canonical function. Native candidate/baseline match: 90242 retained units before
+  exposure, 90259 after, 30368 after clear, dataSize rejection at 400000, close zero.
+  Admission census installs 10/123/341 deferred declarations in bootstrap/page/Vue,
+  with 108 total materializations; this is admission evidence, not a speed proof.
+  Serial 30 s candidate/baseline reach 957569/958789 steps, 891189/892105 peak units,
+  16 scripts and Vue timeout. No useful initialization gain or join. Six original
+  source/build files are restored byte-for-byte; all temporary artifacts removed.
+- Closed-return eligibility census admits all 18 page and 75 Vue candidates, with
+  zero runtime-guard declines. Their 1.25 million reads are 5.08% of 24.64 million
+  interpreted capture reads; none come from bootstrap. Narrow scope pruning did
+  target live functions but covers little of this trace. HTTP 200, 16 scripts then
+  Vue timeout, cleanup zero. Source untouched; the instrumented compiled file was
+  restored byte-for-byte and census/probe/backup removed. No speed or join claim.
 - Narrow closed-return lexical pruning is rejected and reverted. The candidate
   physically replaces unused intermediate scopes with the original global scope,
   preserving indirect eval and its string-compilation policy. Twenty-nine new and
