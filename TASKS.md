@@ -120,6 +120,16 @@
   16 names 17.6 to 12.2 ms; eight names 14.5 to 13.6 ms; small maps show little gain.
   Actual page maps have one, two and eight names. Live Vue still times out at 120 s;
   clean cleanup does not prove application readiness, joining or media acceptance.
+  Early frozen-closure dispatch experiment reverted: warmed benchmarks and live
+  initialization showed no reliable gain. Managed proxy descriptor capture now
+  includes hidden fields when a trap registers managed accounting during capture,
+  fixing the existing 9-versus-23-unit failure and enforcing the data-size limit
+  without extra descriptor traps. The new regression fails on the exact saved
+  baseline; both directly related files pass all 25 tests after the fix. Focused
+  SDK checks pass 87/89 across nine files; the two baseline default-stack depth
+  failures remain. Core compilation, new-test formatting, contribution patch
+  round trips and all nine actual native idle adapter cases pass. Earlier idle
+  timing failures remain unresolved. No live run of this accounting fix is claimed.
   Native extension adapter still rejects suspended 60000 plus later 60000 at
   data limit 100000 and releases data on close. The separate PageScripts timer
   version reaches suspension but closes with a generic callback script-error

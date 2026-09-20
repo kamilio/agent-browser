@@ -1,0 +1,55 @@
+--- a/src/interp/values.ts
++++ b/src/interp/values.ts
+@@ -1269,7 +1269,7 @@
+     // Capture values before any retained callback can mutate later properties.
+     // Plain transport records do not charge hidden fields. Preserve proxy trap
+     // ordering, including managed-state changes during descriptor capture.
+-    const includeNonEnumerable = isSandboxDate(value) || isSandboxArrayBuffer(value) || isSandboxSharedArrayBuffer(value) || isSandboxDataView(value) || sandboxErrorTypes.has(value) || hasManagedDescriptors(value);
++    let includeNonEnumerable = isSandboxDate(value) || isSandboxArrayBuffer(value) || isSandboxSharedArrayBuffer(value) || isSandboxDataView(value) || sandboxErrorTypes.has(value) || hasManagedDescriptors(value);
+     const metadata = hostFunctionMetadata.get(value);
+     const proxyKeys = nodeTypes.isProxy(value) ? Object.getOwnPropertyNames(value) : undefined;
+     // Avoid capturing value in a callback: that forces a parameter context on
+@@ -1280,6 +1280,10 @@
+       for (let index = 0; index < proxyKeys.length; index++)
+         proxyDescriptors.push(Object.getOwnPropertyDescriptor(value, proxyKeys[index]!));
+     }
++    // Descriptor traps can register managed accounting after hidden fields
++    // have already been captured. Apply that status to the complete snapshot.
++    if (proxyKeys !== undefined && !includeNonEnumerable)
++      includeNonEnumerable = hasManagedDescriptors(value);
+     const keys = proxyKeys ?? (includeNonEnumerable ? Object.getOwnPropertyNames(value) : Object.keys(value));
+     const retained: unknown[] = [];
+     for (let index = 0; index < keys.length; index++) {
+--- /dev/null
++++ b/src/interp/proxy-managed-capture-budget.test.ts
+@@ -0,0 +1,30 @@
++import { expect, it } from "vitest";
++import { Budget } from "./budget.js";
++import { markDescriptorObject } from "./object-model.js";
++import { reconcileCompiledValues } from "./values.js";
++
++it("rejects hidden data when descriptor capture registers managed accounting", () => {
++	const target = Object.defineProperty({}, "hidden", {
++		value: "x".repeat(101),
++	});
++	Object.defineProperty(target, "visible", {
++		value: undefined,
++		enumerable: true,
++	});
++	const reads: PropertyKey[] = [];
++	const value = new Proxy(target, {
++		getOwnPropertyDescriptor(owner, key) {
++			reads.push(key);
++			if (key === "visible") markDescriptorObject(value);
++			return Reflect.getOwnPropertyDescriptor(owner, key);
++		},
++	});
++	const budget = new Budget({ dataSize: 100 });
++	expect(() => reconcileCompiledValues(budget, [value])).toThrow(
++		expect.objectContaining({ code: "budgetExceeded", budget: "dataSize" }),
++	);
++	expect(reads.filter((key) => typeof key === "string")).toEqual([
++		"hidden",
++		"visible",
++	]);
++});
