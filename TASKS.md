@@ -23,6 +23,17 @@
 
 ## Current verified state
 
+- Checkpoint attribution rules out completed-frame restructuring as the main fix:
+  function-terminal scans use 1.4 s (3.2%) of 44.2 s measured traversal, versus
+  Identifier 13.9 s (31.4%), MemberExpression 3.2 s and BinaryExpression 2.8 s.
+  The full diagnostic records 45210 primary/ownership scans; registered-root
+  collection adds 1.5 s. These instrumented timings establish attribution only.
+  Focus on repeated graph traversal across node checkpoints, preserving fresh
+  provider observations and complete primary checks; terminal-only work has little
+  coverage. Instrumented/restored SDK fixtures match 14 stable provider reads,
+  result 7 and 11 reads before identical growth/dataSize failures. Live HTTP 200,
+  16 scripts then Vue timeout at 959040 steps / 892227 peak; no join, close zero.
+  Source untouched; three compiled files restored exactly, census/probes removed.
 - Object visitation bitsets/stamps are rejected and removed. Bitsets regress both
   warmed graph fixtures; reentrant weak stamps improve them only about 1–3%.
   Five new and 97 existing SDK checks pass, with scoped core/test compilation,
