@@ -20,6 +20,19 @@
 
 ## Current verified state
 
+- The repeatable authorized live diagnostic is scripts/check-zoom-initialization.ts:
+  selects the working SDK explicitly, uses the extension adapter and correctly
+  nests ScriptLoader limits (256 scripts / 64 external / 8 MB source). Earlier
+  temporary probes supplied an ignored second constructor argument; their Vue
+  timeout preceded the default loader limits. New scoped TypeScript and formatter
+  checks pass. Actual 30 s run: Vue timeout, 959277 steps / 892499 peak units,
+  16 scripts executed; failure exit, readiness/join unverified, cleanup data zero.
+- App/tenant old/current web-client route variants all converge to the same
+  app.zoom.us/wc/join/7982110526 page, bootstrap and Vue asset. Published join
+  handler uses CAPTCHA completion and join fields; the form has no usable native
+  submit action. The working notetaker selects the same /wc/7982110526/join route.
+  No lighter route or supported form-only join established. Read-only native
+  source inspection does not replay join/authentication/challenge requests.
 - Retained SDK contributions include classic globals, callback scheduling, strict
   idle dictionary conversion, timed checkpoints, held-data enforcement, tracked
   own-field/private-name projections, frozen closure symbol snapshots, managed
@@ -120,6 +133,12 @@
   production actor/default 128 MB heap, meeting sockets, media and transcription
   acceptance remain unverified. Invitation landing reports unsupported OS; an
   alternate duplicate script path exhausted the 192 MB heap.
+- Actual current native extension-page probe reports absent RTCPeerConnection,
+  AudioContext, MediaRecorder, navigator.mediaDevices/getUserMedia, Worker,
+  WebAssembly and canvas getContext; cleanup data zero. The working recorder uses
+  media-device capture and AudioWorklet processing; native PCM chunk handling is
+  not a Zoom audio source. Media transport/rendering APIs need implementation,
+  separately from initialization performance and later live acceptance.
 - Default-stack dataDepth for direct symbol descendants, closure property/prototype
   paths and other untested graph edges; older scope-root shape expectations and a
   baseline Promise snapshot timeout. The tested capture fix does not clear this gate.
