@@ -23,6 +23,20 @@
 
 ## Current verified state
 
+- Creator-origin census attributes 19.71 million interpreted capture reads to
+  browser bootstrap (4.85 million, 127 functions created), join-page inline scripts
+  (8.69 million, 400), Vue (5.75 million, 960) and smaller assets (0.42 million).
+  The visitor records 76.79 million entries during inline scripts and 96.97 million
+  during Vue; 34.86/43.52 million respectively already have seen object identities.
+  Five inspected Vue/site-helper assets have no getRandomValues/randomUUID/subtle
+  references; Web Crypto is not established as the present blocker. Focus the next accounting
+  design on retained library graphs across primary measurements, preserving mutable
+  descendants and foreign effects; browser-bootstrap reduction alone covers only
+  24.6% of interpreted capture reads. These counters establish attribution, not
+  cache safety or speed. HTTP 200, 16 scripts then Vue timeout at 954776 steps /
+  889177 peak units; no join, close data zero. Same-walk binding mutation (12 units)
+  and data-limit rejection sanity pass. Source untouched; both instrumented compiled
+  SDK files restored byte-for-byte, backup removed, no diagnostic artifacts retained.
 - Owned lexical-scope snapshot sharing is rejected and reverted. The standalone
   adapter probe preserves function identity/captured writes, releases a retained
   60000-character payload and rejects excessive allocation; 91 focused SDK checks
