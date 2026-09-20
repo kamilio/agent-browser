@@ -460,9 +460,21 @@ export function extensionPageRuntime(
 				}
 				evaluation.signal?.addEventListener("abort", abort, { once: true });
 				try {
+					const discard = Object.getOwnPropertyDescriptor(
+						realm,
+						"supportsDiscardResult",
+					);
 					const result = await realm.evaluate(source, {
 						...(filename === undefined ? {} : { filename }),
 						...(sourceType === "module" ? { sourceType: "module" } : {}),
+						...(evaluation.discardResult === true &&
+						discard &&
+						"value" in discard &&
+						discard.value === true &&
+						!discard.writable &&
+						!discard.configurable
+							? { discardResult: true }
+							: {}),
 					});
 					if (!result || typeof result.ok !== "boolean")
 						throw new AgentBrowserError(

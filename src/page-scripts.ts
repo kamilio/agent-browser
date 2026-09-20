@@ -15,6 +15,8 @@ import {
 	PageBindings,
 	pageBindingGlobalNames,
 } from "./page-bindings.js";
+import { pageDomConstructorBootstrapSource } from "./page-dom-constructor-bootstrap.js";
+import { pageEventBootstrapSource } from "./page-event-bootstrap.js";
 import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 import { PageClock } from "./page-performance.js";
 import {
@@ -26,8 +28,6 @@ import {
 } from "./page-runtime.js";
 import { pageWebSocketBootstrapSource } from "./page-websocket-bootstrap.js";
 import { pageXmlHttpRequestBootstrapSource } from "./page-xml-http-request-bootstrap.js";
-import { pageEventBootstrapSource } from "./page-event-bootstrap.js";
-import { pageDomConstructorBootstrapSource } from "./page-dom-constructor-bootstrap.js";
 import {
 	type ScriptBudgetProfile,
 	type ScriptEvaluation,
@@ -373,6 +373,7 @@ export class PageScripts {
 			const evaluated = await runtime.evaluate(source, {
 				signal: controller.signal,
 				filename,
+				...(options.discardResult === true ? { discardResult: true } : {}),
 				...(sourceType === "module" ? { sourceType: "module" } : {}),
 			});
 			await interrupted();

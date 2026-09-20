@@ -1,6 +1,6 @@
 import { AgentBrowserError } from "./errors.js";
-import type { PageBindingContext } from "./page-bindings.js";
 import type { HtmlModuleRequest, HtmlModuleSource } from "./html-module.js";
+import type { PageBindingContext } from "./page-bindings.js";
 import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 import type { SafeJsBudget, ScriptLimits } from "./safejs.js";
 import type { ScriptCallbackRuntime } from "./script-events.js";
@@ -55,6 +55,7 @@ export interface PageRuntimeEvaluationOptions {
 	signal: AbortSignal;
 	filename?: string;
 	sourceType?: "module";
+	discardResult?: boolean;
 }
 
 export interface PageRuntime {

@@ -8,6 +8,10 @@ import {
 import { DocumentInteractions } from "./interactions.js";
 import { pageBindingGlobalNames } from "./page-bindings.js";
 import {
+	pageDomConstructorBootstrapGlobal,
+	pageDomConstructorBootstrapSource,
+} from "./page-dom-constructor-bootstrap.js";
+import {
 	pageEventBootstrapGlobal,
 	pageEventBootstrapSource,
 } from "./page-event-bootstrap.js";
@@ -39,6 +43,7 @@ afterEach(async () => {
 function fakeCore(
 	stringPolicy?: PropertyDescriptor,
 	scriptErrorPolicy?: PropertyDescriptor,
+	discardPolicy?: PropertyDescriptor,
 ) {
 	const budgetOptions: ConstructorParameters<ReleasedCore["Budget"]>[0][] = [];
 	class Budget {
@@ -188,6 +193,8 @@ function fakeCore(
 			Object.defineProperty(realm, "stringCompilation", stringPolicy);
 		if (scriptErrorPolicy)
 			Object.defineProperty(realm, "classicScriptErrors", scriptErrorPolicy);
+		if (discardPolicy)
+			Object.defineProperty(realm, "supportsDiscardResult", discardPolicy);
 		return realm;
 	});
 	const core: ReleasedCore = { Budget, defineExtension, createRealm };
@@ -795,7 +802,11 @@ it("declares owned console, retention, and focus await-result grants before lazy
 	const test = fixture();
 	expect(test.defineExtension.mock.calls[0][0].manifest).toMatchObject({
 		name: "agent-browser-page",
-		globals: [pageEventBootstrapGlobal, ...pageBindingGlobalNames(test.tree)],
+		globals: [
+			pageEventBootstrapGlobal,
+			pageDomConstructorBootstrapGlobal,
+			...pageBindingGlobalNames(test.tree),
+		],
 		capabilities: ["guest:retain", "source:nested"],
 	});
 	expect(test.state.options).toMatchObject({
@@ -817,7 +828,7 @@ it("bootstraps once, shares owned aliases and forwards only supported public eva
 	).toMatchObject({ ok: true, value: { answer: 42 } });
 	await test.scripts.evaluate("second");
 	expect(test.state.evaluate.mock.calls.map(([source]) => source)).toEqual([
-		pageEventBootstrapSource,
+		pageEventBootstrapSource + pageDomConstructorBootstrapSource,
 		"first",
 		"second",
 	]);
@@ -1262,7 +1273,7 @@ it("fails closed if a selected core ignores extension setup", async () => {
 	});
 	expect(test.scripts.closed).toBe(true);
 	expect(test.state.evaluate.mock.calls.map(([source]) => source)).toEqual([
-		pageEventBootstrapSource,
+		pageEventBootstrapSource + pageDomConstructorBootstrapSource,
 	]);
 	expect(test.state.evaluate.mock.calls[0][1]).toEqual({
 		filename: "agent-browser:page-bootstrap",
@@ -1303,4 +1314,53 @@ it("preserves runtime close failures while clearing browser resources", async ()
 	await expect(closing).rejects.toBe(failure);
 	expect(test.scripts.metrics().dom?.classLists.closed).toBe(true);
 	expect(test.scripts.metrics().pendingCallbacks).toBe(0);
+});
+
+it("passes ignored page-script results to a runtime advertising immutable discard support", async () => {
+	const shared = fakeCore(undefined, undefined, { value: true });
+	const { scripts } = fixture(shared);
+	expect(
+		await scripts.evaluate("completion", { discardResult: true }),
+	).toMatchObject({ ok: true });
+	expect(shared.realms[0].evaluate).toHaveBeenLastCalledWith(
+		"completion",
+		expect.objectContaining({ discardResult: true }),
+	);
+	expect(await scripts.evaluate("result")).toMatchObject({
+		ok: true,
+		value: { answer: 42 },
+	});
+	expect(shared.realms[0].evaluate.mock.lastCall?.[1]).not.toHaveProperty(
+		"discardResult",
+	);
+});
+
+it.each([
+	undefined,
+	{ value: false },
+	{ value: true, writable: true },
+	{ value: true, configurable: true },
+])(
+	"retains bounded-result compatibility without immutable discard support %j",
+	async (discardPolicy) => {
+		const shared = fakeCore(undefined, undefined, discardPolicy);
+		const { scripts } = fixture(shared);
+		expect(
+			await scripts.evaluate("completion", { discardResult: true }),
+		).toMatchObject({ ok: true });
+		expect(shared.realms[0].evaluate.mock.lastCall?.[1]).not.toHaveProperty(
+			"discardResult",
+		);
+	},
+);
+
+it("does not invoke an accessor claiming discard support", async () => {
+	const getter = vi.fn(() => true);
+	const shared = fakeCore(undefined, undefined, { get: getter });
+	const { scripts } = fixture(shared);
+	await scripts.evaluate("completion", { discardResult: true });
+	expect(getter).not.toHaveBeenCalled();
+	expect(shared.realms[0].evaluate.mock.lastCall?.[1]).not.toHaveProperty(
+		"discardResult",
+	);
 });

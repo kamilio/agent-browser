@@ -68,9 +68,14 @@ export interface ReleasedContext {
 export interface ReleasedRealm {
 	readonly stringCompilation?: "allow" | "deny";
 	readonly classicScriptErrors?: "fatal" | "report";
+	readonly supportsDiscardResult?: true;
 	evaluate(
 		source: string,
-		options?: { filename?: string; sourceType?: "module" },
+		options?: {
+			filename?: string;
+			sourceType?: "module";
+			discardResult?: boolean;
+		},
 	): Promise<{
 		ok: boolean;
 		returnValue?: unknown;
