@@ -23,6 +23,14 @@
 
 ## Current verified state
 
+- Filtered later-script diagnostic denies /lib/vue/ and /fe-static/fe-frame-popups/
+  only in an ephemeral script policy. It reaches 19 executed scripts, then all.min.js
+  (243575 characters, jQuery/site helpers) times out at 30.1 s / 585018 total steps /
+  368232 delta / 602814 peak units; cleanup data zero, no join. Source inspection
+  confirms Vue supplies popup CAPTCHA via all.min.js AJAX handling, so the filter
+  is not a complete workflow policy. Initialization cost also affects a separate
+  library; fixing Vue alone or filtering UI assets has not established readiness.
+  Probe removed; production source/build and existing Automations are unchanged.
 - Native HTML canvas has bounded 2D rectangles/readback and viewport compositing:
   stable context, color/alpha state, save/restore, fillRect/clearRect/getImageData;
   resize clears pixels/state and close revokes access. Normal-flow inline/block
