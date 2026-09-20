@@ -4,6 +4,9 @@
   replacement for the working Automations Zoom notetaker. Keep Automations
   unchanged and the native engine independent of Chromium, Firefox and remote
   browsers. SafeJS is the only approved page-runtime dependency.
+- This is exploratory work for a hypothetical future replacement, not a current
+  migration. The working Automations setup remains the operational solution;
+  the acceptance gates below describe future readiness.
 - Test meeting: https://quora.zoom.us/j/7982110526. The approved diagnostic route
   https://app.zoom.us/wc/7982110526/join returns HTTP 200 with server-rendered
   name and Join controls, but interactive initialization still fails. No meeting
@@ -20,6 +23,10 @@
 
 ## Current verified state
 
+- Scratch SDK automatic closure-selection experiment: 25 focused checks across
+  two files pass, including GC, conservative exclusions and snapshot recovery.
+  The experiment is unaccepted; compilation, broader regressions and actual native
+  usefulness remain unverified. No contribution patch or live run for this candidate.
 - Internal plain-local scope projections now share mutable binding cells without
   retaining the original local frame or omitted data. Weak view tracking propagates
   accounting-cache invalidation; opaque snapshot cell IDs preserve sharing across
