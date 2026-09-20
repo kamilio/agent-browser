@@ -23,24 +23,32 @@
 - Retained SDK contributions include classic globals, callback scheduling, strict
   idle dictionary conversion, timed checkpoints, held-data enforcement, tracked
   own-field/private-name projections, frozen closure symbol snapshots, managed
-  proxy descriptor capture and record/array DFS continuations. Record/array chains
-  reach depth 1024 and reject 1025 with dataDepth; broader depth coverage remains open.
+  proxy descriptor capture and record/array DFS continuations. Direct and scoped
+  closure captures now continue off the stack at depth 128; transparent scope roots
+  use DFS continuations without adding units or depth. Tested record/array/capture
+  chains reach 1024 and reject 1025 with dataDepth. Capture iterators preserve step
+  failures, mutation order and inner-to-outer close order on descendant errors.
+  Broader graph depth coverage remains open.
 - Compiled-ticket ownership now scans escaping roots only when reconciliation is
   unheld and an included ticket has a positive staged charge. Primary graph
   measurement, held limit enforcement and ticket forwarding remain intact.
   Metadata providers must not rely on an optional ownership scan for side effects;
   release of a hold during the primary capture is covered. This change deliberately
   reduces capture invocations when the ownership result would be unused.
-- Latest validation: 143 focused SDK checks across 18 files, scoped core compilation,
-  new-test formatting, exact contribution patch forward/reverse application and all
-  nine actual native SafeJS idle adapter checks pass. Four new checks fail on the
-  saved baseline's redundant capture calls; primary-capture hold release passes on
-  both versions. The actual native extension adapter rejects suspended 60000 units
-  plus a later 60000-unit value at data limit 100000 and releases data on close.
+- Latest validation: 194 focused SDK checks across 25 files, scoped core compilation,
+  new-test formatting and exact contribution patch forward/reverse application pass.
+  All six new direct/mixed/scoped depth regressions fail on the exact saved baseline;
+  ten iterator/accounting preservation checks pass on both versions. Actual native
+  adapter: a 256-level guest closure graph succeeds; the larger 512-level graph
+  rejects at dataDepth 1025 versus limit 1024 and releases data on close. Both native
+  guest outcomes are preserved from baseline. Final nine-case actual idle checks pass
+  serially at default 1 s and explicit 16 s; earlier candidate timeouts keep reliability
+  open. Shallow warmed benchmarks are similar; depth-256 continuation median is
+  0.081 ms versus 0.043 ms baseline, so deep traversal has a performance cost.
 - Last 120 s, 192 MB live diagnostic: initial 107111-character script completes in
-  14.6 s; Vue still times out at 120315 ms, peak data 912839 units, 16 scripts
-  executed. Cleanup completes. Loader completion and existing controls do not prove
-  application readiness or joining. No reliable initialization speedup is claimed.
+  16.5 s; Vue times out at 120768 ms, 994883 steps, peak data 910516 units and 16
+  scripts executed. Cleanup completes, no meeting joined. Loader completion does not
+  prove application readiness. No reliable initialization speedup is claimed.
 - Rejected scope-root grouping/reuse and weak-map visitation experiments were
   reverted after mixed benchmarks and no initialization gain. Extending snapshots
   to native private-name maps also failed to establish a useful live improvement:
@@ -60,8 +68,9 @@
   production actor/default 128 MB heap, meeting sockets, media and transcription
   acceptance remain unverified. Invitation landing reports unsupported OS; an
   alternate duplicate script path exhausted the 192 MB heap.
-- Default-stack dataDepth for direct symbol descendants and closure captures;
-  older scope-root shape expectations and a baseline Promise snapshot timeout.
+- Default-stack dataDepth for direct symbol descendants, closure property/prototype
+  paths and other untested graph edges; older scope-root shape expectations and a
+  baseline Promise snapshot timeout. The tested capture fix does not clear this gate.
 - Three baseline joined-callback rejection failures, earlier shared-budget realm
   reentry failure, a PageScripts timer probe's generic callback script-error and
   an onload non-callable-handler failure. Prior intermittent default 1 s idle

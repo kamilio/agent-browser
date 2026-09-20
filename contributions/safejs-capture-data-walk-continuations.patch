@@ -1,0 +1,436 @@
+--- a/src/interp/values.ts
++++ b/src/interp/values.ts
+@@ -786,6 +786,15 @@
+   } finally { release(); }
+ }
+
++// A native for-of preserves iterator acquisition, next/value failures and close
++// semantics. Its suspension lets deep retained graphs continue off the stack.
++function* capturedDataValues(values: Iterable<unknown>): Generator<unknown, void> {
++  for (const value of values) yield value;
++}
++const captureIteratorPrototype = Object.getPrototypeOf(Object.getPrototypeOf(capturedDataValues([])));
++const captureIteratorNext = captureIteratorPrototype.next as Generator<unknown, void>["next"];
++const captureIteratorThrow = captureIteratorPrototype.throw as Generator<unknown, void>["throw"];
++
+ export function measureSandboxData(
+   values: Iterable<unknown>,
+   options: {
+@@ -805,7 +814,10 @@
+   const visit = (value: unknown, depth = 0): void => {
+     // Record descriptors are captured before descendants. Keep their DFS
+     // continuations off the native stack, without postponing any callbacks.
+-    let pending: Array<{ values: readonly unknown[]; index: number; depth: number }> | undefined;
++    type Frame = { values: readonly unknown[]; index: number; depth: number } |
++      { iterator: Generator<unknown, void>; depth: number };
++    let pending: Frame[] | undefined;
++    try {
+     walk: while (true) {
+       entry: {
+         if (typeof value === "bigint") {
+@@ -845,9 +857,17 @@
+         const bindingRoot = scopeDataRoots.get(value);
+         if (bindingRoot !== undefined) {
+           seen.add(value);
+-          if ("value" in bindingRoot) visit(bindingRoot.value, depth);
+-          else for (const entry of bindingRoot.values) visit(entry, depth);
+-          break entry;
++          if ("value" in bindingRoot) value = bindingRoot.value;
++          else {
++            // These arrays are SDK-owned snapshots, not callback iterables.
++            const references = bindingRoot.values;
++            if (references.length === 0) break entry;
++            if (references.length > 1)
++              (pending ??= []).push({ values: references, index: 1, depth });
++            value = references[0];
++          }
++          // Accounting projections add neither object units nor graph depth.
++          continue walk;
+         }
+         assertSandboxDataDepth(depth);
+         seen.add(value);
+@@ -983,8 +1003,13 @@
+               }
+             } else visit(value.properties, depth + 1);
+           }
+-          if (!options.ignoreClosureCaptures)
+-            for (const retained of value[sandboxRetainedValues]?.() ?? []) visit(retained, depth + 1);
++          if (!options.ignoreClosureCaptures) {
++            const captures = value[sandboxRetainedValues]?.() ?? [];
++            // Keep the shallow hot path; deep captures must reach the SDK depth
++            // limit rather than exhausting the host stack first.
++            if (depth < 128) for (const retained of captures) visit(retained, depth + 1);
++            else (pending ??= []).push({ iterator: capturedDataValues(captures), depth: depth + 1 });
++          }
+           break entry;
+         }
+         if (isSandboxBox(value)) {
+@@ -1323,14 +1348,39 @@
+       }
+       while (pending !== undefined && pending.length > 0) {
+         const frame = pending[pending.length - 1]!;
+-        if (frame.index < frame.values.length) {
+-          value = frame.values[frame.index++];
+-          depth = frame.depth;
+-          continue walk;
+-        }
+-        pending.pop();
++        if ("iterator" in frame) {
++          // Iterator-step failures occur outside the for-of body. Remove this
++          // frame before stepping so only already suspended ancestors close.
++          pending.pop();
++          const next = Reflect.apply(captureIteratorNext, frame.iterator, []);
++          if (!next.done) {
++            pending.push(frame);
++            value = next.value;
++            depth = frame.depth;
++            continue walk;
++          }
++        } else {
++          if (frame.index < frame.values.length) {
++            value = frame.values[frame.index++];
++            depth = frame.depth;
++            continue walk;
++          }
++          pending.pop();
++        }
+       }
+       return;
++    }
++    } catch (error) {
++      // Close suspended for-of bodies from the innermost iterator outward.
++      // Native IteratorClose preserves the original throw over close failures.
++      for (let index = (pending?.length ?? 0) - 1; index >= 0; index--) {
++        const frame = pending![index]!;
++        if ("iterator" in frame) {
++          try { Reflect.apply(captureIteratorThrow, frame.iterator, [error]); }
++          catch { /* Preserve the original traversal failure. */ }
++        }
++      }
++      throw error;
+     }
+   };
+
+--- /dev/null
++++ b/src/interp/capture-data-walk.test.ts
+@@ -0,0 +1,320 @@
++import { expect, it } from "vitest";
++import { MAX_DATA_DEPTH } from "../graph-depth.js";
++import { Budget } from "./budget.js";
++import { Scope } from "./scope.js";
++import {
++	createSandboxClosure,
++	measureSandboxData,
++	reconcileCompiledValues,
++	type SandboxValue,
++} from "./values.js";
++
++function wrap(root: object, depth: number): object {
++	for (let index = 0; index < depth; index++) {
++		const next = root;
++		root = createSandboxClosure({
++			call: () => undefined,
++			retainedValues: () => [next as SandboxValue],
++		});
++	}
++	return root;
++}
++function chain(depth: number, childFirst: boolean, mixed: boolean): object {
++	let root: object = {};
++	for (let index = 0; index < depth; index++) {
++		const next = root;
++		if (mixed && index % 2 === 1)
++			root = childFirst ? { next, padding: "x" } : { padding: "x", next };
++		else
++			root = createSandboxClosure({
++				call: () => undefined,
++				retainedValues: () =>
++					childFirst
++						? [next as SandboxValue, "x"]
++						: ["x", next as SandboxValue],
++			});
++	}
++	return root;
++}
++for (const childFirst of [false, true])
++	for (const mixed of [false, true]) {
++		it(`keeps capture depth and exact units on the default stack (childFirst=${childFirst}, mixed=${mixed})`, () => {
++			const units =
++				1 + (mixed ? (MAX_DATA_DEPTH / 2) * (2 + 15) : MAX_DATA_DEPTH * 2);
++			expect(
++				measureSandboxData([chain(MAX_DATA_DEPTH, childFirst, mixed)]),
++			).toBe(units);
++			expect(() =>
++				measureSandboxData([chain(MAX_DATA_DEPTH + 1, childFirst, mixed)]),
++			).toThrow(
++				expect.objectContaining({
++					code: "budgetExceeded",
++					budget: "dataDepth",
++					current: MAX_DATA_DEPTH + 1,
++				}),
++			);
++		});
++	}
++
++it("resumes custom capture iterators only after descendants and closes them in order", () => {
++	const events: string[] = [];
++	const record = { text: "before" };
++	const mutator = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: () => {
++			events.push("child");
++			record.text = "after";
++			return [];
++		},
++	});
++	const closure = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: function* () {
++			events.push("open");
++			try {
++				yield mutator;
++				events.push("resume");
++				yield record;
++				events.push("done");
++			} finally {
++				events.push("close");
++			}
++		},
++	});
++	expect(measureSandboxData([wrap(closure, 128)])).toBe(128 + 2 + 11);
++	expect(events).toEqual(["open", "child", "resume", "done", "close"]);
++});
++
++it("uses a callback array's custom iterator and live array membership", () => {
++	let reads = 0;
++	const custom = ["decoy"];
++	Object.defineProperty(custom, Symbol.iterator, {
++		get() {
++			reads++;
++			return function* () {
++				yield "x".repeat(101);
++			};
++		},
++	});
++	const closure = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: () => custom,
++	});
++	expect(measureSandboxData([wrap(closure, 128)])).toBe(230);
++	expect(reads).toBe(1);
++	const captures: SandboxValue[] = [];
++	const mutate = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: () => {
++			captures.push("extra");
++			return [];
++		},
++	});
++	captures.push(mutate, "tail");
++	expect(
++		measureSandboxData([
++			wrap(
++				createSandboxClosure({
++					call: () => undefined,
++					retainedValues: () => captures,
++				}),
++				128,
++			),
++		]),
++	).toBe(139);
++});
++
++it("closes inner continuations before native outer loops and preserves the original error", () => {
++	const events: string[] = [];
++	const failure = new Error("captured child failed");
++	const child = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: () => {
++			throw failure;
++		},
++	});
++	function provider(
++		name: string,
++		next: SandboxValue,
++	): () => Iterable<SandboxValue> {
++		return () => ({
++			[Symbol.iterator]() {
++				events.push(name + ":open");
++				let sent = false;
++				return {
++					next() {
++						return sent
++							? { done: true, value: undefined }
++							: ((sent = true), { done: false, value: next });
++					},
++					get return() {
++						events.push(name + ":return");
++						throw new Error("close failed");
++					},
++				};
++			},
++		});
++	}
++	const inner = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: provider("inner", child),
++	});
++	const middle = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: provider("middle", inner),
++	});
++	const outer = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: provider("outer", middle),
++	});
++	expect(() => measureSandboxData([wrap(outer, 127)])).toThrow(failure);
++	expect(events).toEqual([
++		"outer:open",
++		"middle:open",
++		"inner:open",
++		"inner:return",
++		"middle:return",
++		"outer:return",
++	]);
++});
++
++it.each(["next", "result", "done", "value"])(
++	"does not close the failing iterator on a %s step error, but closes its ancestor",
++	(kind) => {
++		const events: string[] = [];
++		const failure = new Error(kind + " failed");
++		const inner = createSandboxClosure({
++			call: () => undefined,
++			retainedValues: () => ({
++				[Symbol.iterator]() {
++					events.push("inner:open");
++					return {
++						next() {
++							if (kind === "next") throw failure;
++							if (kind === "result") return 1 as never;
++							return {
++								get done() {
++									if (kind === "done") throw failure;
++									return false;
++								},
++								get value() {
++									throw failure;
++								},
++							};
++						},
++						return() {
++							events.push("inner:close");
++							return { done: true, value: undefined };
++						},
++					};
++				},
++			}),
++		});
++		const outer = createSandboxClosure({
++			call: () => undefined,
++			retainedValues: function* () {
++				events.push("outer:open");
++				try {
++					yield inner;
++				} finally {
++					events.push("outer:close");
++				}
++			},
++		});
++		const operation = () => measureSandboxData([wrap(outer, 128)]);
++		if (kind === "result") expect(operation).toThrow(TypeError);
++		else expect(operation).toThrow(failure);
++		expect(events).toEqual(["outer:open", "inner:open", "outer:close"]);
++	},
++);
++
++it("gets next once per iterator, observes later data and does not close a normally exhausted iterator", () => {
++	const events: string[] = [];
++	const closure = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: () => ({
++			[Symbol.iterator]() {
++				let index = 0;
++				return {
++					get next() {
++						events.push("next:get");
++						return function () {
++							events.push("next:" + index);
++							return index++ === 0
++								? { done: false, value: "payload" }
++								: { done: true, value: undefined };
++						};
++					},
++					return() {
++						events.push("close");
++						return { done: true, value: undefined };
++					},
++				};
++			},
++		}),
++	});
++	expect(measureSandboxData([wrap(closure, 128)])).toBe(136);
++	expect(events).toEqual(["next:get", "next:0", "next:1"]);
++});
++
++it("keeps held primary accounting active through deep capture graphs", () => {
++	const closure = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: () => ["x".repeat(600), "y".repeat(600)],
++	});
++	const budget = new Budget({ dataSize: 1000 });
++	const release = budget.deferReconciliation();
++	try {
++		expect(() => reconcileCompiledValues(budget, [wrap(closure, 128)])).toThrow(
++			expect.objectContaining({ code: "budgetExceeded", budget: "dataSize" }),
++		);
++	} finally {
++		release();
++	}
++});
++
++it("deduplicates aliases and cycles through captures and preserves ignore options", () => {
++	let captures = 0;
++	const record = { text: "abc" };
++	const closure = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: () => {
++			captures++;
++			return [record, record, closure];
++		},
++	});
++	const root = wrap(closure, 128);
++	expect(measureSandboxData([root, root])).toBe(138);
++	expect(captures).toBe(1);
++	expect(measureSandboxData([root], { ignoreClosureCaptures: true })).toBe(1);
++	expect(measureSandboxData([root], { ignoreClosures: true })).toBe(1);
++	expect(captures).toBe(1);
++});
++
++it.each([false, true])(
++	"keeps actual scope-root capture chains on the default stack (privateNames=%s)",
++	(withPrivateNames) => {
++		function build(depth: number): object {
++			let root: object = {};
++			for (let index = 0; index < depth; index++) {
++				const scope = new Scope({ next: root as SandboxValue });
++				if (withPrivateNames) scope.declarePrivateName("x");
++				root = createSandboxClosure({
++					call: () => undefined,
++					retainedValues: () => scope.retainedDataRoots() as SandboxValue[],
++				});
++			}
++			return root;
++		}
++		expect(measureSandboxData([build(MAX_DATA_DEPTH)])).toBe(
++			1 + MAX_DATA_DEPTH * (withPrivateNames ? 15 : 1),
++		);
++		expect(() => measureSandboxData([build(MAX_DATA_DEPTH + 1)])).toThrow(
++			expect.objectContaining({
++				code: "budgetExceeded",
++				budget: "dataDepth",
++				current: MAX_DATA_DEPTH + 1,
++			}),
++		);
++	},
++);
