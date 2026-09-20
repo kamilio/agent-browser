@@ -13,11 +13,13 @@
   The SDK now enforces data limits during those holds, avoids double charging
   included compile tickets and keeps suspended async frames/scopes visible until
   settlement or disposal. With these checks, the latest 192 MB live run timed out
-  in Vue at its 120 s window (964493 steps, peak data 894821 units; 16 scripts
-  executed; cleanup at 150 s with errors 0). A bounded 256 MB diagnostic captured
-  a component-library profile before the hold fix: retained-graph visitation
-  dominates identified JavaScript samples; allocations include parser metadata and inspector
-  overhead. Optimize graph visitation and investigate host-memory use; an earlier
+  in Vue at its 120 s window (986118 steps, peak data 906074 units; 16 scripts
+  executed; total 139 s; cleanup closed with no pending loads or errors). A bounded
+  256 MB allocation diagnostic estimates cumulative churn falling from 17.8 GB to
+  13.1 GB after private-array indexing and removal of a per-visit callback context.
+  These totals include collected allocations, not live RAM; initialization still
+  times out. Fresh visited-set entries and scope-root collection are the next
+  measured optimization candidates; an earlier
   alternate script path exhausted the 192 MB heap in all.min.js. SDK-owned tables
   cache own string-field accounting and remeasure descendants; other paths stay
   conservative. Neither those faster runs nor profiling proves live acceptance.
@@ -91,7 +93,14 @@
   115 ms to 92 ms. Latest live run still times out in Vue after 120 s. Follow-up
   profiling reduces symbol inspection, but graph visitation dominates and GC is
   roughly 10% of samples. Attribute allocation callers before the next optimization.
-  Actual idle semantics: 9/9 pass with the explicit 16 s profile; default 1 s times out.
+  Data-walk allocation patch: final focused SDK checks pass 176/179 across
+  16 files; the three failures reproduce on baseline (proxy managed-state capture,
+  constructor descendant depth and scope metadata depth). Core compilation, new-test
+  formatting and patch round trips pass. Indexed traversal applies only to private
+  metadata arrays; callback-provided iterators and retained-graph reconciliation
+  remain intact. Bytecode confirms removal of the per-visit function context.
+  Latest actual idle checks pass 9/9 at both default 1 s and explicit 16 s; prior
+  default failures keep timing reliability open. No full native-suite pass is claimed.
   Native extension adapter still rejects suspended 60000 plus later 60000 at
   data limit 100000 and releases data on close. The separate PageScripts timer
   version reaches suspension but closes with a generic callback script-error

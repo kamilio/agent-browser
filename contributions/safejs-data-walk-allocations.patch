@@ -1,0 +1,142 @@
+diff --git a/packages/safe-js/src/interp/values.ts b/packages/safe-js/src/interp/values.ts
+--- a/packages/safe-js/src/interp/values.ts
++++ b/packages/safe-js/src/interp/values.ts
+@@ -892,7 +892,8 @@
+       if (prototype !== null) visit(prototype, depth + 1);
+       const projection = trackedObjectStringData(value, hasManagedDescriptors(value))!;
+       usage += projection.units;
+-      for (const entry of projection.references) visit(entry, depth + 1);
++      for (let index = 0; index < projection.references.length; index++)
++        visit(projection.references[index], depth + 1);
+       return;
+     }
+     const weakState = weakCollectionStates.get(value);
+@@ -963,7 +964,10 @@
+       if (options.ignoreClosures) return;
+       if (value.properties !== undefined) {
+         if (isIntrinsicFunction(value)) {
+-          for (const [key, descriptor] of intrinsicFunctionDataDescriptors(value.properties)) {
++          const descriptors = intrinsicFunctionDataDescriptors(value.properties);
++          for (let index = 0; index < descriptors.length; index++) {
++            const entry = descriptors[index]!;
++            const key = entry[0], descriptor = entry[1];
+             usage += key.length + 1;
+             if ("value" in descriptor) visit(descriptor.value, depth + 1);
+             else for (const closure of retainedAccessorClosures(descriptor)) visit(closure, depth + 1);
+@@ -1097,13 +1101,16 @@
+     if (arrayLength !== undefined) {
+       usage += arrayLength;
+       if (arrayDescriptors !== undefined) {
+-        for (const [key, descriptor] of arrayDescriptors) {
++        for (let index = 0; index < arrayDescriptors.length; index++) {
++          const entry = arrayDescriptors[index]!;
++          const key = entry[0], descriptor = entry[1];
+           usage += key.length + 1;
+           if ("value" in descriptor) visit(descriptor.value, depth + 1);
+           else for (const closure of retainedAccessorClosures(descriptor)) visit(closure, depth + 1);
+         }
+       } else {
+-        for (const element of arrayElements!) visit(element, depth + 1);
++        for (let index = 0; index < arrayElements!.length; index++)
++          visit(arrayElements![index], depth + 1);
+       }
+       return;
+     }
+@@ -1250,9 +1257,11 @@
+         // The native restricted callee accessor retains no sandbox data.
+         if (retained.length > 0) entries.push([key, retained]);
+       }
+-      for (const [key, retained] of entries) {
++      for (let index = 0; index < entries.length; index++) {
++        const entry = entries[index]!;
++        const key = entry[0], retained = entry[1];
+         usage += 1 + key.length;
+-        for (const entry of retained) visit(entry, depth + 1);
++        for (let offset = 0; offset < retained.length; offset++) visit(retained[offset], depth + 1);
+       }
+       return;
+     }
+@@ -1263,7 +1272,14 @@
+     const includeNonEnumerable = isSandboxDate(value) || isSandboxArrayBuffer(value) || isSandboxSharedArrayBuffer(value) || isSandboxDataView(value) || sandboxErrorTypes.has(value) || hasManagedDescriptors(value);
+     const metadata = hostFunctionMetadata.get(value);
+     const proxyKeys = nodeTypes.isProxy(value) ? Object.getOwnPropertyNames(value) : undefined;
+-    const proxyDescriptors = proxyKeys?.map(key => Object.getOwnPropertyDescriptor(value,key));
++    // Avoid capturing value in a callback: that forces a parameter context on
++    // every recursive visit, including ordinary values that never reach here.
++    let proxyDescriptors: Array<PropertyDescriptor | undefined> | undefined;
++    if (proxyKeys !== undefined) {
++      proxyDescriptors = [];
++      for (let index = 0; index < proxyKeys.length; index++)
++        proxyDescriptors.push(Object.getOwnPropertyDescriptor(value, proxyKeys[index]!));
++    }
+     const keys = proxyKeys ?? (includeNonEnumerable ? Object.getOwnPropertyNames(value) : Object.keys(value));
+     const retained: unknown[] = [];
+     for (let index = 0; index < keys.length; index++) {
+@@ -1280,7 +1296,7 @@
+       if ("value" in descriptor) retained.push(descriptor.value);
+       else for (const closure of retainedAccessorClosures(descriptor)) retained.push(closure);
+     }
+-    for (const entry of retained) visit(entry, depth + 1);
++    for (let index = 0; index < retained.length; index++) visit(retained[index], depth + 1);
+   };
+
+   function visitPrivateAndSymbols(value: object, depth: number): void {
+@@ -1299,7 +1315,9 @@
+       let descriptors = frozen?.descriptors ?? trackedObjectSymbolDescriptors(value);
+       // Capture before visiting: retained callbacks can mutate later properties.
+       if (descriptors === undefined) {
+-        for (const key of Object.getOwnPropertySymbols(value)) {
++        const keys = Object.getOwnPropertySymbols(value);
++        for (let index = 0; index < keys.length; index++) {
++          const key = keys[index]!;
+           // Frozen factory records have no proxy traps. Capture all their
+           // symbols so a later internal-symbol registration is still observed.
+           if (frozen === undefined && internalSymbols.has(key)) continue;
+@@ -1308,7 +1326,9 @@
+         }
+         if (frozen !== undefined) frozen.descriptors = descriptors ??= [];
+       }
+-      if (descriptors !== undefined) for (const [key, descriptor] of descriptors) {
++      if (descriptors !== undefined) for (let index = 0; index < descriptors.length; index++) {
++        const entry = descriptors[index]!;
++        const key = entry[0], descriptor = entry[1];
+         if (internalSymbols.has(key)) continue;
+         usage += 1;
+         visit(key, depth + 1);
+diff --git a/packages/safe-js/src/interp/indexed-data-walk.test.ts b/packages/safe-js/src/interp/indexed-data-walk.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/interp/indexed-data-walk.test.ts
+@@ -0,0 +1,32 @@
++import { expect, it } from "vitest";
++import { Budget } from "./budget.js";
++import {
++  createSandboxClosure,
++  measureSandboxData,
++  reconcileCompiledValues,
++} from "./values.js";
++
++it("uses a callback-provided array's iterator when measuring retained data", () => {
++  let reads = 0;
++  const roots = ["decoy"];
++  Object.defineProperty(roots, Symbol.iterator, {
++    get() {
++      reads++;
++      return function* () {
++        yield "x".repeat(101);
++      };
++    },
++  });
++  const closure = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => roots,
++  });
++  expect(measureSandboxData([closure])).toBe(102);
++  expect(reads).toBe(1);
++  expect(() =>
++    reconcileCompiledValues(new Budget({ dataSize: 100 }), [closure]),
++  ).toThrow(
++    expect.objectContaining({ code: "budgetExceeded", budget: "dataSize" }),
++  );
++  expect(reads).toBe(2);
++});
