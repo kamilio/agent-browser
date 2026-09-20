@@ -23,6 +23,19 @@
 
 ## Current verified state
 
+- Narrow closed-return lexical pruning is rejected and reverted. The candidate
+  physically replaces unused intermediate scopes with the original global scope,
+  preserving indirect eval and its string-compilation policy. Twenty-nine new and
+  43 existing focused SDK checks, scoped core/new-test compilation and new-file
+  lint/format pass. The restored baseline passes 26 preservation checks and fails
+  the physical-scope regression as expected. GC confirms omitted payload collection.
+  Actual native adapter retention grows by
+  230 candidate versus 60247 baseline units for an unused 60000-character payload;
+  identity/captured writes/private fields, dataSize rejection at 400000 and close
+  data zero are preserved. Serial 30 s live candidate/baseline execute 16 scripts
+  then Vue times out at 958789/959040 steps and 892105/892227 peak units. No useful
+  initialization gain or meeting join. All four original SDK source/build files
+  are restored byte-for-byte; helpers/tests/config/probes and backup removed.
 - Declaration-boundary census finds 480 ordinary declarations: first exposure by
   lookup for 109 and global publication for two; 369 have no tracked exposure before
   timeout. Snapshot/frame/property/invocation probes add no first exposures in this
