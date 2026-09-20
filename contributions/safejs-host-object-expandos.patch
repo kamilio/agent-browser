@@ -1,0 +1,540 @@
+--- a/packages/safe-js/src/interp/globals/object.ts
++++ b/packages/safe-js/src/interp/globals/object.ts
+@@ -275,7 +275,7 @@
+   enumerable: boolean
+ ): boolean {
+   requireReceiver(value);
+-  if (isGuestHostObject(value)) return typeof key === "symbol" ? false : hasHostObjectMember(value, String(key), enumerable);
++  if (isGuestHostObject(value)) return hasHostObjectMember(value, typeof key === "symbol" ? key : String(key), enumerable);
+   let properties: object;
+   if (isSandboxClosure(value)) properties = materializeFunctionProperties(value);
+   else if (isSandboxMap(value) || isSandboxSet(value)) properties = getCollectionProperties(value);
+--- a/packages/safe-js/src/interp/host-capabilities.ts
++++ b/packages/safe-js/src/interp/host-capabilities.ts
+@@ -17,6 +17,7 @@
+   maxLength: number;
+ };
+ export type HostObjectDefinition = {
++  expandos?: { maxKeys: number; maxKeyCodeUnits: number; assertActive?: () => void };
+   indexed?: HostObjectIndexedDefinition;
+   named?: HostObjectNamedDefinition;
+   properties?: Record<string, { get?: () => unknown; set?: (value: unknown) => void }>;
+@@ -35,6 +36,7 @@
+   owner: object;
+   assertActive(): void;
+   chargeWork(units?: number): void;
++  chargeGuestData(units: number): void;
+   checkLength(length: number): void;
+   checkString(value: string): void;
+   checkTemporaryDataSize(size: number): void;
+@@ -50,6 +52,7 @@
+   methods: Map<string, SandboxClosure>;
+   indexed?: HostObjectIndexedDefinition;
+   named?: HostObjectNamedDefinition;
++  expandos?: { values: SandboxObject; maxKeys: number; maxKeyCodeUnits: number; assertActive?: () => void };
+ };
+ const MAX_INDEXED_LENGTH = 65_536;
+ const MAX_NAMED_KEYS = 65_536;
+@@ -97,9 +100,24 @@
+ ): HostObject {
+   const input = readDataRecord(definition, "Host object definition");
+   if (
+-    Object.keys(input).some((key) => !["properties", "methods", "indexed", "named"].includes(key))
++    Object.keys(input).some((key) => !["properties", "methods", "indexed", "named", "expandos"].includes(key))
+   )
+     throw new TypeError("Unknown host object definition field.");
++  let expandos: HostObjectState["expandos"];
++  if (input.expandos !== undefined) {
++    const data = readDataRecord(input.expandos, "Guest expando definition");
++    if (Object.keys(data).some(key => !["maxKeys", "maxKeyCodeUnits", "assertActive"].includes(key)))
++      throw new TypeError("Unknown guest expando field.");
++    for (const [key, maximum] of [["maxKeys", MAX_NAMED_KEYS], ["maxKeyCodeUnits", MAX_NAMED_KEY_CODE_UNITS]] as const) {
++      if (typeof data[key] !== "number" || !Number.isInteger(data[key]) || data[key] < 1 || data[key] > maximum)
++        throw new RangeError(`Guest expando ${key} must be an integer from 1 to ${maximum}.`);
++    }
++    if (data.assertActive !== undefined && (typeof data.assertActive !== "function" || types.isProxy(data.assertActive) ||
++        types.isAsyncFunction(data.assertActive) || types.isGeneratorFunction(data.assertActive)))
++      throw new TypeError("Guest expando assertActive must be a synchronous function, not a proxy.");
++    expandos = { values: Object.create(null), maxKeys: data.maxKeys as number,
++      maxKeyCodeUnits: data.maxKeyCodeUnits as number, assertActive: data.assertActive as (() => void) | undefined };
++  }
+   let indexed: HostObjectIndexedDefinition | undefined;
+   if (input.indexed !== undefined) {
+     const data = readDataRecord(input.indexed, "Indexed host capability");
+@@ -166,6 +184,7 @@
+       enumerable: data.enumerable as boolean | undefined
+     };
+   }
++  if (expandos !== undefined && named !== undefined) throw new TypeError("Guest expandos cannot be combined with named host properties.");
+   const properties = new Map<string, { get?: () => unknown; set?: (value: unknown) => void }>();
+   for (const [name, inputProperty] of Object.entries(
+     readDataRecord(input.properties ?? {}, "Host properties")
+@@ -201,7 +220,7 @@
+       controller.method(operation as HostOperation)
+     ])
+   );
+-  const state = { host, guest, controller, properties, methods, indexed, named };
++  const state = { host, guest, controller, properties, methods, indexed, named, expandos };
+   hostObjects.set(host, state);
+   guestObjects.set(guest, state);
+   return host;
+@@ -274,12 +293,16 @@
+   state.methods.clear();
+   state.indexed = undefined;
+   state.named = undefined;
+-}
+-
+-export function getHostObjectMember(value: SandboxObject, key: string): SandboxValue {
++  state.expandos = undefined;
++}
++
++export function getHostObjectMember(value: SandboxObject, key: string | symbol): SandboxValue {
+   const state = guestObjects.get(value)!;
+   state.controller.assertActive();
+   state.controller.chargeWork();
++  assertExpandoActive(state);
++  if (state.expandos && Object.hasOwn(state.expandos.values, key)) return Reflect.get(state.expandos.values, key);
++  if (typeof key === "symbol") return undefined;
+   if (state.indexed !== undefined) {
+     if (key === "length") return indexedLength(state);
+     const index = canonicalIndex(key);
+@@ -298,26 +321,43 @@
+   return undefined;
+ }
+ 
+-export function setHostObjectMember(value: SandboxObject, key: string, entry: SandboxValue): void {
++export function setHostObjectMember(value: SandboxObject, key: string | symbol, entry: SandboxValue): void {
+   const state = guestObjects.get(value)!;
+   state.controller.assertActive();
+   state.controller.chargeWork();
+-  const property = state.properties.get(key);
++  assertExpandoActive(state);
++  const property = typeof key === "string" ? state.properties.get(key) : undefined;
+   if (property !== undefined) {
+-    if (property.set === undefined) throw new TypeError(`Host property '${key}' is not writable.`);
++    if (property.set === undefined) throw new TypeError(`Host property '${String(key)}' is not writable.`);
+     state.controller.write(property.set, entry);
+     return;
+   }
+-  if (state.named?.set === undefined) throw new TypeError(`Host property '${key}' is not writable.`);
++  if (state.expandos !== undefined) {
++    validateExpandoKey(state, key);
++    const current = Object.getOwnPropertyDescriptor(state.expandos.values, key);
++    if (current && !current.writable) throw new TypeError("Guest expando is not writable.");
++    if (!current) state.controller.chargeGuestData(expandoKeyUnits(key) + 1);
++    Object.defineProperty(state.expandos.values, key, current ? { value: entry } :
++      { value: entry, writable: true, enumerable: true, configurable: true });
++    return;
++  }
++  if (typeof key === "symbol") throw new TypeError("Host properties require string keys.");
++  if (state.named?.set === undefined) throw new TypeError(`Host property '${String(key)}' is not writable.`);
+   namedMutationKeys(state, key, true);
+   state.controller.write((value) => state.named!.set!(key, value), entry);
+   namedKeys(state);
+ }
+ 
+-export function deleteHostObjectMember(value: SandboxObject, key: string): boolean {
++export function deleteHostObjectMember(value: SandboxObject, key: string | symbol): boolean {
+   const state = guestObjects.get(value)!;
+   state.controller.assertActive();
+   state.controller.chargeWork();
++  assertExpandoActive(state);
++  if (state.expandos !== undefined) {
++    validateExpandoKey(state, key, false);
++    return Reflect.deleteProperty(state.expandos.values, key);
++  }
++  if (typeof key === "symbol") throw new TypeError("Host properties require string keys.");
+   if (state.named?.delete === undefined) throw new TypeError("Live host properties cannot be deleted.");
+   if (!namedMutationKeys(state, key, false).includes(key)) return true;
+   const deleted = state.controller.read(() => state.named!.delete!(key), (result) => {
+@@ -331,6 +371,7 @@
+ export function getHostObjectKeys(value: SandboxObject): string[] {
+   const state = guestObjects.get(value)!;
+   state.controller.assertActive();
++  assertExpandoActive(state);
+   const length = state.indexed === undefined ? 0 : indexedLength(state);
+   const names =
+     state.named === undefined || state.named.enumerable === false
+@@ -344,25 +385,31 @@
+               (key === "length" || canonicalIndex(key) !== undefined)
+             )
+         );
+-  const size = length + state.properties.size + state.methods.size + names.length;
++  const expandos = state.expandos ? Object.keys(state.expandos.values) : [];
++  const size = expandos.length + length + state.properties.size + state.methods.size + names.length;
+   state.controller.checkLength(size);
+   state.controller.chargeWork(size + 1);
+   return [
+     ...Array.from({ length }, (_entry, index) => String(index)),
+     ...state.properties.keys(),
+     ...state.methods.keys(),
+-    ...names
++    ...names,
++    ...expandos
+   ];
+ }
+ 
+ export function hasHostObjectMember(
+   value: SandboxObject,
+-  key: string,
++  key: string | symbol,
+   enumerableOnly = false
+ ): boolean {
+   const state = guestObjects.get(value)!;
+   state.controller.assertActive();
+   state.controller.chargeWork();
++  assertExpandoActive(state);
++  const expando = state.expandos && Object.getOwnPropertyDescriptor(state.expandos.values, key);
++  if (expando) return !enumerableOnly || expando.enumerable === true;
++  if (typeof key === "symbol") return false;
+   if (state.indexed !== undefined) {
+     if (key === "length") return !enumerableOnly;
+     const index = canonicalIndex(key);
+@@ -492,3 +539,43 @@
+     return result;
+   }) as string[];
+ }
++
++function expandoKeyUnits(key: string | symbol): number {
++  return typeof key === "string" ? key.length : key.description?.length ?? 0;
++}
++
++function assertExpandoActive(state: HostObjectState): void {
++  const result = state.expandos?.assertActive?.();
++  if (types.isPromise(result)) void Promise.resolve(result).catch(() => undefined);
++  if (result !== undefined) throw new TypeError("Guest expando assertActive must return undefined.");
++}
++
++function validateExpandoKey(state: HostObjectState, key: string | symbol, create = true): void {
++  if (typeof key === "string" && (["constructor", "prototype", "__proto__"].includes(key) ||
++      state.properties.has(key) || state.methods.has(key) ||
++      (state.indexed && (key === "length" || canonicalIndex(key) !== undefined))))
++    throw new TypeError("Host member is protected from guest expando mutation.");
++  const expandos = state.expandos!;
++  const keys = Reflect.ownKeys(expandos.values);
++  if (create && !Object.hasOwn(expandos.values, key)) keys.push(key);
++  state.controller.chargeWork(keys.length + 1);
++  if (keys.length > expandos.maxKeys) throw new RangeError("Guest expandos exceed maxKeys.");
++  let units = 0;
++  for (const key of keys) units += expandoKeyUnits(key);
++  if (units > expandos.maxKeyCodeUnits) throw new RangeError("Guest expandos exceed maximum UTF-16 code units.");
++  state.controller.checkLength(keys.length);
++  if (typeof key === "string") state.controller.checkString(key);
++}
++
++export function getHostObjectSymbolKeys(value: SandboxObject): symbol[] {
++  const state = guestObjects.get(value)!;
++  state.controller.assertActive();
++  assertExpandoActive(state);
++  state.controller.chargeWork((state.expandos ? Reflect.ownKeys(state.expandos.values).length : 0) + 1);
++  return state.expandos ? Object.getOwnPropertySymbols(state.expandos.values) : [];
++}
++
++export function hostObjectGuestRoots(value: HostObject | SandboxObject): SandboxValue[] {
++  const state = hostObjects.get(value) ?? guestObjects.get(value)!;
++  return state.expandos ? [state.expandos.values] : [];
++}
+--- a/packages/safe-js/src/interp/interpreter.ts
++++ b/packages/safe-js/src/interp/interpreter.ts
+@@ -14,7 +14,7 @@
+ import { isSandboxModuleNamespace } from "./module-namespace.js";
+ import { bigIntOperation, type BigIntOperator } from "./bigint-operators.js";
+ import { accessorAdapter, readPropertyDescriptor, writePropertyDescriptor } from "./accessors.js";
+-import { deleteHostObjectMember, getHostObjectKeys, getHostObjectMember, hasHostObjectMember, isGuestHostObject, setHostObjectMember } from "./host-capabilities.js";
++import { getHostObjectSymbolKeys, deleteHostObjectMember, getHostObjectKeys, getHostObjectMember, hasHostObjectMember, isGuestHostObject, setHostObjectMember } from "./host-capabilities.js";
+ import { propertyFunctionName, toPropertyKey } from "./property-key.js";
+ import { assertPromiseExecutionAllowed } from "./promise-tracker.js";
+ import { SandboxJobQueue, runAsyncPrefix, suspendJob } from "./jobs.js";
+@@ -3287,7 +3287,7 @@
+   context: EvaluationContext,
+   receiver: SandboxValue = target
+ ): SandboxValue | Promise<SandboxValue> {
+-  if (isGuestHostObject(target)) return typeof property === "symbol" ? undefined : getHostObjectMember(target, String(property));
++  if (isGuestHostObject(target)) return getHostObjectMember(target, typeof property === "symbol" ? property : String(property));
+   let proxyBoundary: object | undefined;
+   const descriptor = getSandboxPropertyDescriptor(target, property, context.budget, proxy => { proxyBoundary = proxy; });
+   if (proxyBoundary !== undefined)
+@@ -4147,7 +4147,7 @@
+   let current = value;
+   let depth = 0;
+   while (typeof current === "object" && current !== null) {
+-    if (isGuestHostObject(current)) return typeof key === "symbol" ? false : hasHostObjectMember(current, String(key));
++    if (isGuestHostObject(current)) return hasHostObjectMember(current, typeof key === "symbol" ? key : String(key));
+     if (hasOwnSandboxProperty(current, key, false)) return true;
+     if (!isSandboxDate(current) && !isSandboxRegex(current) && !isSandboxMap(current) && !isSandboxSet(current) && !((isGuestClosure(current) || isSandboxGenerator(current) || Array.isArray(current)) && hasExplicitSandboxPrototype(current)) &&
+         (Array.isArray(current) || !isPlainSandboxObject(current) ||
+@@ -4480,8 +4480,7 @@
+   throwOnFailure = true
+ ): void | Promise<void> {
+   if (isGuestHostObject(target)) {
+-    if (typeof property === "symbol") throw new TypeError("Host properties require string keys.");
+-    setHostObjectMember(target, String(property), value);
++    setHostObjectMember(target, typeof property === "symbol" ? property : String(property), value);
+     return;
+   }
+   const prototypeOwner = target;
+@@ -4625,7 +4624,7 @@
+   throwOnFailure = true
+ ): boolean {
+   if (target !== null && target !== undefined && typeof target !== "object") target = Object(target) as SandboxObject;
+-  if (isGuestHostObject(target)) return deleteHostObjectMember(target, String(property));
++  if (isGuestHostObject(target)) return deleteHostObjectMember(target, typeof property === "symbol" ? property : String(property));
+   if (isSandboxClosure(target)) target = materializeFunctionProperties(target);
+   if (isSandboxRegex(target)) target = getRegexProperties(target);
+   if (isSandboxPromise(target)) target = getPromiseProperties(target);
+@@ -4967,8 +4966,8 @@
+   }
+ 
+   if (isGuestHostObject(value.value)) {
+-    const entries: Array<readonly [string, SandboxValue]> = [];
+-    for (const key of getHostObjectKeys(value.value)) {
++    const entries: Array<readonly [PropertyKey, SandboxValue]> = [];
++    for (const key of [...getHostObjectKeys(value.value), ...getHostObjectSymbolKeys(value.value)]) {
+       if (hasHostObjectMember(value.value, key, true))
+         entries.push([key, getHostObjectMember(value.value, key)]);
+     }
+--- a/packages/safe-js/src/interp/object-model.ts
++++ b/packages/safe-js/src/interp/object-model.ts
+@@ -576,7 +576,7 @@
+   while (typeof current === "object" && current !== null) {
+     if (isNumericTypedArray(current) && typeof key !== "symbol" && isTypedArrayIndex(String(key)))
+       return Object.getOwnPropertyDescriptor(current, key)?.value;
+-    if (isGuestHostObject(current)) return typeof key === "symbol" ? undefined : getHostObjectMember(current, String(key));
++    if (isGuestHostObject(current)) return getHostObjectMember(current, typeof key === "symbol" ? key : String(key));
+     if (isSandboxRegex(current)) return Object.getOwnPropertyDescriptor(getRegexProperties(current), key)?.value;
+     if (isSandboxPromise(current)) return Object.getOwnPropertyDescriptor(getPromiseProperties(current), key)?.value;
+     if (isSandboxGenerator(current)) {
+--- a/packages/safe-js/src/interp/values.ts
++++ b/packages/safe-js/src/interp/values.ts
+@@ -57,7 +57,7 @@
+ import { isSandboxDurationFormat, durationFormatState } from "./intl-durationformat.js";
+ import { createRawJson, isRawJson } from "./raw-json.js";
+ import { boxedDataProperties, boxedValue, createSandboxBox, isSandboxBox, nativeBoxedValue } from "./boxed.js";
+-import { getHostObjectKeys, getHostObjectMember, hasHostObjectMember, measureHostObjectData, isGuestHostObject, isLiveCapability } from "./host-capabilities.js";
++import { hostObjectGuestRoots, getHostObjectSymbolKeys, getHostObjectKeys, getHostObjectMember, hasHostObjectMember, measureHostObjectData, isGuestHostObject, isLiveCapability } from "./host-capabilities.js";
+ import type { Budget, CompileOwner, CompileTicket } from "./budget.js";
+ import { types as nodeTypes } from "node:util";
+ import { nativePromiseDataProperties } from "./native-promise-properties.js";
+@@ -386,7 +386,7 @@
+ 
+ export function ownSandboxSymbolKeys(value: SandboxValue): symbol[] {
+   if (value === null || value === undefined) throw new TypeError("Cannot convert undefined or null to object.");
+-  if (isGuestHostObject(value)) return [];
++  if (isGuestHostObject(value)) return getHostObjectSymbolKeys(value);
+   if (isSandboxClosure(value)) value = value.properties ?? {};
+   else if (isSandboxRegex(value)) value = getRegexProperties(value);
+   else if (isSandboxPromise(value)) value = getPromiseProperties(value);
+@@ -399,6 +399,7 @@
+ export function ownEnumerableSandboxKeys(value: SandboxValue, includeSymbols: true): PropertyKey[];
+ export function ownEnumerableSandboxKeys(value: SandboxValue, includeSymbols = false): PropertyKey[] {
+   if (includeSymbols) {
++    if (isGuestHostObject(value)) return [...ownEnumerableSandboxKeys(value), ...getHostObjectSymbolKeys(value).filter(key => hasHostObjectMember(value, key, true))];
+     const properties = isSandboxClosure(value) ? value.properties ?? {} : isSandboxGenerator(value) ? getGeneratorProperties(value) : isSandboxPromise(value) ? getPromiseProperties(value) : isSandboxRegex(value) ? getRegexProperties(value)
+       : isSandboxMap(value) || isSandboxSet(value) ? getCollectionProperties(value) : Object(value);
+     return [...ownEnumerableSandboxKeys(value), ...ownSandboxSymbolKeys(value).filter(key =>
+@@ -1072,6 +1073,7 @@
+     }
+     if (isGuestHostObject(value)) {
+       usage += measureHostObjectData(value);
++      for (const root of hostObjectGuestRoots(value)) visit(root, depth + 1);
+       return;
+     }
+     const prototype = getSandboxPrototype(value);
+--- a/packages/safe-js/src/realm.ts
++++ b/packages/safe-js/src/realm.ts
+@@ -30,6 +30,7 @@
+ } from "./interp/host-bridge.js";
+ import {
+   createLiveHostObject,
++  hostObjectGuestRoots,
+   createGuestReference,
+   exportHostCapability,
+   readGuestReference,
+@@ -303,6 +304,7 @@
+   });
+ 
+   retainedRoots = (): SandboxValue[] => [
++    ...Array.from(this.hostObjects).flatMap(hostObjectGuestRoots),
+     ...this.callbacks.values(),
+     ...Array.from(this.pendingCallbacks, (pending) => pending.closure),
+     ...this.guestReferences.values()
+@@ -508,6 +510,7 @@
+       owner: this,
+       assertActive: this.assertOpen,
+       chargeWork: this.chargeWork,
++      chargeGuestData: (units) => this.budget.chargeDataUsage(units),
+       checkLength: (length) => this.budget.allocateArrayLength(length),
+       checkString: (value) => { this.budget.allocateString(value); },
+       checkTemporaryDataSize: (size) => {
+--- /dev/null
++++ b/packages/safe-js/src/host-object-expandos.test.ts
+@@ -0,0 +1,169 @@
++import { expect, it, vi } from "vitest";
++import { Budget, createRealm, defineExtension, type HostObjectDefinition } from "./core.js";
++
++function fixture(options: { definition?: HostObjectDefinition; budget?: Budget; expandos?: unknown } = {}) {
++  const get = vi.fn(() => "native");
++  let node: unknown;
++  const realm = createRealm({
++    budget: options.budget,
++    extensions: [defineExtension({
++      manifest: { version: 1, name: "expandos", globals: ["lookup"] },
++      setup(context) {
++        node = context.createHostObject({
++          properties: { value: { get } },
++          ...options.definition,
++          expandos: options.expandos ?? { maxKeys: 4, maxKeyCodeUnits: 32 },
++        } as HostObjectDefinition);
++        return { globals: { lookup: () => node } };
++      },
++    })],
++  });
++  return { realm, get };
++}
++
++it("preserves guest graphs, aliases, callbacks and distinct symbol identities without host conversion", async () => {
++  const { realm, get } = fixture();
++  try {
++    expect(await realm.evaluate(`
++      const node = lookup(); const first = Symbol("same"); const second = Symbol("same");
++      const value = { nested: { number: 21 } }; const callback = () => value.nested.number * 2;
++      node[first] = value; node[second] = callback; node.private = value;
++      return [node[first] === value, node[second] === callback, node[second]() === 42,
++        node.private === value, first in node, Object.hasOwn(node, first),
++        Object.getOwnPropertySymbols(node).length === 2, Object.keys(node).includes("private"),
++        ({...node})[first] === value, Object.assign({}, node)[second] === callback,
++        delete node[first], !(first in node), node[second]() === 42];
++    `)).toMatchObject({ ok: true, returnValue: Array(13).fill(true) });
++    expect(get).toHaveBeenCalledTimes(2);
++  } finally { await realm.close(); }
++});
++
++it("retains guest data when the last local reference to the capability disappears", async () => {
++  const { realm } = fixture();
++  try {
++    expect(await realm.evaluate('lookup().private = { count: 40, increment: () => 2 }; return 1;')).toMatchObject({ ok: true });
++    expect(await realm.evaluate('return lookup().private.count + lookup().private.increment();')).toMatchObject({ ok: true, returnValue: 42 });
++  } finally { await realm.close(); }
++});
++
++it("counts both symbol and string keys against one limit and permits reuse after deletion", async () => {
++  const { realm } = fixture({ expandos: { maxKeys: 2, maxKeyCodeUnits: 20 } });
++  try {
++    expect(await realm.evaluate(`
++      const node = lookup(); const key = Symbol("key"); node[key] = 1; node.other = 2;
++      let rejected = false; try { node.third = 3; } catch(e) { rejected = e instanceof RangeError; }
++      delete node.other; node.third = 3;
++      return [rejected, node[key] === 1, node.third === 3];
++    `)).toMatchObject({ ok: true, returnValue: [true, true, true] });
++  } finally { await realm.close(); }
++});
++
++it("counts symbol descriptions against UTF-16 limits before mutating", async () => {
++  const { realm } = fixture({ expandos: { maxKeys: 4, maxKeyCodeUnits: 4 } });
++  try {
++    expect(await realm.evaluate(`
++      const node = lookup(); const key = Symbol("oversize"); let rejected = false;
++      try { node[key] = 1; } catch(e) { rejected = e instanceof RangeError; }
++      return [rejected, !(key in node), Object.getOwnPropertySymbols(node).length === 0];
++    `)).toMatchObject({ ok: true, returnValue: [true, true, true] });
++  } finally { await realm.close(); }
++});
++
++it("preserves declared native reads and rejects protected methods, prototypes and indexed names", async () => {
++  const { realm, get } = fixture({ definition: {
++    methods: { call: () => 42 }, indexed: { length: () => 1, get: () => "item", maxLength: 2 },
++  } });
++  try {
++    expect(await realm.evaluate(`
++      const node = lookup(); const names = ["value", "call", "constructor", "prototype", "__proto__", "length", "0"];
++      let rejected = 0; for (const name of names) { try { node[name] = 1; } catch(e) { if(e instanceof TypeError) rejected++; } }
++      return [rejected === names.length, node.value === "native", node.call() === 42, node[0] === "item"];
++    `)).toMatchObject({ ok: true, returnValue: [true, true, true, true] });
++    expect(get).toHaveBeenCalledTimes(1);
++  } finally { await realm.close(); }
++});
++
++it("checks publishing-owner lifetime for existing and absent keys", async () => {
++  let closed = false;
++  const { realm } = fixture({ expandos: { maxKeys: 4, maxKeyCodeUnits: 32, assertActive() { if (closed) throw new Error("publisher closed"); } } });
++  try {
++    await realm.evaluate('lookup().private = 1;'); closed = true;
++    expect(await realm.evaluate(`
++      const node = lookup(); let denied = 0;
++      for (const operation of [() => node.private, () => node[Symbol()], () => {node.other=2;}, () => delete node.private,
++        () => Object.keys(node), () => Object.getOwnPropertySymbols(node), () => "absent" in node]) {
++        try { operation(); } catch(e) { if(e.message === "publisher closed") denied++; }
++      }
++      return denied;
++    `)).toMatchObject({ ok: true, returnValue: 7 });
++  } finally { await realm.close(); }
++});
++
++it("includes hidden guest graphs in retained accounting and releases deleted data", async () => {
++  const budget = new Budget({ dataSize: 20000 });
++  const { realm } = fixture({ budget });
++  try {
++    await realm.evaluate('lookup().private = "x".repeat(4096); return 1;');
++    await realm.evaluate('return 1;');
++    const retained = budget.currentDataSize;
++    expect(retained).toBeGreaterThanOrEqual(4096);
++    await realm.evaluate('delete lookup().private; return 1;');
++    expect(budget.currentDataSize).toBeLessThan(retained - 4000);
++  } finally { await realm.close(); }
++});
++
++it("keeps guest expando allocations subject to fatal data-size limits", async () => {
++  const { realm } = fixture({ budget: new Budget({ dataSize: 10000 }) });
++  try {
++    const result = await realm.evaluate('try { lookup().private = "x".repeat(20000); } catch(e) {} return 1;').catch(error => ({ ok: false, error }));
++    expect(result).toMatchObject({ ok: false, error: { code: "budgetExceeded", budget: "dataSize" } });
++  } finally { await realm.close(); }
++});
++
++it.each([0, -1, 1.5, NaN, Infinity, "2"])("rejects malformed maxKeys %s", maxKeys => {
++  const { realm } = fixture({ expandos: { maxKeys, maxKeyCodeUnits: 32 } });
++  return expect(realm.evaluate("return lookup();")).rejects.toBeInstanceOf(RangeError).finally(() => realm.close());
++});
++
++it("isolates guest fields between independently owned realms", async () => {
++  const first = fixture().realm, second = fixture().realm;
++  try {
++    await first.evaluate('lookup().private = 42;');
++    expect(await second.evaluate('return [lookup().private === undefined, !("private" in lookup())];'))
++      .toMatchObject({ ok: true, returnValue: [true, true] });
++    expect(await first.evaluate('return lookup().private;')).toMatchObject({ ok: true, returnValue: 42 });
++  } finally { await first.close(); await second.close(); }
++});
++
++it.each([0, -1, 1.5, NaN, Infinity, "32"])("rejects malformed maxKeyCodeUnits %s", maxKeyCodeUnits => {
++  const { realm } = fixture({ expandos: { maxKeys: 4, maxKeyCodeUnits } });
++  return expect(realm.evaluate("return lookup();")).rejects.toBeInstanceOf(RangeError).finally(() => realm.close());
++});
++
++it("rejects expando-definition accessors without invoking them", async () => {
++  const getter = vi.fn(() => 4);
++  const expandos = Object.defineProperty({ maxKeyCodeUnits: 32 }, "maxKeys", { enumerable: true, get: getter });
++  const { realm } = fixture({ expandos });
++  try { await expect(realm.evaluate("return lookup();")).rejects.toBeInstanceOf(TypeError); }
++  finally { await realm.close(); }
++  expect(getter).not.toHaveBeenCalled();
++});
++
++it("rejects a hook's Promise return without leaking its rejection", async () => {
++  const { realm } = fixture({ expandos: { maxKeys: 4, maxKeyCodeUnits: 32,
++    assertActive() { return Promise.reject(new Error("invalid asynchronous guard")); } } });
++  try {
++    expect(await realm.evaluate('try {lookup().private=1;} catch(e) {return e.message;}'))
++      .toMatchObject({ ok: true, returnValue: "Guest expando assertActive must return undefined." });
++  } finally { await realm.close(); }
++});
++
++it("preserves fixed host objects when expandos are omitted", async () => {
++  const realm = createRealm({ extensions: [defineExtension({
++    manifest: { version: 1, name: "fixed", globals: ["node"] },
++    setup(context) { return { globals: { node: context.createHostObject({}) } }; },
++  })] });
++  try {
++    expect(await realm.evaluate('let count=0; try {node.private=1;} catch(e) {count++;} try {node[Symbol()]=1;} catch(e) {count++;} return count;')).toMatchObject({ ok: true, returnValue: 2 });
++  } finally { await realm.close(); }
++});
