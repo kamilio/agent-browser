@@ -23,6 +23,13 @@
 
 ## Current verified state
 
+- Shared method-carrier model is rejected: a callback mutating a binding or private
+  name during measurement leaves the carrier at 29 units versus 1028/1034 baseline,
+  incorrectly admitting both under a 900-unit quota. The actual SDK measurer probe
+  passes its counterexample assertions. Fresh-read root-vector sharing matches
+  baseline units, provider reads and quota rejection in these cases only; foreign
+  iterables, primitive multiplicity, depth/holds, GC and performance are unverified.
+  No implementation retained, no live run or join claim; temporary probe removed.
 - True local declaration deferral is rejected and reverted. Functions are created
   on first exposure rather than behind an existing shell; the full lexical payload
   remains measured. Sixteen new SDK checks and 87 existing focused checks pass,
