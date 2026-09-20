@@ -86,16 +86,24 @@
   A phase probe attributes 13.2 of 14.1 s in the first script and 28.5 of 30.5 s
   in Vue to reconciliation. Sampled locations advance through normal Vue CSP
   parser/AST-type setup; no alternate compatibility fallback was established.
-- A closed-invocation retention diagnostic keeps guest bindings and full accounting
-  unchanged. Twenty conservative lexical-analysis checks and four instrumented
-  shared-cell/arguments/this/return checks pass. Two serial 30 s Vue runs still
-  time out; sampled charged closed-frame bindings include 133621/1258895 and
-  120843/1182674 candidate-unused occurrences (about 10%). The second pass excludes
-  property keys/labels and conservatively retains scopes whose arguments were read.
-  These are binding counts, not retained units, visitor cost or a speedup. Cleanup
-  releases all accounted data. Exact compiled baseline is restored and probes are
-  removed. Next test physical release of unused arguments in terminal invocations,
-  preserving escaped/mapped arguments, eval, snapshots and shared cells.
+- Closed-invocation retention diagnostics identify about 10% candidate-unused
+  occurrences among sampled charged bindings. Twenty lexical-analysis checks and
+  four instrumented preservation checks pass. Excluding property keys/labels and
+  retaining scopes whose arguments were read leaves similar results. Binding
+  counts do not establish retained units, visitor cost or a speedup.
+- Physical release of unused terminal-invocation arguments is rejected and reverted.
+  The bounded, uncached whole-function analysis excludes arguments/eval identifiers,
+  classes/with and exposed/suspended checkpoint paths. Candidate: 145 SDK checks
+  across 16 files and scoped core compilation pass; two physical-release regressions
+  fail on baseline, ten preservation checks pass both. Actual native adapter:
+  unused 60000-character extra argument raises retained data by 60109 units baseline
+  versus 88 candidate; clear restores starting data, excessive allocation still
+  rejects with dataSize, close releases all data. Serial 30 s Vue reaches 956710
+  candidate versus 958789 baseline steps, both timeout; peaks 886591 versus 892105.
+  No useful initialization improvement or meeting join established. Exact source/build
+  baseline and declarations are restored; baseline core compilation passes and all
+  candidate helpers/tests/config/probes are removed. Broader capture compaction still
+  needs shared-cell snapshot identity and stable-code/escape guarantees.
 - SDK-owned literal/constructor array projections are rejected and reverted:
   large array-only CPU gains did not improve live initialization. Final candidate
   and baseline both reach 957340 steps / 890986 peak units in serial 30 s runs;
