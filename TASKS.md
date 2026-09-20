@@ -76,6 +76,10 @@
   enforcement, the default 1 s idle probe times out even serially; an explicit
   16 s large-source diagnostic passes all 9 idle semantics checks. Keep the
   default timing failure open; a larger-profile pass does not resolve it.
+  Local Set visitation experiment reverted: record and closure benchmarks showed
+  no measurable benefit. Alternating default idle checks passed 2/3 with each
+  visitor, so the 1 s timing gate is intermittent and remains open. The metadata
+  depth failure also reproduces with baseline WeakSet visitation.
   Broader native setup also found an onload non-callable-handler failure;
   the full native suite has not been claimed green. Live diagnostics block optional
   file-paa.zoom.us and cdn.cookielaw.org origins and use a direct process;
