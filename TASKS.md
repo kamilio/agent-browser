@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Aggregate visitor census narrows the next performance target to interpreted
+  function captures. Bootstrap: 75.78 million entries, 34.10 million repeated
+  object identities, 13.01 million closure visits / 6.72 million interpreted.
+  Post-bootstrap through the 30 s Vue timeout: 142.87 million entries, 64.22 million
+  repeats, 22.13 million closure visits / 17.72 million interpreted (80%); function
+  expressions contribute 10.68 million and declarations 7.03 million visits.
+  Counts include intervening scripts and are not a speed comparison. Both probes
+  still timeout and close at zero. Temporary build counters are restored exactly;
+  restored native class retention/limit/cleanup probe matches baseline. Investigate
+  physically smaller function captures rather than further private-table tuning.
 - Opt-in fixed Scope metadata/snapshot sharing is rejected and reverted. Serial
   30 s Vue runs reach 959687 candidate versus 959469 baseline steps (less than
   0.03% difference); both execute 16 preceding scripts, timeout and close at zero.
