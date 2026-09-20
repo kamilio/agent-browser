@@ -1,0 +1,122 @@
+--- a/packages/safe-js/src/interp/budget.ts
++++ b/packages/safe-js/src/interp/budget.ts
+@@ -15,6 +15,8 @@
+   deadline?: number | Date;
+   maxCallDepth?: number;
+   stringLength?: number;
++  regexSourceLength?: number;
++  regexCompileAllocations?: number;
+   arrayLength?: number;
+   dataSize?: number;
+ };
+@@ -71,6 +73,8 @@
+   maxSteps?: number;
+   maxCallDepth?: number;
+   stringLength?: number;
++  regexSourceLength?: number;
++  regexCompileAllocations?: number;
+   arrayLength?: number;
+   dataSize?: number;
+ };
+@@ -123,6 +127,8 @@
+       maxSteps: normalizeLimit("maxSteps", options.maxSteps),
+       maxCallDepth: normalizeLimit("maxCallDepth", options.maxCallDepth),
+       stringLength: normalizeLimit("stringLength", options.stringLength),
++      ...(options.regexSourceLength === undefined ? {} : { regexSourceLength: normalizeRegexLimit("regexSourceLength", options.regexSourceLength, 8192) }),
++      ...(options.regexCompileAllocations === undefined ? {} : { regexCompileAllocations: normalizeRegexLimit("regexCompileAllocations", options.regexCompileAllocations, 65536) }),
+       arrayLength: normalizeLimit("arrayLength", options.arrayLength),
+       dataSize: normalizeLimit("dataSize", options.dataSize)
+     });
+@@ -617,3 +623,10 @@
+ 
+   return value;
+ }
++
++function normalizeRegexLimit(name: string, value: number | undefined, maximum: number): number | undefined {
++  if (value === undefined) return undefined;
++  if (!Number.isSafeInteger(value) || value < 1 || value > maximum)
++    throw new RangeError(`${name} must be an integer from 1 to ${maximum}.`);
++  return value;
++}
+--- a/packages/safe-js/src/interp/regex/compile-guard.ts
++++ b/packages/safe-js/src/interp/regex/compile-guard.ts
+@@ -47,7 +47,8 @@
+   }
+ 
+   checkLength(length: number, flags = false): void {
+-    const hard = flags ? REGEX_COMPILE_LIMITS.flagsLength : REGEX_COMPILE_LIMITS.sourceLength;
++    const hard = flags ? REGEX_COMPILE_LIMITS.flagsLength
++      : this.scope?.owner?.budget.limits.regexSourceLength ?? REGEX_COMPILE_LIMITS.sourceLength;
+     const limit = Math.min(hard, this.scope?.owner?.budget.limits.stringLength ?? hard);
+     if (length > limit) throw new SandboxError({ budget: "stringLength", current: length, limit });
+   }
+@@ -60,11 +61,12 @@
+ 
+   allocate(units: number): void {
+     const next = this.allocations + units;
+-    if (next > REGEX_COMPILE_LIMITS.allocations) {
++    const limit = this.scope?.owner?.budget.limits.regexCompileAllocations ?? REGEX_COMPILE_LIMITS.allocations;
++    if (next > limit) {
+       throw new SandboxError({
+         budget: "dataSize",
+         current: next,
+-        limit: REGEX_COMPILE_LIMITS.allocations
++        limit
+       });
+     }
+     this.work(units);
+--- /dev/null
++++ b/packages/safe-js/src/regex-budget-allowances.test.ts
+@@ -0,0 +1,52 @@
++import { expect, it } from "vitest";
++import { Budget, createRealm } from "./core.js";
++
++async function evaluate(budget: Budget, source: string) {
++  const realm = createRealm({ budget });
++  try { return await realm.evaluate(source).catch(error => ({ ok: false, error })); }
++  finally { await realm.close(); }
++}
++
++it("keeps default regex-source admission bounded independently of the general string limit", async () => {
++  expect(await evaluate(new Budget({ stringLength: 16384 }), 'return new RegExp("a".repeat(4097)).source.length;'))
++    .toMatchObject({ ok: false, error: { code: "budgetExceeded", budget: "stringLength", limit: 4096 } });
++});
++
++it("admits larger regexes only within explicitly selected source and allocation allowances", async () => {
++  const budget = new Budget({ stringLength: 16384, regexSourceLength: 8192, regexCompileAllocations: 65536 });
++  expect(await evaluate(budget, 'return new RegExp("a".repeat(4097)).source.length;'))
++    .toMatchObject({ ok: true, returnValue: 4097 });
++  expect(budget.limits).toMatchObject({ regexSourceLength: 8192, regexCompileAllocations: 65536 });
++  expect(Object.isFrozen(budget.limits)).toBe(true);
++});
++
++it("retains the default compilation-allocation quota when only source admission is enlarged", async () => {
++  expect(await evaluate(new Budget({ stringLength: 16384, regexSourceLength: 8192 }), 'return new RegExp("a".repeat(4097)).source.length;'))
++    .toMatchObject({ ok: false, error: { code: "budgetExceeded", budget: "dataSize", limit: 16384 } });
++});
++
++it("keeps tighter general string limits effective", async () => {
++  expect(await evaluate(new Budget({ stringLength: 3, regexSourceLength: 8192, regexCompileAllocations: 65536 }), 'return /abcd/.source;'))
++    .toMatchObject({ ok: false, error: { code: "budgetExceeded", budget: "stringLength", limit: 3 } });
++});
++
++it("keeps data-size and execution-work limits fatal with larger compile allowances", async () => {
++  for (const [options, quota] of [[{ dataSize: 1024 }, "dataSize"], [{ maxSteps: 1000 }, "steps"]] as const) {
++    expect(await evaluate(new Budget({ ...options, stringLength: 16384, regexSourceLength: 8192, regexCompileAllocations: 65536 }),
++      'try { new RegExp("a".repeat(4097)); } catch(e) {} return 1;'))
++      .toMatchObject({ ok: false, error: { code: "budgetExceeded", budget: quota } });
++  }
++});
++
++it("shares selected allowances and usage across budget views", () => {
++  const budget = new Budget({ regexSourceLength: 8192, regexCompileAllocations: 65536 });
++  const view = budget.forkRealm();
++  expect(view.limits).toBe(budget.limits);
++  view.visitNode(7);
++  expect(budget.stepsUsed).toBe(7);
++});
++
++it.each(["regexSourceLength", "regexCompileAllocations"] as const)("rejects malformed %s", name => {
++  for (const value of [0, -1, 1.5, NaN, Infinity, "8192", name === "regexSourceLength" ? 8193 : 65537])
++    expect(() => new Budget({ [name]: value } as never)).toThrow(RangeError);
++});
