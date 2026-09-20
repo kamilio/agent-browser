@@ -23,6 +23,20 @@
 
 ## Current verified state
 
+- Declaration-boundary census finds 480 ordinary declarations: first exposure by
+  lookup for 109 and global publication for two; 369 have no tracked exposure before
+  timeout. Snapshot/frame/property/invocation probes add no first exposures in this
+  trace; this is not exhaustive access-path coverage. Of 9.15 million declaration
+  capture reads, 7.80 million precede exposure. A separate executable deferred-body
+  model postpones initialization until call but leaves accounting unchanged: eager
+  and deferred shells both retain 60001 units and perform 101 scope reads over 101
+  measurements; both reject at dataSize 40000 and clear to one unit. Deferring body
+  factories behind existing function shells does not remove the reconciliation work.
+  A useful deferred-binding design still needs canonical function identity, actual
+  retention representation, publication/copy/import boundaries and snapshot recovery;
+  unread counts do not authorize omitting captured scopes. Live census: HTTP 200,
+  16 scripts then Vue timeout at 958127 steps / 891790 peak; no join, close data zero.
+  Source untouched; three compiled files restored byte-for-byte and backup removed.
 - Opaque compiler-scope metadata with revision-tracked private-name maps is rejected
   and reverted. Thirteen new and 58 existing focused SDK checks pass (one GC check
   skipped), along with scoped core/new-test compilation. The actual native adapter
