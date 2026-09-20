@@ -23,6 +23,20 @@
 
 ## Current verified state
 
+- Guarded per-measurement scope-read sharing is rejected and reverted. Seventeen
+  new SDK checks and 27 existing focused checks pass; broader coverage passes 124
+  checks across 15 files, including seven initially skipped GC checks rerun with
+  explicit worker GC. Scoped core/new-test compilation and new-file formatting pass.
+  Guards preserve callback/proxy mutations, getter counts, reentry, primitive
+  multiplicity, snapshot recovery and held primary limits. Actual native outcomes
+  match baseline: return 60007 / retain 90274 / peak 150274 / clear 29974, reject
+  excessive data at 200000 and close at zero. Serial live 30 s Vue reaches 950330
+  candidate versus 959687 baseline steps; both time out with 16 scripts executed
+  and cleanup zero. First-script CPU regresses to 25.1 s versus 16.3 s. Exact
+  baseline source/build restoration and core compilation pass; cache source/tests,
+  configs/probes/backups are removed. Further sharing needs cheaper guarantees for
+  interpreter-owned metadata while retaining observable foreign metadata fallback;
+  the current guards cost more than the scope reads they avoid. No join/media acceptance.
 - Temporary effect-barrier probe estimates 15.34 million potentially reusable
   reads among 21.01 million interpreted closure captures (73.0%) across initialization
   plus 30 s Vue. Barriers surround unknown callbacks/untracked objects, reset between
@@ -32,10 +46,8 @@
   getter reads and exception restoration. Native return 12 / retained 30113 / peak
   30292 / cleanup zero matches the restored baseline. Source is unchanged and all
   instrumentation/probes/backups are removed. This is an availability estimate,
-  not a cache safety or speed proof. Next implement guarded sharing with full host
-  intrinsic/metadata integrity checks, same-walk effects, primitive multiplicity,
-  depth, reentry and held-limit regressions before native/live comparison. Vue
-  still times out; no initialization/join/media acceptance.
+  not a cache safety or speed proof. The guarded follow-up above passes preservation
+  checks but regresses live initialization. Vue still times out; no join/media acceptance.
 - Temporary live declaration/read/sharing counters identify repeated capture reads
   as the next target. Across initialization plus 30 s Vue, 22.71 million interpreted
   closure captures include 19.16 million (84.4%) rereads of the same Scope within
