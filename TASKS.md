@@ -23,6 +23,19 @@
 
 ## Current verified state
 
+- Temporary effect-barrier probe estimates 15.34 million potentially reusable
+  reads among 21.01 million interpreted closure captures (73.0%) across initialization
+  plus 30 s Vue. Barriers surround unknown callbacks/untracked objects, reset between
+  top-level roots and reject accessor/custom scope metadata. Existing owned empty
+  module environments must remain eligible; excluding them incorrectly rejected all
+  live scopes. Four SDK sanity cases preserve callback/proxy mutations, six private
+  getter reads and exception restoration. Native return 12 / retained 30113 / peak
+  30292 / cleanup zero matches the restored baseline. Source is unchanged and all
+  instrumentation/probes/backups are removed. This is an availability estimate,
+  not a cache safety or speed proof. Next implement guarded sharing with full host
+  intrinsic/metadata integrity checks, same-walk effects, primitive multiplicity,
+  depth, reentry and held-limit regressions before native/live comparison. Vue
+  still times out; no initialization/join/media acceptance.
 - Temporary live declaration/read/sharing counters identify repeated capture reads
   as the next target. Across initialization plus 30 s Vue, 22.71 million interpreted
   closure captures include 19.16 million (84.4%) rereads of the same Scope within
