@@ -1,0 +1,196 @@
+diff --git a/packages/safe-js/src/interp/budget.ts b/packages/safe-js/src/interp/budget.ts
+--- a/packages/safe-js/src/interp/budget.ts
++++ b/packages/safe-js/src/interp/budget.ts
+@@ -356,7 +356,17 @@
+   ): ReadonlySet<CompileTicket> {
+     if (this.reconciliationDeferred) {
+       if (retainedOwner !== undefined) this.setRetainedDataUsage(retainedOwner, usage);
+-      else this.reconcileDataUsage(usage);
++      else {
++        // Keep tickets owned while another job can still use them. Their bytes
++        // already appear in the measured graph, so do not charge them twice.
++        let includedUsage = 0;
++        for (const ticket of included) includedUsage += this.compileTicketUsage(ticket);
++        const measured = usage + this.accounting.retainedDataSize - includedUsage;
++        const total = Math.max(measured, this.accounting.currentDataSize);
++        this.checkDataUsage(total);
++        this.accounting.currentDataSize = total;
++        this.accounting.peakDataSize = Math.max(this.accounting.peakDataSize, total);
++      }
+       return new Set();
+     }
+     let includedUsage = 0;
+diff --git a/packages/safe-js/src/interp/values.ts b/packages/safe-js/src/interp/values.ts
+--- a/packages/safe-js/src/interp/values.ts
++++ b/packages/safe-js/src/interp/values.ts
+@@ -1152,7 +1152,13 @@
+       return;
+     }
+     if (isSandboxGenerator(value)) {
+-      visit(getGeneratorOrigin(value)?.resultPrototype, depth + 1);
++      const origin = getGeneratorOrigin(value);
++      visit(origin?.resultPrototype, depth + 1);
++      if (origin !== undefined) {
++        for (const root of (origin.suspendedScope ?? origin.closureScope).retainedDataRoots()) visit(root, depth + 1);
++        for (const scope of origin.blockScopes?.values() ?? [])
++          for (const root of scope.retainedDataRoots()) visit(root, depth + 1);
++      }
+       visit(asyncGeneratorDrivers.get(value), depth + 1);
+       const descriptors = Object.getOwnPropertyDescriptors(getGeneratorProperties(value));
+       for (const key of Reflect.ownKeys(descriptors)) {
+@@ -1322,7 +1328,6 @@
+   parent?: CompileScope,
+   escaping: Iterable<unknown> = []
+ ): void {
+-  if (budget.reconciliationDeferred) return;
+   while (parent?.closed) parent = parent.parent;
+   const included = new Set<CompileTicket>();
+   const usage = measureSandboxData([...values, ...budget.retainedValues()], { compileTickets: included });
+diff --git a/packages/safe-js/src/interp/async-function-driver.ts b/packages/safe-js/src/interp/async-function-driver.ts
+--- a/packages/safe-js/src/interp/async-function-driver.ts
++++ b/packages/safe-js/src/interp/async-function-driver.ts
+@@ -71,6 +71,10 @@
+   const capability = createPendingPromiseCapability(budget, context, prefix);
+   const driver: AsyncFunctionDriver = {capability: {promise: capability.promise, resolve: capability.resolve, reject: capability.reject}, phase: "running", generation: 0};
+   asyncFunctionDrivers.set(driver, driver);
++  // The native continuation owns this frame through every suspended tail.
++  // Keep that ownership visible to graph accounting until it settles/disposes.
++  const releaseDriver = retainValues(budget, () => [driver]);
++  void capability.promise.promise.then(releaseDriver, releaseDriver);
+   bindAsyncFunctionSignal(driver, signal, budget, context);
+   void runAsyncPrefix(async () => {
+     try {
+diff --git a/packages/safe-js/src/interp/held-data-budget.test.ts b/packages/safe-js/src/interp/held-data-budget.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/interp/held-data-budget.test.ts
+@@ -0,0 +1,77 @@
++import { expect, it } from "vitest";
++import { Budget } from "./budget.js";
++import { createIntrinsicObject } from "./object-model.js";
++import { reconcileCompiledValues } from "./values.js";
++
++it("enforces aggregate live data while reconciliation is held", () => {
++  const budget = new Budget({ dataSize: 100 });
++  const release = budget.deferReconciliation();
++  const first = createIntrinsicObject({ text: "x".repeat(60) });
++  const second = createIntrinsicObject({ text: "y".repeat(60) });
++  try {
++    expect(() => reconcileCompiledValues(budget, [first, first])).not.toThrow();
++    expect(budget.currentDataSize).toBe(66);
++    expect(() => reconcileCompiledValues(budget, [first, second])).toThrow(
++      expect.objectContaining({
++        code: "budgetExceeded",
++        budget: "dataSize",
++        current: 132,
++      }),
++    );
++    expect(budget.currentDataSize).toBe(66);
++  } finally {
++    release();
++  }
++});
++
++it("keeps included compile tickets owned without charging their graph bytes twice", () => {
++  const budget = new Budget({ dataSize: 40 });
++  const owner = budget.acquireCompileOwner(true);
++  const ticket = budget.createCompileTicket(owner.owner);
++  budget.resizeCompileTicket(ticket, 20);
++  budget.chargeDataUsage(10);
++  const release = budget.deferReconciliation();
++  try {
++    budget.discardCompileTicket(ticket);
++    expect(() =>
++      budget.reconcileCompileData(35, new Set([ticket])),
++    ).not.toThrow();
++    expect(budget.currentDataSize).toBe(35);
++    expect(budget.compileTicketUsage(ticket)).toBe(20);
++    budget.reconcileCompileData(0, new Set());
++    expect(budget.currentDataSize).toBe(35);
++    expect(budget.peakDataSize).toBe(35);
++    release();
++    reconcileCompiledValues(budget, []);
++    expect(budget.currentDataSize).toBe(0);
++    expect(budget.compileTicketUsage(ticket)).toBe(0);
++  } finally {
++    release();
++    owner.release();
++  }
++});
++
++it("keeps unincluded compile tickets charged during a hold", () => {
++  const budget = new Budget({ dataSize: 40 });
++  const owner = budget.acquireCompileOwner(true);
++  const included = budget.createCompileTicket(owner.owner);
++  const other = budget.createCompileTicket(owner.owner);
++  budget.resizeCompileTicket(included, 20);
++  budget.resizeCompileTicket(other, 10);
++  const release = budget.deferReconciliation();
++  try {
++    expect(() => budget.reconcileCompileData(35, new Set([included]))).toThrow(
++      expect.objectContaining({
++        code: "budgetExceeded",
++        budget: "dataSize",
++        current: 45,
++      }),
++    );
++    expect(budget.compileTicketUsage(included)).toBe(20);
++    expect(budget.compileTicketUsage(other)).toBe(10);
++    expect(budget.currentDataSize).toBe(30);
++  } finally {
++    release();
++    owner.release();
++  }
++});
+diff --git a/packages/safe-js/src/realm-held-data-budget.test.ts b/packages/safe-js/src/realm-held-data-budget.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/realm-held-data-budget.test.ts
+@@ -0,0 +1,47 @@
++import { expect, it } from "vitest";
++import { Budget, createRealm } from "./core.js";
++
++it("counts suspended callback locals together with a later source result", async () => {
++  let finish!: () => void;
++  const tail = new Promise<void>((resolve) => {
++    finish = resolve;
++  });
++  let callback: unknown;
++  const budget = new Budget({ dataSize: 50000 });
++  const realm = createRealm({
++    callbackScheduling: "after-prefix",
++    budget,
++    bindings: {
++      save: (value: unknown) => {
++        callback = value;
++      },
++      wait: () => tail,
++    },
++  });
++  try {
++    expect(
++      await realm.evaluate(`save(async () => {
++      const local = {text: "x".repeat(30000)};
++      await wait(); return local;
++    });`),
++    ).toMatchObject({ ok: true });
++    const invocation = realm.startCallback(callback);
++    const outcome = invocation.result.then(
++      () => ({ rejected: false }),
++      (error) => ({ rejected: true, error }),
++    );
++    await invocation.synchronous;
++    expect(budget.currentDataSize).toBeGreaterThanOrEqual(30000);
++    await expect(
++      realm.evaluate('return "y".repeat(30000);'),
++    ).rejects.toMatchObject({
++      code: "budgetExceeded",
++      budget: "dataSize",
++    });
++    expect(await outcome).toMatchObject({ rejected: true });
++  } finally {
++    finish();
++    await realm.close();
++  }
++  expect(budget.currentDataSize).toBe(0);
++});

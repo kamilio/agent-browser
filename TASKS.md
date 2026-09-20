@@ -3,21 +3,24 @@
 - **Future Zoom replacement:** develop native browser + SafeJS as a possible replacement
   for the working automations notetaker; this is exploratory future work, not a
   migration of the existing setup. The approved direct web-client diagnostic gets
-  HTTP 200 and a server-rendered name textbox and Join button. Vue now completes
-  after converting idle timeout dictionaries in the guest and resolving bare
-  requestIdleCallback through its Window property. Vue's replacement of
+  HTTP 200 and a server-rendered name textbox and Join button. Idle timeout
+  dictionaries are converted in the guest and bare requestIdleCallback resolves
+  through its Window property. Vue's replacement of
   Object.getOwnPropertyNames had made ordinary options fail strict data export.
-  General SafeJS record copying stays strict. Time-aware SDK checkpoints now
-  sample host time every 128 nodes and yield when elapsed time reaches 16 ms, keeping the
-  4096-node backstop and guest job ownership. Two live runs completed Vue in
-  10–12 s and the previously stalled component library in 10–14 s. The first
-  run then timed out in the 171510-character CAPTCHA popup library; the page
-  reported execution-timeout and cleaned up normally at 194 s, without a forced
-  kill. A repeat took a different script path and exhausted the 192 MB Node heap
-  in the 243575-character all.min.js; the intended popup profile was not captured.
-  Investigate retained-data accounting cost and host-memory use across these
-  paths. SDK-owned tables cache own string-field accounting, remeasure descendants
-  and release invalidated captures; untracked/exotic values stay conservative.
+  General SafeJS record copying stays strict. Time-aware SDK checkpoints keep
+  host timers responsive, but the earlier fast Vue/component runs are insufficient
+  evidence: pending callback tails had skipped retained-graph reconciliation.
+  The SDK now enforces data limits during those holds, avoids double charging
+  included compile tickets and keeps suspended async frames/scopes visible until
+  settlement or disposal. With these checks, the latest 192 MB live run timed out
+  in Vue at its 120 s window and cleaned up at 145 s (974772 steps, peak data
+  900435 units; 16 scripts executed). A bounded 256 MB diagnostic captured a
+  component-library profile before the hold fix: retained-graph visitation dominates
+  identified JavaScript samples; allocations include parser metadata and inspector
+  overhead. Optimize graph visitation and investigate host-memory use; an earlier
+  alternate script path exhausted the 192 MB heap in all.min.js. SDK-owned tables
+  cache own string-field accounting and remeasure descendants; other paths stay
+  conservative. Neither those faster runs nor profiling proves live acceptance.
   Interactive joining remains unverified. The full replacement gates also include
   presence/admission, roster/chat, audio capture and transcription, playback/live
   microphone/avatar support, leaving and cleanup. DOM branding does not implement
@@ -64,6 +67,15 @@
   baseline checkpoints (joined rejection handling and shared tail data limits).
   All 9 actual idle adapter checks pass serially; a concurrent run hit its default
   1 s initialization timeout. New-test formatting and patch round-trip checks pass.
+  Held-data limits: 212 selected SDK checks across 26 files and core compilation
+  pass; all 4 new regressions fail against the saved baseline. Browser scheduling
+  now passes 44/47 checks, fixing the shared tail data-limit failure; three baseline
+  joined-rejection failures remain. Actual native adapter probe: suspended 60000
+  units plus a later 60000-unit value correctly rejects at the 100000-unit data
+  limit. Included-ticket accounting, ownership and cleanup checks pass. After
+  enforcement, the default 1 s idle probe times out even serially; an explicit
+  16 s large-source diagnostic passes all 9 idle semantics checks. Keep the
+  default timing failure open; a larger-profile pass does not resolve it.
   Broader native setup also found an onload non-callable-handler failure;
   the full native suite has not been claimed green. Live diagnostics block optional
   file-paa.zoom.us and cdn.cookielaw.org origins and use a direct process;
