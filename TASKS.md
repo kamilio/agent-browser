@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Explicit opt-in managed scope metadata/root vectors are rejected and removed.
+  Seventy-one focused SDK checks and scoped compilation pass; actual native adapter
+  candidate/exact baseline match closure identity, mutable captures and private fields,
+  90334 retained units, 29974 after clear, dataSize rejection and close zero.
+  A shared depth-6/200-closure synthetic fixture improves about 61% with unchanged
+  units/provider reads, but live candidate/baseline reach 959337/961047 steps and
+  894029/895469 peak units. Both execute 16 scripts then Vue times out, zero sockets
+  and cleanup zero; no useful initialization gain or join. Original six source/build
+  files restored byte-for-byte; 56 focused restored checks and scoped core compilation
+  pass. Helpers/tests/config/probes/logs removed.
 - Ownership scanning is not an initialization target: the live census records
   20 ownership scans / 4.69 ms versus 44660 primary scans / 46723.65 ms. All target
   tickets are found early in only one scan, leaving 0.00314 ms / one visit afterward.
