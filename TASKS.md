@@ -23,6 +23,20 @@
 
 ## Current verified state
 
+- Cross-checkpoint accounting census samples adjacent pairs every 32 scans, keeping
+  all graph checks active. Two live runs agree: 45076 measurements, 1409 pairs;
+  288 matching signatures cover 1473495 / 6682457 visits (22.1%). The second run
+  finds a matching prefix covering 5883323 visits (88.0%), with no 32768-entry cap
+  reached. Signatures include visit identity/depth, charged strings and total units;
+  hashes and uncharged primitive coalescing are availability evidence, not exact
+  graph equality or cache safety. Sampled closures are 69.3% interpreted; matching
+  callback output does not authorize skipping its observable effects. Next accounting
+  design should reuse independently validated graph portions with mutation provenance
+  and volatile-provider barriers, rather than whole-result reuse. Both runs return
+  HTTP 200, execute 16 scripts and time out in Vue at 958789 steps / 892105 peak
+  units; close data zero, no join. Callback-read and held-limit sanity checks pass.
+  SDK source untouched, exact build restoration verified, census/probe removed;
+  instrumented timings establish no speedup.
 - Native canvas drawImage now accepts same-document HTML canvas and loaded image
   sources at natural size, scaled or cropped. Negative sizes preserve direction;
   source/destination clipping and self-copy snapshots stay bounded. Source alpha
