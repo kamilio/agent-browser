@@ -1,11 +1,17 @@
 # Browser priorities
 
 - **Future Zoom replacement:** develop native browser + SafeJS as a possible replacement
-  for the working automations notetaker. The approved live diagnostic reaches Zoom's
-  main application script. DOM interface branding removes the missing `SVGElement`
-  failure; it now stops after about 29 s with `TypeError: Host properties require
-  string keys.` No controls render. Joining, audio and notetaking remain unproven.
-  DOM interface branding does not implement full prototype method tables.
+  for the working automations notetaker; this is exploratory future work, not a
+  migration of the existing setup. The approved direct web-client diagnostic gets
+  HTTP 200 and a server-rendered name textbox and Join button. Vue initialization
+  still halts after about 75 s with `TypeError: Guest prototype links and custom
+  descriptors cannot be copied as data.` Completion discard passes isolated probes
+  but does not remove this live failure; investigate the remaining copying path.
+  Joining, audio and notetaking remain unproven. DOM branding does not implement
+  full prototype method tables; namespaced creation currently supports unprefixed
+  HTML, SVG and MathML names only. The invitation landing application executes but
+  reports an unsupported OS; a duplicate fallback script exhausted the 192 MB Node
+  heap. Neither route passes live acceptance. No meeting was joined.
 - Reduce retained-graph accounting cost without weakening memory, depth,
   cancellation or credential isolation. Opt-in ordinary classic-script exception
   recovery works; syntax, module, callback and resource failures remain fatal.
@@ -25,10 +31,16 @@
   The user approved SafeJS, live Zoom and necessary socket testing. Policy/classic
   runtime tests: 75/76 passed; shared-budget realm isolation still fails with reentry.
   Broader SDK callback ownership, shared-data, descriptor reuse and depth failures
-  remain unresolved. DOM branding: build, 62 focused native tests and 23 actual
-  SafeJS checks passed. Broader native setup also finds a pre-existing onload
-  non-callable-handler failure. The live check used a direct diagnostic process;
-  production actor, meeting join, media and transcription acceptance remain open.
+  remain unresolved. Bounded DOM guest fields: 102 SDK tests, 41 native tests and
+  18 actual SafeJS checks passed. Namespaced DOM creation: 58 native tests and
+  25 actual SafeJS constructor checks passed. Regex allowances: 31 SDK tests and
+  both native-profile probes passed. Completion discard: build, formatter,
+  12 SDK tests, 150 manifest-listed native tests and 3 actual SafeJS adapter checks
+  passed. Broader native setup also found an onload non-callable-handler failure;
+  the full native suite has not been claimed green. Live diagnostics block optional
+  file-paa.zoom.us and cdn.cookielaw.org origins and use a direct process;
+  production actor, meeting join, socket, media and transcription acceptance stay
+  open. No Automations changes or Chromium/remote-browser fallback were used.
 
 ## Retained development inputs
 
