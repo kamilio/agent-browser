@@ -86,6 +86,16 @@
   A phase probe attributes 13.2 of 14.1 s in the first script and 28.5 of 30.5 s
   in Vue to reconciliation. Sampled locations advance through normal Vue CSP
   parser/AST-type setup; no alternate compatibility fallback was established.
+- A closed-invocation retention diagnostic keeps guest bindings and full accounting
+  unchanged. Twenty conservative lexical-analysis checks and four instrumented
+  shared-cell/arguments/this/return checks pass. Two serial 30 s Vue runs still
+  time out; sampled charged closed-frame bindings include 133621/1258895 and
+  120843/1182674 candidate-unused occurrences (about 10%). The second pass excludes
+  property keys/labels and conservatively retains scopes whose arguments were read.
+  These are binding counts, not retained units, visitor cost or a speedup. Cleanup
+  releases all accounted data. Exact compiled baseline is restored and probes are
+  removed. Next test physical release of unused arguments in terminal invocations,
+  preserving escaped/mapped arguments, eval, snapshots and shared cells.
 - SDK-owned literal/constructor array projections are rejected and reverted:
   large array-only CPU gains did not improve live initialization. Final candidate
   and baseline both reach 957340 steps / 890986 peak units in serial 30 s runs;
