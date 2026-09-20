@@ -23,6 +23,17 @@
 
 ## Current verified state
 
+- Mutation coverage probe confirms the existing intrinsic token is not a general
+  retained-graph epoch: array membership, ordinary prototype links, private-field
+  values and retained-provider output grow measured data by 101/109/100/100 units
+  without changing it. The live Zoom census sees 44944 primary scans, 7183 adjacent
+  matching root signatures/token, zero changed usage in those pairs and zero token
+  changes during scans. This specific trace supplies no counterexample; the four
+  SDK cases rule out promoting that guard to a general exact-accounting cache.
+  Stable-portion reuse needs independently validated ownership/revision witnesses
+  and fresh volatile-provider traversal, not a global token alone. HTTP 200,
+  16 scripts then Vue timeout at 958789 steps / 892105 peak; close data zero, no
+  join. SDK source untouched, both compiled files restored exactly, probe removed.
 - Cross-checkpoint accounting census samples adjacent pairs every 32 scans, keeping
   all graph checks active. Two live runs agree: 45076 measurements, 1409 pairs;
   288 matching signatures cover 1473495 / 6682457 visits (22.1%). The second run
