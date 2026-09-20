@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Native HTML canvas now has a bounded 2D rectangle/readback subset: stable context
+  identity, fillStyle/globalAlpha, save/restore, fillRect/clearRect and independent
+  Uint8ClampedArray getImageData. Resize resets pixels/state; close revokes access.
+  One runtime and its child documents share a 4M-pixel / 64-context cap. Nine new
+  checks plus 46 existing manifest-listed DOM checks pass; TypeScript/build and
+  new-file lint/format pass. Existing script-dom assignment-expression/import-order
+  lint remains. Actual native + SafeJS drawing/clear/readback/resize probe passes,
+  with cleanup data zero. WebGL, paths, text, transforms, image/video drawing,
+  canvas export and viewport compositing remain missing. This does not resolve
+  Vue initialization or establish Zoom join/media readiness.
 - Fresh line-sampled baseline profile has 21937 visitor self samples: 1501 at seen
   lookup, 1487 at insertion (13.6% combined), 925 at capture-provider reads and 869
   at closure-property reads. Cost is spread across identity, metadata and descriptor
@@ -335,9 +345,11 @@
   production actor/default 128 MB heap, meeting sockets, media and transcription
   acceptance remain unverified. Invitation landing reports unsupported OS; an
   alternate duplicate script path exhausted the 192 MB heap.
-- Actual current native extension-page probe reports absent RTCPeerConnection,
+- Earlier native extension-page probe reports absent RTCPeerConnection,
   AudioContext, MediaRecorder, navigator.mediaDevices/getUserMedia, Worker,
-  WebAssembly and canvas getContext; cleanup data zero. The working recorder uses
+  WebAssembly and canvas getContext; cleanup data zero. The bounded canvas 2D
+  subset above now passes its own adapter probe; full canvas rendering remains open.
+  The working recorder uses
   media-device capture and AudioWorklet processing; native PCM chunk handling is
   not a Zoom audio source. Media transport/rendering APIs need implementation,
   separately from initialization performance and later live acceptance.

@@ -87,6 +87,7 @@ import type { ScriptStorage } from "./script-storage.js";
 import { scriptUrlProperties } from "./script-urls.js";
 import { scriptElementProperties } from "./script-element-properties.js";
 import { scriptImageProperties } from "./script-image-properties.js";
+import { scriptCanvasBindings } from "./script-canvases.js";
 import { initializeScriptElement } from "./script-element-state.js";
 import { DocumentQueries } from "./selectors.js";
 import { documentHitTesting, type DocumentHitTesting } from "./hit-testing.js";
@@ -825,6 +826,17 @@ export class ScriptDom {
 			}
 		}
 		if (initial.kind === "element") {
+			if (isHtmlElement(initial, "canvas")) {
+				const canvas = scriptCanvasBindings(
+					this.tree,
+					id,
+					this.factory,
+					() => this.node(id),
+					() => this.read(id),
+				);
+				Object.assign(definition.properties, canvas.properties);
+				Object.assign(definition.methods, canvas.methods);
+			}
 			if (pageFocus && !this.inert) {
 				definition.methods.focus = (options) => {
 					this.read(id);
