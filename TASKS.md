@@ -35,7 +35,8 @@
   Metadata providers must not rely on an optional ownership scan for side effects;
   release of a hold during the primary capture is covered. This change deliberately
   reduces capture invocations when the ownership result would be unused.
-- Latest validation: 194 focused SDK checks across 25 files, scoped core compilation,
+- Capture-continuation validation: 194 focused SDK checks across 25 files, scoped
+  core compilation,
   new-test formatting and exact contribution patch forward/reverse application pass.
   All six new direct/mixed/scoped depth regressions fail on the exact saved baseline;
   ten iterator/accounting preservation checks pass on both versions. Actual native
@@ -45,10 +46,25 @@
   serially at default 1 s and explicit 16 s; earlier candidate timeouts keep reliability
   open. Shallow warmed benchmarks are similar; depth-256 continuation median is
   0.081 ms versus 0.043 ms baseline, so deep traversal has a performance cost.
+- Object/symbol scope bindings now use their own measurement identities instead
+  of redundant cell projections. Strings/bigints retain cell roots for independent
+  primitive charges. Writes invalidate snapshots based on both old and new charged
+  values; full graph reconciliation, memory limits and depth limits remain active.
+  Validation: 169 focused SDK checks across 23 files, scoped core compilation,
+  new-test formatting and exact contribution forward/reverse application pass.
+  Eight added preservation checks pass baseline and candidate; six fail if the
+  changed invalidation is omitted. Four older empty-module scope-shape failures
+  reproduce on both. Native capture/clear/data-limit/cleanup outcomes match baseline;
+  clearing a captured 60000-character payload removes 60006 data units. The two
+  manifest-listed native idle files pass 89 checks, separate from actual SDK probes.
 - Last 120 s, 192 MB live diagnostic: initial 107111-character script completes in
-  16.5 s; Vue times out at 120768 ms, 994883 steps, peak data 910516 units and 16
-  scripts executed. Cleanup completes, no meeting joined. Loader completion does not
-  prove application readiness. No reliable initialization speedup is claimed.
+  14.3 s; Vue times out at 120222 ms, 1006603 steps, peak data 914788 units and 16
+  scripts executed. Cleanup releases all accounted data; no meeting joined. Loader
+  completion does not prove application readiness. A serial 30 s baseline reaches
+  958127 steps versus candidate 959687; both time out. Shallow closure measurement
+  falls from 0.329 to 0.307 ms in one warmed benchmark; other fixtures are mixed.
+  No reliable initialization speedup is claimed. A visitor-entry fast path was
+  rejected and reverted after no live gain.
 - Rejected scope-root grouping/reuse and weak-map visitation experiments were
   reverted after mixed benchmarks and no initialization gain. Extending snapshots
   to native private-name maps also failed to establish a useful live improvement:
@@ -56,10 +72,16 @@
   timed out. Synthetic warmed measurements fell from 0.45 to 0.36 ms, but the
   experiment is reverted. Its 113 focused SDK checks, native suspended private-field
   data limit and removed-value GC probes passed. No experimental caches remain.
-- Current 49 s CPU profile: graph visitor 25.4 s, private/symbol traversal 5.7 s,
-  scope-root collection 4.2 s and GC 1.9 s of self samples. Investigate visitor
-  traversal/capture continuations next; repeated scope snapshot experiments have
-  not resolved live initialization. The diagnostic profile and harness are removed.
+- Retained CPU evidence: graph visitor 25.4 s, private/symbol traversal 5.7 s,
+  scope-root collection 4.2 s and GC 1.9 s of self samples in a 49 s profile.
+  A separate live visitor probe counts 79.7 million entries / 24866 measurements
+  and 12.2 million capture reads for the first script; Vue's 30 s window adds
+  140.2 million entries / 14651 measurements and 19.2 million capture reads.
+  Closure contexts physically retain full scope chains; filtering accounting alone
+  would undercount retention. Investigate execution-context/capture compaction with
+  shared cells, conservative eval/with handling and snapshot alias preservation.
+  Existing lint scanners resolve lexical reads, but expose no reusable capture
+  analysis. No experimental caches or diagnostic instrumentation remain.
 
 ## Outstanding gates
 
