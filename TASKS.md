@@ -19,9 +19,11 @@
 - Keep native, SafeJS, live-network, socket and TTY gates separate. Native tests
   must come from `native-tests.json`; do not claim unverified acceptance.
 
-- Recovery gate: isolated SDK and policy regression tests compile; 360 focused
-  native CSP/runtime tests pass. Proposed scoped guest string-compilation policy
-  is saved in `contributions/safejs-string-compilation.patch`. SafeJS execution
+- Recovery gate: isolated SDK compiles with scoped compilation policy, scope-root
+  caching, literal/constructor tracking, closure allocation and callback reuse.
+  Eight affected cache/optimization regression files type-check; runtime tests
+  remain unrun. The cache foundation and compilation policy proposals are saved
+  in `contributions/`; 360 focused native CSP/runtime tests passed. SafeJS execution
   tests and a fresh live Zoom join check await separate authorization after
   automatic approval review rejected the SafeJS probe. Runtime behavior is unverified.
 
@@ -30,8 +32,9 @@
 - Build native code from this repository; redundant scratch sources/builds are removed.
 - Previous temporary SDK inputs are missing. Local baseline: `/home/kjopek/project/poe-code/packages/safe-js`.
 - Recovered working SDK source/build: `/tmp/agent-browser-zoom-sdk/packages/safe-js`.
-  Includes classic globals, callback scheduling and exception-reporting patches;
-  the older retained accounting patch chain still needs reconciliation.
+  Includes classic globals, callback scheduling, exception reporting and recovered
+  scope/module caching. Some remaining retained-accounting patches still need
+  reconciliation. The metadata-test patch header was normalized only in `/tmp`.
 - SDK code patches: `contributions/`.
 
 No run diaries, research inventories, logs, page dumps or archives. Keep only

@@ -1,0 +1,207 @@
+--- a/packages/safe-js/src/interp/scope.ts
++++ b/packages/safe-js/src/interp/scope.ts
+@@ -81,6 +81,8 @@
+   readonly #restoredBindings: Map<string, InterpreterValue>;
+   #frameHydrated = false;
+   #bindingDataRoots?: SandboxObject[];
++  #dataRevision = {};
++  #retainedDataSnapshot?: WeakRef<{ scopes: Array<{ scope: Scope; revision: object }>; roots: InterpreterValue[] }>;
+   #globalVarNames?: Set<string>;
+   #globalVarNameValues?: string[];
+ 
+@@ -195,7 +197,7 @@
+     if (binding?.deletable !== true) return false;
+     this.#bindings.delete(name);
+     if (![...this.#bindings.values()].includes(binding)) this.#replacedBindings.delete(binding);
+-    this.#bindingDataRoots = undefined;
++    this.invalidateDataRoots();
+     return true;
+   }
+ 
+@@ -208,6 +210,7 @@
+     if (deleted && this.#globalVarNames?.delete(name)) {
+       if (this.#globalVarNames.size === 0) this.#globalVarNames = undefined;
+       this.#globalVarNameValues = undefined;
++      this.invalidateDataRoots();
+     }
+     return deleted;
+   }
+@@ -283,6 +286,21 @@
+   }
+ 
+   retainedDataRoots(): InterpreterValue[] {
++    const captured = this.#retainedDataSnapshot?.deref();
++    let scopes: Array<{ scope: Scope; revision: object }> | undefined = [];
++    let unchanged = captured !== undefined;
++    for (let scope: Scope | undefined = this; scope !== undefined; scope = scope.parent) {
++      const moduleEnvironment = scope.moduleEnvironment;
++      if ((moduleEnvironment !== undefined && (scope.options.globalEnvironment !== true || !immutableEmptyModuleEnvironments.has(moduleEnvironment))) || scope.resourceState !== undefined ||
++          scope.privateNames !== undefined || scope.importMeta !== undefined || scope.withEnvironment) {
++        scopes = undefined;
++        break;
++      }
++      const previous = captured?.scopes[scopes.length];
++      unchanged &&= previous?.scope === scope && previous.revision === scope.#dataRevision;
++      scopes.push({ scope, revision: scope.#dataRevision });
++    }
++    if (scopes !== undefined && unchanged && captured!.scopes.length === scopes.length) return [...captured!.roots];
+     const values = this.parent?.retainedDataRoots() ?? [];
+     if (this.#globalVarNames !== undefined) values.push(this.#globalVarNameValues ??= [...this.#globalVarNames]);
+     if (this.withEnvironment && this.objectEnvironment !== undefined) values.push(this.objectEnvironment);
+@@ -313,7 +331,15 @@
+       }
+     }
+     values.push(...this.#bindingDataRoots);
+-    return values;
++    if (scopes === undefined) {
++      this.#retainedDataSnapshot = undefined;
++      return values;
++    }
++    const group = Object.freeze({});
++    scopeDataRoots.set(group, { values });
++    const roots = [group];
++    this.#retainedDataSnapshot = new WeakRef({ scopes, roots });
++    return [...roots];
+   }
+ 
+   declare(name: string, kind: VariableDeclarationKind, value: InterpreterValue,
+@@ -331,7 +357,7 @@
+     if (existing !== undefined) this.writeBindingValue(existing, value);
+     else {
+       this.#bindings.set(name, { kind, value, ...options });
+-      if (isChargedBindingValue(value)) this.#bindingDataRoots = undefined;
++      if (isChargedBindingValue(value)) this.invalidateDataRoots();
+     }
+   }
+ 
+@@ -362,6 +388,7 @@
+       if (!this.#globalVarNames?.has(name)) {
+         (this.#globalVarNames ??= new Set()).add(name);
+         this.#globalVarNameValues = undefined;
++        this.invalidateDataRoots();
+       }
+       return;
+     }
+@@ -391,7 +418,7 @@
+       ...(options?.deletable ? {deletable: true} : {}),
+       value: options?.functionValue
+     });
+-    if (options !== undefined && isChargedBindingValue(options.functionValue)) this.#bindingDataRoots = undefined;
++    if (options !== undefined && isChargedBindingValue(options.functionValue)) this.invalidateDataRoots();
+     if (options !== undefined) this.trackReplacement(name, this.#bindings.get(name)!);
+   }
+ 
+@@ -498,7 +525,7 @@
+       if (strict) throw new ReferenceError(`Cannot assign to undeclared binding '${name}'.`);
+       binding = {kind: "var", deletable: true, value};
+       this.#bindings.set(name, binding);
+-      this.#bindingDataRoots = undefined;
++      this.invalidateDataRoots();
+       this.trackReplacement(name, binding);
+       return;
+     }
+@@ -685,7 +712,7 @@
+     this.#globalVarNames = globalVarNames?.size ? globalVarNames : undefined;
+     this.#globalVarNameValues = undefined;
+     this.#frameHydrated = true;
+-    this.#bindingDataRoots = undefined;
++    this.invalidateDataRoots();
+   }
+ 
+   copyInitializedBindingsFrom(source: Scope, names: readonly string[]): void {
+@@ -703,9 +730,15 @@
+     }
+   }
+ 
++  private invalidateDataRoots(): void {
++    this.#bindingDataRoots = undefined;
++    this.#dataRevision = {};
++    this.#retainedDataSnapshot = undefined;
++  }
++
+   private writeBindingValue(binding: ScopeBinding, value: InterpreterValue): void {
+     if (!Object.is(binding.value, value)) {
+-      if (binding.accounting !== undefined || isChargedBindingValue(value)) this.#bindingDataRoots = undefined;
++      if (binding.accounting !== undefined || isChargedBindingValue(value)) this.invalidateDataRoots();
+       // Release obsolete snapshots even without another accounting pass.
+       binding.accounting = undefined;
+     }
+@@ -725,10 +758,10 @@
+     if (this.options.chargeData !== false || binding.kind === "const") return;
+     const value = binding.value;
+     if (typeof value === "object" && value !== null && getIntrinsicIdentity(value) === JSON.stringify([name])) {
+-      if (this.#replacedBindings.delete(binding)) this.#bindingDataRoots = undefined;
++      if (this.#replacedBindings.delete(binding)) this.invalidateDataRoots();
+     } else if (!this.#replacedBindings.has(binding)) {
+       this.#replacedBindings.add(binding);
+-      this.#bindingDataRoots = undefined;
++      this.invalidateDataRoots();
+     }
+   }
+ 
+--- /dev/null
++++ b/packages/safe-js/src/interp/scope-cache-invalidation.test.ts
+@@ -0,0 +1,63 @@
++import { expect, it } from "vitest";
++import { Budget } from "./budget.js";
++import { createBuiltinBindings } from "./globals.js";
++import { Scope } from "./scope.js";
++import { measureSandboxData } from "./values.js";
++
++it("remeasures deleted bindings and aliases while preserving earlier snapshots", () => {
++  const parent = new Scope();
++  parent.declareVar("text", { functionValue: "abc", deletable: true });
++  parent.declareAlias("alias", "text");
++  const child = parent.child({ local: "x" });
++  const original = child.retainedDataRoots();
++  expect(measureSandboxData(original)).toBe(4);
++  expect(parent.deleteBinding("text")).toBe(true);
++  const aliased = child.retainedDataRoots();
++  expect(measureSandboxData(aliased)).toBe(4);
++  expect(aliased[0]).not.toBe(original[0]);
++  expect(parent.deleteBinding("alias")).toBe(true);
++  expect(measureSandboxData(child.retainedDataRoots())).toBe(1);
++  expect(measureSandboxData(original)).toBe(4);
++});
++
++it("invalidates ancestor snapshots when an empty scope is hydrated", () => {
++  const parent = new Scope();
++  const child = parent.child({ local: "x" });
++  const original = child.retainedDataRoots();
++  const donor = new Scope({ text: "abc" });
++  parent.hydrateFrame(donor.captureFrame());
++  const hydrated = child.retainedDataRoots();
++  expect(hydrated[0]).not.toBe(original[0]);
++  expect(measureSandboxData(hydrated)).toBe(4);
++  expect(measureSandboxData(original)).toBe(1);
++});
++
++it("remeasures mutable descendants even when scope snapshot identity is reused", () => {
++  const payload = { text: "abc" };
++  const parent = new Scope({ payload });
++  const child = parent.child({ local: "x" });
++  const before = child.retainedDataRoots();
++  const initial = measureSandboxData(before);
++  payload.text = "x".repeat(1000);
++  const after = child.retainedDataRoots();
++  expect(after[0]).toBe(before[0]);
++  expect(measureSandboxData(after)).toBe(initial + 997);
++  const budget = new Budget({ dataSize: initial });
++  expect(() => budget.reconcileDataUsage(measureSandboxData(after))).toThrow(
++    expect.objectContaining({ budget: "dataSize" }),
++  );
++});
++
++it("invalidates captured declaration names for deletable classic globals", () => {
++  const bindings = createBuiltinBindings({ budget: new Budget() });
++  const parent = new Scope(bindings, undefined, undefined, { chargeData: false });
++  const global = parent.child({}, { globalEnvironment: true });
++  const child = global.child();
++  const before = child.retainedDataRoots();
++  global.declareVar("temporary", { deletable: true });
++  const declared = child.retainedDataRoots();
++  expect(declared[0]).not.toBe(before[0]);
++  expect(measureSandboxData(declared)).toBeGreaterThan(measureSandboxData(before));
++  expect(global.deleteGlobalBinding("temporary")).toBe(true);
++  expect(measureSandboxData(child.retainedDataRoots())).toBe(measureSandboxData(before));
++});
