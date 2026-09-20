@@ -23,6 +23,28 @@
 
 ## Current verified state
 
+- Private-table ownership alone is rejected and reverted. Eleven new and 240
+  existing SDK checks pass, including explicit GC, class/snapshot/held-memory
+  preservation; scoped core/new-test compilation and new-file formatting pass.
+  Actual native class adapter matches baseline: return 60000, retain 90289 /
+  peak 270300 / clear 29985 from 29965, reject excessive data at 400000 and close
+  at zero. Serial 30 s Vue reaches 958575 candidate versus 958329 baseline steps;
+  first-script CPU is 16.5 s for both, with 16 scripts executed, Vue timeouts and
+  cleanup zero. Follow-up confirms all 2.63 million startup / 1.56 million Vue
+  table reads use the owned fast path; live realms reuse scopes directly, so
+  snapshot restoration is not the cause of the absent gain. Source/build baseline
+  is restored exactly; candidate/probe artifacts are removed. Further sharing
+  needs cheaper guarantees for Scope metadata, not private-table reads alone.
+  No initialization, join or media acceptance.
+- Temporary scope-snapshot census rules out weak snapshot lifetime as the main
+  target: startup has 11.51 million scope reads / 7.28 million cache hits / 38
+  cleared weak snapshots; 60 s Vue has 28.10 million reads / 24.56 million hits /
+  238 cleared snapshots. All 4.22 million startup / 3.53 million Vue metadata
+  declines are private-name scopes, with zero module/resource/import/with declines.
+  Existing snapshots already cover most reads; owned private tables above do not
+  change scope snapshot eligibility. Fourteen preservation checks and scoped core
+  compilation pass. Counters are instrumentation, not a speed comparison; Vue
+  still times out, and the source/build counters are reverted.
 - Zoom initialization diagnostic now enables existing policy-aware HTML/network
   modules and logs every script's start/result, URL path and execution-step delta;
   URL credentials, queries and fragments are omitted. TypeScript/build and formatter
