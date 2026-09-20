@@ -3,11 +3,18 @@
 - **Future Zoom replacement:** develop native browser + SafeJS as a possible replacement
   for the working automations notetaker; this is exploratory future work, not a
   migration of the existing setup. The approved direct web-client diagnostic gets
-  HTTP 200 and a server-rendered name textbox and Join button. Vue initialization
-  still halts after about 75 s with `TypeError: Guest prototype links and custom
-  descriptors cannot be copied as data.` Completion discard passes isolated probes
-  but does not remove this live failure; investigate the remaining copying path.
-  Joining, audio and notetaking remain unproven. DOM branding does not implement
+  HTTP 200 and a server-rendered name textbox and Join button. Vue now completes
+  after converting idle timeout dictionaries in the guest and resolving bare
+  requestIdleCallback through its Window property. Vue's replacement of
+  Object.getOwnPropertyNames had made ordinary options fail strict data export.
+  General SafeJS record copying stays strict. Initialization now stalls in the
+  352872-character Zoom component library: a 170 s diagnostic timed out, and a
+  240 s profiled run needed forced shutdown at 250 s despite the 120 s evaluation
+  window. V8 sampling identifies retained-data traversal as the leading identified
+  JavaScript hot path; investigate graph measurement cost and timeout responsiveness.
+  Interactive joining remains unverified. The full replacement gates also include
+  presence/admission, roster/chat, audio capture and transcription, playback/live
+  microphone/avatar support, leaving and cleanup. DOM branding does not implement
   full prototype method tables; namespaced creation currently supports unprefixed
   HTML, SVG and MathML names only. The invitation landing application executes but
   reports an unsupported OS; a duplicate fallback script exhausted the 192 MB Node
@@ -36,7 +43,12 @@
   25 actual SafeJS constructor checks passed. Regex allowances: 31 SDK tests and
   both native-profile probes passed. Completion discard: build, formatter,
   12 SDK tests, 150 manifest-listed native tests and 3 actual SafeJS adapter checks
-  passed. Broader native setup also found an onload non-callable-handler failure;
+  passed. Idle dictionary conversion: native build and formatter, 157 manifest-listed
+  native tests and 9 actual SafeJS checks passed. SDK core compilation passes;
+  a fresh full-package build currently fails resolving tiny-mcp-client types through
+  the shared local dependency tree. The unchanged object-literal descriptor-reuse
+  SDK tests pass 5/6; repeated literal descriptor capture still fails its expectation.
+  Broader native setup also found an onload non-callable-handler failure;
   the full native suite has not been claimed green. Live diagnostics block optional
   file-paa.zoom.us and cdn.cookielaw.org origins and use a direct process;
   production actor, meeting join, socket, media and transcription acceptance stay
