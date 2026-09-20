@@ -23,6 +23,15 @@
 
 ## Current verified state
 
+- Empty-block scope elision is rejected and removed. Sixteen new and 77 existing
+  focused SDK checks, scoped compilation and new-test lint/format pass; exact baseline
+  preserves 15 cases and fails the physical-frame regression. Actual native adapter
+  candidate/baseline match: closure/private-field/capture behavior, disposal order,
+  90308 retained units, 29974 after clear, dataSize rejection and close zero. Serial
+  live candidate/baseline reach 961458/961723 steps and 895520/895697 peak units;
+  both execute 16 scripts then Vue times out, zero sockets and cleanup zero. No
+  useful initialization gain or join; source/build restored exactly. Restored 77
+  focused checks and scoped compilation pass; test/config/probe/log/backups removed.
 - Explicit opt-in managed scope metadata/root vectors are rejected and removed.
   Seventy-one focused SDK checks and scoped compilation pass; actual native adapter
   candidate/exact baseline match closure identity, mutable captures and private fields,
