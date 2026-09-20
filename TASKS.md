@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Scope epoch caching is rejected and reverted. Eight new and 113 existing SDK
+  checks, scoped core/new-test compilation and the actual native retention/limit/
+  cleanup probe pass. The uninstrumented candidate still times out at 954120 total
+  Vue steps versus 959469 in the restored serial baseline; startup CPU is 20.0 s
+  versus 16.6 s. Both execute 16 scripts and close at accounted data zero. A separate
+  census confirms 23.06 million fast
+  hits among 30.30 million Scope reads, zero module/untracked declines and 7.02
+  million other declines; these instrumented counts are not a speed comparison.
+  Exact source/build restoration and baseline core compilation pass; candidate
+  test/config/backups and counters are removed. No initialization or meeting join.
 - Factory closure classification is rejected and reverted: eight new and 44
   existing SDK checks, scoped core/new-test compilation and the actual native
   class retention/limit/cleanup probe pass, but serial 30 s Vue reaches 957785
