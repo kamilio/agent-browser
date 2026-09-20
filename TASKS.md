@@ -13,15 +13,16 @@
   The SDK now enforces data limits during those holds, avoids double charging
   included compile tickets and keeps suspended async frames/scopes visible until
   settlement or disposal. The retained build's last 192 MB live run timed out
-  in Vue at its 120 s window (986118 steps, peak data 906074 units; 16 scripts
-  executed; total 139 s; cleanup closed with no pending loads or errors). A bounded
+  in Vue at its 120 s window (987231 steps, peak data 906548 units; 16 scripts
+  executed; cleanup closed with no pending loads or errors). A bounded
   256 MB allocation diagnostic estimates cumulative churn falling from 17.8 GB to
   13.1 GB after private-array indexing and removal of a per-visit callback context.
   These totals include collected allocations, not live RAM; initialization still
   times out. A subsequent weak-map membership experiment was reverted: it removed
   fresh visited-set allocation callers but did not improve initialization or show
   a reliable benchmark gain; corrected paired samples increased total churn. Investigate
-  scope-root collection and graph traversal rather than visitation-set reuse; an earlier
+  graph traversal rather than visitation-set reuse. Private-name projections reduce
+  collection cost in larger maps, but do not resolve initialization; an earlier
   alternate script path exhausted the 192 MB heap in all.min.js. SDK-owned tables
   cache own string-field accounting and remeasure descendants; other paths stay
   conservative. Neither those faster runs nor profiling proves live acceptance.
@@ -109,6 +110,16 @@
   showed only the three baseline failures. Corrected diagnostic wiring must supply
   the existing session fetch transport to enable XMLHttpRequest; CSRF succeeds on
   both builds with that wiring. Experimental patch and test removed.
+  Scope diagnostics identify private-name metadata as the dominant miss reason:
+  1.45 million misses in 9.3 million calls; only 134 weak snapshots collected.
+  Native private-name maps now project actual object membership into transparent
+  accounting roots; descendants are remeasured and raw primitives/custom iterators
+  stay conservative. SDK checks: 295/297 across 13 files; both depth failures reproduce
+  on baseline. All six preservation cases pass on both versions. Core compilation,
+  formatting, patch round trips and removed-value GC probe pass. Shared-scope benchmark:
+  16 names 17.6 to 12.2 ms; eight names 14.5 to 13.6 ms; small maps show little gain.
+  Actual page maps have one, two and eight names. Live Vue still times out at 120 s;
+  clean cleanup does not prove application readiness, joining or media acceptance.
   Native extension adapter still rejects suspended 60000 plus later 60000 at
   data limit 100000 and releases data on close. The separate PageScripts timer
   version reaches suspension but closes with a generic callback script-error

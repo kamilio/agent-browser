@@ -1,0 +1,273 @@
+diff --git a/packages/safe-js/src/interp/scope.ts b/packages/safe-js/src/interp/scope.ts
+--- a/packages/safe-js/src/interp/scope.ts
++++ b/packages/safe-js/src/interp/scope.ts
+@@ -6,6 +6,7 @@
+ import { getSandboxPropertyDescriptor } from "./object-model.js";
+ import type { SandboxObject } from "./values.js";
+ import type { ModuleEnvironment } from "../modules/registry.js";
++import { privateNameDataRoot } from "./private-name-data-roots.js";
+ import { scopeDataRoots } from "./scope-data-roots.js";
+ import { hasEmptyOwnedModuleEnvironment } from "../modules/empty-environment.js";
+
+@@ -317,7 +318,12 @@
+     if (this.resourceState !== undefined) values.push(this.resourceState);
+     if (this.options.chargeData !== false) {
+       if (this.importMeta !== undefined) values.push(this.importMeta);
+-      if (this.privateNames !== undefined) values.push(...this.privateNames.values());
++      if (this.privateNames !== undefined) {
++        const names = this.privateNames;
++        const root = privateNameDataRoot(names);
++        if (root === undefined) values.push(...names!.values());
++        else values.push(root);
++      }
+     }
+     if (this.#bindingDataRoots === undefined) {
+       const roots: SandboxObject[] = [];
+diff --git a/packages/safe-js/src/interp/private-name-data-roots.ts b/packages/safe-js/src/interp/private-name-data-roots.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/interp/private-name-data-roots.ts
+@@ -0,0 +1,81 @@
++import { types as nodeTypes } from "node:util";
++import type { InterpreterValue } from "./interpreter.js";
++import type { SandboxObject } from "./values.js";
++import { scopeDataRoots } from "./scope-data-roots.js";
++
++const nativeValues = Map.prototype.values;
++const nativeForEach = Map.prototype.forEach;
++const iteratorPrototype = Object.getPrototypeOf(new Map().values());
++const nativeNext = Object.getOwnPropertyDescriptor(
++	iteratorPrototype,
++	"next",
++)!.value;
++const iterablePrototype = Object.getPrototypeOf(iteratorPrototype);
++const nativeIterator = Object.getOwnPropertyDescriptor(
++	iterablePrototype,
++	Symbol.iterator,
++)!.value;
++
++type Capture = { root: SandboxObject; values: readonly InterpreterValue[] };
++const captures = new WeakMap<object, WeakRef<Capture>>();
++type CaptureState = {
++	before?: readonly InterpreterValue[];
++	values?: InterpreterValue[];
++	index: number;
++	cacheable: boolean;
++};
++
++function captureValue(this: CaptureState, value: InterpreterValue): void {
++	if (typeof value !== "object" || value === null) this.cacheable = false;
++	if (this.values === undefined && this.before?.[this.index] !== value) {
++		this.values = this.before?.slice(0, this.index) ?? [];
++	}
++	this.values?.push(value);
++	this.index++;
++}
++
++// Capture actual membership on every call. This caches no descendant usage and
++// does not add private-name keys or Map bookkeeping to guest accounting.
++export function privateNameDataRoot(
++	names: object | undefined,
++): SandboxObject | undefined {
++	if (
++		names === undefined ||
++		nodeTypes.isProxy(names) ||
++		!nodeTypes.isMap(names) ||
++		Object.getPrototypeOf(names) !== Map.prototype ||
++		Object.hasOwn(names, "values") ||
++		Object.getOwnPropertyDescriptor(Map.prototype, "values")?.value !==
++			nativeValues ||
++		Object.getOwnPropertyDescriptor(iteratorPrototype, "next")?.value !==
++			nativeNext ||
++		Object.getPrototypeOf(iteratorPrototype) !== iterablePrototype ||
++		Object.getOwnPropertyDescriptor(iterablePrototype, Symbol.iterator)
++			?.value !== nativeIterator ||
++		Object.hasOwn(iteratorPrototype, Symbol.iterator)
++	)
++		return undefined;
++	const before = captures.get(names)?.deref();
++	const state: CaptureState = {
++		before: before?.values,
++		index: 0,
++		cacheable: true,
++	};
++	Reflect.apply(nativeForEach, names, [captureValue, state]);
++	// Raw primitives must retain their original multiplicity across callbacks.
++	if (!state.cacheable) {
++		captures.delete(names);
++		return undefined;
++	}
++	if (
++		before !== undefined &&
++		state.values === undefined &&
++		state.index === before.values.length
++	)
++		return before.root;
++	const values = state.values ?? state.before?.slice(0, state.index) ?? [];
++	const root = Object.freeze({});
++	scopeDataRoots.set(root, { values });
++	captures.set(names, new WeakRef({ root, values }));
++	return root;
++}
+diff --git a/packages/safe-js/src/interp/private-name-data-roots.test.ts b/packages/safe-js/src/interp/private-name-data-roots.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/interp/private-name-data-roots.test.ts
+@@ -0,0 +1,157 @@
++import { expect, it } from "vitest";
++import { Budget } from "./budget.js";
++import { Scope } from "./scope.js";
++import {
++	createSandboxClosure,
++	measureSandboxData,
++	reconcileCompiledValues,
++} from "./values.js";
++
++it("remeasures private-name descendants and actual map membership", () => {
++	const scope = new Scope();
++	const first = scope.declarePrivateName("first");
++	const before = scope.retainedDataRoots();
++	expect(measureSandboxData(before)).toBe(measureSandboxData([first]));
++	Object.defineProperty(first, "description", { value: "first".repeat(100) });
++	const current = scope.retainedDataRoots();
++	expect(measureSandboxData(current)).toBe(measureSandboxData([first]));
++	const budget = new Budget({ dataSize: 100 });
++	expect(() => reconcileCompiledValues(budget, current)).toThrow(
++		expect.objectContaining({ budget: "dataSize" }),
++	);
++	const second = scope.declarePrivateName("second");
++	expect(measureSandboxData(scope.retainedDataRoots())).toBe(
++		measureSandboxData([first, second]),
++	);
++	scope.privateNames!.delete("first");
++	expect(measureSandboxData(scope.retainedDataRoots())).toBe(
++		measureSandboxData([second]),
++	);
++	expect(measureSandboxData(before)).toBe(measureSandboxData([first]));
++	scope.privateNames = new Map([["replacement", first]]);
++	expect(measureSandboxData(scope.retainedDataRoots())).toBe(
++		measureSandboxData([first]),
++	);
++});
++
++it("observes private-map additions between callbacks in the same walk", () => {
++	const scope = new Scope();
++	const first = scope.declarePrivateName("same");
++	const second = { description: "same" };
++	const before = scope.retainedDataRoots();
++	const get = () => scope.retainedDataRoots();
++	const left = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: get,
++	});
++	const mutate = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: () => {
++			scope.privateNames!.set("second", second);
++			return [];
++		},
++	});
++	const right = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: get,
++	});
++	expect(measureSandboxData([left, mutate, right])).toBe(
++		3 + measureSandboxData([first, second]),
++	);
++	expect(measureSandboxData(before)).toBe(measureSandboxData([first]));
++});
++
++it("preserves raw private-map primitive multiplicity", () => {
++	const scope = new Scope();
++	scope.privateNames = new Map([["raw", "repeat" as never]]);
++	const roots = Array.from({ length: 2 }, () =>
++		createSandboxClosure({
++			call: () => undefined,
++			retainedValues: () => scope.retainedDataRoots(),
++		}),
++	);
++	expect(measureSandboxData(roots)).toBe(14);
++});
++
++it("preserves a custom values getter, iteration and its failures", () => {
++	const scope = new Scope();
++	let reads = 0,
++		fail = false;
++	const failure = new Error("private iterator failed");
++	scope.privateNames = new Map();
++	Object.defineProperty(scope.privateNames, "values", {
++		configurable: true,
++		get() {
++			reads++;
++			if (fail) throw failure;
++			return function* () {
++				yield "x".repeat(101);
++			};
++		},
++	});
++	expect(measureSandboxData(scope.retainedDataRoots())).toBe(101);
++	expect(reads).toBe(1);
++	expect(() =>
++		reconcileCompiledValues(
++			new Budget({ dataSize: 100 }),
++			scope.retainedDataRoots(),
++		),
++	).toThrow(expect.objectContaining({ budget: "dataSize" }));
++	expect(reads).toBe(2);
++	fail = true;
++	expect(() => scope.retainedDataRoots()).toThrow(failure);
++	fail = false;
++	expect(measureSandboxData(scope.retainedDataRoots())).toBe(101);
++});
++
++it("preserves subclass iterators and private-map property read order", () => {
++	class Names extends Map<string, { description: string }> {}
++	Object.defineProperty(Names.prototype, "values", {
++		value: function* () {
++			yield { description: "custom" };
++		},
++	});
++	const scope = new Scope();
++	scope.privateNames = new Names([["decoy", { description: "decoy" }]]);
++	expect(measureSandboxData(scope.retainedDataRoots())).toBe(
++		measureSandboxData([{ description: "custom" }]),
++	);
++	const names = new Map([["actual", { description: "actual" }]]);
++	let reads = 0;
++	Object.defineProperty(scope, "privateNames", {
++		get() {
++			reads++;
++			return names;
++		},
++	});
++	expect(measureSandboxData(scope.retainedDataRoots())).toBe(
++		measureSandboxData([...names.values()]),
++	);
++	expect(reads).toBe(3);
++});
++
++it("preserves a replaced native map-iterator next method", () => {
++	const scope = new Scope();
++	scope.declarePrivateName("decoy");
++	scope.retainedDataRoots();
++	const prototype = Object.getPrototypeOf(new Map().values());
++	const before = Object.getOwnPropertyDescriptor(prototype, "next")!;
++	try {
++		Object.defineProperty(prototype, "next", {
++			...before,
++			value: function (this: unknown) {
++				const result = Reflect.apply(before.value, this, []);
++				return result.done ? result : { done: false, value: "x".repeat(101) };
++			},
++		});
++		expect(measureSandboxData(scope.retainedDataRoots())).toBe(101);
++		expect(() =>
++			reconcileCompiledValues(
++				new Budget({ dataSize: 100 }),
++				scope.retainedDataRoots(),
++			),
++		).toThrow(expect.objectContaining({ budget: "dataSize" }));
++	} finally {
++		Object.defineProperty(prototype, "next", before);
++	}
++});
