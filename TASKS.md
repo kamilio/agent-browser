@@ -23,6 +23,20 @@
 
 ## Current verified state
 
+- Temporary live declaration/read/sharing counters identify repeated capture reads
+  as the next target. Across initialization plus 30 s Vue, 22.71 million interpreted
+  closure captures include 19.16 million (84.4%) rereads of the same Scope within
+  one measurement, with zero reads outside measurement and zero generator exclusions.
+  478 declarations / 1128 expressions are created; 103 / 306 are observed through
+  binding or interpreter property reads and 46 / 242 invoked. 7.68 million declaration
+  and 9.80 million expression captures precede either observation or invocation;
+  expressions already expose a value on creation, so these counts do not authorize
+  lazy instantiation. Native sanity covers export, call and construction (return 12,
+  peak 30392, cleanup zero), including exact baseline restoration. Instrumentation
+  in four builds and all probes/backups are removed; source is unchanged. Investigate
+  sharing trusted scope reads within each measurement while preserving same-walk
+  mutations, metadata/iterator effects, depth and held primary limits. These numeric
+  probes are not speed comparisons; Vue still times out and no meeting is joined.
 - Guarded private-name scope snapshot caching is rejected and reverted. The
   candidate passes 195 focused SDK checks across 21 files (10 new), scoped
   core/new-test compilation and new-test formatting. Nine preservation checks
@@ -33,10 +47,10 @@
   with 16 scripts executed and cleanup zero. First-script CPU is 18.3 s versus
   17.2 s; competing builds limit timing conclusions. No useful initialization
   gain established. Exact baseline source/build restoration and scoped core
-  compilation pass; experiment tests/configs/probes/backups are removed. Next,
-  measure eager declaration closures in active invocation scopes before choosing
-  another optimization; lazy instantiation needs identity, ownership, snapshot and
-  memory-accounting guarantees. No initialization/join/media acceptance.
+  compilation pass; experiment tests/configs/probes/backups are removed. The
+  declaration/sharing follow-up above guides the next target. Lazy instantiation
+  still needs identity, ownership, snapshot and memory-accounting guarantees.
+  No initialization/join/media acceptance.
 - Internal read-only scope roots are rejected and reverted: 160 SDK checks across
   20 files (13 new), scoped core/new-test compilation and new-test formatting pass.
   Native probe creates 124780 roots arrays versus 149720 baseline; both return
