@@ -20,6 +20,19 @@
 
 ## Current verified state
 
+- Closures now discard the creating invocation's callee, which every invocation
+  replaces. The retained contribution is safejs-release-creating-callee.patch;
+  lexical scopes, arguments, constructor metadata and primary accounting stay intact.
+  Validation: 212 focused SDK checks across 14 files and scoped core compilation pass;
+  five explicit-GC regressions fail on the saved baseline, seven preservation checks
+  pass both. Exact contribution forward/reverse verification and new-test formatting
+  pass. Actual native adapter: a cleared caller and its 60000-character property
+  collect only with the fix; the returned closure still returns 7. Both versions
+  measure 30242 units versus starting/cleared 29965, reject excessive allocation
+  at dataSize 200000 and close at zero. This fixes hidden physical retention;
+  it does not reduce measured lexical captures. Serial live 30 s comparison:
+  baseline 956381 steps / 890071 peak units, fix 956220 / 890082; both Vue timeouts,
+  16 scripts executed and cleanup zero. No initialization improvement or join claimed.
 - The repeatable authorized live diagnostic is scripts/check-zoom-initialization.ts:
   selects the working SDK explicitly, uses the extension adapter and correctly
   nests ScriptLoader limits (256 scripts / 64 external / 8 MB source). Earlier
