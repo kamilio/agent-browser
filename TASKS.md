@@ -23,6 +23,14 @@
 
 ## Current verified state
 
+- Ownership scanning is not an initialization target: the live census records
+  20 ownership scans / 4.69 ms versus 44660 primary scans / 46723.65 ms. All target
+  tickets are found early in only one scan, leaving 0.00314 ms / one visit afterward.
+  Early termination has negligible coverage; primary reconciliation needs the
+  algorithm change. Seven compiled ownership/hold/mutation/quota fixtures match
+  instrumented/restored behavior. Live HTTP 200, 16 scripts then Vue timeout at
+  960093 steps / 896784 peak, zero sockets and cleanup zero; no join. Source unchanged,
+  compiled module restored byte-for-byte and census/fixtures/logs removed.
 - Fresh-read vector sharing is also rejected. A temporary native array index setter
   exposes a fresh object-only scope-root vector and restores the prototype before
   validation; later provider code appends 1000 units. Both frozen and reused-live
