@@ -23,16 +23,18 @@
 
 ## Current verified state
 
-- Aggregate visitor census narrows the next performance target to interpreted
-  function captures. Bootstrap: 75.78 million entries, 34.10 million repeated
-  object identities, 13.01 million closure visits / 6.72 million interpreted.
-  Post-bootstrap through the 30 s Vue timeout: 142.87 million entries, 64.22 million
-  repeats, 22.13 million closure visits / 17.72 million interpreted (80%); function
-  expressions contribute 10.68 million and declarations 7.03 million visits.
-  Counts include intervening scripts and are not a speed comparison. Both probes
-  still timeout and close at zero. Temporary build counters are restored exactly;
-  restored native class retention/limit/cleanup probe matches baseline. Investigate
-  physically smaller function captures rather than further private-table tuning.
+- Chain-wide local capture projection is rejected and reverted. Twelve new and
+  156 existing SDK checks pass, including GC, future bindings, shared writes, TDZ,
+  recursion, classic scripts, held limits and snapshot preservation; scoped core/
+  new-test compilation passes. Actual native probe retains 30249 units candidate
+  versus 150282 baseline, returns 7, clears to 29996, rejects excessive data and
+  closes at zero. Serial 30 s Vue reaches 955895 versus 959469 baseline steps;
+  both timeout, with startup CPU 18.1 versus 16.8 s and cleanup zero. No useful
+  initialization improvement. Exact source/build restoration and baseline core
+  compilation pass; all candidate helpers/tests/config/probe artifacts are removed.
+  Census identifies interpreted functions as 80% of post-bootstrap closure visits
+  and repeated identities as 45% of entries, but smaller escaped captures alone
+  have not improved active primary reconciliation. No initialization/join acceptance.
 - Opt-in fixed Scope metadata/snapshot sharing is rejected and reverted. Serial
   30 s Vue runs reach 959687 candidate versus 959469 baseline steps (less than
   0.03% difference); both execute 16 preceding scripts, timeout and close at zero.
