@@ -1,4 +1,5 @@
 import { AgentBrowserError } from "./errors.js";
+import { pageIdleCallbackBootstrapSource } from "./page-idle-callback-bootstrap.js";
 import { pageUrlBootstrapSource } from "./page-url-bootstrap.js";
 import { PageUrls } from "./page-urls.js";
 import type {
@@ -8,6 +9,9 @@ import type {
 
 const bridgeName = "__agentBrowserWindowGlobal";
 const aliases = ["window", "self", "top", "parent"];
+// Guest implementations resolve through global properties, rather than an
+// immutable injected binding shadowing the implementation installed below.
+const guestGlobals = [...aliases, "requestIdleCallback"];
 
 export class PageWindowGlobal {
 	readonly names: readonly string[];
@@ -45,6 +49,7 @@ export class PageWindowGlobal {
 				value: Image, writable: true, configurable: true, enumerable: false
 			});
 		}
+		${pageIdleCallbackBootstrapSource}
 		${pageUrlBootstrapSource}
 	})();`;
 	private readonly definitions = new WeakMap<object, ReleasedHostDefinition>();
@@ -61,7 +66,7 @@ export class PageWindowGlobal {
 		if (names.includes(bridgeName))
 			throw new AgentBrowserError("invalid-input", "Reserved window global");
 		this.names = [
-			...names.filter((name) => !aliases.includes(name)),
+			...names.filter((name) => !guestGlobals.includes(name)),
 			bridgeName,
 		];
 	}
@@ -146,7 +151,9 @@ export class PageWindowGlobal {
 		});
 		return {
 			...Object.fromEntries(
-				Object.entries(globals).filter(([name]) => !aliases.includes(name)),
+				Object.entries(globals).filter(
+					([name]) => !guestGlobals.includes(name),
+				),
 			),
 			[bridgeName]: owner.createHostObject({
 				properties: {

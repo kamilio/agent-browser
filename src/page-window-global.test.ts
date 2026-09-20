@@ -19,6 +19,103 @@ import { ScriptDom } from "./script-dom.js";
 const bridgeName = "__agentBrowserWindowGlobal";
 const aliases = ["window", "self", "top", "parent"];
 
+function idleFixture() {
+	const owner = fakeOwner();
+	const request = vi.fn<(callback: unknown, options?: unknown) => number>(
+		() => {
+			if (owner.context.signal.aborted)
+				throw new Error("Idle callbacks closed");
+			return 17;
+		},
+	);
+	const windowGlobal = new PageWindowGlobal([
+		...aliases,
+		"requestIdleCallback",
+	]);
+	const window = windowGlobal.createHostObject(owner.context, {
+		methods: { requestIdleCallback: request },
+	});
+	const context = createContext(
+		windowGlobal.install(owner.context, {
+			window,
+			self: window,
+			requestIdleCallback: request,
+		}),
+	);
+	runInContext(windowGlobal.source, context);
+	imageCleanups.push(owner.close);
+	return {
+		...owner,
+		request,
+		evaluate: (source: string) => runInContext(source, context),
+	};
+}
+
+it("converts idle dictionaries in the guest despite application Object method replacements", () => {
+	const test = idleFixture();
+	expect(
+		test.evaluate(`
+		Object.getOwnPropertyNames = function() { return []; };
+		Object.create = function() { throw new Error("application replacement"); };
+		var reads = 0;
+		var options = Object.setPrototypeOf({}, { get timeout() { reads++; return "1000"; } });
+		requestIdleCallback(function() {}, options)
+	`),
+	).toBe(17);
+	expect(test.evaluate("reads")).toBe(1);
+	const dictionary = test.request.mock.lastCall?.[1];
+	expect(Object.getPrototypeOf(dictionary)).toBe(null);
+	expect(Object.getOwnPropertyDescriptors(dictionary)).toEqual({
+		timeout: {
+			value: 1000,
+			writable: true,
+			enumerable: true,
+			configurable: true,
+		},
+	});
+	expect(
+		test.evaluate(
+			"requestIdleCallback === window.requestIdleCallback && requestIdleCallback.length === 1",
+		),
+	).toBe(true);
+});
+
+it("uses unsigned long timeout conversion and defaults for idle dictionaries", () => {
+	const test = idleFixture();
+	for (const [source, expected] of [
+		["-1", 4294967295],
+		["4294967297.8", 1],
+		["Infinity", 0],
+		["NaN", 0],
+		["null", 0],
+		["{valueOf() { return 7.8; }}", 7],
+	] as const) {
+		test.evaluate(`requestIdleCallback(function(){}, {timeout: ${source}})`);
+		expect(test.request.mock.lastCall?.[1]).toEqual({ timeout: expected });
+	}
+	for (const source of ["undefined", "null", "{}", "function(){}"])
+		test.evaluate(`requestIdleCallback(function(){}, ${source})`);
+	expect(test.request.mock.lastCall).toHaveLength(1);
+});
+
+it("rejects malformed idle inputs before scheduling and preserves native closure", async () => {
+	const test = idleFixture();
+	for (const source of [
+		"requestIdleCallback()",
+		"requestIdleCallback({})",
+		"requestIdleCallback(function(){}, 1)",
+		"requestIdleCallback(function(){}, {timeout: 1n})",
+		"requestIdleCallback(function(){}, {timeout: Symbol()})",
+		"requestIdleCallback(function(){}, {get timeout() { throw new Error('getter'); }})",
+	])
+		expect(() => test.evaluate(source)).toThrow();
+	expect(test.request).not.toHaveBeenCalled();
+	await test.close();
+	expect(() =>
+		test.evaluate("requestIdleCallback(function(){}, {timeout:1})"),
+	).toThrow(/closed/);
+});
+
 it("installs guest URL globals on the classic Window without requiring a document", async () => {
 	const test = fixture();
 	const context = createContext(test.installed);
