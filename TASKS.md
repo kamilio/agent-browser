@@ -13,8 +13,8 @@
   The SDK now enforces data limits during those holds, avoids double charging
   included compile tickets and keeps suspended async frames/scopes visible until
   settlement or disposal. The retained build's last 192 MB live run timed out
-  in Vue at its 120 s window (987231 steps, peak data 906548 units; 16 scripts
-  executed; cleanup closed with no pending loads or errors). A bounded
+  in Vue at its 120 s window (985715 steps, peak data 905901 units; 16 scripts
+  executed; cleanup completed). A bounded
   256 MB allocation diagnostic estimates cumulative churn falling from 17.8 GB to
   13.1 GB after private-array indexing and removal of a per-visit callback context.
   These totals include collected allocations, not live RAM; initialization still
@@ -36,7 +36,8 @@
 - Reduce retained-graph accounting cost without weakening memory, depth,
   cancellation or credential isolation. Opt-in ordinary classic-script exception
   recovery works; syntax, module, callback and resource failures remain fatal.
-- Open test gates: SDK default-stack depth tests, older scope-root shape expectations
+- Open test gates: SDK default-stack depth for arrays and mixed graphs,
+  older scope-root shape expectations
   and a baseline Promise snapshot timeout; existing native capability-metadata and
   classic-loader limit expectations.
 - Opt-in 16 MB extraction now projects recognized React stream completions;
@@ -129,7 +130,23 @@
   SDK checks pass 87/89 across nine files; the two baseline default-stack depth
   failures remain. Core compilation, new-test formatting, contribution patch
   round trips and all nine actual native idle adapter cases pass. Earlier idle
-  timing failures remain unresolved. No live run of this accounting fix is claimed.
+  timing failures remain unresolved.
+  Instrumented live Vue initialization adds roughly 146 million value visits in
+  a 30 s window; closures dominate newly visited objects. Pure scope-root grouping
+  experiment reverted after slower warmed benchmarks. Record and tracked-table
+  string children now use explicit DFS continuations, preserving descriptor
+  snapshots, callback order, shared identities and retained-graph checks. Both
+  previously failing constructor/metadata depth tests pass; new record chains
+  reach depth 1024 and reject 1025 with dataDepth in either child order. Those
+  two boundary cases fail on the saved baseline. Final focused SDK checks:
+  171/171 across 24 files; core compilation, test formatting, contribution round
+  trips and all nine actual idle adapter cases pass. Benchmarks are mixed; no
+  reliable initialization speedup is claimed. Array depth 1024 still raises
+  RangeError on the default stack; arrays and mixed graphs keep the depth gate open.
+  Actual final-build 192 MB Zoom diagnostic still times out in Vue after 120465 ms:
+  985715 steps, peak data 905901 units and 16 scripts executed; cleanup completes.
+  No meeting joined. Continue reducing repeated accounting without suppressing
+  checks, and extend continuation handling to arrays before clearing the depth gate.
   Native extension adapter still rejects suspended 60000 plus later 60000 at
   data limit 100000 and releases data on close. The separate PageScripts timer
   version reaches suspension but closes with a generic callback script-error
