@@ -1,3 +1,4 @@
+import { type CanvasImageSource, paintCanvasImage } from "./canvas-image.js";
 import { parseCssColor } from "./css-color.js";
 import type { DocumentNode, DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
@@ -79,6 +80,7 @@ function numeric(value: unknown): number {
 
 export class NativeCanvas2D {
 	private image?: Readonly<RasterImage>;
+	private clean = true;
 	private state = initialState();
 	private readonly saved: PaintState[] = [];
 	constructor(
@@ -89,12 +91,66 @@ export class NativeCanvas2D {
 	reset(): void {
 		if (this.image) this.owner.release(this.image.width * this.image.height);
 		this.image = undefined;
+		this.clean = true;
 		this.state = initialState();
 		this.saved.length = 0;
 	}
 	bitmap(): Readonly<RasterImage> | undefined {
 		this.owner.assertOpen();
 		return this.image;
+	}
+	get originClean(): boolean {
+		this.owner.assertOpen();
+		return this.clean;
+	}
+	drawImage(source: CanvasImageSource, ...args: readonly unknown[]): void {
+		this.owner.assertOpen();
+		if (![2, 4, 8].includes(args.length))
+			throw new TypeError("drawImage requires three, five or nine arguments");
+		const values = args.map(numeric);
+		if (!values.every(Number.isFinite)) return;
+		if (source.width === 0 || source.height === 0)
+			throw new DOMException("Image source has no pixels", "InvalidStateError");
+		let sx = 0;
+		let sy = 0;
+		let sw = source.width;
+		let sh = source.height;
+		let [dx, dy, dw = source.width, dh = source.height] = values;
+		if (values.length === 8) [sx, sy, sw, sh, dx, dy, dw, dh] = values;
+		if (sw === 0 || sh === 0 || dw === 0 || dh === 0) return;
+		if (sw < 0) {
+			sx += sw;
+			sw = -sw;
+		}
+		if (sh < 0) {
+			sy += sh;
+			sh = -sh;
+		}
+		if (dw < 0) {
+			dx += dw;
+			dw = -dw;
+		}
+		if (dh < 0) {
+			dy += dh;
+			dh = -dh;
+		}
+		if (
+			![sx, sy, dx, dy, sx + sw, sy + sh, dx + dw, dy + dh].every(
+				Number.isFinite,
+			)
+		)
+			return;
+		// Taint survives clipping, transparent paint, clearing and state restoration.
+		if (!source.originClean) this.clean = false;
+		if (!source.image || this.state.alpha === 0) return;
+		const image = this.surface();
+		if (image)
+			paintCanvasImage(
+				image,
+				source,
+				[sx, sy, sw, sh, dx, dy, dw, dh],
+				this.state.alpha,
+			);
 	}
 	get fillStyle(): string {
 		this.owner.assertOpen();
@@ -221,6 +277,11 @@ export class NativeCanvas2D {
 		data: Uint8ClampedArray;
 	} {
 		this.owner.assertOpen();
+		if (!this.clean)
+			throw new DOMException(
+				"Canvas contains cross-origin pixels",
+				"SecurityError",
+			);
 		if (args.length < 4)
 			throw new TypeError("getImageData requires four arguments");
 		let [x, y, width, height] = args
@@ -302,6 +363,10 @@ export class DocumentCanvases {
 	bitmap(id: number): Readonly<RasterImage> | undefined {
 		this.dimensions(id);
 		return this.contexts.get(id)?.bitmap();
+	}
+	originClean(id: number): boolean {
+		this.dimensions(id);
+		return this.contexts.get(id)?.originClean ?? true;
 	}
 	get(id: number): NativeCanvas2D {
 		this.dimensions(id);

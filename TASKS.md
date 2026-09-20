@@ -23,6 +23,19 @@
 
 ## Current verified state
 
+- Native canvas drawImage now accepts same-document HTML canvas and loaded image
+  sources at natural size, scaled or cropped. Negative sizes preserve direction;
+  source/destination clipping and self-copy snapshots stay bounded. Source alpha
+  and globalAlpha compose over destination pixels. Image-loader origin checks,
+  including redirects, taint readback and propagate through canvas copies;
+  clear/paint/save/restore preserve taint and dimension writes reset it. Thirteen
+  added manifest checks and 68 existing canvas/image checks pass; native build and
+  changed canvas-file lint/format pass. Actual SafeJS drawing, self-copy, loaded
+  image, taint propagation/reset and native PNG pixels pass, close data zero;
+  probe removed. Nearest-neighbor sampling, primitive coordinates and exact 3/5/9
+  argument forms only; foreign documents, video/ImageBitmap sources and CORS image
+  loading remain unsupported. SVG inherits the existing static native subset.
+  This advances image/avatar primitives, not Zoom initialization or meeting media.
 - Filtered later-script diagnostic denies /lib/vue/ and /fe-static/fe-frame-popups/
   only in an ephemeral script policy. It reaches 19 executed scripts, then all.min.js
   (243575 characters, jQuery/site helpers) times out at 30.1 s / 585018 total steps /
@@ -40,7 +53,7 @@
   and 64 contexts. Eighteen added API/rendering checks plus 335 existing manifest
   checks pass; TypeScript/build and new-file lint/format pass. Actual native + SafeJS
   drawing-to-PNG pixel assertions pass, cleanup data zero. WebGL, paths, text,
-  transforms, image/video drawing and canvas export remain missing. Existing
+  transforms, video drawing and canvas export remain missing. Existing
   script-dom import-order/assignment-expression lint remains. Vue initialization
   and Zoom join/media readiness remain unverified.
 - Fresh line-sampled baseline profile has 21937 visitor self samples: 1501 at seen

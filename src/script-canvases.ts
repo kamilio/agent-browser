@@ -1,5 +1,7 @@
 import { CanvasBudget, documentCanvases } from "./document-canvases.js";
+import { documentImages } from "./document-images.js";
 import type { DocumentTree } from "./document.js";
+import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import type {
 	ScriptHostObjectDefinition,
@@ -14,6 +16,7 @@ export function scriptCanvasBindings(
 	factory: ScriptHostObjectFactory,
 	node: () => object,
 	ensureOpen: () => unknown,
+	identify: (value: unknown) => number,
 ): ScriptHostObjectDefinition {
 	const owner = documentCanvases(tree);
 	let budget = budgets.get(factory);
@@ -96,6 +99,45 @@ export function scriptCanvasBindings(
 							},
 						},
 						methods: {
+							drawImage: (value, ...args) => {
+								active();
+								const sourceId = identify(value);
+								const sourceNode = tree.get(sourceId);
+								if (isHtmlElement(sourceNode, "canvas")) {
+									const dimensions = owner.dimensions(sourceId);
+									const source = owner.bitmap(sourceId);
+									context.drawImage(
+										{
+											...dimensions,
+											image: source,
+											originClean: owner.originClean(sourceId),
+										},
+										...args,
+									);
+								} else if (isHtmlElement(sourceNode, "img")) {
+									const images = documentImages(tree);
+									const snapshot = images.get(sourceId);
+									if (snapshot.state === "broken")
+										throw new DOMException(
+											"Image source is broken",
+											"InvalidStateError",
+										);
+									const decoded = images.decoded(sourceId);
+									if (!decoded) return;
+									context.drawImage(
+										{
+											width: snapshot.naturalWidth,
+											height: snapshot.naturalHeight,
+											image: decoded.image,
+											originClean: snapshot.originClean,
+										},
+										...args,
+									);
+								} else
+									throw new TypeError(
+										"drawImage requires an HTML image or canvas from this document",
+									);
+							},
 							fillRect: (...args) => {
 								active();
 								context.fillRect(...args);

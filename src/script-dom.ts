@@ -833,6 +833,7 @@ export class ScriptDom {
 					this.factory,
 					() => this.node(id),
 					() => this.read(id),
+					(value) => this.identify(value),
 				);
 				Object.assign(definition.properties, canvas.properties);
 				Object.assign(definition.methods, canvas.methods);
