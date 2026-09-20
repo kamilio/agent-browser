@@ -23,6 +23,17 @@
 
 ## Current verified state
 
+- WebSocket bootstrap keeps its constructor local: global `var WebSocket` hoisting
+  previously made the classic Window accessor definition fail before any socket.
+  All 295 focused manifest-listed native checks, native build/noEmit and changed-code
+  format/lint pass. Actual SafeJS + loopback ws verifies text, fragmented UTF-8,
+  ping/pong, ArrayBuffer/view/DataView bytes, event identity/origin, protocol and
+  clean close; document closure releases a second open socket, close data zero.
+  Temporary probe removed. The Zoom diagnostic now configures native WebSockets
+  and verifies transport shutdown. Live HTTP 200, 16 scripts then Vue timeout at
+  961047 steps / 895469 peak, zero socket attempts, cleanup zero; no meeting joined.
+  Meeting WSS/media acceptance remains open. Zoom ships Vue 2.6.11-csp directly;
+  no runtime string-compilation setting selects a lighter implementation.
 - Checkpoint attribution rules out completed-frame restructuring as the main fix:
   function-terminal scans use 1.4 s (3.2%) of 44.2 s measured traversal, versus
   Identifier 13.9 s (31.4%), MemberExpression 3.2 s and BinaryExpression 2.8 s.

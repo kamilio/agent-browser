@@ -1,7 +1,7 @@
 export const pageWebSocketBootstrapGlobal = "__agentBrowserWebSocketBootstrap";
 
 export const pageWebSocketBootstrapSource = `
-var WebSocket = (() => {
+(() => {
 	const port = __agentBrowserWebSocketBootstrap();
 	class WebSocket {
 		#socket;
@@ -41,7 +41,6 @@ var WebSocket = (() => {
 	Object.defineProperties(WebSocket, constants);
 	Object.defineProperties(WebSocket.prototype, constants);
 	port.publish(WebSocket);
-	return WebSocket;
+	globalThis.WebSocket = WebSocket;
 })();
-globalThis.WebSocket = WebSocket;
 `;

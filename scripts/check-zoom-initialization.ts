@@ -7,6 +7,7 @@ import { AgentBrowserError } from "../src/errors.js";
 import { documentInteractions } from "../src/interactions.js";
 import { loadPageRuntime } from "../src/node-page-core.js";
 import { NodeNetworkTransport } from "../src/node-transport.js";
+import { NodeWebSocketTransport } from "../src/node-websocket-transport.js";
 import type {
 	PageRuntime,
 	PageRuntimeError,
@@ -16,8 +17,8 @@ import { PageScripts } from "../src/page-scripts.js";
 import { ScriptLoader } from "../src/script-loader.js";
 import { BrowserSession } from "../src/session.js";
 
-// Live-network/SafeJS diagnostic, separate from native-tests.json. Run only with
-// authorization for this meeting, for example:
+// Live-network/socket/SafeJS diagnostic, separate from native-tests.json. Run only
+// with authorization for this meeting and its necessary sockets, for example:
 // AGENT_BROWSER_SAFEJS_SOURCE_ROOT=/path/to/safe-js \
 //   node --max-old-space-size=192 dist/scripts/check-zoom-initialization.js
 // This checks initialization; it never certifies admission or meeting media.
@@ -120,7 +121,9 @@ const observed: PageRuntimeFactory = {
 		});
 	},
 };
+const socketTransport = new NodeWebSocketTransport({ blockedOrigins });
 const browser = new BrowserSession({
+	webSocketTransport: socketTransport,
 	limits: { maxScriptRequests: 64, navigationTimeoutMs: 180000 },
 	createTransport: (cookieJar) =>
 		new NodeNetworkTransport({ cookieJar, blockedOrigins }),
@@ -177,12 +180,18 @@ try {
 	const closes = await Promise.allSettled(
 		[...owners].map((owner) => owner.close()),
 	);
+	const socketCloses = await Promise.allSettled([socketTransport.close()]);
+	const webSockets = socketTransport.metrics();
 	const cleanup = runtimes.map((runtime) => ({
 		closed: runtime.closed,
 		currentDataSize: currentDataSize(runtime) ?? "unavailable",
 	}));
 	const cleanupVerified =
 		closes.every((result) => result.status === "fulfilled") &&
+		socketCloses.every((result) => result.status === "fulfilled") &&
+		webSockets.closed &&
+		webSockets.active === 0 &&
+		webSockets.pending === 0 &&
 		cleanup.length > 0 &&
 		cleanup.every((runtime) => runtime.closed && runtime.currentDataSize === 0);
 	console.log(
@@ -198,6 +207,7 @@ try {
 			report,
 			applicationReadinessVerified: false,
 			meetingJoinVerified: false,
+			webSockets,
 			cleanupVerified,
 			cleanup,
 		}),

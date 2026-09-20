@@ -8,6 +8,10 @@ import { AgentBrowserError } from "./errors.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { documentInteractions } from "./interactions.js";
 import { PageWindowGlobal } from "./page-window-global.js";
+import {
+	pageWebSocketBootstrapGlobal,
+	pageWebSocketBootstrapSource,
+} from "./page-websocket-bootstrap.js";
 import { encodePng } from "./png.js";
 import { createRaster } from "./raster.js";
 import type {
@@ -18,6 +22,53 @@ import { ScriptDom } from "./script-dom.js";
 
 const bridgeName = "__agentBrowserWindowGlobal";
 const aliases = ["window", "self", "top", "parent"];
+
+it("publishes the WebSocket constructor through the classic Window accessor", () => {
+	const owner = fakeOwner();
+	const windowGlobal = new PageWindowGlobal([
+		...aliases,
+		pageWebSocketBootstrapGlobal,
+	]);
+	let constructor: unknown;
+	const send = vi.fn();
+	const create = vi.fn(() => ({ send, readyState: 0 }));
+	const publish = vi.fn((value: unknown) => {
+		constructor = value;
+	});
+	const window = windowGlobal.createHostObject(owner.context, {
+		properties: { WebSocket: { get: () => constructor } },
+	});
+	const context = createContext(
+		windowGlobal.install(owner.context, {
+			window,
+			self: window,
+			[pageWebSocketBootstrapGlobal]: () => ({ create, publish }),
+		}),
+	);
+	runInContext(windowGlobal.source + pageWebSocketBootstrapSource, context);
+	expect(
+		runInContext(
+			"typeof WebSocket === 'function' && WebSocket === window.WebSocket && WebSocket === self.WebSocket && WebSocket === globalThis.WebSocket",
+			context,
+		),
+	).toBe(true);
+	expect(publish).toHaveBeenCalledOnce();
+	const receiver = runInContext(
+		"new WebSocket('wss://fixture.invalid/room', 'meeting')",
+		context,
+	);
+	expect(create).toHaveBeenCalledWith(
+		"wss://fixture.invalid/room",
+		"meeting",
+		receiver,
+	);
+	runInContext(
+		"var later = new WebSocket('wss://fixture.invalid/later'); later.send('hello')",
+		context,
+	);
+	expect(send).toHaveBeenCalledWith("hello");
+	imageCleanups.push(owner.close);
+});
 
 function idleFixture() {
 	const owner = fakeOwner();
