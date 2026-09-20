@@ -23,6 +23,17 @@
 
 ## Current verified state
 
+- Owned lexical-scope snapshot sharing is rejected and reverted. The standalone
+  adapter probe preserves function identity/captured writes, releases a retained
+  60000-character payload and rejects excessive allocation; 91 focused SDK checks
+  and scoped compilation pass before final guard additions. Both live candidates
+  time out in the first inline script with zero scripts executed, regressing from
+  the baseline's 16 scripts before Vue timeout. Admission instrumentation records
+  5.85 million reads, 3.53 million hits, 744742 snapshots and 2.32 million guard
+  declines; sharing was admitted but supplied no useful initialization progress.
+  No meeting joined; both runs close with zero retained data. All 14 SDK source/build
+  files are restored byte-for-byte and experimental helpers/probes removed. No
+  final-guard compilation, full SDK pass or speedup is claimed.
 - Mutation coverage probe confirms the existing intrinsic token is not a general
   retained-graph epoch: array membership, ordinary prototype links, private-field
   values and retained-provider output grow measured data by 101/109/100/100 units
