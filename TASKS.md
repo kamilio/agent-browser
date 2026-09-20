@@ -23,6 +23,14 @@
 
 ## Current verified state
 
+- Isolated 240 s baseline diagnostic also times out in Vue: HTTP 200, 16 preceding
+  scripts pass, 1055341 total steps / 840306 Vue delta / 934886 peak units, cleanup
+  data zero and no meeting joined. The 30 s baseline reaches 959469 total steps;
+  execution advances, but four minutes still does not establish initialization.
+  Only the ephemeral owner's timer and existing 300 s navigation selection were
+  extended; memory/step limits and production code are unchanged, harness removed.
+  Stop extending timers as a proposed fix. Investigate an accounting algorithm
+  change that preserves full primary reconciliation and observable foreign metadata.
 - Scope epoch caching is rejected and reverted. Eight new and 113 existing SDK
   checks, scoped core/new-test compilation and the actual native retention/limit/
   cleanup probe pass. The uninstrumented candidate still times out at 954120 total
