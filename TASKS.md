@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Object visitation bitsets/stamps are rejected and removed. Bitsets regress both
+  warmed graph fixtures; reentrant weak stamps improve them only about 1–3%.
+  Five new and 97 existing SDK checks pass, with scoped core/test compilation,
+  new-file formatting/oxlint and nine compiled preservation/GC cases. Two host-copy
+  depth failures reproduce on restored baseline. Actual native adapter matches:
+  90173 retained units, 29976 after clear, dataSize rejection at 400000, close zero.
+  Serial 30 s live stamp/baseline reach 960577/959469 steps and 893088/892568 peak
+  units; both execute 16 scripts then Vue times out. About 0.7% extra interpreted
+  Vue work and slightly higher CPU establish no useful initialization gain or join.
+  Original source/build verified byte-for-byte; helpers/tests/probes/backups removed.
 - Shared method-carrier model is rejected: a callback mutating a binding or private
   name during measurement leaves the carrier at 29 units versus 1028/1034 baseline,
   incorrectly admitting both under a 900-unit quota. The actual SDK measurer probe
