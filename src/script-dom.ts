@@ -10,6 +10,10 @@ import type { ObservedDocumentMutation } from "./document-observers.js";
 import { ScriptMutationRecords } from "./script-mutation-records.js";
 import { ScriptMutationObservers } from "./script-mutation-observers.js";
 import { ScriptNodePublications } from "./script-node-publications.js";
+import {
+	registerScriptNodeBrand,
+	scriptNodeHasInstance,
+} from "./script-dom-brands.js";
 import { documentScriptState } from "./document-script-state.js";
 import {
 	documentBody,
@@ -1162,6 +1166,7 @@ export class ScriptDom {
 				this.relations.register(capability, id);
 				this.capabilities.set(id, capability);
 				this.identities.set(capability, id);
+				registerScriptNodeBrand(capability, this.factory, () => this.read(id));
 			},
 			pageFocus && !this.inert && initial.kind === "element"
 				? (methods) => pageFocus.bindMethods(methods)
@@ -1237,6 +1242,11 @@ export class ScriptDom {
 			: node.kind === "fragment"
 				? "#document-fragment"
 				: `#${node.kind}`;
+	}
+
+	hasInstance(value: unknown, name: unknown): boolean {
+		this.ensureOpen();
+		return scriptNodeHasInstance(value, this.factory, name);
 	}
 
 	metrics() {

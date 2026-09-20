@@ -6,6 +6,7 @@ import { PageXmlHttpRequests } from "./page-xml-http-requests.js";
 import { pageXmlHttpRequestBootstrapGlobal } from "./page-xml-http-request-bootstrap.js";
 import { PageEventConstructors } from "./page-event-constructors.js";
 import { pageEventBootstrapGlobal } from "./page-event-bootstrap.js";
+import { pageDomConstructorBootstrapGlobal } from "./page-dom-constructor-bootstrap.js";
 import type { PageAbortSignals } from "./page-abort-signals.js";
 import { documentIdentity } from "./document-identity.js";
 import { PagePasskeys, type PagePasskeyContext } from "./page-passkeys.js";
@@ -85,6 +86,7 @@ export function pageBindingGlobalNames(
 ): readonly string[] {
 	return Object.freeze([
 		...(enableEventConstructors ? [pageEventBootstrapGlobal] : []),
+		...(enableEventConstructors ? [pageDomConstructorBootstrapGlobal] : []),
 		...(existingDocumentWebSockets(document)
 			? [pageWebSocketBootstrapGlobal]
 			: []),
@@ -627,6 +629,14 @@ export class PageBindings {
 				(error) => lifecycle.fail(error),
 			);
 			this.globals = {
+				...(enableEventConstructors
+					? {
+							[pageDomConstructorBootstrapGlobal]: (
+								value: unknown,
+								name: unknown,
+							) => this.dom.hasInstance(value, name),
+						}
+					: {}),
 				...(this.eventConstructors
 					? { [pageEventBootstrapGlobal]: this.eventConstructors.bootstrap }
 					: {}),

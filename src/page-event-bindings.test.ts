@@ -17,6 +17,10 @@ import type {
 	PageRuntimeOptions,
 } from "./page-runtime.js";
 import { PageScripts } from "./page-scripts.js";
+import {
+	pageDomConstructorBootstrapGlobal,
+	pageDomConstructorBootstrapSource,
+} from "./page-dom-constructor-bootstrap.js";
 
 const documents: DocumentTree[] = [];
 type Operation = (...args: readonly unknown[]) => unknown;
@@ -191,7 +195,11 @@ it("enables initialization and event setup without a fetch transport", async () 
 		},
 	};
 	const scripts = new PageScripts(test.page, factory);
-	expect(input?.initializationSource).toBe(pageEventBootstrapSource);
+	expect(input?.initializationSource).toBe(
+		pageEventBootstrapSource + pageDomConstructorBootstrapSource,
+	);
+	expect(input?.globals).toContain(pageDomConstructorBootstrapGlobal);
+	expect(globals?.[pageDomConstructorBootstrapGlobal]).toBeTypeOf("function");
 	expect(input?.globals).toContain(pageEventBootstrapGlobal);
 	expect(globals?.[pageEventBootstrapGlobal]).toBeTypeOf("function");
 	expect(globals).not.toHaveProperty("fetch");

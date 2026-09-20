@@ -1,10 +1,11 @@
 # Browser priorities
 
-- **Zoom first:** native browser + SafeJS only. Last observed: with optional analytics blocked,
-  `application-v1` hits the regex-compilation quota, not the page heap limit.
-  `application-unicode-v1` avoids that failure, but Vue still times out at 120 s;
-  retained-data accounting dominates its CPU profile. Joining, audio and
-  notetaking do not work yet. No challenge or meeting access is bypassed.
+- **Future Zoom replacement:** develop native browser + SafeJS as a possible replacement
+  for the working automations notetaker. The approved live diagnostic reaches Zoom's
+  main application script. DOM interface branding removes the missing `SVGElement`
+  failure; it now stops after about 29 s with `TypeError: Host properties require
+  string keys.` No controls render. Joining, audio and notetaking remain unproven.
+  DOM interface branding does not implement full prototype method tables.
 - Reduce retained-graph accounting cost without weakening memory, depth,
   cancellation or credential isolation. Opt-in ordinary classic-script exception
   recovery works; syntax, module, callback and resource failures remain fatal.
@@ -21,11 +22,13 @@
 
 - Recovery gate: isolated SDK compiles with scoped compilation policy, scope-root
   caching, literal/constructor tracking, closure allocation and callback reuse.
-  Eight affected cache/optimization regression files type-check; runtime tests
-  remain unrun. The cache foundation and compilation policy proposals are saved
-  in `contributions/`; 360 focused native CSP/runtime tests passed. SafeJS execution
-  tests and a fresh live Zoom join check await separate authorization after
-  automatic approval review rejected the SafeJS probe. Runtime behavior is unverified.
+  The user approved SafeJS, live Zoom and necessary socket testing. Policy/classic
+  runtime tests: 75/76 passed; shared-budget realm isolation still fails with reentry.
+  Broader SDK callback ownership, shared-data, descriptor reuse and depth failures
+  remain unresolved. DOM branding: build, 62 focused native tests and 23 actual
+  SafeJS checks passed. Broader native setup also finds a pre-existing onload
+  non-callable-handler failure. The live check used a direct diagnostic process;
+  production actor, meeting join, media and transcription acceptance remain open.
 
 ## Retained development inputs
 
