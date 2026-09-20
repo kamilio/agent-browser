@@ -1,0 +1,122 @@
+--- a/src/interp/values.ts
++++ b/src/interp/values.ts
+@@ -1109,19 +1109,24 @@
+         }
+         if (arrayLength !== undefined) {
+           usage += arrayLength;
++          const retained = arrayElements ?? [];
+           if (arrayDescriptors !== undefined) {
+             for (let index = 0; index < arrayDescriptors.length; index++) {
+               const entry = arrayDescriptors[index]!;
+               const key = entry[0], descriptor = entry[1];
+               usage += key.length + 1;
+-              if ("value" in descriptor) visit(descriptor.value, depth + 1);
+-              else for (const closure of retainedAccessorClosures(descriptor)) visit(closure, depth + 1);
++              if ("value" in descriptor) retained.push(descriptor.value);
++              else for (const closure of retainedAccessorClosures(descriptor)) retained.push(closure);
+             }
+-          } else {
+-            for (let index = 0; index < arrayElements!.length; index++)
+-              visit(arrayElements![index], depth + 1);
+           }
+-          break entry;
++          // All descriptors/elements were captured before retained callbacks.
++          // Continue their ordered graph walk without one stack frame per array.
++          if (retained.length === 0) break entry;
++          if (retained.length > 1)
++            (pending ??= []).push({ values: retained, index: 1, depth: depth + 1 });
++          value = retained[0];
++          depth++;
++          continue walk;
+         }
+         if (isSandboxMap(value) || isSandboxSet(value)) {
+           const properties = getCollectionProperties(value);
+--- /dev/null
++++ b/src/interp/array-data-walk.test.ts
+@@ -0,0 +1,86 @@
++import { expect, it } from "vitest";
++import { MAX_DATA_DEPTH } from "../graph-depth.js";
++import { markDescriptorObject } from "./object-model.js";
++import { createSandboxClosure, measureSandboxData } from "./values.js";
++
++function chain(
++	depth: number,
++	managed: boolean,
++	childFirst: boolean,
++	mixed: boolean,
++): object {
++	let root: object = {};
++	for (let index = 0; index < depth; index++) {
++		if (mixed && index % 2 === 1)
++			root = childFirst
++				? { next: root, padding: "x" }
++				: { padding: "x", next: root };
++		else {
++			const next = childFirst ? [root, "x"] : ["x", root];
++			if (managed) markDescriptorObject(next);
++			root = next;
++		}
++	}
++	return root;
++}
++
++for (const managed of [false, true])
++	for (const childFirst of [false, true])
++		for (const mixed of [false, true]) {
++			it(`keeps array depth and units on the default stack (managed=${managed}, childFirst=${childFirst}, mixed=${mixed})`, () => {
++				// Arrays contribute four units, or eight with managed index keys. Records
++				// contribute fifteen; the leaf contributes one. No depth is charged for keys.
++				const arrayUnits = managed ? 8 : 4;
++				const units =
++					1 +
++					(mixed
++						? (MAX_DATA_DEPTH / 2) * (arrayUnits + 15)
++						: MAX_DATA_DEPTH * arrayUnits);
++				expect(
++					measureSandboxData([
++						chain(MAX_DATA_DEPTH, managed, childFirst, mixed),
++					]),
++				).toBe(units);
++				expect(() =>
++					measureSandboxData([
++						chain(MAX_DATA_DEPTH + 1, managed, childFirst, mixed),
++					]),
++				).toThrow(
++					expect.objectContaining({
++						code: "budgetExceeded",
++						budget: "dataDepth",
++					}),
++				);
++			});
++		}
++
++it("captures managed named accessors before callbacks and never invokes their getters", () => {
++	const array: unknown[] = [];
++	let reads = 0;
++	const first = createSandboxClosure({
++		call: () => undefined,
++		retainedValues: () => {
++			array.length = 0;
++			Object.defineProperty(array, "hidden", {
++				value: "changed!",
++				configurable: true,
++			});
++			return [];
++		},
++	});
++	array.push(first, "initial");
++	Object.defineProperty(array, "hidden", {
++		value: "original",
++		configurable: true,
++	});
++	Object.defineProperty(array, "getter", {
++		get() {
++			reads++;
++			throw new Error("getter invoked");
++		},
++		configurable: true,
++	});
++	markDescriptorObject(array);
++	expect(measureSandboxData([array])).toBe(37);
++	expect(reads).toBe(0);
++});

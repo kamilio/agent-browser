@@ -13,7 +13,7 @@
   The SDK now enforces data limits during those holds, avoids double charging
   included compile tickets and keeps suspended async frames/scopes visible until
   settlement or disposal. The retained build's last 192 MB live run timed out
-  in Vue at its 120 s window (985715 steps, peak data 905901 units; 16 scripts
+  in Vue at its 120 s window (983953 steps, peak data 905003 units; 16 scripts
   executed; cleanup completed). A bounded
   256 MB allocation diagnostic estimates cumulative churn falling from 17.8 GB to
   13.1 GB after private-array indexing and removal of a per-visit callback context.
@@ -36,7 +36,8 @@
 - Reduce retained-graph accounting cost without weakening memory, depth,
   cancellation or credential isolation. Opt-in ordinary classic-script exception
   recovery works; syntax, module, callback and resource failures remain fatal.
-- Open test gates: SDK default-stack depth for arrays and mixed graphs,
+- Open test gates: SDK default-stack depth for symbol descendants and
+  closure captures,
   older scope-root shape expectations
   and a baseline Promise snapshot timeout; existing native capability-metadata and
   classic-loader limit expectations.
@@ -147,6 +148,23 @@
   985715 steps, peak data 905901 units and 16 scripts executed; cleanup completes.
   No meeting joined. Continue reducing repeated accounting without suppressing
   checks, and extend continuation handling to arrays before clearing the depth gate.
+  Scope reuse diagnostic: 11.7 million of 15.8 million Vue-window scope reads
+  repeat between conservative mutation barriers. Measurement-local reuse prototype
+  reverted: clean warmed benchmarks improve, but mixed cases and live do not;
+  the initial script takes 18.2 s and Vue still times out in its 30 s window.
+  Any future reuse must also preserve unknown iterator effects, weak retention
+  and invalidation across nested measurements; no experimental cache is retained.
+  Captured array elements and managed descriptors now use DFS continuations.
+  Ordinary/managed arrays and alternating record/array chains preserve exact units
+  through depth 1024, reject 1025 with dataDepth and preserve callback snapshots
+  without invoking getters. All eight boundary combinations fail on the saved
+  baseline. Final focused SDK checks: 180/180 across 25 files; core compilation,
+  test formatting, contribution round trips and all nine actual idle cases pass.
+  Direct symbol-descendant and closure-capture chains at 1024 still raise RangeError;
+  the general depth gate remains open. No full native-suite or Zoom acceptance pass.
+  Actual final array-build 192 MB Zoom diagnostic still times out in Vue after
+  120935 ms: 983953 steps, peak data 905003 units and 16 scripts executed;
+  cleanup completes, no meeting joined. Initial script completes in 14.6 s.
   Native extension adapter still rejects suspended 60000 plus later 60000 at
   data limit 100000 and releases data on close. The separate PageScripts timer
   version reaches suspension but closes with a generic callback script-error
