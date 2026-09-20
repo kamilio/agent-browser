@@ -23,6 +23,15 @@
 
 ## Current verified state
 
+- Fresh line-sampled baseline profile has 21937 visitor self samples: 1501 at seen
+  lookup, 1487 at insertion (13.6% combined), 925 at capture-provider reads and 869
+  at closure-property reads. Cost is spread across identity, metadata and descriptor
+  paths; no single line dominates. Symbol/private traversal adds 5587 self samples,
+  including 982 at symbol enumeration. Samples identify source positions, not exact
+  operation timings. Live run still times out at 959040 total steps with 16 scripts
+  executed and cleanup zero. Profile artifacts removed; source/build unchanged.
+  Next accounting candidate must reduce repeated graph-wide work, rather than
+  treating one metadata lookup or one ancestry cache as sufficient.
 - Isolated 240 s baseline diagnostic also times out in Vue: HTTP 200, 16 preceding
   scripts pass, 1055341 total steps / 840306 Vue delta / 934886 peak units, cleanup
   data zero and no meeting joined. The 30 s baseline reaches 959469 total steps;
