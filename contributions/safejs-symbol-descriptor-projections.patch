@@ -1,0 +1,218 @@
+diff --git a/packages/safe-js/src/interp/object-model.ts b/packages/safe-js/src/interp/object-model.ts
+--- a/packages/safe-js/src/interp/object-model.ts
++++ b/packages/safe-js/src/interp/object-model.ts
+@@ -52,6 +52,7 @@
+   revision: number;
+   measuredRevision?: number;
+   measuredDescriptors?: Array<[string, PropertyDescriptor]>;
++  measuredSymbols?: Array<readonly [symbol, PropertyDescriptor]>;
+   measuredStringRevision?: number;
+   enumerableStrings?: StringDataProjection;
+   allStrings?: StringDataProjection;
+@@ -115,6 +116,22 @@
+     state.measuredDescriptors = descriptors;
+   }
+   return descriptors;
++}
++
++// Cache only SDK-owned descriptor snapshots. Referenced values still need a
++// fresh graph walk, and untracked/proxy wrappers must retain their trap ordering.
++export function trackedObjectSymbolDescriptors(value: object): Array<readonly [symbol, PropertyDescriptor]> | undefined {
++  const state = functionPropertyRevisions.get(value);
++  if (state === undefined) return undefined;
++  if (state.measuredSymbols === undefined) {
++    const descriptors: Array<readonly [symbol, PropertyDescriptor]> = [];
++    for (const key of Object.getOwnPropertySymbols(value)) {
++      const descriptor = Object.getOwnPropertyDescriptor(value, key);
++      if (descriptor !== undefined) descriptors.push([key, descriptor]);
++    }
++    state.measuredSymbols = descriptors;
++  }
++  return state.measuredSymbols;
+ }
+
+ // Only SDK-owned proxies have exhaustive mutation tracking. Cache their own
+@@ -200,11 +217,13 @@
+ function trackPropertyTable(properties: SandboxObject): SandboxObject {
+   // Never expose the raw table: native callers must invalidate captures too.
+   const state: TrackedPropertyState = { revision: 0 };
+-  const invalidate = () => {
++  const invalidate = (key: PropertyKey) => {
+     state.revision++;
+     // Release deleted/replaced descendants immediately, even if this table is
+     // never measured again. Ongoing visitors keep their local captured snapshot.
+     state.measuredDescriptors = undefined;
++    // Own symbol descriptors are independent of writes to string fields.
++    if (typeof key === "symbol") state.measuredSymbols = undefined;
+     state.enumerableStrings = undefined;
+     state.allStrings = undefined;
+     state.measuredStringRevision = undefined;
+@@ -214,14 +233,14 @@
+     defineProperty(target, key, descriptor) {
+       const changed = Reflect.defineProperty(target, key, descriptor);
+       if (changed) {
+-        invalidate();
++        invalidate(key);
+       }
+       return changed;
+     },
+     deleteProperty(target, key) {
+       const changed = Reflect.deleteProperty(target, key);
+       if (changed) {
+-        invalidate();
++        invalidate(key);
+       }
+       return changed;
+     }
+diff --git a/packages/safe-js/src/interp/values.ts b/packages/safe-js/src/interp/values.ts
+--- a/packages/safe-js/src/interp/values.ts
++++ b/packages/safe-js/src/interp/values.ts
+@@ -86,7 +86,7 @@
+ import { parseRegex, type RegexPattern } from "./regex/parse.js";
+ import { assertSandboxDataDepth } from "../graph-depth.js";
+ import { sandboxErrorTypes } from "../error/shape.js";
+-import { getGuestFunctionProperties, materializeFunctionProperties, getSandboxPropertyDescriptor, getSandboxPrototype, hasExplicitSandboxPrototype, hasGuestObjectState, hasManagedDescriptors, hasNullObjectPrototype, intrinsicFunctionDataDescriptors, trackedObjectStringData, isIntrinsicFunction, isTrackedIntrinsicObject, isTrackedPropertyTable, registerGuestClosure, setSandboxPrototype } from "./object-model.js";
++import { getGuestFunctionProperties, materializeFunctionProperties, getSandboxPropertyDescriptor, getSandboxPrototype, hasExplicitSandboxPrototype, hasGuestObjectState, hasManagedDescriptors, hasNullObjectPrototype, intrinsicFunctionDataDescriptors, trackedObjectStringData, trackedObjectSymbolDescriptors, isIntrinsicFunction, isTrackedIntrinsicObject, isTrackedPropertyTable, registerGuestClosure, setSandboxPrototype } from "./object-model.js";
+ import type { FunctionSource } from "../parse/function-source.js";
+ import { dynamicSourceRecords, dynamicValueSources, type DynamicSource } from "../parse/function-source.js";
+ import {
+@@ -1288,15 +1288,17 @@
+       }
+     }
+     if (!isGuestHostObject(value)) {
+-      const symbols = Object.getOwnPropertySymbols(value);
+-      let descriptors: Array<readonly [symbol, PropertyDescriptor]> | undefined;
++      let descriptors = trackedObjectSymbolDescriptors(value);
+       // Capture before visiting: retained callbacks can mutate later properties.
+-      for (const key of symbols) {
++      if (descriptors === undefined) {
++        for (const key of Object.getOwnPropertySymbols(value)) {
++          if (internalSymbols.has(key)) continue;
++          const descriptor = Object.getOwnPropertyDescriptor(value, key);
++          if (descriptor !== undefined) (descriptors ??= []).push([key, descriptor]);
++        }
++      }
++      if (descriptors !== undefined) for (const [key, descriptor] of descriptors) {
+         if (internalSymbols.has(key)) continue;
+-        const descriptor = Object.getOwnPropertyDescriptor(value, key);
+-        if (descriptor !== undefined) (descriptors ??= []).push([key, descriptor]);
+-      }
+-      if (descriptors !== undefined) for (const [key, descriptor] of descriptors) {
+         usage += 1;
+         visit(key, depth + 1);
+         if ("value" in descriptor) visit(descriptor.value, depth + 1);
+diff --git a/packages/safe-js/src/interp/tracked-object-symbol-data.test.ts b/packages/safe-js/src/interp/tracked-object-symbol-data.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/interp/tracked-object-symbol-data.test.ts
+@@ -0,0 +1,110 @@
++import { expect, it, vi } from "vitest";
++import { accessorAdapter } from "./accessors.js";
++import { Budget } from "./budget.js";
++import { internalSymbols } from "./internal-symbols.js";
++import { createIntrinsicObject } from "./object-model.js";
++import { createSandboxClosure, measureSandboxData } from "./values.js";
++
++it("reuses symbol inspection without reusing descendant measurements", () => {
++  const key = Symbol("entry");
++  const child = createIntrinsicObject({ text: "a" });
++  const root = createIntrinsicObject({ [key]: child });
++  const inspect = vi.spyOn(Object, "getOwnPropertySymbols");
++  try {
++    const initial = measureSandboxData([root]);
++    root.uncharged = 1;
++    child.text = "x".repeat(1000);
++    expect(measureSandboxData([root])).toBe(initial + 1009);
++    expect(inspect.mock.calls.filter(([value]) => value === root)).toHaveLength(
++      1,
++    );
++    expect(() =>
++      new Budget({ dataSize: 100 }).reconcileDataUsage(
++        measureSandboxData([root]),
++      ),
++    ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++  } finally {
++    inspect.mockRestore();
++  }
++});
++
++it("observes symbol assignment, definition, deletion and visibility changes", () => {
++  const key = Symbol("field");
++  const root = createIntrinsicObject({ [key]: "a" });
++  expect(measureSandboxData([root])).toBe(9);
++  root[key] = "longer";
++  expect(measureSandboxData([root])).toBe(14);
++  Object.defineProperty(root, key, { enumerable: false, value: "hidden" });
++  expect(measureSandboxData([root])).toBe(14);
++  delete root[key];
++  expect(measureSandboxData([root])).toBe(1);
++  Object.defineProperty(root, key, { value: "new" });
++  expect(measureSandboxData([root])).toBe(11);
++});
++
++it("captures later symbols before descendant callbacks mutate them", () => {
++  const first = Symbol("first"),
++    later = Symbol("second");
++  const root = createIntrinsicObject();
++  root[first] = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => {
++      root[later] = "longer";
++      return [];
++    },
++  });
++  root[later] = "a";
++  expect(measureSandboxData([root])).toBe(18);
++  expect(measureSandboxData([root])).toBe(23);
++});
++
++it("retains accessor captures without invoking getters and drops deleted captures", () => {
++  const key = Symbol("accessor");
++  const getter = vi.fn();
++  const retained = vi.fn(() => ["owned"]);
++  const closure = createSandboxClosure({
++    call: getter,
++    retainedValues: retained,
++  });
++  const root = createIntrinsicObject();
++  Object.defineProperty(root, key, {
++    configurable: true,
++    get: accessorAdapter(closure, "get"),
++  });
++  expect(measureSandboxData([root])).toBe(17);
++  expect(measureSandboxData([root])).toBe(17);
++  expect(getter).not.toHaveBeenCalled();
++  expect(retained).toHaveBeenCalledTimes(2);
++  delete root[key];
++  expect(measureSandboxData([root])).toBe(1);
++  expect(retained).toHaveBeenCalledTimes(2);
++});
++
++it("inspects outer proxies on every walk instead of trusting the wrapped table", () => {
++  const key = Symbol("field");
++  const table = createIntrinsicObject({ [key]: "a" });
++  const root = new Proxy(table, {});
++  const inspect = vi.spyOn(Object, "getOwnPropertySymbols");
++  try {
++    const initial = measureSandboxData([root]);
++    table[key] = "longer";
++    expect(measureSandboxData([root])).toBe(initial + 5);
++    expect(inspect.mock.calls.filter(([value]) => value === root)).toHaveLength(
++      2,
++    );
++  } finally {
++    inspect.mockRestore();
++  }
++});
++
++it("checks internal symbol ownership after a descriptor snapshot is cached", () => {
++  const key = Symbol("late-internal");
++  const root = createIntrinsicObject({ [key]: "owned" });
++  expect(measureSandboxData([root])).toBe(21);
++  internalSymbols.add(key);
++  try {
++    expect(measureSandboxData([root])).toBe(1);
++  } finally {
++    internalSymbols.delete(key);
++  }
++});
