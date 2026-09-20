@@ -1,6 +1,6 @@
 # Browser priorities
 
-- **Zoom first:** native browser + SafeJS only. With optional analytics blocked,
+- **Zoom first:** native browser + SafeJS only. Last observed: with optional analytics blocked,
   `application-v1` hits the regex-compilation quota, not the page heap limit.
   `application-unicode-v1` avoids that failure, but Vue still times out at 120 s;
   retained-data accounting dominates its CPU profile. Joining, audio and
@@ -19,12 +19,19 @@
 - Keep native, SafeJS, live-network, socket and TTY gates separate. Native tests
   must come from `native-tests.json`; do not claim unverified acceptance.
 
+- Recovery gate: isolated SDK and policy regression tests compile; 360 focused
+  native CSP/runtime tests pass. Proposed scoped guest string-compilation policy
+  is saved in `contributions/safejs-string-compilation.patch`. SafeJS execution
+  tests and a fresh live Zoom join check await separate authorization after
+  automatic approval review rejected the SafeJS probe. Runtime behavior is unverified.
+
 ## Retained development inputs
 
 - Build native code from this repository; redundant scratch sources/builds are removed.
-- One unmerged test is preserved at `/tmp/agent-browser-event-union13-duJvuD/candidate/src/extraction-content-focus-nested.test.ts`.
-- SafeJS source: `/tmp/agent-browser-sdk-released-tickets-w68sa7j8/candidate`.
-- SafeJS runtime: `/tmp/agent-browser-released-ticket-sdk-cybnsyeb/package`.
+- Previous temporary SDK inputs are missing. Local baseline: `/home/kjopek/project/poe-code/packages/safe-js`.
+- Recovered working SDK source/build: `/tmp/agent-browser-zoom-sdk/packages/safe-js`.
+  Includes classic globals, callback scheduling and exception-reporting patches;
+  the older retained accounting patch chain still needs reconciliation.
 - SDK code patches: `contributions/`.
 
 No run diaries, research inventories, logs, page dumps or archives. Keep only
