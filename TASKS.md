@@ -23,6 +23,14 @@
 
 ## Current verified state
 
+- Manual capture-iterator records are rejected and removed. All-depth records slow
+  warmed shallow/shared fixtures by 23–28%; preserving shallow loops speeds the
+  depth-512 fixture by about 19% only. Eighteen new and 85 existing focused SDK
+  checks and scoped core/test compilation pass; two host-copy depth failures also
+  reproduce on baseline. Live candidate/baseline execute 16 scripts then Vue times
+  out at 961275/960093 steps, 895509/894811 peak units, zero socket attempts and
+  cleanup zero. Slightly more candidate CPU establishes no useful initialization
+  gain or join. Source/build restored byte-for-byte; all experiment artifacts removed.
 - Actual SafeJS + local WSS passes with a process-local test CA: original-host SNI
   and Origin, protocol negotiation, fragmented UTF-8, 64 KiB binary echo with
   64-bit frame length, and send snapshots surviving subsequent guest mutation.
