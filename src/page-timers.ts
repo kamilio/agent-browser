@@ -43,10 +43,11 @@ export class PageTimers {
 	private nesting = 0;
 	private running = false;
 	private current?: PageTimer;
+	private wakeHandle?: ReturnType<typeof setTimeout>;
 	private closedValue = false;
 
 	constructor(
-		private readonly callbacks: ScriptCallbackRuntime,
+		private readonly callbacks: ScriptCallbackRuntime & { isBusy?(): boolean },
 		private readonly window: () => object,
 		private readonly fail: (error?: unknown) => void,
 		limits: Partial<TimerLimits> = {},
@@ -83,9 +84,27 @@ export class PageTimers {
 		});
 	}
 
+	wake() {
+		if (
+			this.closedValue ||
+			this.running ||
+			this.wakeHandle !== undefined ||
+			!this.ready.length ||
+			this.callbacks.isBusy?.()
+		)
+			return;
+		this.wakeHandle = setTimeout(() => {
+			this.wakeHandle = undefined;
+			if (this.callbacks.isClosed()) this.close();
+			else this.pump();
+		}, 0);
+	}
+
 	close() {
 		if (this.closedValue) return;
 		this.closedValue = true;
+		clearTimeout(this.wakeHandle);
+		this.wakeHandle = undefined;
 		for (const record of this.records.values()) {
 			clearTimeout(record.handle);
 			this.release(record, true);
@@ -170,7 +189,7 @@ export class PageTimers {
 	}
 
 	private pump() {
-		if (this.running || this.closedValue) return;
+		if (this.running || this.closedValue || this.callbacks.isBusy?.()) return;
 		const record = this.ready.shift();
 		if (!record) return;
 		if (!this.live(record)) {

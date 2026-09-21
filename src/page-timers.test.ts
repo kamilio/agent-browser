@@ -39,6 +39,62 @@ function deferred() {
 	return { promise, resolve, reject };
 }
 
+it("keeps due timers queued while a source task is busy and resumes on a later task", async () => {
+	const test = fixture();
+	let busy = true;
+	const runtime = { ...test.runtime, isBusy: () => busy };
+	const timers = new PageTimers(runtime, () => test.window, test.fail);
+	const calls: string[] = [];
+	timers.methods.setTimeout(() => calls.push("first"), 1);
+	const canceled = timers.methods.setTimeout(() => calls.push("canceled"), 1);
+	timers.methods.setTimeout(() => calls.push("last"), 1);
+	await vi.advanceTimersByTimeAsync(10);
+	expect(calls).toEqual([]);
+	expect(timers.metrics()).toMatchObject({
+		queued: 3,
+		fired: 0,
+		pendingCallbacks: 0,
+	});
+	timers.methods.clearTimeout(canceled);
+	timers.wake();
+	expect(vi.getTimerCount()).toBe(0);
+	busy = false;
+	timers.wake();
+	timers.wake();
+	expect(vi.getTimerCount()).toBe(1);
+	expect(calls).toEqual([]);
+	await vi.advanceTimersByTimeAsync(0);
+	expect(calls).toEqual(["first", "last"]);
+	expect(timers.metrics()).toMatchObject({ queued: 0, active: 0, fired: 2 });
+	timers.close();
+	test.timers.close();
+});
+
+it("cancels a deferred dispatch and releases its arguments when closed", async () => {
+	const test = fixture();
+	let busy = true;
+	const release = vi.fn();
+	const timers = new PageTimers(
+		{ ...test.runtime, isBusy: () => busy },
+		() => test.window,
+		test.fail,
+		{},
+		release,
+	);
+	const argument = {};
+	timers.methods.setTimeout(() => undefined, 1, argument);
+	await vi.advanceTimersByTimeAsync(1);
+	expect(release).not.toHaveBeenCalled();
+	busy = false;
+	timers.wake();
+	timers.close();
+	expect(vi.getTimerCount()).toBe(0);
+	expect(release).toHaveBeenCalledExactlyOnceWith(argument);
+	await vi.advanceTimersByTimeAsync(1);
+	expect(test.runtime.startCallback).not.toHaveBeenCalled();
+	test.timers.close();
+});
+
 it("reserves pending ownership before entering a timer callback", async () => {
 	const test = fixture();
 	let observed = -1;

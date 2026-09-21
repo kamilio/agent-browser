@@ -12,6 +12,63 @@ import type { ScriptHostObjectDefinition } from "./script-dom.js";
 
 afterEach(() => vi.useRealTimers());
 
+it.each([
+	false,
+	true,
+])("defers timers only for classic script tasks (classic=%s)", async (classic) => {
+	vi.useFakeTimers();
+	const test = fixture();
+	const scripts = new PageScripts(
+		{ document: test.tree, interactions: test.actions },
+		test.core,
+	);
+	const callback = vi.fn();
+	let release!: () => void;
+	let entered!: () => void;
+	const started = new Promise<void>((resolve) => {
+		entered = resolve;
+	});
+	test.evaluate.mockImplementation(() => {
+		entered();
+		return new Promise((resolve) => {
+			release = () => resolve({ returnValue: { answer: 42 } });
+		});
+	});
+	const evaluation = scripts.evaluate("source", { classicScriptTask: classic });
+	await started;
+	scripts.timers.methods.setTimeout(callback, 1);
+	await vi.advanceTimersByTimeAsync(2);
+	expect(callback).toHaveBeenCalledTimes(classic ? 0 : 1);
+	release();
+	expect(await evaluation).toMatchObject({ ok: true });
+	await vi.advanceTimersByTimeAsync(0);
+	expect(callback).toHaveBeenCalledOnce();
+	await scripts.close();
+	test.tree.close();
+});
+
+it("rejects classic task flags for modules and malformed flags before evaluation", async () => {
+	const test = fixture();
+	const scripts = new PageScripts(
+		{ document: test.tree, interactions: test.actions },
+		test.core,
+	);
+	for (const options of [
+		{
+			classicScriptTask: true,
+			sourceType: "module" as const,
+			filename: "fixture",
+		},
+		{ classicScriptTask: "yes" as unknown as boolean },
+	])
+		await expect(scripts.evaluate("source", options)).rejects.toMatchObject({
+			code: "invalid-input",
+		});
+	expect(test.evaluate).not.toHaveBeenCalled();
+	await scripts.close();
+	test.tree.close();
+});
+
 it("shares live Location aliases and revokes them with the page realm", async () => {
 	const test = fixture();
 	const scripts = new PageScripts(

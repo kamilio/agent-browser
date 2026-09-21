@@ -74,6 +74,7 @@ export interface PageBindingOptions {
 
 export interface PageBindingLifecycle extends ScriptCallbackRuntime {
 	isBusy?(): boolean;
+	isTimerBusy?(): boolean;
 	fail(error?: unknown): void;
 	onConsoleCall(): void;
 }
@@ -319,6 +320,7 @@ export class PageBindings {
 			this.timers = new PageTimers(
 				{
 					isClosed: () => this.closed,
+					isBusy: () => lifecycle.isTimerBusy?.() ?? false,
 					startCallback: (callback, args, value) =>
 						lifecycle.startCallback(callback, args, value),
 				},

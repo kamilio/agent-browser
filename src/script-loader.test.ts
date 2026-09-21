@@ -162,7 +162,8 @@ async function fixture(
 				get closed() {
 					return options.closed === true && seen.length > 0;
 				},
-				evaluate: async (source) => {
+				evaluate: async (source, evaluationOptions) => {
+					expect(evaluationOptions.classicScriptTask).toBe(true);
 					seen.push({
 						source,
 						state: documentScriptState(tree)?.readyState,

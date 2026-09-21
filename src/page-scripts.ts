@@ -64,6 +64,7 @@ export class PageScripts {
 	private initialized = false;
 	private bindings?: PageBindings;
 	private active?: AbortController;
+	private classicScriptTask = false;
 	private closing?: Promise<void>;
 	private closedValue = false;
 	private evaluations = 0;
@@ -206,6 +207,8 @@ export class PageScripts {
 							isClosed: () => this.closed,
 							isBusy: () =>
 								this.active !== undefined || this.prefixes.size !== 0,
+							isTimerBusy: () =>
+								this.classicScriptTask || this.prefixes.size !== 0,
 							startCallback: (callback, args, receiver) =>
 								this.startCallback(callback, args, receiver),
 							fail: (error) => {
@@ -286,6 +289,7 @@ export class PageScripts {
 			signal?: AbortSignal;
 			filename?: string;
 			discardResult?: boolean;
+			classicScriptTask?: boolean;
 			sourceType?: "module";
 		} = {},
 	): Promise<ScriptEvaluation> {
@@ -304,6 +308,15 @@ export class PageScripts {
 			);
 		const filename = options.filename;
 		const sourceType = options.sourceType;
+		if (
+			(options.classicScriptTask !== undefined &&
+				typeof options.classicScriptTask !== "boolean") ||
+			(options.classicScriptTask === true && sourceType !== undefined)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid classic script task",
+			);
 		if (
 			filename !== undefined &&
 			(typeof filename !== "string" || filename.length > 4096)
@@ -370,6 +383,9 @@ export class PageScripts {
 				await interrupted();
 			}
 			this.ensureOpen();
+			// Timers are tasks, so due callbacks wait until the classic script and
+			// its microtask checkpoint return. Modules may await a timer directly.
+			this.classicScriptTask = options.classicScriptTask === true;
 			const evaluated = await runtime.evaluate(source, {
 				signal: controller.signal,
 				filename,
@@ -418,9 +434,11 @@ export class PageScripts {
 			clearTimeout(timer);
 			options.signal?.removeEventListener("abort", abort);
 			if (this.active === controller) this.active = undefined;
+			this.classicScriptTask = false;
 			if (runtime.closed && !this.closedValue) await this.close();
 			this.bindings?.scrolling.wake();
 			this.bindings?.idleCallbacks.wake();
+			this.bindings?.timers.wake();
 		}
 	}
 
@@ -491,6 +509,7 @@ export class PageScripts {
 			if (resultFinished) this.pending.delete(slot);
 			this.bindings?.scrolling.wake();
 			this.bindings?.idleCallbacks.wake();
+			this.bindings?.timers.wake();
 		};
 		const complete = () => {
 			resultFinished = true;

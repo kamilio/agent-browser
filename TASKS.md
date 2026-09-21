@@ -23,19 +23,28 @@
 
 ## Current verified state
 
-- Explicit bounded user-agent profiles now survive session/child configuration and
-  agree between HTTP defaults and navigator; the default remains AgentBrowser/0.1.
-  All 176 manifest-listed identity checks and the native TypeScript build pass.
-  Zoom selects a different document for an opt-in desktop compatibility identity
-  including the AgentBrowser marker: nine web-client scripts at the original join
-  route versus 53 legacy join-page scripts for the default identity. Live HTTP 200:
-  four scripts execute, then the 31758-character inline script times out at 30 s
-  (148186 total steps, 545505 peak data units). Zero sockets, no join; cleanup zero.
-  A second run reproduces the timeout; CPU samples place 30.0 of 33.3 s under
-  reconciliation and 28.9 s under graph measurement. The script mainly assigns
-  configuration data. Investigate accounting traversal without skipping primary
-  graph reconciliation or weakening ownership/limits; the temporary profile is removed.
-  This 192 MB diagnostic does not clear the default 128 MB actor or media gates.
+- Classic script tasks now defer due timer callbacks until the script and its
+  microtask checkpoint return; queued work resumes on a later task. Modules and
+  interactive evaluation can still await timers. All 195 focused manifest-listed
+  timer/page-script/loader/module/idle checks and the native TypeScript build pass.
+  Actual SDK adapter under 128 MB verifies classic timer ordering, a module's
+  awaited timer, zero network requests and close data zero. No SDK accounting
+  checks are bypassed; unrelated native changes stay outside this commit.
+- Explicit bounded user-agent profiles survive session/child configuration and
+  agree between HTTP defaults and navigator; default remains AgentBrowser/0.1.
+  All 176 manifest-listed identity checks pass. Zoom selects nine web-client
+  document scripts for an opt-in desktop compatibility identity including the
+  AgentBrowser marker, versus 53 legacy join-page scripts for the default identity.
+  Earlier fifth-script timeout was dominated by FingerprintJS background execution:
+  23962 fingerprint nodes versus 645 configuration nodes; 25795 graph measurements
+  traverse 131.5 million entries during that evaluation. Temporary census builds
+  are restored; no instrumentation or profiles remain. With timer task ordering,
+  live HTTP 200 executes all nine document scripts (configuration completes in
+  2.9 s) and discovers externals.min.js (163960 characters), which times out at
+  30 s. Report: ten discovered, nine executed, one failed; 537036 total steps,
+  742526 peak units, zero sockets, no join, cleanup zero. A prior temporary probe
+  reaches the same vendor gate. This 192 MB diagnostic does not clear production
+  actor/default 128 MB Zoom, interactive initialization or media acceptance.
 - Scope-root registry reads/writes and private-name capture caches now use pinned
   native operations; private capture records/vectors are immutable and reflective
   admission cannot be spoofed by later hooks. Retained contribution:

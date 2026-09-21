@@ -55,6 +55,7 @@ interface ScriptRunner {
 			signal: AbortSignal;
 			filename: string;
 			discardResult: true;
+			classicScriptTask?: true;
 			sourceType?: "module";
 		},
 	): Promise<ScriptEvaluation>;
@@ -916,6 +917,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 						signal: this.controller.signal,
 						filename: source.url,
 						discardResult: true,
+						classicScriptTask: true,
 					}),
 				);
 				this.live();
