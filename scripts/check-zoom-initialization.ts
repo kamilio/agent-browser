@@ -1,3 +1,4 @@
+import { types } from "node:util";
 import { loadBrowserDocument } from "../src/document-loader.js";
 import {
 	type ScriptLoadReport,
@@ -15,6 +16,10 @@ import type {
 } from "../src/page-runtime.js";
 import { PageScripts } from "../src/page-scripts.js";
 import { ScriptLoader } from "../src/script-loader.js";
+import type {
+	ReleasedCore,
+	ReleasedRealm,
+} from "../src/safejs-extension-types.js";
 import { BrowserSession } from "../src/session.js";
 
 // Live-network/socket/SafeJS diagnostic, separate from native-tests.json. Run only
@@ -46,15 +51,60 @@ const loaderLimits = {
 	maxExternal: 64,
 	maxSourceBytes: 8388608,
 };
-const { factory } = await loadPageRuntime(packageRoot, {
-	adapter: "extension",
-	runtimeOptions: {
-		classicScripts: true,
-		classicScriptErrors: "report",
-		callbackScheduling: "after-prefix",
-		domExpandos: "bounded-v1",
+const { factory } = await loadPageRuntime(
+	packageRoot,
+	{
+		adapter: "extension",
+		runtimeOptions: {
+			classicScripts: true,
+			classicScriptErrors: "report",
+			callbackScheduling: "after-prefix",
+			domExpandos: "bounded-v1",
+		},
 	},
-});
+	{
+		async importModule(specifier) {
+			const core = (await import(specifier)) as ReleasedCore;
+			return {
+				...core,
+				createRealm(options: Parameters<ReleasedCore["createRealm"]>[0]) {
+					const realm = core.createRealm(options);
+					const evaluate: ReleasedRealm["evaluate"] = async (
+						source,
+						evaluationOptions,
+					) => {
+						try {
+							const result = await realm.evaluate(source, evaluationOptions);
+							if (!result.ok)
+								reportFailure(
+									result.error,
+									source.length,
+									evaluationOptions?.filename,
+								);
+							return result;
+						} catch (failure) {
+							reportFailure(
+								failure,
+								source.length,
+								evaluationOptions?.filename,
+							);
+							throw failure;
+						}
+					};
+					// The SDK freezes its public facade. Copy its descriptors so the
+					// observer preserves readonly markers and does not violate Proxy
+					// invariants when replacing the evaluate function.
+					const descriptors = Object.getOwnPropertyDescriptors(realm);
+					descriptors.evaluate = { ...descriptors.evaluate, value: evaluate };
+					return Object.freeze(
+						Object.create(Object.getPrototypeOf(realm), descriptors),
+					) as ReleasedRealm;
+				},
+			};
+		},
+	},
+);
+
 const owners = new Set<PageScripts>();
 const runtimes: PageRuntime[] = [];
 function currentDataSize(runtime: PageRuntime): number | undefined {
@@ -69,6 +119,113 @@ function scriptLabel(filename: string | undefined): string | undefined {
 		return filename;
 	}
 }
+
+const failureIdentifiers: Readonly<Record<string, readonly string[]>> = {
+	name: [
+		"Error",
+		"EvalError",
+		"RangeError",
+		"ReferenceError",
+		"SyntaxError",
+		"TypeError",
+		"URIError",
+		"AggregateError",
+		"SandboxError",
+		"UnhandledRejectionError",
+	],
+	code: [
+		"aborted",
+		"budgetExceeded",
+		"reentry",
+		"LABEL_NOT_FOUND",
+		"UNBOUND_IDENTIFIER",
+		"UNSUPPORTED_NODE",
+		"UNCAUGHT_EXCEPTION",
+	],
+	budget: [
+		"steps",
+		"deadline",
+		"callDepth",
+		"stringLength",
+		"arrayLength",
+		"dataSize",
+		"dataDepth",
+	],
+	// Unlisted AST kinds are omitted; no arbitrary guest identifier is logged.
+	nodeType: [
+		"Program",
+		"BlockStatement",
+		"ExpressionStatement",
+		"CallExpression",
+		"NewExpression",
+		"MemberExpression",
+		"Identifier",
+		"ReturnStatement",
+		"ThrowStatement",
+		"VariableDeclaration",
+		"VariableDeclarator",
+		"FunctionDeclaration",
+		"FunctionExpression",
+		"ArrowFunctionExpression",
+		"AssignmentExpression",
+		"BinaryExpression",
+		"ForStatement",
+		"ForInStatement",
+		"ForOfStatement",
+		"WhileStatement",
+		"IfStatement",
+	],
+};
+
+// Read only allowlisted own-data identifiers and bounded positions from SDK
+// failures. Messages and source excerpts may contain page data, so they never
+// enter this diagnostic.
+function reportFailure(
+	failure: unknown,
+	characters: number,
+	filename?: string,
+) {
+	function own(value: unknown, key: string): unknown {
+		if (!value || typeof value !== "object" || types.isProxy(value))
+			return undefined;
+		const descriptor = Object.getOwnPropertyDescriptor(value, key);
+		return descriptor && "value" in descriptor ? descriptor.value : undefined;
+	}
+	const fields: Record<string, unknown> = {};
+	for (const [key, allowed] of Object.entries(failureIdentifiers)) {
+		const value = own(failure, key);
+		if (typeof value === "string" && allowed.includes(value))
+			fields[key] = value;
+	}
+	const span = own(failure, "span");
+	for (const edge of ["start", "end"]) {
+		const position = own(span, edge);
+		const values = ["offset", "line", "column"].map((key) =>
+			own(position, key),
+		);
+		if (
+			values.every(
+				(value) =>
+					typeof value === "number" &&
+					Number.isSafeInteger(value) &&
+					value >= 0 &&
+					value <= characters + 1,
+			)
+		)
+			fields[edge] = Object.fromEntries(
+				["offset", "line", "column"].map((key, index) => [key, values[index]]),
+			);
+	}
+	console.log(
+		JSON.stringify({
+			event: "runtime-failure",
+			filename: scriptLabel(filename),
+			characters,
+			...fields,
+		}),
+	);
+}
+
 const observed: PageRuntimeFactory = {
 	...factory,
 	createPageRuntime(options) {

@@ -23,6 +23,22 @@
 
 ## Current verified state
 
+- Zoom initialization diagnostic now observes raw SDK evaluation failures through
+  a frozen facade that preserves the SDK's descriptors. Output admits only known
+  error identifiers and bounded positions; no messages, stacks or source excerpts.
+  Native TypeScript build and actual SDK offline standard/custom-error fixtures
+  under 128 MB pass, including private-marker exclusion, zero sockets and close
+  data zero. Direct unknown-identifier and Proxy fixtures also pass. Latest live
+  30 s run: HTTP 200, ten scripts discovered / nine executed / one timeout before
+  vendor evaluation starts, zero sockets and verified cleanup zero. Waiting for
+  earlier callback prefixes consumes the same initialization timeout.
+  Earlier vendor CPU profile attributes 47.5 of 52.9 s to graph measurement;
+  sampled work builds ReactDOM attribute/event metadata (14633 vendor nodes versus
+  679 FingerprintJS nodes). Retried shallow capture dispatch fails earlier under
+  CPU contention and is reverted; unchanged-build 120 s diagnostic still times
+  out, with about 28 s spent before vendor evaluation starts. Neither is a speed
+  comparison or acceptance pass. SDK builds restored, profiling artifacts removed;
+  interactive initialization, default 128 MB actor and all meeting gates stay open.
 - Classic script tasks now defer due timer callbacks until the script and its
   microtask checkpoint return; queued work resumes on a later task. Modules and
   interactive evaluation can still await timers. All 195 focused manifest-listed
