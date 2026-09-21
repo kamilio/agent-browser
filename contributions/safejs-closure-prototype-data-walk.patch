@@ -1,0 +1,227 @@
+diff --git a/src/interp/values.ts b/src/interp/values.ts
+--- a/src/interp/values.ts
++++ b/src/interp/values.ts
+@@ -815,7 +815,8 @@
+     // Record descriptors are captured before descendants. Keep their DFS
+     // continuations off the native stack, without postponing any callbacks.
+     type Frame = { values: readonly unknown[]; index: number; depth: number } |
+-      { iterator: Generator<unknown, void>; depth: number };
++      { iterator: Generator<unknown, void>; depth: number } |
++      { afterClosurePrototype: SandboxClosure; depth: number };
+     let pending: Frame[] | undefined;
+     try {
+     walk: while (true) {
+@@ -989,7 +990,15 @@
+         visitPrivateAndSymbols(value, depth);
+         if (isSandboxClosure(value)) {
+           const prototype = getSandboxPrototype(value);
+-          if (prototype !== null) visit(prototype, depth + 1);
++          if (prototype !== null) {
++            if (depth < 128) visit(prototype, depth + 1);
++            else {
++              (pending ??= []).push({ afterClosurePrototype: value, depth });
++              value = prototype;
++              depth++;
++              continue walk;
++            }
++          }
+           if (options.ignoreClosures) break entry;
+           if (value.properties !== undefined) {
+             if (isIntrinsicFunction(value)) {
+@@ -1359,6 +1368,10 @@
+             depth = frame.depth;
+             continue walk;
+           }
++        } else if ("afterClosurePrototype" in frame) {
++          pending.pop();
++          const capture = visitClosureAfterPrototype(frame.afterClosurePrototype, frame.depth);
++          if (capture !== undefined) pending.push(capture);
+         } else {
+           if (frame.index < frame.values.length) {
+             value = frame.values[frame.index++];
+@@ -1383,6 +1396,32 @@
+       throw error;
+     }
+   };
++
++  // Resume only after the complete prototype subtree has been observed.
++  // Property getters and retained providers remain fresh and in DFS order.
++  function visitClosureAfterPrototype(value: SandboxClosure, depth: number): { iterator: Generator<unknown, void>; depth: number } | undefined {
++    if (options.ignoreClosures) return undefined;
++    if (value.properties !== undefined) {
++      if (isIntrinsicFunction(value)) {
++        const descriptors = intrinsicFunctionDataDescriptors(value.properties);
++        for (let index = 0; index < descriptors.length; index++) {
++          const entry = descriptors[index]!;
++          const key = entry[0], descriptor = entry[1];
++          usage += key.length + 1;
++          if ("value" in descriptor) visit(descriptor.value, depth + 1);
++          else for (const closure of retainedAccessorClosures(descriptor)) visit(closure, depth + 1);
++        }
++      } else visit(value.properties, depth + 1);
++    }
++    if (!options.ignoreClosureCaptures) {
++      const captures = value[sandboxRetainedValues]?.() ?? [];
++      // Keep the shallow hot path; deep captures must reach the SDK depth
++      // limit rather than exhausting the host stack first.
++      if (depth < 128) for (const retained of captures) visit(retained, depth + 1);
++      else return { iterator: capturedDataValues(captures), depth: depth + 1 };
++    }
++    return undefined;
++  }
+
+   function visitPrivateAndSymbols(value: object, depth: number): void {
+     const privateSlots = privateElements.get(value);
+diff --git a/src/interp/closure-prototype-data-walk.test.ts b/src/interp/closure-prototype-data-walk.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/interp/closure-prototype-data-walk.test.ts
+@@ -0,0 +1,148 @@
++import { expect, it } from "vitest";
++import { MAX_DATA_DEPTH } from "../graph-depth.js";
++import { Budget } from "./budget.js";
++import { createIntrinsicObject, setSandboxPrototype } from "./object-model.js";
++import {
++  createSandboxClosure,
++  measureSandboxData,
++  reconcileCompiledValues,
++  type SandboxClosure,
++} from "./values.js";
++
++function chain(
++  depth: number,
++  retainedValues?: () => Iterable<never>,
++): SandboxClosure {
++  let root: object = createIntrinsicObject({ text: "a" });
++  for (let index = 0; index < depth; index++) {
++    const closure = createSandboxClosure({
++      call: () => undefined,
++      retainedValues,
++    });
++    setSandboxPrototype(closure, root);
++    root = closure;
++  }
++  return root as SandboxClosure;
++}
++
++it("measures closure prototype chains through the data-depth limit on the default stack", () => {
++  expect(measureSandboxData([chain(MAX_DATA_DEPTH)])).toBe(
++    MAX_DATA_DEPTH * 14 + 7,
++  );
++});
++
++it("rejects the first excessive prototype depth with dataDepth instead of a native stack failure", () => {
++  const root = createIntrinsicObject({ link: chain(MAX_DATA_DEPTH) });
++  expect(() => measureSandboxData([root])).toThrow(
++    expect.objectContaining({
++      code: "budgetExceeded",
++      budget: "dataDepth",
++      current: MAX_DATA_DEPTH + 1,
++    }),
++  );
++});
++
++it("checks the entire primary prototype graph while reconciliation is held", () => {
++  const root = chain(MAX_DATA_DEPTH);
++  const budget = new Budget({ dataSize: 10000 });
++  const release = budget.deferReconciliation();
++  try {
++    expect(() => reconcileCompiledValues(budget, [root])).toThrow(
++      expect.objectContaining({ budget: "dataSize" }),
++    );
++  } finally {
++    release();
++  }
++});
++
++it("keeps prototype traversal active when closures or captures are ignored", () => {
++  let reads = 0;
++  const root = chain(MAX_DATA_DEPTH, () => {
++    reads++;
++    return [];
++  });
++  expect(measureSandboxData([root], { ignoreClosures: true })).toBe(
++    MAX_DATA_DEPTH + 7,
++  );
++  expect(reads).toBe(0);
++  expect(measureSandboxData([root], { ignoreClosureCaptures: true })).toBe(
++    MAX_DATA_DEPTH * 14 + 7,
++  );
++  expect(reads).toBe(0);
++  expect(measureSandboxData([root])).toBe(MAX_DATA_DEPTH * 14 + 7);
++  expect(reads).toBe(MAX_DATA_DEPTH);
++});
++
++it("resumes parent properties after prototype callbacks and observes next-measurement mutations", () => {
++  const properties = createIntrinsicObject({ text: "a" });
++  let reads = 0;
++  const leaf = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => {
++      reads++;
++      properties.text = "x".repeat(1000);
++      return [];
++    },
++  });
++  const parent = createSandboxClosure({ call: () => undefined, properties });
++  setSandboxPrototype(parent, leaf);
++  let root = parent;
++  for (let index = 0; index < 140; index++) {
++    const next = createSandboxClosure({ call: () => undefined });
++    setSandboxPrototype(next, root);
++    root = next;
++  }
++  const usage = measureSandboxData([root]);
++  expect(reads).toBe(1);
++  expect(properties.text).toHaveLength(1000);
++  expect(measureSandboxData([root])).toBe(usage);
++  expect(reads).toBe(2);
++});
++
++it("closes suspended captures in order when deep prototype traversal throws", () => {
++  const events: string[] = [];
++  const failure = new Error("prototype failure");
++  const leaf = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => {
++      throw failure;
++    },
++  });
++  let root = leaf;
++  for (let index = 0; index < 140; index++) {
++    const next = createSandboxClosure({ call: () => undefined });
++    setSandboxPrototype(next, root);
++    root = next;
++  }
++  const source = root;
++  for (const name of ["inner", "outer"]) {
++    const next = root;
++    root = createSandboxClosure({
++      call: () => undefined,
++      retainedValues: function* () {
++        events.push(`open-${name}`);
++        try {
++          yield next;
++        } finally {
++          events.push(`close-${name}`);
++        }
++      },
++    });
++  }
++  // A deep capture prefix suspends native iterators in the off-stack worklist.
++  for (let index = 0; index < 128; index++) {
++    const next = root;
++    root = createSandboxClosure({
++      call: () => undefined,
++      retainedValues: () => [next],
++    });
++  }
++  expect(() => measureSandboxData([root])).toThrow(failure);
++  expect(events).toEqual([
++    "open-outer",
++    "open-inner",
++    "close-inner",
++    "close-outer",
++  ]);
++  expect(() => measureSandboxData([source])).toThrow(failure);
++});

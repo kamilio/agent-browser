@@ -23,6 +23,19 @@
 
 ## Current verified state
 
+- Deep closure prototype traversal now resumes from off-stack continuations;
+  parent properties/providers stay fresh after the complete prototype subtree.
+  Retained contribution: safejs-closure-prototype-data-walk.patch. Baseline fails
+  four of six new checks; candidate passes all six plus 116 existing SDK checks,
+  scoped core/new-test compilation, new-test lint/format and exact patch forward/reverse.
+  Compiled default-stack/128 MB probe measures 14343 units at depth1024 instead of
+  native RangeError; excessive depth reports dataDepth, held primary quota remains
+  enforced, and callback/iterator order is preserved. Native adapter matches baseline
+  at 150437 retained / 30023 after clear, quota rejection and close zero under 128 MB.
+  Live HTTP 200, 16 scripts then Vue timeout at 960584 steps / 895131 peak, zero
+  sockets and cleanup zero; no join or speed claim. Pure closure-walker factoring
+  was separately reverted after inconsistent benchmark gains (repeat private/mixed
+  regressions about 7–8%). No graph reuse was enabled; temporary artifacts removed.
 - Capture-root admission/cardinality census rules out empty-private-map shortcuts
   and weak-snapshot churn as major reuse targets: 24.36 million snapshot hits /
   17,696 eligible misses / 257 collected snapshots; all 7.87 million declines
@@ -628,9 +641,9 @@
   media-device capture and AudioWorklet processing; native PCM chunk handling is
   not a Zoom audio source. Media transport/rendering APIs need implementation,
   separately from initialization performance and later live acceptance.
-- Default-stack dataDepth for direct symbol descendants, closure property/prototype
+- Default-stack dataDepth for direct symbol descendants, closure property
   paths and other untested graph edges; older scope-root shape expectations and a
-  baseline Promise snapshot timeout. The tested capture fix does not clear this gate.
+  baseline Promise snapshot timeout. Tested capture/prototype fixes do not clear this gate.
 - Three baseline joined-callback rejection failures, earlier shared-budget realm
   reentry failure, a PageScripts timer probe's generic callback script-error and
   an onload non-callable-handler failure. Prior intermittent default 1 s idle
