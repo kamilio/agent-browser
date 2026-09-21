@@ -28,6 +28,8 @@ import { BrowserSession } from "../src/session.js";
 //   node --max-old-space-size=192 dist/scripts/check-zoom-initialization.js
 // Set AGENT_BROWSER_ZOOM_USER_AGENT explicitly to compare server-selected client
 // documents; the same identity is published to HTTP requests and navigator.
+// Observe delayed initialization for 10 s after navigation by default; set
+// AGENT_BROWSER_ZOOM_OBSERVATION_MS between 0 and 30000 to select the window.
 // This checks initialization; it never certifies admission or meeting media.
 const packageRoot = process.env.AGENT_BROWSER_SAFEJS_SOURCE_ROOT;
 if (!packageRoot)
@@ -37,6 +39,15 @@ const timeoutMs = Number(
 );
 if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 120000)
 	throw new Error("Zoom script timeout must be between 1000 and 120000 ms");
+const observationMs = Number(
+	process.env.AGENT_BROWSER_ZOOM_OBSERVATION_MS ?? 10000,
+);
+if (
+	!Number.isSafeInteger(observationMs) ||
+	observationMs < 0 ||
+	observationMs > 30000
+)
+	throw new Error("Zoom observation window must be between 0 and 30000 ms");
 
 const userAgent = process.env.AGENT_BROWSER_ZOOM_USER_AGENT;
 
@@ -106,6 +117,15 @@ const { factory } = await loadPageRuntime(
 );
 
 const owners = new Set<PageScripts>();
+const loaders = new Set<ScriptLoader>();
+function createScriptLoader(
+	options: ConstructorParameters<typeof ScriptLoader>[0],
+) {
+	const loader = new ScriptLoader(options);
+	loaders.add(loader);
+	return loader;
+}
+
 const runtimes: PageRuntime[] = [];
 function currentDataSize(runtime: PageRuntime): number | undefined {
 	return (runtime.budget as { currentDataSize?: number }).currentDataSize;
@@ -294,7 +314,7 @@ const browser = new BrowserSession({
 	loadDocument: (response, context) =>
 		loadBrowserDocument(response, {
 			...context,
-			scripts: new ScriptLoader({
+			scripts: createScriptLoader({
 				response,
 				topLevelDocument: context.topLevelDocument,
 				signal: context.signal,
@@ -335,6 +355,13 @@ try {
 	const tab = browser.createTab();
 	const navigation = await browser.navigate(tab.id, url);
 	status = navigation.response?.status;
+	if (observationMs > 0) {
+		console.log(JSON.stringify({ event: "post-navigation", observationMs }));
+		await new Promise<void>((resolve) => setTimeout(resolve, observationMs));
+		// Navigation completion does not drain future timer tasks. Keep the page
+		// alive for the selected window, then settle scripts those tasks inserted.
+		await Promise.all([...loaders].map((loader) => loader.settle()));
+	}
 	report = documentScriptState(browser.page(tab.id).document)?.report;
 } catch (failure) {
 	navigationError =
@@ -363,6 +390,7 @@ try {
 			event: "result",
 			scope: "Native Zoom navigation and script initialization only",
 			timeoutMs,
+			observationMs,
 			userAgent: browser.identity.userAgent,
 			loaderLimits,
 			blockedOrigins,

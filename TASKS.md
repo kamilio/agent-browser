@@ -23,6 +23,13 @@
 
 ## Current verified state
 
+- Zoom diagnostic keeps the page alive for a selectable 0–30 s post-navigation
+  observation (default 10 s), then settles newly inserted scripts before reporting.
+  Native build and three offline actual-SDK 128 MB cases at the standard 30 s
+  script limit pass: zero window omits the delayed script; observation captures
+  delayed success and makes delayed failure exit nonzero. All verify cleanup zero
+  and no socket attempts. A preliminary 1 s bootstrap allowance times out; this
+  does not clear existing timing-reliability or interactive-readiness gates.
 - More frequent SafeJS host-time sampling (8 nodes versus 128) preserves guest
   ownership and full graph accounting. Incremental contribution:
   safejs-frequent-host-checkpoints.patch, after timed-host-checkpoints. New
