@@ -234,6 +234,7 @@ export interface HtmlScriptHooks {
 		id: number,
 	): "blocking" | "nonblocking" | "inline";
 	finish(tree: DocumentTree): Promise<void>;
+	settle?(): Promise<void>;
 	policy?(tree: DocumentTree, id: number): void;
 	runParser?(step: () => void): Promise<void>;
 	parsed?(tree: DocumentTree): Promise<void>;

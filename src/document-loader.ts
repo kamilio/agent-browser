@@ -361,6 +361,9 @@ export async function loadBrowserDocument(
 		documentImages(tree).enableBackgrounds();
 		await context.scripts?.finish(tree);
 		await documentImages(tree).settle(context.signal);
+		// Load handlers and image completion can insert scripts after finish's
+		// earlier checkpoint. Drain those requests before bootstrap is retired.
+		await context.scripts?.settle?.();
 		return tree;
 	} catch (error) {
 		tree.close();

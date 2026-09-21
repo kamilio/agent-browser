@@ -23,6 +23,18 @@
 
 ## Current verified state
 
+- Document loading now settles scripts inserted by load handlers/final image
+  completion before bootstrap retirement. Three new native regressions fail
+  baseline; all 269 focused manifest-listed checks and native build pass, including
+  stop/close cancellation and existing bootstrap-only cancellation. Actual SDK
+  128 MB synthetic window-load insertion executes both scripts, zero socket
+  attempts, zero active requests and verified cleanup zero. Live 192 MB/120 s
+  diagnostic executes all ten initial scripts (vendor 62 s); a further observed
+  run reaches twelve discovered / eleven executed and the 187-byte webclient
+  bootstrap's UnhandledRejectionError. Its dynamic import of webclient.es.min.js
+  never reaches the request journal. No name/Join controls rendered, no Join
+  action taken, zero sockets and verified cleanup zero. This diagnostic allowance
+  does not clear the default 30 s/128 MB, interactive or meeting gates.
 - Zoom diagnostic keeps the page alive for a selectable 0–30 s post-navigation
   observation (default 10 s), then settles newly inserted scripts before reporting.
   Native build and three offline actual-SDK 128 MB cases at the standard 30 s
@@ -772,6 +784,12 @@
 
 ## Outstanding gates
 
+- Classic-script dynamic import cannot reach the network source graph. The SDK
+  creates that graph only in its module-evaluation branch; Zoom's classic
+  webclient.min.js imports ./webclient.es.min.js and rejects before any request.
+  Preserve each script's original referrer across later closures/callbacks and
+  evaluations without overwriting shared global scope identity; retain native
+  source admission, CSP, credentials, limits and cancellation checks.
 - Interactive Zoom initialization/join and every notetaker capability listed above.
   Iframe navigation, srcdoc/policy contexts and child script realms remain unsupported.
   Diagnostics block optional file-paa.zoom.us and cdn.cookielaw.org origins;

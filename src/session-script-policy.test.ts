@@ -5,6 +5,7 @@ import { loadBrowserDocument } from "./document-loader.js";
 import { documentScriptState } from "./document-script-state.js";
 import { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { documentInteractions } from "./interactions.js";
 import type {
 	NetworkRequest,
 	NetworkResponse,
@@ -13,6 +14,7 @@ import type {
 import type { ScriptEvaluation } from "./safejs.js";
 import type { ScriptFetchPolicy, ScriptFetchResult } from "./script-fetch.js";
 import { ScriptLoader } from "./script-loader.js";
+import { initializeScriptElement } from "./script-element-state.js";
 import {
 	BrowserSession,
 	type BrowserSessionOptions,
@@ -122,6 +124,114 @@ afterEach(() => {
 });
 
 describe("constructed BrowserSession script policy transport fixtures", () => {
+	it.each([
+		"complete",
+		"stop",
+		"close",
+	] as const)("keeps a script inserted by window load pending until %s", async (action) => {
+		const started = deferred<NetworkRequest>();
+		const release = deferred<void>();
+		const seen: string[] = [];
+		const { session } = fixture(
+			{
+				loadDocument: async (input, context) => {
+					const scripts = new ScriptLoader({
+						response: input,
+						signal: context.signal,
+						fetch: context.fetchScript,
+						fetchWithPolicy: policyFetch(context),
+						owner(tree) {
+							documents.push(tree);
+							const events = documentInteractions(tree).events;
+							events.addEventListener(
+								events.windowTarget as number,
+								"load",
+								() => {
+									const id = tree.createElement("script", {
+										src: scriptUrl,
+										crossorigin: "anonymous",
+									});
+									initializeScriptElement(tree, id, "dynamic");
+									tree.append(tree.root, id);
+								},
+							);
+							return {
+								closed: false,
+								evaluate: async (source): Promise<ScriptEvaluation> => {
+									seen.push(source);
+									return {
+										engine: "poe-safe-js",
+										partial: true,
+										ok: true,
+										metrics: {
+											steps: 0,
+											peakCallDepth: 0,
+											peakDataSize: 0,
+											consoleCalls: 0,
+										},
+									};
+								},
+							};
+						},
+					});
+					return loadBrowserDocument(input, { ...context, scripts });
+				},
+			},
+			async (input) => {
+				if (input.url === initialUrl)
+					return response(input.url, "<body>Window load fixture</body>", {
+						headers: { "content-type": ["text/html"] },
+					});
+				started.resolve(input);
+				await release.promise;
+				return response(input.url, "late-window-load-source");
+			},
+		);
+		const tab = session.createTab().id;
+		let navigationFinished = false;
+		const navigation = session.navigate(tab, initialUrl).then(
+			() => {
+				navigationFinished = true;
+				return { committed: true };
+			},
+			(error: AgentBrowserError) => {
+				navigationFinished = true;
+				return { committed: false, code: error.code };
+			},
+		);
+		try {
+			const request = await started.promise;
+			await new Promise<void>((resolve) => setImmediate(resolve));
+			expect(navigationFinished).toBe(false);
+			expect(request.signal?.aborted).toBe(false);
+			if (action === "stop") session.stop(tab);
+			else if (action === "close") session.close();
+			release.resolve();
+			expect(await navigation).toEqual(
+				action === "complete"
+					? { committed: true }
+					: {
+							committed: false,
+							code: action === "stop" ? "aborted" : "closed",
+						},
+			);
+			expect(seen).toEqual(
+				action === "complete" ? ["late-window-load-source"] : [],
+			);
+			if (action === "complete")
+				expect(
+					documentScriptState(session.page(tab).document)?.report,
+				).toMatchObject({
+					discovered: 1,
+					executed: 1,
+					failed: 0,
+				});
+			else expect(request.signal?.aborted).toBe(true);
+		} finally {
+			release.resolve();
+			await navigation;
+		}
+	});
 	it.each([
 		["cors", "same-origin", "omit", "cors", "https://example.com"],
 		["cors", "include", "include", "cors", "https://example.com"],
