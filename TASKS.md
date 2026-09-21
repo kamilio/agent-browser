@@ -23,6 +23,21 @@
 
 ## Current verified state
 
+- More frequent SafeJS host-time sampling (8 nodes versus 128) preserves guest
+  ownership and full graph accounting. Incremental contribution:
+  safejs-frequent-host-checkpoints.patch, after timed-host-checkpoints. New
+  expensive-node regression fails baseline; all 109 focused SDK checks and scoped
+  core/test compilation pass; patch applies/reverses exactly. Actual native/SDK
+  128 MB controlled fetch improves 4881 to 994 ms, host delay 191 to 42 ms;
+  identical 43714 guest steps / 97719 current / 98036 peak, cleanup zero.
+  Live 192 MB stylesheet (1526774 bytes) completes in 4.4 s versus baseline
+  timeout; vendor fetch completes in 1.2 s versus roughly 13 s baseline.
+  With a 10 s post-navigation observation and loader settlement, nine scripts
+  execute then vendor evaluation still times out at 30 s (198832 steps,
+  1344060 peak), zero sockets, verified cleanup zero. An earlier baseline
+  128 MB live run exhausts the heap at vendor start and cannot verify cleanup;
+  candidate production/default-heap acceptance remains unverified. No join or
+  CPU initialization speedup established; working Automations stays unchanged.
 - Script-boundary diagnostics now report current SDK data charge alongside peak
   usage. Native build and actual SDK 128 MB allocation/release fixture pass: a
   20000-character payload raises current charge to 85744, clearing it drops to

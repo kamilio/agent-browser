@@ -1,0 +1,70 @@
+diff --git a/packages/safe-js/src/interp/jobs.ts b/packages/safe-js/src/interp/jobs.ts
+--- a/packages/safe-js/src/interp/jobs.ts
++++ b/packages/safe-js/src/interp/jobs.ts
+@@ -64,7 +64,7 @@
+   private generation = 0;
+   private controlled = false;
+   private nodesUntilHostTurn = 4096;
+-  private nodesUntilTimeCheck = 128;
++  private nodesUntilTimeCheck = 8;
+   private lastHostTurn = Date.now();
+   private pauseRequest?: PauseRequest;
+   private finished = false;
+@@ -164,12 +164,12 @@
+     const nodeLimit = --queue.nodesUntilHostTurn <= 0;
+     let timeLimit = false;
+     if (--queue.nodesUntilTimeCheck <= 0) {
+-      queue.nodesUntilTimeCheck = 128;
++      queue.nodesUntilTimeCheck = 8;
+       timeLimit = Date.now() - queue.lastHostTurn >= 16;
+     }
+     if (!nodeLimit && !timeLimit) return;
+     queue.nodesUntilHostTurn = 4096;
+-    queue.nodesUntilTimeCheck = 128;
++    queue.nodesUntilTimeCheck = 8;
+     return yieldToHost().then(() => {
+       queue.lastHostTurn = Date.now();
+       if (queue.pauseRequest === undefined) return;
+diff --git a/packages/safe-js/src/interp/jobs-expensive-host-turn.test.ts b/packages/safe-js/src/interp/jobs-expensive-host-turn.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/interp/jobs-expensive-host-turn.test.ts
+@@ -0,0 +1,38 @@
++import { expect, it, vi } from "vitest";
++import { SandboxJobQueue } from "./jobs.js";
++
++it("serves host work within sixteen expensive nodes while keeping guest ownership", async () => {
++  let now = 0;
++  const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
++  const queue = new SandboxJobQueue();
++  queue.enableControl();
++  let hostRan = false;
++  let siblingRan = false;
++  const host = new Promise<void>((resolve) =>
++    setImmediate(() => {
++      hostRan = true;
++      resolve();
++    }),
++  );
++  try {
++    const owner = queue.run(async () => {
++      for (let index = 0; index < 16; index++) {
++        now += 4;
++        const checkpoint = SandboxJobQueue.checkpoint();
++        if (checkpoint !== undefined) await checkpoint;
++        expect(siblingRan).toBe(false);
++      }
++      expect(hostRan).toBe(true);
++    });
++    const sibling = queue.run(() => {
++      siblingRan = true;
++    });
++    await Promise.allSettled([owner, sibling]);
++    await owner;
++    expect(siblingRan).toBe(true);
++  } finally {
++    clock.mockRestore();
++    queue.finish();
++    await host;
++  }
++});
