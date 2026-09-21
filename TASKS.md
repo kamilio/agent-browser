@@ -23,6 +23,18 @@
 
 ## Current verified state
 
+- Global leaf/seen-identity dispatch outside the SDK classification visitor is
+  rejected and reverted. Candidate passes 56 focused SDK checks and scoped core/
+  new-test compilation; baseline preserves all six new checks. Exact charges,
+  identity lookup counts, DFS/reentry order and held quota rejection match.
+  Warmed synthetic median: 0.516 ms candidate versus 0.600/0.621 ms baseline,
+  with variable samples; live vendor reaches 191979 candidate versus 196276 baseline
+  steps in serial 30 s runs. Both execute nine document scripts, time out at vendor,
+  peak at 1341339 units, open zero sockets and verify cleanup zero. No useful live
+  gain or join established. Temporary entry census fails earlier under contention
+  (four scripts execute); its 26.7 million entries / 17.3 million visitor calls
+  do not profile vendor. Exact SDK source/build restored; temporary tests, counters,
+  configs and benchmarks removed. Avoid repeating dispatcher-only reductions.
 - Initial unsandboxed about:blank iframes now expose separate native documents,
   stable window/document links, inherited origin/base URL and child computed styles.
   Frame documents share parent/template node, text and document quotas; nested and
