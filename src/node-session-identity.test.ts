@@ -243,6 +243,24 @@ async function cli() {
 }
 
 describe("synthetic identity plumbing only; no SDK, runtime, process or network probes", () => {
+	it("preserves the custom user agent through the parent frame and child session options", async () => {
+		const identity = {
+			userAgent: "Compatibility/1 AgentBrowser/0.1",
+			languages: ["pl-pl"],
+		};
+		const created = await parent(identity);
+		const serialized = created.frames[0].identity;
+		expect(serialized).toEqual({
+			userAgent: identity.userAgent,
+			languages: ["pl-PL"],
+		});
+		await child(serialized);
+		expect(childMessages[0].type).toBe("ready");
+		send({ type: "command", id: 1, argv: ["capabilities"] });
+		await vi.waitFor(() => expect(fixture.session).toHaveBeenCalledOnce());
+		expect(fixture.session.mock.calls[0][0].identity).toEqual(serialized);
+	});
+
 	it.each([undefined, { languages: ["pl-pl", "en-us"] }])(
 		"parent serializes only canonical language options (%j)",
 		async (identity) => {
@@ -280,7 +298,7 @@ describe("synthetic identity plumbing only; no SDK, runtime, process or network 
 		null,
 		{ languages: [] },
 		{ languages: ["en", "EN"] },
-		{ userAgent: "Chrome" },
+		{ platform: "Chrome" },
 	])(
 		"parent rejects invalid identity before root access or mocked spawn (%j)",
 		async (identity) => {
@@ -337,7 +355,7 @@ describe("synthetic identity plumbing only; no SDK, runtime, process or network 
 			{ languages: ["en-us", "en-US"] },
 			{ languages: ["en_US"] },
 			{ languages: [null] },
-			{ languages: ["en"], userAgent: "Chrome" },
+			{ languages: ["en"], platform: "Chrome" },
 		].map((identity) => [identity]),
 	)(
 		"child rejects invalid serialized identity before mocked runtime loading (%j)",

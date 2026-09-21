@@ -20,6 +20,55 @@ function headers(input: unknown, identity: unknown = defaultBrowserIdentity) {
 }
 
 describe("native browser identity", () => {
+	it("preserves an explicit immutable user agent through reconstruction and headers", () => {
+		const options = { userAgent: "Compatibility/1 AgentBrowser/0.1" };
+		const identity = createBrowserIdentity(options);
+		options.userAgent = "Changed/1";
+		expect(identity.userAgent).toBe("Compatibility/1 AgentBrowser/0.1");
+		expect(identity.languages).toEqual(["en-US"]);
+		expect(Object.isFrozen(identity)).toBe(true);
+		const reconstructed = createBrowserIdentity({
+			userAgent: identity.userAgent,
+			languages: identity.languages,
+		});
+		expect(reconstructed).toEqual(identity);
+		expect(headers(undefined, reconstructed)["User-Agent"]).toBe(
+			identity.userAgent,
+		);
+		expect(
+			createBrowserIdentity({
+				userAgent: "a".repeat(browserIdentityLimits.userAgentCodeUnits),
+			}).userAgent,
+		).toHaveLength(browserIdentityLimits.userAgentCodeUnits);
+	});
+
+	it.each([
+		null,
+		false,
+		1,
+		new String("Agent"),
+		"",
+		"   ",
+		" Agent",
+		"Agent ",
+		"Agent\r\nInjected: yes",
+		"Agent\0",
+		"Agent\t",
+		"Agent\u007f",
+		"Agent\u0080",
+		"a".repeat(browserIdentityLimits.userAgentCodeUnits + 1),
+	])("rejects invalid user agents %#", (userAgent) => {
+		expect(() => create({ userAgent })).toThrow(TypeError);
+	});
+
+	it("rejects user-agent accessors without evaluating them", () => {
+		const get = vi.fn(() => "Agent");
+		expect(() =>
+			create(Object.defineProperty({}, "userAgent", { get })),
+		).toThrow(TypeError);
+		expect(get).not.toHaveBeenCalled();
+	});
+
 	it("uses one frozen explicit English default, not host locale", () => {
 		const canonicalize = vi.spyOn(Intl, "getCanonicalLocales");
 		try {
@@ -97,7 +146,7 @@ describe("native browser identity", () => {
 		"en",
 		[],
 		() => undefined,
-		{ userAgent: "Chrome" },
+		{ platform: "Chrome" },
 		{ platform: "Linux" },
 		{ languages: ["en"], extra: true },
 		{ constructor: undefined },

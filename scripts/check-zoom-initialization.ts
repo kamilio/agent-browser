@@ -21,6 +21,8 @@ import { BrowserSession } from "../src/session.js";
 // with authorization for this meeting and its necessary sockets, for example:
 // AGENT_BROWSER_SAFEJS_SOURCE_ROOT=/path/to/safe-js \
 //   node --max-old-space-size=192 dist/scripts/check-zoom-initialization.js
+// Set AGENT_BROWSER_ZOOM_USER_AGENT explicitly to compare server-selected client
+// documents; the same identity is published to HTTP requests and navigator.
 // This checks initialization; it never certifies admission or meeting media.
 const packageRoot = process.env.AGENT_BROWSER_SAFEJS_SOURCE_ROOT;
 if (!packageRoot)
@@ -30,6 +32,8 @@ const timeoutMs = Number(
 );
 if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 120000)
 	throw new Error("Zoom script timeout must be between 1000 and 120000 ms");
+
+const userAgent = process.env.AGENT_BROWSER_ZOOM_USER_AGENT;
 
 const url = "https://app.zoom.us/wc/7982110526/join";
 const blockedOrigins = [
@@ -123,6 +127,7 @@ const observed: PageRuntimeFactory = {
 };
 const socketTransport = new NodeWebSocketTransport({ blockedOrigins });
 const browser = new BrowserSession({
+	identity: { userAgent },
 	webSocketTransport: socketTransport,
 	limits: { maxScriptRequests: 64, navigationTimeoutMs: 180000 },
 	createTransport: (cookieJar) =>
@@ -199,6 +204,7 @@ try {
 			event: "result",
 			scope: "Native Zoom navigation and script initialization only",
 			timeoutMs,
+			userAgent: browser.identity.userAgent,
 			loaderLimits,
 			blockedOrigins,
 			moduleScripts: "enabled through the policy-aware native loader",

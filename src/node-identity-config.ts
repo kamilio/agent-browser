@@ -1,6 +1,7 @@
 import {
 	type BrowserIdentityOptions,
 	createBrowserIdentity,
+	defaultBrowserIdentity,
 } from "./browser-identity.js";
 import { AgentBrowserError } from "./errors.js";
 
@@ -11,9 +12,14 @@ export function sessionIdentityOptions(
 ): Readonly<BrowserIdentityOptions> {
 	try {
 		const identity = createBrowserIdentity(value as BrowserIdentityOptions);
-		return Object.freeze({ languages: identity.languages });
+		return Object.freeze({
+			languages: identity.languages,
+			...(identity.userAgent === defaultBrowserIdentity.userAgent
+				? {}
+				: { userAgent: identity.userAgent }),
+		});
 	} catch {
-		throw new AgentBrowserError("invalid-input", "Invalid browser languages");
+		throw new AgentBrowserError("invalid-input", "Invalid browser identity");
 	}
 }
 

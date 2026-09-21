@@ -136,6 +136,14 @@ it("exposes truthful default identity independently of passkeys", () => {
 	expect(navigator).not.toHaveProperty("credentials");
 });
 
+it("publishes the explicitly bound compatibility user agent read-only", () => {
+	const userAgent = "Compatibility/1 AgentBrowser/0.1";
+	const { navigator } = fixture(createBrowserIdentity({ userAgent }));
+	expect(navigator.userAgent).toBe(userAgent);
+	expect(Reflect.set(navigator, "userAgent", "Changed/1")).toBe(false);
+	expect(navigator.userAgent).toBe(userAgent);
+});
+
 it("uses the bound canonical profile with stable frozen native language data", () => {
 	const input = ["PL-pl", "en-us", "de"];
 	const identity = createBrowserIdentity({ languages: input });

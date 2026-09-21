@@ -89,6 +89,32 @@ it("defaults session requests and committed documents to the explicit native pro
 	expect(documentIdentity(session.page(tab).document)).toBe(session.identity);
 });
 
+it("uses one opt-in user agent for navigation, subresources and the committed document", async () => {
+	const identity = { userAgent: "Compatibility/1 AgentBrowser/0.1" };
+	const { session, requests } = fixture({
+		identity,
+		loadDocument: async (result, context) => {
+			const document = new DocumentTree(result.url, context.limits);
+			context.initializeDocument?.(document);
+			expect(documentIdentity(document).userAgent).toBe(
+				session.identity.userAgent,
+			);
+			await context.fetchScript?.("https://example.com/script.js");
+			return document;
+		},
+	});
+	identity.userAgent = "Changed/1";
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	await session.page(tab).fetch?.({ url: "https://example.com/data" });
+	expect(requests).toHaveLength(3);
+	for (const request of requests)
+		expect(request.headers?.["User-Agent"]).toBe(
+			"Compatibility/1 AgentBrowser/0.1",
+		);
+	expect(documentIdentity(session.page(tab).document)).toBe(session.identity);
+});
+
 it("canonicalizes and snapshots custom language preferences without retaining caller arrays", async () => {
 	const languages = ["fr-ca", "EN-us"];
 	const identity = { languages };
@@ -135,7 +161,7 @@ it.each([
 	["noncanonical duplicates", { languages: ["en-us", "en-US"] }],
 	["malformed language", { languages: ["en_US"] }],
 	["header injection", { languages: ["en-US\r\nInjected: true"] }],
-	["unsupported user agent", { userAgent: "OtherBrowser" }],
+	["user agent injection", { userAgent: "OtherBrowser\r\nInjected: yes" }],
 ] as const)(
 	"rejects %s identity before transport or resource configuration",
 	(_name, identity) => {

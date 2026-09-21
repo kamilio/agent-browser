@@ -1,16 +1,18 @@
 export const browserIdentityLimits = Object.freeze({
 	languages: 10,
+	userAgentCodeUnits: 2048,
 	languageTagCodeUnits: 64,
 	headerCount: 128,
 	headerBytes: 16 * 1024,
 });
 
 export interface BrowserIdentityOptions {
+	userAgent?: string;
 	languages?: readonly string[];
 }
 
 export interface BrowserIdentity {
-	readonly userAgent: "AgentBrowser/0.1";
+	readonly userAgent: string;
 	readonly language: string;
 	readonly languages: readonly string[];
 	readonly acceptLanguage: string;
@@ -36,10 +38,13 @@ function ownData(value: object, key: PropertyKey): unknown {
 	return descriptor.value;
 }
 
-function makeIdentity(languages: readonly string[]): Readonly<BrowserIdentity> {
+function makeIdentity(
+	languages: readonly string[],
+	userAgent = "AgentBrowser/0.1",
+): Readonly<BrowserIdentity> {
 	const copied = Object.freeze([...languages]);
 	const identity: Readonly<BrowserIdentity> = Object.freeze({
-		userAgent: "AgentBrowser/0.1",
+		userAgent,
 		language: copied[0],
 		languages: copied,
 		acceptLanguage: copied
@@ -60,10 +65,31 @@ export function createBrowserIdentity(
 	if (options === undefined) return defaultBrowserIdentity;
 	requireRecord(options);
 	const optionKeys = Reflect.ownKeys(options);
-	if (optionKeys.length > 1 || optionKeys.some((key) => key !== "languages"))
-		throw new TypeError("Only languages may be configured");
-	const input = optionKeys.length ? ownData(options, "languages") : undefined;
-	if (input === undefined) return defaultBrowserIdentity;
+	if (
+		optionKeys.length > 2 ||
+		optionKeys.some((key) => key !== "languages" && key !== "userAgent")
+	)
+		throw new TypeError("Only languages and userAgent may be configured");
+	const configuredUserAgent = optionKeys.includes("userAgent")
+		? ownData(options, "userAgent")
+		: undefined;
+	const userAgent = configuredUserAgent ?? defaultBrowserIdentity.userAgent;
+	if (
+		configuredUserAgent === null ||
+		typeof userAgent !== "string" ||
+		userAgent.length < 1 ||
+		userAgent.length > browserIdentityLimits.userAgentCodeUnits ||
+		!/^[\x20-\x7e]+$/.test(userAgent) ||
+		userAgent.trim() !== userAgent
+	)
+		throw new TypeError("Invalid or oversized user agent");
+	const input = optionKeys.includes("languages")
+		? ownData(options, "languages")
+		: undefined;
+	if (input === undefined)
+		return userAgent === defaultBrowserIdentity.userAgent
+			? defaultBrowserIdentity
+			: makeIdentity(defaultBrowserIdentity.languages, userAgent);
 	if (!Array.isArray(input) || Object.getPrototypeOf(input) !== Array.prototype)
 		throw new TypeError("Expected a language array");
 	const length = ownData(input, "length");
@@ -100,7 +126,7 @@ export function createBrowserIdentity(
 		)
 	)
 		throw new TypeError("Duplicate or oversized canonical language tag");
-	return makeIdentity(canonical);
+	return makeIdentity(canonical, userAgent);
 }
 
 export function browserIdentityHeaders(

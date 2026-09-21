@@ -7,6 +7,20 @@ import {
 } from "./node-identity-config.js";
 
 describe("pure identity configuration; no runtime or process probes", () => {
+	it("retains the opt-in user agent across JSON process configuration", () => {
+		const options = sessionIdentityOptions({
+			userAgent: "Compatibility/1 AgentBrowser/0.1",
+			languages: ["pl-pl"],
+		});
+		expect(options).toEqual({
+			userAgent: "Compatibility/1 AgentBrowser/0.1",
+			languages: ["pl-PL"],
+		});
+		expect(sessionIdentityOptions(JSON.parse(JSON.stringify(options)))).toEqual(
+			options,
+		);
+	});
+
 	it("uses explicit defaults and exports only frozen language options", () => {
 		for (const value of [undefined, {}, { languages: undefined }]) {
 			const options = sessionIdentityOptions(value);
@@ -105,8 +119,8 @@ describe("pure identity configuration; no runtime or process probes", () => {
 		for (const value of [
 			null,
 			[],
-			{ userAgent: "Chrome" },
-			{ languages: ["en-US"], userAgent: "Chrome" },
+			{ platform: "Chrome" },
+			{ languages: ["en-US"], platform: "Chrome" },
 			Object.create({ languages: ["en-US"] }),
 			accessorOptions,
 			{ languages: accessorArray },
