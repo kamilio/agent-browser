@@ -1,0 +1,364 @@
+diff --git a/src/interp/object-model.ts b/src/interp/object-model.ts
+--- a/src/interp/object-model.ts
++++ b/src/interp/object-model.ts
+@@ -49,6 +49,9 @@
+ const nativeCreate = Object.create;
+ const nativeGetPrototypeOf = Object.getPrototypeOf;
+ const nativeGetOwnPropertyDescriptors = Object.getOwnPropertyDescriptors;
++const nativeGetOwnPropertyNames = Object.getOwnPropertyNames;
++const nativeGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
++const nativeFreeze = Object.freeze;
+ const NativeProxy = Proxy;
+ const nativeDefineProperty = Reflect.defineProperty;
+ const nativeDeleteProperty = Reflect.deleteProperty;
+@@ -56,7 +59,7 @@
+ const guestClosures = new WeakSet<object>();
+ const functionProperties = new WeakMap<object, SandboxObject>();
+ export const hostFunctionPropertyTables = new WeakSet<object>();
+-type StringDataProjection = { units: number; references: unknown[] };
++type StringDataProjection = { readonly units: number; readonly references: readonly unknown[] };
+ type TrackedPropertyState = {
+   revision: number;
+   measuredRevision?: number;
+@@ -149,10 +152,12 @@
+   const state = functionPropertyRevisions.get(value);
+   if (state === undefined) return undefined;
+   if (state.measuredStringRevision !== state.revision) {
+-    const enumerable: StringDataProjection = { units: 0, references: [] };
+-    const all: StringDataProjection = { units: 0, references: [] };
+-    for (const key of Object.getOwnPropertyNames(value)) {
+-      const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
++    let enumerableUnits = 0, allUnits = 0;
++    const enumerableReferences: unknown[] = [], allReferences: unknown[] = [];
++    const keys = nativeGetOwnPropertyNames(value);
++    for (let index = 0; index < keys.length; index++) {
++      const key = keys[index]!;
++      const descriptor = nativeGetOwnPropertyDescriptor(value, key)!;
+       let units = 1 + key.length;
+       let references: unknown[];
+       if ("value" in descriptor) {
+@@ -161,15 +166,27 @@
+         else if (typeof item === "bigint") units += item.toString(16).length;
+         references = ((typeof item === "object" && item !== null) || typeof item === "symbol") ? [item] : [];
+       } else references = retainedAccessorClosures(descriptor);
+-      all.units += units;
+-      all.references.push(...references);
++      allUnits += units;
++      for (let offset = 0; offset < references.length; offset++) {
++        const item = references[offset];
++        // Native push still invokes inherited numeric setters. Define own
++        // entries directly so neither those setters nor later push hooks can
++        // expose a mutable accounting snapshot while it is being constructed.
++        nativeDefineProperty(allReferences, allReferences.length, {
++          value: item, writable: true, enumerable: true, configurable: true
++        });
++        if (descriptor.enumerable) nativeDefineProperty(enumerableReferences, enumerableReferences.length, {
++          value: item, writable: true, enumerable: true, configurable: true
++        });
++      }
+       if (descriptor.enumerable) {
+-        enumerable.units += units;
+-        enumerable.references.push(...references);
++        enumerableUnits += units;
+       }
+     }
+-    state.enumerableStrings = enumerable;
+-    state.allStrings = all;
++    // Internal callers may read the cache, but cannot alter its units or edge
++    // membership. Descendants themselves remain mutable and are walked afresh.
++    state.enumerableStrings = nativeFreeze({ units: enumerableUnits, references: nativeFreeze(enumerableReferences) });
++    state.allStrings = nativeFreeze({ units: allUnits, references: nativeFreeze(allReferences) });
+     state.measuredStringRevision = state.revision;
+   }
+   return includeNonEnumerable ? state.allStrings : state.enumerableStrings;
+diff --git a/src/interp/accessors.ts b/src/interp/accessors.ts
+--- a/src/interp/accessors.ts
++++ b/src/interp/accessors.ts
+@@ -7,6 +7,7 @@
+ const accessorClosures = new WeakMap<object, SandboxClosure>();
+ const getterAdapters = new WeakMap<SandboxClosure, () => undefined>();
+ const setterAdapters = new WeakMap<SandboxClosure, (value: unknown) => void>();
++const nativeDefineProperty = Reflect.defineProperty;
+ // Strict arguments carry this native intrinsic; translate its identity, never execute it.
+ const nativeRestrictedAccessor = Object.getOwnPropertyDescriptor(Function.prototype, "caller")!.get;
+
+@@ -45,9 +46,13 @@
+
+ export function retainedAccessorClosures(descriptor: PropertyDescriptor): SandboxClosure[] {
+   const closures: SandboxClosure[] = [];
+-  for (const adapter of [descriptor.get, descriptor.set]) {
++  const get = descriptor.get, set = descriptor.set;
++  for (let index = 0; index < 2; index++) {
++    const adapter = index === 0 ? get : set;
+     const closure = adapter === undefined ? undefined : accessorClosures.get(adapter);
+-    if (closure !== undefined) closures.push(closure);
++    if (closure !== undefined) nativeDefineProperty(closures, closures.length, {
++      value: closure, writable: true, enumerable: true, configurable: true
++    });
+   }
+   return closures;
+ }
+diff --git a/src/interp/string-projection-ownership.test.ts b/src/interp/string-projection-ownership.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/interp/string-projection-ownership.test.ts
+@@ -0,0 +1,259 @@
++import { expect, it } from "vitest";
++import { accessorAdapter, retainedAccessorClosures } from "./accessors.js";
++import { Budget } from "./budget.js";
++import {
++  createIntrinsicObject,
++  markDescriptorObject,
++  trackedObjectStringData,
++} from "./object-model.js";
++import {
++  createSandboxClosure,
++  measureSandboxData,
++  reconcileCompiledValues,
++} from "./values.js";
++
++it("does not expose cached edges through a later native push hook", () => {
++  const child = createIntrinsicObject({ text: "x".repeat(1000) });
++  const root = createIntrinsicObject({ child });
++  const original = Array.prototype.push;
++  const aliases = new Set<unknown[]>();
++  try {
++    Array.prototype.push = function (...items: unknown[]) {
++      if (items.includes(child)) aliases.add(this);
++      return Reflect.apply(original, this, items);
++    };
++    trackedObjectStringData(root, false);
++  } finally {
++    Array.prototype.push = original;
++  }
++  for (const alias of aliases) alias.length = 0;
++  expect(aliases.size).toBe(0);
++  expect(measureSandboxData([root])).toBe(1013);
++  expect(() =>
++    reconcileCompiledValues(new Budget({ dataSize: 500 }), [root]),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it.each([false, true])(
++  "freezes units and edge membership (hidden=%s)",
++  (hidden) => {
++    const child = { text: "payload" };
++    const root = createIntrinsicObject();
++    Object.defineProperty(root, "child", {
++      value: child,
++      configurable: true,
++      enumerable: !hidden,
++    });
++    const projection = trackedObjectStringData(root, hidden)!;
++    expect(Object.isFrozen(projection)).toBe(true);
++    expect(Object.isFrozen(projection.references)).toBe(true);
++    expect(Reflect.set(projection, "units", 0)).toBe(false);
++    expect(Reflect.set(projection.references, "length", 0)).toBe(false);
++    expect(projection.references).toEqual([child]);
++    expect(projection.units).toBe(6);
++  },
++);
++
++it.each(["getOwnPropertyNames", "getOwnPropertyDescriptor"] as const)(
++  "pins tracked reads across later Object.%s hooks",
++  (method) => {
++    const child = { text: "payload" };
++    const root = createIntrinsicObject({ child });
++    const originalNames = Object.getOwnPropertyNames;
++    const originalDescriptor = Object.getOwnPropertyDescriptor;
++    let intercepted = false;
++    try {
++      if (method === "getOwnPropertyNames")
++        Object.getOwnPropertyNames = (target) => {
++          if (target === root) {
++            intercepted = true;
++            return [];
++          }
++          return originalNames(target);
++        };
++      else
++        Object.getOwnPropertyDescriptor = (target, key) => {
++          if (target === root) {
++            intercepted = true;
++            return undefined;
++          }
++          return originalDescriptor(target, key);
++        };
++      trackedObjectStringData(root, false);
++    } finally {
++      Object.getOwnPropertyNames = originalNames;
++      Object.getOwnPropertyDescriptor = originalDescriptor;
++    }
++    expect(intercepted).toBe(false);
++    expect(trackedObjectStringData(root, false)!.references).toEqual([child]);
++  },
++);
++
++it("does not expose a cache through later native freeze hooks", () => {
++  const root = createIntrinsicObject({ text: "payload" });
++  const original = Object.freeze;
++  let intercepted = false;
++  try {
++    Object.freeze = <T>(value: T): Readonly<T> => {
++      intercepted = true;
++      return value;
++    };
++    trackedObjectStringData(root, false);
++  } finally {
++    Object.freeze = original;
++  }
++  expect(intercepted).toBe(false);
++  expect(Object.isFrozen(trackedObjectStringData(root, false)!)).toBe(true);
++});
++
++it("defines cache entries without invoking inherited numeric setters", () => {
++  const child = { text: "payload" };
++  const root = createIntrinsicObject({ child });
++  const aliases = new Set<object>();
++  const original = Object.getOwnPropertyDescriptor(Array.prototype, "0");
++  try {
++    Object.defineProperty(Array.prototype, "0", {
++      configurable: true,
++      set(value: unknown) {
++        if (value === child) aliases.add(this);
++        Object.defineProperty(this, "0", {
++          value,
++          writable: true,
++          enumerable: true,
++          configurable: true,
++        });
++      },
++    });
++    trackedObjectStringData(root, false);
++  } finally {
++    if (original) Object.defineProperty(Array.prototype, "0", original);
++    else Reflect.deleteProperty(Array.prototype, "0");
++  }
++  expect(aliases.size).toBe(0);
++  expect(trackedObjectStringData(root, false)!.references).toEqual([child]);
++});
++
++it("does not use a replaced array iterator to build owned snapshots", () => {
++  const child = { text: "payload" };
++  const root = createIntrinsicObject({ child });
++  const original = Array.prototype[Symbol.iterator];
++  let intercepted = false;
++  try {
++    Array.prototype[Symbol.iterator] = function* () {
++      intercepted = true;
++      yield "fake";
++    } as typeof original;
++    trackedObjectStringData(root, false);
++  } finally {
++    Array.prototype[Symbol.iterator] = original;
++  }
++  expect(intercepted).toBe(false);
++  expect(trackedObjectStringData(root, false)!.references).toEqual([child]);
++});
++
++it("preserves accessor edges across a push hook that erases transient arrays", () => {
++  const closure = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => ["x".repeat(1000)],
++  });
++  const root = createIntrinsicObject();
++  Object.defineProperty(root, "child", {
++    get: accessorAdapter(closure, "get"),
++    configurable: true,
++    enumerable: true,
++  });
++  const original = Array.prototype.push;
++  try {
++    Array.prototype.push = function (...items: unknown[]) {
++      const length = Reflect.apply(original, this, items);
++      if (items.includes(closure)) this.length = 0;
++      return length;
++    };
++    trackedObjectStringData(root, false);
++  } finally {
++    Array.prototype.push = original;
++  }
++  expect(trackedObjectStringData(root, false)!.references).toEqual([closure]);
++  expect(() =>
++    reconcileCompiledValues(new Budget({ dataSize: 500 }), [root]),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it("keeps descendant growth fresh and replaces caches after descriptor changes", () => {
++  const child = createIntrinsicObject({ text: "a" });
++  const root = createIntrinsicObject({ child });
++  const initial = trackedObjectStringData(root, false)!;
++  const before = measureSandboxData([root]);
++  child.text = "x".repeat(1000);
++  expect(trackedObjectStringData(root, false)).toBe(initial);
++  expect(measureSandboxData([root])).toBe(before + 999);
++  Object.defineProperty(root, "child", {
++    value: child,
++    configurable: true,
++    enumerable: false,
++  });
++  const after = trackedObjectStringData(root, false)!;
++  expect(after).not.toBe(initial);
++  expect(after.references).toEqual([]);
++  markDescriptorObject(root);
++  expect(measureSandboxData([root])).toBe(before + 999);
++  delete root.child;
++  expect(measureSandboxData([root])).toBe(1);
++  expect(initial.references).toEqual([child]);
++});
++
++it("preserves snapshot-before-callback order and next-measurement changes", () => {
++  const root = createIntrinsicObject();
++  root.first = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => {
++      root.later = "longer";
++      return [];
++    },
++  });
++  root.later = "a";
++  expect(measureSandboxData([root])).toBe(15);
++  expect(measureSandboxData([root])).toBe(20);
++});
++
++it("keeps untracked proxy descriptor observations conservative", () => {
++  const root = new Proxy(
++    { child: { text: "payload" } },
++    {
++      ownKeys() {
++        throw new Error("untracked trap");
++      },
++    },
++  );
++  expect(trackedObjectStringData(root, false)).toBeUndefined();
++  expect(() => measureSandboxData([root])).toThrow("untracked trap");
++});
++
++it("captures both descriptor adapters before metadata lookup", () => {
++  const closure = createSandboxClosure({ call: () => undefined });
++  const adapter = accessorAdapter(closure, "get");
++  const events: string[] = [];
++  const descriptor = {
++    get get() {
++      events.push("get");
++      return adapter;
++    },
++    get set() {
++      events.push("set");
++      return undefined;
++    },
++  };
++  const original = WeakMap.prototype.get;
++  let retained;
++  try {
++    WeakMap.prototype.get = function (key: object) {
++      if (key === adapter) events.push("lookup");
++      return Reflect.apply(original, this, [key]);
++    };
++    retained = retainedAccessorClosures(descriptor);
++  } finally {
++    WeakMap.prototype.get = original;
++  }
++  expect(events).toEqual(["get", "set", "lookup"]);
++  expect(retained).toEqual([closure]);
++});

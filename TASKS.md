@@ -23,6 +23,19 @@
 
 ## Current verified state
 
+- Tracked string-property projections now keep immutable units/edge snapshots,
+  using pinned native reads, freeze and own-entry construction; inherited numeric
+  setters and later push/iterator/reflection hooks cannot corrupt these caches.
+  Accessor adapter read order is preserved. Retained contribution:
+  safejs-string-projection-ownership.patch. Baseline fails nine of 13 new checks;
+  candidate passes all 13 plus 423 existing SDK checks, scoped compilation,
+  new-test lint/format and exact patch forward/reverse. Compiled quota probe:
+  1013 units / quota500 rejected, versus corrupted baseline 7 units / admitted.
+  Actual native adapter matches baseline: 150437 retained / 30023 after clear,
+  closure/private-field/disposal/descriptor behavior, quota rejection and close zero.
+  Live HTTP 200, 16 scripts then Vue timeout at 957061 steps / 892372 peak,
+  zero sockets and cleanup zero. No join or speed claim; other caches and foreign
+  graph ownership remain unproven. Temporary validation artifacts removed.
 - A provenance census narrows the primary-walk target to interpreted capture
   graphs: Vue alone performs 13,759 measurements / 116.0 million entries,
   including 18.1 million closure visits (14.5 million interpreted) and 26.3 million
