@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Tracked record/function table backings now stay private across later native
+  Reflect/Object/Proxy hooks; native copying/construction/mutation operations are
+  pinned. Retained contribution: safejs-tracked-backing-ownership.patch. Exact baseline
+  fails nine leak regressions; candidate passes ten new and 125 existing focused SDK
+  checks, scoped compilation, new-test lint/format and exact patch forward/reverse.
+  Compiled quota probe now measures 1006 rather than 13 units and rejects quota 500.
+  Native adapter matches baseline: 90302 retained units, 29974 after clear, closure/
+  private-field/disposal/descriptor behavior, dataSize rejection and close zero.
+  Live HTTP 200, 16 scripts then Vue timeout at 958505 steps / 893240 peak, zero
+  sockets and cleanup zero; no join or speed claim. Temporary artifacts removed.
 - Empty-block scope elision is rejected and removed. Sixteen new and 77 existing
   focused SDK checks, scoped compilation and new-test lint/format pass; exact baseline
   preserves 15 cases and fails the physical-frame regression. Actual native adapter

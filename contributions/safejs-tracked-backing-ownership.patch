@@ -1,0 +1,287 @@
+--- a/src/interp/object-model.ts
++++ b/src/interp/object-model.ts
+@@ -44,6 +44,15 @@
+   type SandboxValue
+ } from "./values.js";
+
++// These operations receive fresh backing tables. Capture their native identities
++// before later host hooks can expose a table and bypass revision invalidation.
++const nativeCreate = Object.create;
++const nativeGetPrototypeOf = Object.getPrototypeOf;
++const nativeGetOwnPropertyDescriptors = Object.getOwnPropertyDescriptors;
++const NativeProxy = Proxy;
++const nativeDefineProperty = Reflect.defineProperty;
++const nativeDeleteProperty = Reflect.deleteProperty;
++
+ const guestClosures = new WeakSet<object>();
+ const functionProperties = new WeakMap<object, SandboxObject>();
+ export const hostFunctionPropertyTables = new WeakSet<object>();
+@@ -199,8 +208,7 @@
+ }
+
+ export function createIntrinsicObject(initial: SandboxObject = Object.create(null)): SandboxObject {
+-  // Copy first so no caller retains an untracked alias to the backing table.
+-  const tracked = trackPropertyTable(Object.create(Object.getPrototypeOf(initial), Object.getOwnPropertyDescriptors(initial)));
++  const tracked = trackPropertyTable(initial);
+   trackedIntrinsicObjects.add(tracked);
+   return tracked;
+ }
+@@ -214,7 +222,12 @@
+   return trackedIntrinsicObjects.has(value);
+ }
+
+-function trackPropertyTable(properties: SandboxObject): SandboxObject {
++function trackPropertyTable(initial: SandboxObject): SandboxObject {
++  // Function property builders can also pass tables exposed by Object.create
++  // hooks. Always copy with native operations before installing the tracked proxy.
++  const properties = nativeCreate(
++    nativeGetPrototypeOf(initial), nativeGetOwnPropertyDescriptors(initial)
++  ) as SandboxObject;
+   // Never expose the raw table: native callers must invalidate captures too.
+   const state: TrackedPropertyState = { revision: 0 };
+   const invalidate = (key: PropertyKey) => {
+@@ -229,16 +242,16 @@
+     state.measuredStringRevision = undefined;
+     intrinsicMutationToken = {};
+   };
+-  const tracked = new Proxy(properties, {
++  const tracked = new NativeProxy(properties, {
+     defineProperty(target, key, descriptor) {
+-      const changed = Reflect.defineProperty(target, key, descriptor);
++      const changed = nativeDefineProperty(target, key, descriptor);
+       if (changed) {
+         invalidate(key);
+       }
+       return changed;
+     },
+     deleteProperty(target, key) {
+-      const changed = Reflect.deleteProperty(target, key);
++      const changed = nativeDeleteProperty(target, key);
+       if (changed) {
+         invalidate(key);
+       }
+--- /dev/null
++++ b/src/interp/tracked-backing-ownership.test.ts
+@@ -0,0 +1,222 @@
++import { expect, it } from "vitest";
++import { Budget } from "./budget.js";
++import {
++  createIntrinsicObject,
++  materializeFunctionProperties,
++} from "./object-model.js";
++import {
++  createSandboxClosure,
++  measureSandboxData,
++  reconcileCompiledValues,
++  type SandboxObject,
++} from "./values.js";
++
++it.each(["defineProperty", "deleteProperty"] as const)(
++  "does not expose a tracked backing through native Reflect.%s hooks",
++  (method) => {
++    const value = createIntrinsicObject({ word: "initial" });
++    const original = Reflect[method];
++    let leaked: object | undefined;
++    try {
++      if (method === "defineProperty")
++        Reflect.defineProperty = (target, key, descriptor) => {
++          leaked = target;
++          return Reflect.apply(original, Reflect, [target, key, descriptor]);
++        };
++      else
++        Reflect.deleteProperty = (target, key) => {
++          leaked = target;
++          return Reflect.apply(original, Reflect, [target, key]);
++        };
++      if (method === "defineProperty") value.extra = 1;
++      else delete value.word;
++    } finally {
++      Reflect[method] = original as typeof Reflect.defineProperty &
++        typeof Reflect.deleteProperty;
++    }
++    expect(leaked).toBeUndefined();
++  },
++);
++
++it.each(["defineProperty", "deleteProperty"] as const)(
++  "enforces growth after a temporary native Reflect.%s hook is restored",
++  (method) => {
++    const value = createIntrinsicObject({ word: "initial" });
++    const original = Reflect[method];
++    let leaked: SandboxObject | undefined;
++    try {
++      if (method === "defineProperty")
++        Reflect.defineProperty = (target, key, descriptor) => {
++          leaked = target as SandboxObject;
++          return Reflect.apply(original, Reflect, [target, key, descriptor]);
++        };
++      else
++        Reflect.deleteProperty = (target, key) => {
++          leaked = target as SandboxObject;
++          return Reflect.apply(original, Reflect, [target, key]);
++        };
++      if (method === "defineProperty") value.extra = 1;
++      else delete value.word;
++    } finally {
++      Reflect[method] = original as typeof Reflect.defineProperty &
++        typeof Reflect.deleteProperty;
++    }
++    measureSandboxData([value]);
++    (leaked ?? value).word = "x".repeat(1000);
++    expect(measureSandboxData([value])).toBe(
++      measureSandboxData([{ ...value }]),
++    );
++    expect(() =>
++      reconcileCompiledValues(new Budget({ dataSize: 500 }), [value]),
++    ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++  },
++);
++
++it.each(["record", "function"])(
++  "isolates %s tables from temporary native Object.create hooks",
++  (kind) => {
++    const original = Object.create;
++    const aliases: SandboxObject[] = [];
++    let value: SandboxObject;
++    try {
++      Object.create = (
++        prototype: object | null,
++        descriptors?: PropertyDescriptorMap,
++      ) => {
++        const result =
++          descriptors === undefined
++            ? original(prototype)
++            : original(prototype, descriptors);
++        aliases.push(result);
++        return result;
++      };
++      value =
++        kind === "record"
++          ? createIntrinsicObject({ word: "initial" })
++          : materializeFunctionProperties(
++              createSandboxClosure({
++                guest: true,
++                name: "example",
++                call: () => undefined,
++              }),
++            );
++    } finally {
++      Object.create = original;
++    }
++    const before = measureSandboxData([value!]);
++    for (const alias of aliases) alias.payload = "x".repeat(1000);
++    expect(value!.payload).toBeUndefined();
++    expect(measureSandboxData([value!])).toBe(before);
++    value!.payload = "x".repeat(1000);
++    expect(measureSandboxData([value!])).toBe(before + 1008);
++    expect(() =>
++      reconcileCompiledValues(new Budget({ dataSize: 500 }), [value!]),
++    ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++  },
++);
++
++it("does not expose fresh tables through a temporary native Proxy constructor hook", () => {
++  const original = Proxy;
++  let leaked: SandboxObject | undefined;
++  let value: SandboxObject;
++  try {
++    globalThis.Proxy = new original(original, {
++      construct(target, args) {
++        leaked = args[0] as SandboxObject;
++        return Reflect.construct(target, args);
++      },
++    });
++    value = createIntrinsicObject({ word: "initial" });
++  } finally {
++    globalThis.Proxy = original;
++  }
++  expect(leaked).toBeUndefined();
++  measureSandboxData([value!]);
++  value!.word = "x".repeat(1000);
++  expect(measureSandboxData([value!])).toBe(1006);
++  expect(() =>
++    reconcileCompiledValues(new Budget({ dataSize: 500 }), [value!]),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it("copies caller records and preserves descriptor flags and proxy input trap ordering", () => {
++  const input = { word: "initial" };
++  Object.defineProperty(input, "hidden", {
++    value: "private",
++    writable: false,
++    enumerable: false,
++    configurable: false,
++  });
++  const calls: string[] = [];
++  const proxy = new Proxy(input, {
++    getPrototypeOf(target) {
++      calls.push("prototype");
++      return Reflect.getPrototypeOf(target);
++    },
++    ownKeys(target) {
++      calls.push("keys");
++      return Reflect.ownKeys(target);
++    },
++    getOwnPropertyDescriptor(target, key) {
++      calls.push(String(key));
++      return Reflect.getOwnPropertyDescriptor(target, key);
++    },
++  });
++  const value = createIntrinsicObject(proxy);
++  expect(calls).toEqual(["prototype", "keys", "word", "hidden"]);
++  expect(Object.getOwnPropertyDescriptor(value, "hidden")).toEqual(
++    Object.getOwnPropertyDescriptor(input, "hidden"),
++  );
++  measureSandboxData([value]);
++  input.word = "x".repeat(1000);
++  expect(value.word).toBe("initial");
++  value.word = "current";
++  expect(measureSandboxData([value])).toBe(
++    measureSandboxData([{ word: "current" }]),
++  );
++  expect(Reflect.defineProperty(value, "hidden", { value: "changed" })).toBe(
++    false,
++  );
++  expect(Reflect.deleteProperty(value, "hidden")).toBe(false);
++});
++
++it.each(["defineProperty", "defineProperties"] as const)(
++  "isolates function property builders from native Object.%s hooks",
++  (method) => {
++    const closure = createSandboxClosure({
++      guest: true,
++      name: "Example",
++      call: () => undefined,
++      construct: () => ({}),
++    });
++    const original = Object[method];
++    let builder: SandboxObject | undefined;
++    let value: SandboxObject;
++    try {
++      if (method === "defineProperty")
++        Object.defineProperty = (target, key, descriptor) => {
++          if (key === "prototype") builder = target as SandboxObject;
++          return Reflect.apply(original, Object, [target, key, descriptor]);
++        };
++      else
++        Object.defineProperties = (target, descriptors) => {
++          builder = target as SandboxObject;
++          return Reflect.apply(original, Object, [target, descriptors]);
++        };
++      value = materializeFunctionProperties(closure);
++    } finally {
++      Object[method] = original as typeof Object.defineProperty &
++        typeof Object.defineProperties;
++    }
++    expect(builder).toBeDefined();
++    const before = measureSandboxData([value!]);
++    builder!.payload = "x".repeat(1000);
++    expect(value!.payload).toBeUndefined();
++    expect(measureSandboxData([value!])).toBe(before);
++    value!.payload = "x".repeat(1000);
++    expect(measureSandboxData([value!])).toBe(before + 1008);
++    expect(() =>
++      reconcileCompiledValues(new Budget({ dataSize: 500 }), [value!]),
++    ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++  },
++);
