@@ -1,0 +1,611 @@
+diff --git a/src/interp/scope.ts b/src/interp/scope.ts
+--- a/src/interp/scope.ts
++++ b/src/interp/scope.ts
+@@ -7,7 +7,7 @@
+ import type { SandboxObject } from "./values.js";
+ import type { ModuleEnvironment } from "../modules/registry.js";
+ import { privateNameDataRoot } from "./private-name-data-roots.js";
+-import { scopeDataRoots } from "./scope-data-roots.js";
++import { setScopeDataRoot } from "./scope-data-roots.js";
+ import { hasEmptyOwnedModuleEnvironment } from "../modules/empty-environment.js";
+ 
+ type ScopeBinding = {
+@@ -371,7 +371,7 @@
+         }
+         if (binding.accounting === undefined) {
+           const root = Object.freeze({});
+-          scopeDataRoots.set(root, {value});
++          setScopeDataRoot(root, {value});
+           binding.accounting = {value, root};
+         }
+         roots.push(binding.accounting.root);
+@@ -379,7 +379,7 @@
+       this.#bindingDataRoots = [];
+       if (roots.length > 0) {
+         const group = Object.freeze({});
+-        scopeDataRoots.set(group, {values: roots});
++        setScopeDataRoot(group, {values: roots});
+         this.#bindingDataRoots.push(group);
+       }
+     }
+@@ -389,7 +389,7 @@
+       return values;
+     }
+     const group = Object.freeze({});
+-    scopeDataRoots.set(group, { values });
++    setScopeDataRoot(group, { values });
+     const roots = [group];
+     this.#retainedDataSnapshot = new WeakRef({ scopes, roots });
+     return [...roots];
+diff --git a/src/interp/private-name-data-roots.ts b/src/interp/private-name-data-roots.ts
+--- a/src/interp/private-name-data-roots.ts
++++ b/src/interp/private-name-data-roots.ts
+@@ -1,23 +1,38 @@
+ import { types as nodeTypes } from "node:util";
+ import type { InterpreterValue } from "./interpreter.js";
+ import type { SandboxObject } from "./values.js";
+-import { scopeDataRoots } from "./scope-data-roots.js";
++import { setScopeDataRoot } from "./scope-data-roots.js";
+ 
+ const nativeValues = Map.prototype.values;
+ const nativeForEach = Map.prototype.forEach;
++const nativeMapPrototype = Map.prototype;
++const nativePrototype = Object.getPrototypeOf;
++const nativeDescriptor = Object.getOwnPropertyDescriptor;
++const nativeHasOwn = Object.hasOwn;
++const nativeIsProxy = nodeTypes.isProxy;
++const nativeIsMap = nodeTypes.isMap;
++const nativeApply = Reflect.apply;
++const nativeDefine = Reflect.defineProperty;
++const nativeFreeze = Object.freeze;
++const nativeWeakRef = WeakRef;
++const nativeDeref = WeakRef.prototype.deref;
++const nativeIteratorSymbol = Symbol.iterator;
+ const iteratorPrototype = Object.getPrototypeOf(new Map().values());
+ const nativeNext = Object.getOwnPropertyDescriptor(
+ 	iteratorPrototype,
+ 	"next",
+ )!.value;
+-const iterablePrototype = Object.getPrototypeOf(iteratorPrototype);
++const iterablePrototype = nativePrototype(iteratorPrototype);
+ const nativeIterator = Object.getOwnPropertyDescriptor(
+ 	iterablePrototype,
+ 	Symbol.iterator,
+ )!.value;
+ 
+-type Capture = { root: SandboxObject; values: readonly InterpreterValue[] };
++type Capture = { readonly root: SandboxObject; readonly values: readonly InterpreterValue[] };
+ const captures = new WeakMap<object, WeakRef<Capture>>();
++const nativeCaptureGet: typeof captures.get = WeakMap.prototype.get.bind(captures);
++const nativeCaptureSet: typeof captures.set = WeakMap.prototype.set.bind(captures);
++const nativeCaptureDelete: typeof captures.delete = WeakMap.prototype.delete.bind(captures);
+ type CaptureState = {
+ 	before?: readonly InterpreterValue[];
+ 	values?: InterpreterValue[];
+@@ -25,12 +40,20 @@
+ 	cacheable: boolean;
+ };
+ 
++function appendCapture(values: InterpreterValue[], value: InterpreterValue): void {
++	nativeDefine(values, values.length, { value, writable: true, enumerable: true, configurable: true });
++}
++function copyCapture(before: readonly InterpreterValue[] | undefined, end: number): InterpreterValue[] {
++	const values: InterpreterValue[] = [];
++	const limit = before === undefined ? 0 : end < before.length ? end : before.length;
++	for (let index = 0; index < limit; index++) appendCapture(values, before![index]!);
++	return values;
++}
+ function captureValue(this: CaptureState, value: InterpreterValue): void {
+ 	if (typeof value !== "object" || value === null) this.cacheable = false;
+-	if (this.values === undefined && this.before?.[this.index] !== value) {
+-		this.values = this.before?.slice(0, this.index) ?? [];
+-	}
+-	this.values?.push(value);
++	const previous = this.before !== undefined && this.index < this.before.length ? this.before[this.index] : undefined;
++	if (this.values === undefined && previous !== value) this.values = copyCapture(this.before, this.index);
++	if (this.values !== undefined) appendCapture(this.values, value);
+ 	this.index++;
+ }
+ 
+@@ -41,30 +64,31 @@
+ ): SandboxObject | undefined {
+ 	if (
+ 		names === undefined ||
+-		nodeTypes.isProxy(names) ||
+-		!nodeTypes.isMap(names) ||
+-		Object.getPrototypeOf(names) !== Map.prototype ||
+-		Object.hasOwn(names, "values") ||
+-		Object.getOwnPropertyDescriptor(Map.prototype, "values")?.value !==
++		nativeIsProxy(names) ||
++		!nativeIsMap(names) ||
++		nativePrototype(names) !== nativeMapPrototype ||
++		nativeHasOwn(names, "values") ||
++		nativeDescriptor(nativeMapPrototype, "values")?.value !==
+ 			nativeValues ||
+-		Object.getOwnPropertyDescriptor(iteratorPrototype, "next")?.value !==
++		nativeDescriptor(iteratorPrototype, "next")?.value !==
+ 			nativeNext ||
+-		Object.getPrototypeOf(iteratorPrototype) !== iterablePrototype ||
+-		Object.getOwnPropertyDescriptor(iterablePrototype, Symbol.iterator)
++		nativePrototype(iteratorPrototype) !== iterablePrototype ||
++		nativeDescriptor(iterablePrototype, nativeIteratorSymbol)
+ 			?.value !== nativeIterator ||
+-		Object.hasOwn(iteratorPrototype, Symbol.iterator)
++		nativeHasOwn(iteratorPrototype, nativeIteratorSymbol)
+ 	)
+ 		return undefined;
+-	const before = captures.get(names)?.deref();
++	const reference = nativeCaptureGet(names);
++	const before: Capture | undefined = reference === undefined ? undefined : nativeApply(nativeDeref, reference, []);
+ 	const state: CaptureState = {
+ 		before: before?.values,
+ 		index: 0,
+ 		cacheable: true,
+ 	};
+-	Reflect.apply(nativeForEach, names, [captureValue, state]);
++	nativeApply(nativeForEach, names, [captureValue, state]);
+ 	// Raw primitives must retain their original multiplicity across callbacks.
+ 	if (!state.cacheable) {
+-		captures.delete(names);
++		nativeCaptureDelete(names);
+ 		return undefined;
+ 	}
+ 	if (
+@@ -73,9 +97,9 @@
+ 		state.index === before.values.length
+ 	)
+ 		return before.root;
+-	const values = state.values ?? state.before?.slice(0, state.index) ?? [];
+-	const root = Object.freeze({});
+-	scopeDataRoots.set(root, { values });
+-	captures.set(names, new WeakRef({ root, values }));
++	const values = nativeFreeze(state.values ?? copyCapture(state.before, state.index));
++	const root = nativeFreeze({});
++	setScopeDataRoot(root, nativeFreeze({ values }));
++	nativeCaptureSet(names, new nativeWeakRef(nativeFreeze({ root, values })));
+ 	return root;
+ }
+diff --git a/src/interp/scope-data-roots.ts b/src/interp/scope-data-roots.ts
+--- a/src/interp/scope-data-roots.ts
++++ b/src/interp/scope-data-roots.ts
+@@ -1,6 +1,17 @@
+ import type { InterpreterValue } from "./interpreter.js";
+ 
+ // Accounting-only snapshots: never guest objects or serialized frame cells.
+-export const scopeDataRoots = new WeakMap<object,
+-  { readonly value: InterpreterValue } | { readonly values: readonly InterpreterValue[] }
+->();
++type ScopeDataRoot =
++  { readonly value: InterpreterValue } | { readonly values: readonly InterpreterValue[] };
++export const scopeDataRoots = new WeakMap<object, ScopeDataRoot>();
++// Later native hooks must not receive the registry or its metadata records.
++const nativeGet: typeof scopeDataRoots.get = WeakMap.prototype.get.bind(scopeDataRoots);
++const nativeSet: typeof scopeDataRoots.set = WeakMap.prototype.set.bind(scopeDataRoots);
++
++export function getScopeDataRoot(root: object): ScopeDataRoot | undefined {
++  return nativeGet(root);
++}
++
++export function setScopeDataRoot(root: object, data: ScopeDataRoot): void {
++  nativeSet(root, data);
++}
+diff --git a/src/interp/values.ts b/src/interp/values.ts
+--- a/src/interp/values.ts
++++ b/src/interp/values.ts
+@@ -2,7 +2,7 @@
+ import { nativeConstructorName } from "./native-constructor-name.js";
+ import { bindOtelSpan, getBoundOtelSpan } from "../observability/otel.js";
+ import { readNativeRegExp } from "./native-regexp.js";
+-import { scopeDataRoots } from "./scope-data-roots.js";
++import { getScopeDataRoot } from "./scope-data-roots.js";
+ import { getGeneratorOrigin } from "./closure-origin.js";
+ import { intrinsicDataRoots } from "./intrinsic-data-roots.js";
+ import { guestProxyStates } from "./guest-proxy.js";
+@@ -863,7 +863,7 @@
+             if ((typeof item === "object" && item !== null) || typeof item === "symbol") visit(item, depth);
+           break entry;
+         }
+-        const bindingRoot = scopeDataRoots.get(value);
++        const bindingRoot = getScopeDataRoot(value);
+         if (bindingRoot !== undefined) {
+           seen.add(value);
+           if ("value" in bindingRoot) value = bindingRoot.value;
+diff --git a/src/interp/scope-data-root-registry-ownership.test.ts b/src/interp/scope-data-root-registry-ownership.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/interp/scope-data-root-registry-ownership.test.ts
+@@ -0,0 +1,141 @@
++import { expect, it } from "vitest";
++import { Budget } from "./budget.js";
++import { Scope } from "./scope.js";
++import { getScopeDataRoot, setScopeDataRoot } from "./scope-data-roots.js";
++import {
++  createSandboxClosure,
++  measureSandboxData,
++  reconcileCompiledValues,
++} from "./values.js";
++
++for (const mutation of ["registry", "metadata"] as const)
++  it(`does not expose scope-root ${mutation} through later WeakMap.get hooks`, () => {
++    const scope = new Scope({ text: "x".repeat(1000) });
++    const roots = scope.retainedDataRoots();
++    const root = roots[0] as object;
++    const original = WeakMap.prototype.get;
++    const registries = new Set<WeakMap<object, unknown>>();
++    const records = new Set<{ values: unknown }>();
++    try {
++      WeakMap.prototype.get = function (key: object) {
++        const value = Reflect.apply(original, this, [key]);
++        if (
++          key === root &&
++          value &&
++          typeof value === "object" &&
++          "values" in value
++        ) {
++          registries.add(this);
++          records.add(value);
++        }
++        return value;
++      };
++      expect(measureSandboxData(roots)).toBe(1000);
++    } finally {
++      WeakMap.prototype.get = original;
++    }
++    if (mutation === "registry")
++      for (const registry of registries)
++        WeakMap.prototype.set.call(registry, root, { values: [] });
++    else for (const record of records) record.values = [];
++    expect(registries.size).toBe(0);
++    expect(records.size).toBe(0);
++    expect(measureSandboxData(scope.retainedDataRoots())).toBe(1000);
++    expect(() =>
++      reconcileCompiledValues(
++        new Budget({ dataSize: 500 }),
++        scope.retainedDataRoots(),
++      ),
++    ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++  });
++
++for (const mutation of ["registry", "metadata"] as const)
++  it(`does not expose scope-root ${mutation} through later WeakMap.set hooks`, () => {
++    const scope = new Scope({ text: "x".repeat(1000) });
++    const original = WeakMap.prototype.set;
++    const exposures = new Set<{
++      registry: WeakMap<object, unknown>;
++      root: object;
++      metadata: { values: unknown };
++    }>();
++    let roots;
++    try {
++      WeakMap.prototype.set = function (root: object, metadata: unknown) {
++        if (metadata && typeof metadata === "object" && "values" in metadata)
++          exposures.add({
++            registry: this,
++            root,
++            metadata: metadata as { values: unknown },
++          });
++        return Reflect.apply(original, this, [root, metadata]);
++      };
++      roots = scope.retainedDataRoots();
++    } finally {
++      WeakMap.prototype.set = original;
++    }
++    for (const exposure of exposures) {
++      if (mutation === "registry")
++        WeakMap.prototype.set.call(exposure.registry, exposure.root, {
++          values: [],
++        });
++      else exposure.metadata.values = [];
++    }
++    expect(exposures.size).toBe(0);
++    expect(measureSandboxData(roots)).toBe(1000);
++    expect(() =>
++      reconcileCompiledValues(
++        new Budget({ dataSize: 500 }),
++        scope.retainedDataRoots(),
++      ),
++    ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++  });
++
++it("does not expose private-name root registration through later WeakMap.set hooks", () => {
++  const scope = new Scope();
++  scope.declarePrivateName("x".repeat(1000));
++  const original = WeakMap.prototype.set;
++  const exposures = new Set<{ values: unknown }>();
++  try {
++    WeakMap.prototype.set = function (root: object, metadata: unknown) {
++      if (metadata && typeof metadata === "object" && "values" in metadata)
++        exposures.add(metadata as { values: unknown });
++      return Reflect.apply(original, this, [root, metadata]);
++    };
++    scope.retainedDataRoots();
++  } finally {
++    WeakMap.prototype.set = original;
++  }
++  for (const metadata of exposures) metadata.values = [];
++  expect(exposures.size).toBe(0);
++  expect(() =>
++    reconcileCompiledValues(
++      new Budget({ dataSize: 500 }),
++      scope.retainedDataRoots(),
++    ),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it("preserves live vector observations from explicit internal registrations", () => {
++  const values: string[] = [];
++  const root = Object.freeze({});
++  const data = { values };
++  setScopeDataRoot(root, data);
++  expect(getScopeDataRoot(root)).toBe(data);
++  const mutate = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => {
++      values.push("x".repeat(1000));
++      return [];
++    },
++  });
++  expect(measureSandboxData([mutate, root])).toBe(1001);
++  const budget = new Budget({ dataSize: 500 });
++  const release = budget.deferReconciliation();
++  try {
++    expect(() => reconcileCompiledValues(budget, [root])).toThrow(
++      expect.objectContaining({ budget: "dataSize" }),
++    );
++  } finally {
++    release();
++  }
++});
+diff --git a/src/interp/private-name-cache-ownership.test.ts b/src/interp/private-name-cache-ownership.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/interp/private-name-cache-ownership.test.ts
+@@ -0,0 +1,248 @@
++import { expect, it } from "vitest";
++import { Budget } from "./budget.js";
++import { Scope } from "./scope.js";
++import { scopeDataRoots } from "./scope-data-roots.js";
++import { measureSandboxData, reconcileCompiledValues } from "./values.js";
++
++for (const method of ["get", "set"] as const)
++  it(`does not expose the private-name capture registry through later WeakMap.${method} hooks`, () => {
++    const scope = new Scope();
++    const name = scope.declarePrivateName("x".repeat(1000));
++    const names = scope.privateNames!;
++    if (method === "get") scope.retainedDataRoots();
++    const descriptor = Object.getOwnPropertyDescriptor(
++      WeakMap.prototype,
++      method,
++    )!;
++    const aliases = new Set<WeakMap<object, unknown>>();
++    try {
++      Object.defineProperty(WeakMap.prototype, method, {
++        ...descriptor,
++        value: function (
++          this: WeakMap<object, unknown>,
++          key: object,
++          value?: unknown,
++        ) {
++          const result = Reflect.apply(
++            descriptor.value,
++            this,
++            method === "get" ? [key] : [key, value],
++          );
++          if (
++            key === names &&
++            (method === "get" ? result : value) instanceof WeakRef
++          )
++            aliases.add(this);
++          return result;
++        },
++      });
++      scope.retainedDataRoots();
++    } finally {
++      Object.defineProperty(WeakMap.prototype, method, descriptor);
++    }
++    for (const alias of aliases)
++      WeakMap.prototype.set.call(
++        alias,
++        names,
++        new WeakRef({ root: Object.freeze({}), values: [name] }),
++      );
++    expect(aliases.size).toBe(0);
++    expect(measureSandboxData(scope.retainedDataRoots())).toBe(1013);
++    expect(() =>
++      reconcileCompiledValues(
++        new Budget({ dataSize: 500 }),
++        scope.retainedDataRoots(),
++      ),
++    ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++  });
++
++it("does not expose private-name capture records through a later WeakRef constructor", () => {
++  const scope = new Scope();
++  scope.declarePrivateName("x".repeat(1000));
++  const original = WeakRef;
++  const records = new Set<{ root: unknown }>();
++  try {
++    globalThis.WeakRef = new Proxy(original, {
++      construct(target, args, receiver) {
++        const value = args[0];
++        if (
++          value &&
++          typeof value === "object" &&
++          "root" in value &&
++          "values" in value
++        )
++          records.add(value);
++        return Reflect.construct(target, args, receiver);
++      },
++    });
++    scope.retainedDataRoots();
++  } finally {
++    globalThis.WeakRef = original;
++  }
++  for (const record of records) record.root = Object.freeze({});
++  expect(records.size).toBe(0);
++  expect(() =>
++    reconcileCompiledValues(
++      new Budget({ dataSize: 500 }),
++      scope.retainedDataRoots(),
++    ),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it("does not expose private-name capture records through later deref hooks", () => {
++  const scope = new Scope();
++  scope.declarePrivateName("x".repeat(1000));
++  scope.retainedDataRoots();
++  const descriptor = Object.getOwnPropertyDescriptor(
++    WeakRef.prototype,
++    "deref",
++  )!;
++  const records = new Set<{ root: unknown }>();
++  try {
++    Object.defineProperty(WeakRef.prototype, "deref", {
++      ...descriptor,
++      value: function (this: WeakRef<object>) {
++        const value = Reflect.apply(descriptor.value, this, []);
++        if (
++          value &&
++          typeof value === "object" &&
++          "root" in value &&
++          "values" in value
++        )
++          records.add(value);
++        return value;
++      },
++    });
++    scope.retainedDataRoots();
++  } finally {
++    Object.defineProperty(WeakRef.prototype, "deref", descriptor);
++  }
++  for (const record of records) record.root = Object.freeze({});
++  expect(records.size).toBe(0);
++  expect(() =>
++    reconcileCompiledValues(
++      new Budget({ dataSize: 500 }),
++      scope.retainedDataRoots(),
++    ),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it("keeps private-name projection records and membership vectors immutable", () => {
++  const scope = new Scope();
++  scope.declarePrivateName("x".repeat(1000));
++  const root = scope.retainedDataRoots()[0] as object;
++  const metadata = scopeDataRoots.get(root)!;
++  if (!("values" in metadata)) throw Error("missing projection");
++  expect(Object.isFrozen(metadata)).toBe(true);
++  expect(Object.isFrozen(metadata.values)).toBe(true);
++  expect(Reflect.set(metadata, "values", [])).toBe(false);
++  expect(Reflect.set(metadata.values, "length", 0)).toBe(false);
++  expect(() =>
++    reconcileCompiledValues(
++      new Budget({ dataSize: 500 }),
++      scope.retainedDataRoots(),
++    ),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it("does not expose capture vectors through later inherited numeric setters", () => {
++  const scope = new Scope();
++  const name = scope.declarePrivateName("x".repeat(1000));
++  const descriptor = Object.getOwnPropertyDescriptor(Array.prototype, "0");
++  const arrays = new Set<unknown[]>();
++  try {
++    Object.defineProperty(Array.prototype, "0", {
++      configurable: true,
++      set(value: unknown) {
++        if (value === name) arrays.add(this);
++        Object.defineProperty(this, "0", {
++          value,
++          writable: true,
++          configurable: true,
++          enumerable: true,
++        });
++      },
++    });
++    scope.retainedDataRoots();
++  } finally {
++    if (descriptor) Object.defineProperty(Array.prototype, "0", descriptor);
++    else Reflect.deleteProperty(Array.prototype, "0");
++  }
++  expect(arrays.size).toBe(0);
++  expect(() =>
++    reconcileCompiledValues(
++      new Budget({ dataSize: 500 }),
++      scope.retainedDataRoots(),
++    ),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it("preserves raw undefined entries followed by objects and later native membership growth", () => {
++  const scope = new Scope();
++  const first = { description: "first" };
++  scope.privateNames = new Map([
++    ["undefined", undefined as never],
++    ["first", first],
++  ]);
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(
++    measureSandboxData([undefined, first]),
++  );
++  scope.privateNames.delete("undefined");
++  const before = scope.retainedDataRoots();
++  const second = { description: "second" };
++  scope.privateNames.set("second", second);
++  expect(measureSandboxData(scope.retainedDataRoots())).toBe(
++    measureSandboxData([first, second]),
++  );
++  expect(measureSandboxData(before)).toBe(measureSandboxData([first]));
++});
++
++it("does not admit a custom values method through later reflection hooks", () => {
++  const scope = new Scope();
++  scope.declarePrivateName("decoy");
++  const descriptor = Object.getOwnPropertyDescriptor(Map.prototype, "values")!;
++  const original = Object.getOwnPropertyDescriptor;
++  let roots;
++  try {
++    Object.defineProperty(Map.prototype, "values", {
++      ...descriptor,
++      value: function* () {
++        yield "x".repeat(1000);
++      },
++    });
++    Object.getOwnPropertyDescriptor = (value, key) =>
++      value === Map.prototype && key === "values"
++        ? descriptor
++        : original(value, key);
++    roots = scope.retainedDataRoots();
++  } finally {
++    Object.getOwnPropertyDescriptor = original;
++    Object.defineProperty(Map.prototype, "values", descriptor);
++  }
++  expect(measureSandboxData(roots)).toBe(1000);
++  expect(() =>
++    reconcileCompiledValues(new Budget({ dataSize: 500 }), roots),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it("does not admit an own custom values method through later hasOwn hooks", () => {
++  const scope = new Scope();
++  scope.declarePrivateName("decoy");
++  Object.defineProperty(scope.privateNames!, "values", {
++    value: function* () {
++      yield "x".repeat(1000);
++    },
++  });
++  const original = Object.hasOwn;
++  let roots;
++  try {
++    Object.hasOwn = () => false;
++    roots = scope.retainedDataRoots();
++  } finally {
++    Object.hasOwn = original;
++  }
++  expect(measureSandboxData(roots)).toBe(1000);
++  expect(() =>
++    reconcileCompiledValues(new Budget({ dataSize: 500 }), roots),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});

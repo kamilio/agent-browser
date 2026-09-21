@@ -23,6 +23,22 @@
 
 ## Current verified state
 
+- Scope-root registry reads/writes and private-name capture caches now use pinned
+  native operations; private capture records/vectors are immutable and reflective
+  admission cannot be spoofed by later hooks. Retained contribution:
+  safejs-scope-root-registry-private-cache-ownership.patch. Baseline fails 13 of
+  15 new checks; candidate passes all 15 and 91 relevant SDK checks, including the
+  previously skipped GC check, scoped compilation, new-test lint/format and exact
+  patch forward/reverse. Baseline new-helper API shims only preserve explicit
+  registration coverage; regressions exercise unchanged baseline callers. Compiled
+  quota probes keep 1000/1013 units and reject quota500, versus poisoned baseline
+  0/1 units and admission. Native adapter matches baseline at 150399 retained /
+  29999 cleared, behavior/quota rejection and close zero under 128 MB. Live HTTP
+  200, first-script timeout, zero executed / sockets, 170019 steps / 187870 peak,
+  cleanup zero; no join or speed claim. Escape-monitored private-map layout was
+  separately reverted after nested/private benchmark regressions. No broader graph
+  reuse enabled; other scope caches/backings and frame vectors remain unproven.
+  Temporary validation artifacts removed; initialization and media gates stay open.
 - Shallow capture-root dispatch outside the large visitor is rejected and reverted.
   All 66 focused SDK checks and scoped compilation pass; compiled baseline/candidate
   usage, provider/identity-lookup counts, reentry, mutation, held quota and iterator
