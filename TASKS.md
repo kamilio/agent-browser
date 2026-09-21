@@ -854,8 +854,16 @@
   They do not prove complete module evaluation. The native editor fixture still
   exhausts 128 MB, even though isolated combined compilation fits. A temporary
   WeakSet node-ID traversal did not fix that gate and was restored exactly.
-  Reduce cumulative native realm/compiler memory and complete the loginview graph
-  before another live initialization attempt. Earlier short runs have a green
+  Offline forced-GC diagnostics isolate the editor fixture at about 47 MB before
+  tokenization, 99 MB after tokenization, 117 MB after parsing and 128 MB after
+  assigning AST IDs; after dependency resolution it retains about 123 MB.
+  A separate 128 MB expanded-class fixture measures 12 MB before SDK loading,
+  30 MB after loading, 37 MB after runtime creation and 45 MB after initialization;
+  it renders 12818 and closes with data zero/requests zero/sockets zero. Diagnostic
+  GC changes allocation timing; these samples do not certify normal-run peaks.
+  Both processes terminated and compiler instrumentation was restored exactly.
+  Reduce cumulative runtime/compiler memory, including AST storage, and complete
+  the loginview graph before another live initialization attempt. Earlier short runs have a green
   classic report and a pending ES request; classic reports prove no app readiness.
   Diagnostic source labels remain bounded without credentials/query/fragment/source
   text, and pending ES fetch absence/errors/timeouts are distinct from readiness.
