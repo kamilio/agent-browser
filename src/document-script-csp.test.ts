@@ -455,3 +455,46 @@ it("rejects malformed limit descriptors without invoking accessors or relaxing t
 	}
 	expect(read).not.toHaveBeenCalled();
 });
+
+it("derives a revocable classic import admission without changing inline entry admission", async () => {
+	const { tree, owner } = await parsedScripts(
+		'<script nonce="native"></script>',
+		"script-src 'nonce-native'",
+	);
+	const entry = [...tree.walk()].find(({ node }) => node.tagName === "script");
+	if (!entry) throw new Error("Missing classic script");
+	const admission = owner.prepareScript(entry.node.id);
+	if (!admission) throw new Error("Missing classic admission");
+	const imports = admission.forImports?.();
+	if (!imports) throw new Error("Missing derived import admission");
+	expect(admission.allows()).toBe(true);
+	expect(admission.allows("https://cdn.example/child.js", 0)).toBe(false);
+	expect(admission.forImports?.()).toBe(imports);
+	expect(owner.allowsRequest(imports, "https://cdn.example/child.js", 0)).toBe(
+		true,
+	);
+	owner.close();
+	expect(admission.allows()).toBe(false);
+	expect(imports.allows("https://cdn.example/child.js", 0)).toBe(false);
+	expect(admission.forImports?.()).toBeUndefined();
+});
+
+it("preserves host restrictions for classic imports admitted by unsafe-inline", async () => {
+	const { tree, owner } = await parsedScripts(
+		"<script></script>",
+		"script-src 'self' 'unsafe-inline'",
+	);
+	const entry = [...tree.walk()].find(({ node }) => node.tagName === "script");
+	if (!entry) throw new Error("Missing classic script");
+	const admission = owner.prepareScript(entry.node.id);
+	if (!admission) throw new Error("Missing classic admission");
+	const imports = admission.forImports?.();
+	if (!imports) throw new Error("Missing derived import admission");
+	expect(admission.allows()).toBe(true);
+	expect(owner.allowsRequest(imports, "https://example.com/child.js", 0)).toBe(
+		true,
+	);
+	expect(
+		owner.allowsRequest(imports, "https://other.example/child.js", 0),
+	).toBe(false);
+});

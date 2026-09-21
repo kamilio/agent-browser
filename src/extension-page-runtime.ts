@@ -1,5 +1,8 @@
 import { AgentBrowserError } from "./errors.js";
-import type { HtmlModuleRequest } from "./html-module.js";
+import type {
+	HtmlClassicScriptRequest,
+	HtmlModuleRequest,
+} from "./html-module.js";
 import {
 	type PageNetworkModuleOptions,
 	PageNetworkModuleRegistry,
@@ -436,6 +439,20 @@ export function extensionPageRuntime(
 				ensureOpen();
 				const sourceType = evaluation.sourceType;
 				const filename = evaluation.filename;
+				const classicScriptId = evaluation.classicScriptId;
+				if (classicScriptId !== undefined) {
+					if (
+						!classicScripts ||
+						sourceType !== undefined ||
+						!moduleScope ||
+						!("validateClassicEntry" in moduleScope)
+					)
+						throw new AgentBrowserError(
+							"invalid-input",
+							"Invalid classic source identity",
+						);
+					moduleScope.validateClassicEntry(source, classicScriptId);
+				}
 				if (sourceType !== undefined) {
 					if (sourceType !== "module")
 						throw new AgentBrowserError(
@@ -449,6 +466,16 @@ export function extensionPageRuntime(
 						);
 					moduleScope.validateEntry(source, filename);
 				}
+				// SafeJS uses its filename as the import referrer. Keep arbitrary host
+				// labels from borrowing the network registry's admitted source identity.
+				const sdkFilename =
+					classicScriptId ??
+					(sourceType !== "module" &&
+					selectedModules instanceof PageNetworkModuleRegistry &&
+					filename !== undefined &&
+					/^(?:https?:|urn:agent-browser:html-(?:classic|module):)/.test(filename)
+						? "agent-browser:unadmitted-classic"
+						: filename);
 				if (!realm)
 					throw new AgentBrowserError(
 						"closed",
@@ -465,7 +492,7 @@ export function extensionPageRuntime(
 						"supportsDiscardResult",
 					);
 					const result = await realm.evaluate(source, {
-						...(filename === undefined ? {} : { filename }),
+						...(sdkFilename === undefined ? {} : { filename: sdkFilename }),
 						...(sourceType === "module" ? { sourceType: "module" } : {}),
 						...(evaluation.discardResult === true &&
 						discard &&
@@ -520,6 +547,19 @@ export function extensionPageRuntime(
 			return {
 				budget,
 				supportsSourceModules: moduleScope !== undefined,
+				...(classicScripts &&
+				htmlEntries &&
+				moduleScope &&
+				"prepareHtmlClassicScript" in moduleScope
+					? {
+							prepareClassicScript: async (request: HtmlClassicScriptRequest) => {
+								ensureOpen();
+								const source = await moduleScope.prepareHtmlClassicScript(request);
+								ensureOpen();
+								return source;
+							},
+						}
+					: {}),
 				...(htmlEntries && moduleScope && "prepareHtmlModule" in moduleScope
 					? {
 							prepareModule: async (request: HtmlModuleRequest) => {

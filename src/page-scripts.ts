@@ -6,6 +6,7 @@ import { existingDocumentWebSockets } from "./document-websocket-owner.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import {
+	type HtmlClassicScriptRequest,
 	type HtmlModuleRequest,
 	type HtmlModuleSource,
 	moduleInputData,
@@ -270,6 +271,27 @@ export class PageScripts {
 		return !this.closed && typeof this.runtime?.prepareModule === "function";
 	}
 
+	get supportsHtmlClassicScripts(): boolean {
+		return (
+			!this.closed && typeof this.runtime?.prepareClassicScript === "function"
+		);
+	}
+
+	async prepareClassicScript(
+		request: HtmlClassicScriptRequest,
+	): Promise<HtmlModuleSource> {
+		this.ensureOpen();
+		const runtime = this.runtime;
+		if (!runtime?.prepareClassicScript)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Classic source admission requires an explicitly configured extension runtime",
+			);
+		const source = await runtime.prepareClassicScript(request);
+		this.ensureOpen();
+		return source;
+	}
+
 	async prepareModule(request: HtmlModuleRequest): Promise<HtmlModuleSource> {
 		this.ensureOpen();
 		const runtime = this.runtime;
@@ -288,6 +310,7 @@ export class PageScripts {
 		options: {
 			signal?: AbortSignal;
 			filename?: string;
+			classicScriptId?: string;
 			discardResult?: boolean;
 			classicScriptTask?: boolean;
 			sourceType?: "module";
@@ -308,6 +331,18 @@ export class PageScripts {
 			);
 		const filename = options.filename;
 		const sourceType = options.sourceType;
+		const classicScriptId = options.classicScriptId;
+		if (
+			classicScriptId !== undefined &&
+			(typeof classicScriptId !== "string" ||
+				classicScriptId.length > 4096 ||
+				options.classicScriptTask !== true ||
+				sourceType !== undefined)
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid classic source identity",
+			);
 		if (
 			(options.classicScriptTask !== undefined &&
 				typeof options.classicScriptTask !== "boolean") ||
@@ -389,6 +424,7 @@ export class PageScripts {
 			const evaluated = await runtime.evaluate(source, {
 				signal: controller.signal,
 				filename,
+				...(classicScriptId === undefined ? {} : { classicScriptId }),
 				...(options.discardResult === true ? { discardResult: true } : {}),
 				...(sourceType === "module" ? { sourceType: "module" } : {}),
 			});

@@ -16,7 +16,11 @@ import { isHtmlElement } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import { BrowserEvent } from "./events.js";
 import { documentHistory } from "./history.js";
-import type { HtmlModuleRequest, HtmlModuleSource } from "./html-module.js";
+import type {
+	HtmlClassicScriptRequest,
+	HtmlModuleRequest,
+	HtmlModuleSource,
+} from "./html-module.js";
 import type { HtmlScriptContext, HtmlScriptHooks } from "./html-parser.js";
 import { documentInteractions } from "./interactions.js";
 import {
@@ -49,6 +53,10 @@ interface ScriptRunner {
 	close?(): void | Promise<void>;
 	readonly supportsHtmlModules?: boolean;
 	prepareModule?(request: HtmlModuleRequest): Promise<HtmlModuleSource>;
+	readonly supportsHtmlClassicScripts?: boolean;
+	prepareClassicScript?(
+		request: HtmlClassicScriptRequest,
+	): Promise<HtmlModuleSource>;
 	evaluate(
 		source: string,
 		options: {
@@ -56,6 +64,7 @@ interface ScriptRunner {
 			filename: string;
 			discardResult: true;
 			classicScriptTask?: true;
+			classicScriptId?: string;
 			sourceType?: "module";
 		},
 	): Promise<ScriptEvaluation>;
@@ -70,6 +79,10 @@ interface Source {
 	error?: string;
 	admission?: DocumentScriptAdmission;
 	redirectCount?: number;
+	classic?: Pick<
+		HtmlClassicScriptRequest,
+		"baseUrl" | "credentials" | "external"
+	>;
 }
 
 type PreparedScript =
@@ -125,6 +138,7 @@ export class ScriptLoader implements HtmlScriptHooks {
 	private parserDepth = 0;
 	private readonly moduleResults = new Map<string, { error?: string }>();
 	private modules = false;
+	private classicImports = false;
 	private activeFetches = 0;
 	private parsingFinished = false;
 	private tail = Promise.resolve();
@@ -262,6 +276,9 @@ export class ScriptLoader implements HtmlScriptHooks {
 			this.runner?.supportsHtmlModules === true &&
 			typeof this.runner?.prepareModule === "function";
 		if (this.modules) this.counts.mode = "classic-and-module";
+		this.classicImports =
+			this.runner?.supportsHtmlClassicScripts === true &&
+			typeof this.runner.prepareClassicScript === "function";
 		this.unsubscribeMutations = tree.onMutation((record) =>
 			this.mutation(record),
 		);
@@ -526,7 +543,24 @@ export class ScriptLoader implements HtmlScriptHooks {
 			}
 			return {
 				mode: "inline",
-				source: { id, text: source, url: tree.url, external: false, admission },
+				source: {
+					id,
+					text: source,
+					url: tree.url,
+					external: false,
+					admission,
+					...(this.classicImports
+						? {
+								classic: {
+									baseUrl: documentBaseUrl(tree),
+									credentials:
+										attributes.crossorigin?.toLowerCase() === "use-credentials"
+											? ("include" as const)
+											: ("same-origin" as const),
+								},
+							}
+						: {}),
+				},
 			};
 		}
 		const requiresPolicy =
@@ -809,6 +843,23 @@ export class ScriptLoader implements HtmlScriptHooks {
 				external: true,
 				admission,
 				redirectCount: response.redirects.length,
+				...(this.classicImports
+					? {
+							classic: {
+								baseUrl: response.url,
+								// Classic no-cors entry fetches include credentials, but module
+								// imports use crossorigin's mode: same-origin by default.
+								credentials:
+									selection?.policy.mode === "cors"
+										? selection.policy.credentials
+										: ("same-origin" as const),
+								external: {
+									requestUrl: url,
+									redirects: response.redirects.map((redirect) => redirect.url),
+								},
+							},
+						}
+					: {}),
 			};
 		} catch (error) {
 			return {
@@ -910,14 +961,42 @@ export class ScriptLoader implements HtmlScriptHooks {
 			: undefined;
 		return withDocumentWrite(tree, writer, async () => {
 			let succeeded = false;
-			updateDocumentScriptState(tree, { currentScript: source.id });
 			try {
+				let classicScriptId: string | undefined;
+				if (source.classic) {
+					if (!runner.prepareClassicScript)
+						throw new AgentBrowserError(
+							"unsupported",
+							"Classic source admission is unavailable",
+						);
+					const prepared = await this.awaitOperation(
+						runner.prepareClassicScript({
+							...source.classic,
+							id: `urn:agent-browser:html-classic:${source.id}`,
+							source: text,
+							admission: source.admission,
+							signal: this.controller.signal,
+						}),
+					);
+					this.live();
+					if (
+						prepared.source !== text ||
+						prepared.id !== `urn:agent-browser:html-classic:${source.id}`
+					)
+						throw new AgentBrowserError(
+							"invalid-input",
+							"Classic source admission changed the prepared source",
+						);
+					classicScriptId = prepared.id;
+				}
+				updateDocumentScriptState(tree, { currentScript: source.id });
 				const result = await this.awaitOperation(
 					runner.evaluate(text, {
 						signal: this.controller.signal,
 						filename: source.url,
 						discardResult: true,
 						classicScriptTask: true,
+						...(classicScriptId === undefined ? {} : { classicScriptId }),
 					}),
 				);
 				this.live();

@@ -100,7 +100,15 @@ function fakeCore(
 					const definition = options.extensions[0] as Parameters<
 						ReleasedCore["defineExtension"]
 					>[0];
-					setup(definition.setup(context));
+					const extensionExports = definition.setup(context);
+					setup(extensionExports);
+					if (options.classicScripts) {
+						// Emulate only the Window bootstrap contract; no guest code runs.
+						const bridge = extensionExports.globals.__agentBrowserWindowGlobal as {
+							bind(reference: unknown): void;
+						};
+						bridge.bind({});
+					}
 				}
 				if (source === pageEventBootstrapSource) {
 					expect(evaluation).toEqual({
@@ -915,3 +923,228 @@ it.each([false, true])(
 		expect(classicFetch).not.toHaveBeenCalled();
 	},
 );
+
+const classicRuntimeId = "urn:agent-browser:html-classic:11";
+const classicRuntimeSource = "classic-source-contract";
+
+function classicRuntimeRequest(
+	overrides: Partial<import("./html-module.js").HtmlClassicScriptRequest> = {},
+): import("./html-module.js").HtmlClassicScriptRequest {
+	return {
+		id: classicRuntimeId,
+		source: classicRuntimeSource,
+		baseUrl: "https://example.com/original/",
+		credentials: "same-origin",
+		signal: new AbortController().signal,
+		...overrides,
+	};
+}
+
+it("forwards admitted classic source runtime identity separately from its filename", async () => {
+	const test = fakeCore();
+	const owner = page(
+		extensionPageRuntime(test.core, { classicScripts: true }),
+		configuration(),
+	);
+	expect(owner.scripts.supportsHtmlClassicScripts).toBe(true);
+	const prepared = await owner.scripts.prepareClassicScript(
+		classicRuntimeRequest(),
+	);
+	expect(
+		await owner.scripts.evaluate(prepared.source, {
+			filename: documentUrl,
+			classicScriptId: prepared.id,
+			classicScriptTask: true,
+		}),
+	).toMatchObject({ ok: true });
+	expect(test.realms[0].evaluate.mock.calls.at(-1)).toEqual([
+		classicRuntimeSource,
+		{ filename: classicRuntimeId },
+	]);
+});
+
+it.each([
+	"unknown",
+	"changed-source",
+	"module-mode",
+	"missing-task",
+])("rejects %s classic source runtime admission before forwarding the guest source", async (reason) => {
+	const test = fakeCore();
+	const owner = page(
+		extensionPageRuntime(test.core, { classicScripts: true }),
+		configuration(),
+	);
+	const prepared = await owner.scripts.prepareClassicScript(
+		classicRuntimeRequest(),
+	);
+	const source =
+		reason === "changed-source" ? `${prepared.source} ` : prepared.source;
+	await expect(
+		owner.scripts.evaluate(source, {
+			filename: documentUrl,
+			classicScriptId: reason === "unknown" ? `${prepared.id}1` : prepared.id,
+			classicScriptTask: reason !== "missing-task",
+			...(reason === "module-mode" ? { sourceType: "module" as const } : {}),
+		}),
+	).rejects.toMatchObject({ code: "invalid-input" });
+	expect(
+		test.realms[0].evaluate.mock.calls.filter(([text]) => text === source),
+	).toEqual([]);
+});
+
+it("keeps named host classic source runtime evaluations from borrowing admitted referrers", async () => {
+	const modules = configuration();
+	const denied: unknown[] = [];
+	const test = fakeCore(async (source, evaluation, options) => {
+		if (source !== "named-host-contract") return;
+		if (!evaluation?.filename) throw new Error("Missing host source identity");
+		expect(evaluation.filename).toBe("agent-browser:unadmitted-classic");
+		denied.push(
+			await options.sourceResolver?.("./child.js", evaluation.filename, {}),
+		);
+	});
+	const owner = page(
+		extensionPageRuntime(test.core, { classicScripts: true }),
+		modules,
+	);
+	await owner.scripts.prepareClassicScript(classicRuntimeRequest());
+	await owner.scripts.prepareModule(
+		request({ id: externalId, source: undefined }),
+	);
+	modules.fetchWithPolicy.mockClear();
+	for (const filename of [classicRuntimeId, externalId]) {
+		expect(
+			await owner.scripts.evaluate("named-host-contract", { filename }),
+		).toMatchObject({ ok: true });
+	}
+	expect(denied).toEqual([undefined, undefined]);
+	expect(modules.fetchWithPolicy).not.toHaveBeenCalled();
+});
+
+it.each(
+	[false, true].flatMap((csp) =>
+		[undefined, "anonymous", "use-credentials"].map((crossOrigin) => ({
+			csp,
+			crossOrigin,
+		})),
+	),
+)("routes inline and redirected external classic source runtime imports with $csp CSP and $crossOrigin crossorigin", async ({
+	csp,
+	crossOrigin,
+}) => {
+	const credentials =
+		crossOrigin === "use-credentials" ? "include" : "same-origin";
+	const attribute =
+		crossOrigin === undefined ? "" : ` crossorigin="${crossOrigin}"`;
+	let tree: DocumentTree | undefined;
+	const resolved: string[] = [];
+	const inlineText = "inline-classic-contract";
+	const externalText = "external-classic-contract";
+	const externalFinal = "https://example.com/redirected/entry.js";
+	const test = fakeCore(async (source, evaluation, options) => {
+		if (source !== inlineText && source !== externalText) return;
+		if (!tree || !evaluation?.filename)
+			throw new Error("Missing classic source owner");
+		expect(documentScriptState(tree)?.currentScript).not.toBeNull();
+		expect(evaluation.sourceType).toBeUndefined();
+		expect(evaluation.filename).toMatch(/^urn:agent-browser:html-classic:/);
+		const child = await options.sourceResolver?.(
+			"./child.js",
+			evaluation.filename,
+			{},
+		);
+		if (!child)
+			throw new Error("Prepared classic source lost import admission");
+		resolved.push(child.id);
+	});
+	const modules = configuration();
+	modules.fetchWithPolicy.mockImplementation(
+		async (url, policy, _signal, admission) => {
+			if (csp) expect(admission).toBeDefined();
+			if (url === externalId) {
+				expect(policy).toEqual(
+					crossOrigin === undefined
+						? { mode: "no-cors", credentials: "include" }
+						: { mode: "cors", credentials },
+				);
+				const fetchedEntry = fetched(externalText, externalFinal);
+				fetchedEntry.response.redirects = [
+					{ url: externalId, status: 302, location: externalFinal },
+				];
+				return fetchedEntry;
+			}
+			expect(policy).toEqual({
+				mode: "cors",
+				credentials,
+			});
+			return fetched("export const value=42;", url);
+		},
+	);
+	const controller = new AbortController();
+	cleanups.push(() => controller.abort());
+	const input = response(
+		`<base href="/original/"><script nonce="native"${attribute}>${inlineText}</script><script nonce="native"${attribute} src="/app/entry.js"></script>`,
+		documentUrl,
+		"text/html",
+	);
+	if (csp)
+		input.headers = {
+			...input.headers,
+			"content-security-policy": ["script-src 'nonce-native'"],
+		};
+	const loader = new ScriptLoader({
+		response: input,
+		signal: controller.signal,
+		fetch: async (url) => {
+			if (csp) throw new Error("CSP classic fetch must use its policy");
+			const entry = response(externalText, externalFinal);
+			entry.redirects = [{ url, status: 302, location: externalFinal }];
+			return entry;
+		},
+		fetchWithPolicy: modules.fetchWithPolicy,
+		owner(document) {
+			tree = document;
+			cleanups.push(() => document.close());
+			const scripts = new PageScripts(
+				{ document, interactions: documentInteractions(document) },
+				extensionPageRuntime(test.core, { classicScripts: true }),
+				{ networkSourceModules: modules },
+			);
+			cleanups.push(() => scripts.close());
+			return scripts;
+		},
+	});
+	const document = await loadBrowserDocument(input, {
+		scripts: loader,
+		signal: controller.signal,
+		tabId: "classic-runtime-imports",
+		limits: {
+			maxNodes: 1000,
+			maxDepth: 64,
+			maxTextCodeUnits: 100000,
+			maxChanges: 100,
+		},
+	});
+	expect(documentScriptState(document)?.report?.issues).toEqual({});
+	expect(documentScriptState(document)?.report).toMatchObject({
+		executed: 2,
+		failed: 0,
+		halted: false,
+	});
+	expect(resolved).toEqual([
+		"https://example.com/original/child.js",
+		"https://example.com/redirected/child.js",
+	]);
+});
+
+it.each([
+	{},
+	{ classicScripts: true },
+])("requires explicit HTML configuration for classic source runtime preparation %j", async (options) => {
+	const test = fakeCore();
+	const owner = page(extensionPageRuntime(test.core, options));
+	expect(owner.scripts.supportsHtmlClassicScripts).toBe(false);
+	await expect(
+		owner.scripts.prepareClassicScript(classicRuntimeRequest()),
+	).rejects.toMatchObject({ code: "unsupported" });
+});

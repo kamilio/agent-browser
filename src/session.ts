@@ -139,6 +139,13 @@ export interface DocumentLoaderContext {
 		signal: AbortSignal,
 		admission?: DocumentScriptAdmission,
 	) => Promise<Readonly<ScriptFetchResult>>;
+	// Module imports belong to the document and survive successful bootstrap retirement.
+	readonly fetchModuleWithPolicy?: (
+		url: string,
+		policy: ScriptFetchPolicy,
+		signal: AbortSignal,
+		admission?: DocumentScriptAdmission,
+	) => Promise<Readonly<ScriptFetchResult>>;
 	readonly fetchImage?: ImageFetch;
 	readonly scripts?: HtmlScriptHooks;
 }
@@ -2316,6 +2323,88 @@ export class BrowserSession {
 					signal.removeEventListener("abort", abortNavigation);
 				}
 			});
+		const fetchPolicyScript = async (
+			resourceUrl: string,
+			policy: ScriptFetchPolicy,
+			scriptSignal: AbortSignal,
+			admission?: DocumentScriptAdmission,
+			documentScoped = false,
+		) => {
+			const moduleController = documentScoped ? new AbortController() : undefined;
+			const abortNavigation = () => {
+				if (!committed) moduleController?.abort(signal.reason);
+			};
+			if (moduleController) {
+				signal.addEventListener("abort", abortNavigation, { once: true });
+				if (signal.aborted) abortNavigation();
+			}
+			try {
+				const policySignal = moduleController
+					? AbortSignal.any([
+							fetchLifetime.signal,
+							moduleController.signal,
+							scriptSignal,
+						])
+					: scriptResourceSignal(scriptSignal);
+				let type: ScriptFetchResult["type"] = "opaque";
+				const response = await journal.run(
+					"script",
+					resourceUrl,
+					"GET",
+					async () => {
+						assertScriptOwner();
+						policySignal.throwIfAborted();
+						if (++scriptResources > this.limits.maxScriptRequests)
+							throw new AgentBrowserError(
+								"resource-limit",
+								"Script request limit exceeded",
+							);
+						const result = await fetchScriptResource(
+							resourceUrl,
+							this.resourceCredentials === "omit"
+								? { ...policy, credentials: "omit" }
+								: policy,
+							{
+								documentUrl: responseUrl,
+								signal: policySignal,
+								maxRedirects: this.transport.limits?.maxRedirects ?? 10,
+								checkContentSecurityPolicy: (url, redirectCount) => {
+									resourcePolicy?.check("script", url, redirectCount);
+									const owner = candidate
+										? documentScriptCsp(candidate)
+										: undefined;
+									if (
+										owner?.unsupported ||
+										((fetchCspBlocked || owner?.enforced) &&
+											(!owner ||
+												!admission ||
+												!owner.allowsRequest(admission, url, redirectCount)))
+									)
+										throw new AgentBrowserError(
+											"policy-denied",
+											"Script Content Security Policy is not supported",
+										);
+								},
+								request: async (input) => {
+									assertScriptOwner();
+									const script = await withAbort(
+										this.fetchNetwork({ ...input, signal: policySignal }),
+										policySignal,
+									);
+									assertScriptOwner();
+									return script;
+								},
+							},
+						);
+						type = result.type;
+						return result.response;
+					},
+				);
+				return Object.freeze({ response, type });
+			} finally {
+				if (moduleController) signal.removeEventListener("abort", abortNavigation);
+			}
+		};
 		try {
 			const loaded = await this.loadDocument(
 				response,
@@ -2377,73 +2466,18 @@ export class BrowserSession {
 						);
 						return Object.freeze({ response, type });
 					},
-					fetchScriptWithPolicy: async (
+					fetchScriptWithPolicy: (
 						resourceUrl: string,
 						policy: ScriptFetchPolicy,
 						scriptSignal: AbortSignal,
 						admission?: DocumentScriptAdmission,
-					) => {
-						const policySignal = scriptResourceSignal(scriptSignal);
-						let type: ScriptFetchResult["type"] = "opaque";
-						const response = await journal.run(
-							"script",
-							resourceUrl,
-							"GET",
-							async () => {
-								assertScriptOwner();
-								policySignal.throwIfAborted();
-								if (++scriptResources > this.limits.maxScriptRequests)
-									throw new AgentBrowserError(
-										"resource-limit",
-										"Script request limit exceeded",
-									);
-								const result = await fetchScriptResource(
-									resourceUrl,
-									this.resourceCredentials === "omit"
-										? { ...policy, credentials: "omit" }
-										: policy,
-									{
-										documentUrl: responseUrl,
-										signal: policySignal,
-										maxRedirects: this.transport.limits?.maxRedirects ?? 10,
-										checkContentSecurityPolicy: (url, redirectCount) => {
-											resourcePolicy?.check("script", url, redirectCount);
-											const owner = candidate
-												? documentScriptCsp(candidate)
-												: undefined;
-											if (
-												owner?.unsupported ||
-												((fetchCspBlocked || owner?.enforced) &&
-													(!owner ||
-														!admission ||
-														!owner.allowsRequest(
-															admission,
-															url,
-															redirectCount,
-														)))
-											)
-												throw new AgentBrowserError(
-													"policy-denied",
-													"Script Content Security Policy is not supported",
-												);
-										},
-										request: async (input) => {
-											assertScriptOwner();
-											const script = await withAbort(
-												this.fetchNetwork({ ...input, signal: policySignal }),
-												policySignal,
-											);
-											assertScriptOwner();
-											return script;
-										},
-									},
-								);
-								type = result.type;
-								return result.response;
-							},
-						);
-						return Object.freeze({ response, type });
-					},
+					) => fetchPolicyScript(resourceUrl, policy, scriptSignal, admission),
+					fetchModuleWithPolicy: (
+						resourceUrl: string,
+						policy: ScriptFetchPolicy,
+						scriptSignal: AbortSignal,
+						admission?: DocumentScriptAdmission,
+					) => fetchPolicyScript(resourceUrl, policy, scriptSignal, admission, true),
 					fetchScript: (resourceUrl: string) =>
 						journal.run("script", resourceUrl, "GET", async () => {
 							assertScriptOwner();

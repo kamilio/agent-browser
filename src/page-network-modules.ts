@@ -299,6 +299,7 @@ export class PageNetworkModuleRegistry {
 		);
 		const digests = new Map<string, IntegrityDigests>();
 		const admissions = new Map<string, DocumentScriptAdmission | undefined>();
+		const importAdmissions = new Map<string, DocumentScriptAdmission | undefined>();
 		const paths = new Map<
 			string,
 			readonly { url: string; redirectCount: number }[]
@@ -325,6 +326,7 @@ export class PageNetworkModuleRegistry {
 			policies.clear();
 			digests.clear();
 			admissions.clear();
+			importAdmissions.clear();
 			paths.clear();
 			requests.clear();
 			for (const waiter of waiters.splice(0)) waiter.reject(aborted());
@@ -566,6 +568,19 @@ export class PageNetworkModuleRegistry {
 				if (external === undefined) checkAdmission(admission);
 				for (const target of path)
 					checkAdmission(admission, target.url, target.redirectCount);
+				let importAdmission = admission;
+				if (admission !== undefined) {
+					const derive = data(admission, "forImports", true);
+					if (derive !== undefined) {
+						if (typeof derive !== "function") throw invalid();
+						importAdmission = Reflect.apply(derive, admission, []);
+						if (!importAdmission)
+							throw new AgentBrowserError(
+								"policy-denied",
+								"Classic import admission was revoked",
+							);
+					}
+				}
 				live();
 				checkSignal(caller);
 				if (sources.has(id)) throw invalid();
@@ -587,6 +602,7 @@ export class PageNetworkModuleRegistry {
 					}),
 				);
 				admissions.set(id, admission);
+				importAdmissions.set(id, importAdmission);
 				paths.set(id, Object.freeze(path.map((target) => Object.freeze(target))));
 				return value;
 			},
@@ -602,6 +618,7 @@ export class PageNetworkModuleRegistry {
 				)
 					throw invalid();
 				checkSourceAdmission(id, admissions.get(id));
+				live();
 			},
 			prepareHtmlModule: async (
 				input: HtmlModuleRequest,
@@ -729,7 +746,7 @@ export class PageNetworkModuleRegistry {
 					url,
 					policies.get(parent) ?? this.#policy,
 					null,
-					admission,
+					importAdmissions.get(parent) ?? admission,
 				);
 				const shared = awaitResult(operation, lifetime.signal);
 				return contextSignal === undefined

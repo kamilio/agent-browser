@@ -170,7 +170,7 @@ async function receive(raw: unknown) {
 					loadDocument: (response, context) => {
 						let networkSourceModules: PageNetworkModuleOptions | undefined;
 						if (message.websiteScripts === "module") {
-							if (!context.fetchScriptWithPolicy)
+							if (!context.fetchScriptWithPolicy || !context.fetchModuleWithPolicy)
 								throw new AgentBrowserError(
 									"unsupported",
 									"Module website scripts require policy-aware fetching",
@@ -179,7 +179,7 @@ async function receive(raw: unknown) {
 								documentUrl: response.url,
 								entries: [],
 								htmlEntries: true,
-								fetchWithPolicy: context.fetchScriptWithPolicy,
+								fetchWithPolicy: context.fetchModuleWithPolicy,
 							};
 						}
 						return loadBrowserDocument(response, {

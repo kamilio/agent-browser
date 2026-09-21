@@ -435,8 +435,11 @@ it.each([undefined, "classic", "module"] as const)(
 					documentUrl: "https://fixture.invalid/",
 					entries: [],
 					htmlEntries: true,
-					fetchWithPolicy: loader.fetchWithPolicy,
+					fetchWithPolicy: expect.any(Function),
 				});
+				expect(options.networkSourceModules?.fetchWithPolicy).not.toBe(
+					loader.fetchWithPolicy,
+				);
 				expect(loader.fetchWithPolicy).toEqual(expect.any(Function));
 			} else expect(options.networkSourceModules).toBeUndefined();
 		}

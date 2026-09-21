@@ -23,19 +23,22 @@
 
 ## Current verified state
 
-- Native network registry now explicitly admits prepared classic source identities
-  under HTML-entry configuration, with exact source validation, distinct inline
-  bases, snapshotted external redirect paths and inherited credentials for CORS
-  dependency fetches. Admission is rechecked, source/count limits remain shared
-  with modules and owner cancellation revokes authority. All 272 checks across
-  three manifest-listed registry/loader files and native build pass; fourteen
-  new checks fail the baseline's absent registration API. Compiled explicit
-  registry + actual SDK probes under 128 MB preserve inline/external resolution
-  through later callbacks in both scheduling modes, reject changed source and
-  revoke on cancellation, cleanup zero and zero sockets. These probes wire the
-  registry directly: ScriptLoader/PageScripts/runtime integration is still open.
-  Seven broader HTML-runtime contract failures reproduce with the registry
-  changes removed, from pre-existing DOM-branding bootstrap expectations.
+- Prepared classic source admission is wired through ScriptLoader, PageScripts and
+  the extension runtime. Original inline bases and verified external redirect paths
+  remain stable; exact source validation keeps named host evaluations from borrowing
+  network referrer authority. Imports default to same-origin credentials, with
+  use-credentials preserved separately from a classic entry's no-cors/include fetch.
+  CSP import admission derives external-fetch authority without changing inline
+  entry admission. Document module fetching survives bootstrap retirement while
+  stop/close/replacement and owner cancellation still revoke requests; request
+  limits are shared. Native build and 428 focused manifest-listed checks pass.
+  Five actual SDK/native fixtures at 128 MB render imported results for immediate,
+  timer, nonce-CSP/base-change and default/explicit-credential CDN cases. A named
+  host evaluation cannot borrow a cached dependency; every fixture closes with
+  retained data zero, active requests zero and zero sockets. Earlier direct registry
+  checks pass separately; no full-suite pass is claimed. Seven older HTML-runtime
+  bootstrap contracts, five static-module contracts and one classic-loader limits
+  expectation reproduce on the baseline.
 - SafeJS classic Scripts can now use an explicitly configured source resolver,
   sharing the realm's canonical module graph. The incremental contribution
   safejs-classic-dynamic-import.patch preserves original referrers through later
@@ -46,9 +49,9 @@
   application pass. Compiled SDK probes under 128 MB preserve callback/generator
   referrers in both scheduling modes, cancel pending resolution on close and
   enforce imported-source quotas; all verify cleanup zero and zero sockets.
-  Scratch SDK source/build retain this fix. Native classic-source admission is
-  still missing, so this does not clear the Zoom network-import or join gates.
-- Actual SDK/native 128 MB comparison isolates the import gate: identical
+  Scratch SDK source/build retain this fix. Native admission and loader wiring
+  now pass the fixtures above; live application initialization/join remain open.
+- Earlier actual SDK/native 128 MB comparison isolated the import gate: identical
   import("./dep.js") code fetches /dep.js as a module, but makes no dependency
   request as a classic script. Both guest catch handlers suppress rejection;
   both loader reports are green, with zero sockets and verified cleanup zero.
@@ -821,16 +824,21 @@
 
 ## Outstanding gates
 
-- Native classic-script dynamic import still cannot reach the network source
-  graph through ScriptLoader/PageScripts/runtime: the new registry registration
-  API is not wired into them. Bind admission to each prepared classic Script's
-  source, original base, policy, credentials and verified external redirect path;
-  preserve existing integrity checks. Forward the distinct admitted identity to
-  SafeJS and validate exact source before evaluation. Named host evaluations and
-  bootstrap closures must not borrow admitted module/classic referrer authority.
-  Keep inline bases stable across later closures/base changes, CSP, limits and
-  cancellation. The SDK and directly wired registry probes above clear only their
-  respective gates; do not grant arbitrary referrer URLs authority.
+- Live Zoom now resolves webclient.es.min.js (4383 characters), its rolldown runtime
+  (1365), i18n-core (362461) and editor-core (1095001) into the actual SDK graph.
+  Extended observation aborts with V8 heap exhaustion at the 192 MB diagnostic
+  limit after editor-core resolution, before final reporting. SDK module compilation/
+  evaluation, interactive controls and cleanup for that failed run remain unverified;
+  isolate compilation memory before another live initialization attempt. The prior
+  shorter run executes twelve classics, records the ES request pending and verifies
+  cleanup zero; a green classic report alone proves no application readiness.
+  Diagnostic source logging uses bounded labels without credentials/query/fragment/
+  embedded source; it waits within an explicit bound for pending ES fetches and
+  marks absence, errors and timeout separately from application readiness.
+- Background dynamic imports outlive the classic evaluation's PageScripts timer.
+  The realm graph has document cancellation and shared step/data limits, but no
+  demonstrated per-import evaluation deadline/TLA timeout. Do not clear the default
+  30 s acceptance gate or settle all imports inside their originating classic task.
 - Interactive Zoom initialization/join and every notetaker capability listed above.
   Iframe navigation, srcdoc/policy contexts and child script realms remain unsupported.
   Diagnostics block optional file-paa.zoom.us and cdn.cookielaw.org origins;

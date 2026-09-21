@@ -1,5 +1,9 @@
 import { AgentBrowserError } from "./errors.js";
-import type { HtmlModuleRequest, HtmlModuleSource } from "./html-module.js";
+import type {
+	HtmlClassicScriptRequest,
+	HtmlModuleRequest,
+	HtmlModuleSource,
+} from "./html-module.js";
 import type { PageBindingContext } from "./page-bindings.js";
 import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 import type { SafeJsBudget, ScriptLimits } from "./safejs.js";
@@ -54,6 +58,7 @@ export type PageRuntimeResult =
 export interface PageRuntimeEvaluationOptions {
 	signal: AbortSignal;
 	filename?: string;
+	classicScriptId?: string;
 	sourceType?: "module";
 	discardResult?: boolean;
 }
@@ -63,6 +68,9 @@ export interface PageRuntime {
 	readonly closed: boolean;
 	readonly supportsSourceModules?: boolean;
 	prepareModule?(request: HtmlModuleRequest): Promise<HtmlModuleSource>;
+	prepareClassicScript?(
+		request: HtmlClassicScriptRequest,
+	): Promise<HtmlModuleSource>;
 	initialize(): Promise<void>;
 	evaluate(
 		source: string,

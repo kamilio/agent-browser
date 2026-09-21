@@ -38,6 +38,7 @@ export interface DocumentScriptCsp {
 
 export interface DocumentScriptAdmission {
 	allows(url?: string, redirectCount?: number): boolean;
+	forImports?(): DocumentScriptAdmission | undefined;
 }
 
 const owners = new WeakMap<DocumentTree, DocumentScriptCsp>();
@@ -390,7 +391,28 @@ function bindPolicy(
 				parserInserted: state.origin === "parser",
 				nonceable: true,
 			});
+			// Imports fetch external modules; entry admission keeps its original kind.
+			let imports: DocumentScriptAdmission | undefined;
 			const admission = Object.freeze({
+				forImports: Object.freeze(() => {
+					if (!current()) return undefined;
+					if (!imports) {
+						imports = Object.freeze({
+							allows: Object.freeze(
+								(url?: string, redirectCount?: number) =>
+									current() &&
+									parsed.allowsScript({
+										...metadata,
+										kind: "external",
+										url,
+										redirectCount,
+									}),
+							),
+						});
+						admissions.add(imports);
+					}
+					return imports;
+				}),
 				allows: Object.freeze(
 					(url?: string, redirectCount?: number) =>
 						current() &&

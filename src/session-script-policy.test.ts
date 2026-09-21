@@ -999,3 +999,160 @@ describe("constructed BrowserSession script policy transport fixtures", () => {
 		},
 	);
 });
+
+function modulePolicyFetch(context: DocumentLoaderContext) {
+	if (!context.fetchModuleWithPolicy)
+		throw new Error("Missing document module policy provider");
+	return context.fetchModuleWithPolicy;
+}
+
+it("keeps an admitted module dependency started before commit alive after bootstrap retirement", async () => {
+	const started = deferred<NetworkRequest>();
+	const release = deferred<void>();
+	let pending: Promise<Readonly<ScriptFetchResult>> | undefined;
+	const { session } = fixture(
+		{
+			loadDocument(input, context) {
+				pending = modulePolicyFetch(context)(
+					scriptUrl,
+					{ mode: "cors", credentials: "same-origin" },
+					new AbortController().signal,
+				);
+				void pending.catch(() => undefined);
+				return documentFixture(input, context);
+			},
+		},
+		async (input) => {
+			if (input.url === scriptUrl) {
+				started.resolve(input);
+				await release.promise;
+			}
+			return response(input.url);
+		},
+	);
+	const tab = session.createTab().id;
+	try {
+		await session.navigate(tab, initialUrl);
+		const request = await started.promise;
+		expect(request.signal?.aborted).toBe(false);
+		release.resolve();
+		await expect(pending).resolves.toMatchObject({ response: { status: 200 } });
+		expect(
+			session.requests(tab).entries.filter((entry) => entry.kind === "script"),
+		).toMatchObject([{ state: "complete" }]);
+	} finally {
+		release.resolve();
+	}
+});
+
+it.each([
+	"stop",
+	"close",
+] as const)("cancels precommit document module dependency on %s", async (action) => {
+	const started = deferred<NetworkRequest>();
+	const release = deferred<void>();
+	let pending: Promise<Readonly<ScriptFetchResult>> | undefined;
+	const { session } = fixture(
+		{
+			async loadDocument(input, context) {
+				const tree = documentFixture(input, context);
+				pending = modulePolicyFetch(context)(
+					scriptUrl,
+					{ mode: "cors", credentials: "same-origin" },
+					new AbortController().signal,
+				);
+				void pending.catch(() => undefined);
+				await release.promise;
+				return tree;
+			},
+		},
+		async (input) => {
+			if (input.url === scriptUrl) {
+				started.resolve(input);
+				await release.promise;
+			}
+			return response(input.url);
+		},
+	);
+	const tab = session.createTab().id;
+	const navigation = session.navigate(tab, initialUrl);
+	void navigation.catch(() => undefined);
+	try {
+		const request = await started.promise;
+		if (action === "stop") session.stop(tab);
+		else session.close();
+		await expect(pending).rejects.toBeDefined();
+		expect(request.signal?.aborted).toBe(true);
+		await expect(navigation).rejects.toBeDefined();
+	} finally {
+		release.resolve();
+	}
+});
+
+it("revokes a pending document module dependency when its committed owner is replaced", async () => {
+	const started = deferred<NetworkRequest>();
+	const release = deferred<void>();
+	let pending: Promise<Readonly<ScriptFetchResult>> | undefined;
+	const { session } = fixture(
+		{
+			loadDocument(input, context) {
+				if (input.url === initialUrl) {
+					pending = modulePolicyFetch(context)(
+						scriptUrl,
+						{ mode: "cors", credentials: "same-origin" },
+						new AbortController().signal,
+					);
+					void pending.catch(() => undefined);
+				}
+				return documentFixture(input, context);
+			},
+		},
+		async (input) => {
+			if (input.url === scriptUrl) {
+				started.resolve(input);
+				await release.promise;
+			}
+			return response(input.url);
+		},
+	);
+	const tab = session.createTab().id;
+	try {
+		await session.navigate(tab, initialUrl);
+		const request = await started.promise;
+		await session.navigate(tab, "https://example.com/replacement");
+		await expect(pending).rejects.toBeDefined();
+		expect(request.signal?.aborted).toBe(true);
+	} finally {
+		release.resolve();
+	}
+});
+
+it("shares the script request limit with the document module provider", async () => {
+	const { session, requests } = fixture({
+		limits: { maxScriptRequests: 2 },
+		async loadDocument(input, context) {
+			const policy = { mode: "cors", credentials: "same-origin" } as const;
+			await policyFetch(context)(
+				scriptUrl,
+				policy,
+				new AbortController().signal,
+			);
+			await modulePolicyFetch(context)(
+				"https://example.com/module-child.js",
+				policy,
+				new AbortController().signal,
+			);
+			await expect(
+				legacyFetch(context)("https://example.com/extra.js"),
+			).rejects.toMatchObject({ code: "resource-limit" });
+			return documentFixture(input, context);
+		},
+	});
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	expect(requests.map((input) => input.url)).toEqual([
+		initialUrl,
+		scriptUrl,
+		"https://example.com/module-child.js",
+	]);
+});

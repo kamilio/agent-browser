@@ -28,9 +28,13 @@ import { BrowserSession } from "../src/session.js";
 //   node --max-old-space-size=192 dist/scripts/check-zoom-initialization.js
 // Set AGENT_BROWSER_ZOOM_USER_AGENT explicitly to compare server-selected client
 // documents; the same identity is published to HTTP requests and navigator.
-// Observe delayed initialization for 10 s after navigation by default; set
-// AGENT_BROWSER_ZOOM_OBSERVATION_MS between 0 and 30000 to select the window.
-// This checks initialization; it never certifies admission or meeting media.
+// Observe delayed initialization in two windows of 10 s by default, settling
+// inserted scripts after each window. The second window captures timers scheduled
+// by scripts whose execution outlasts the first window. Set
+// AGENT_BROWSER_ZOOM_OBSERVATION_MS between 0 and 30000 for each window.
+// Await a pending webclient ES fetch for up to 30 s after those windows. Set
+// AGENT_BROWSER_ZOOM_IMPORT_WAIT_MS between 0 and 120000 to change that bound.
+// Fetch completion does not certify module evaluation, admission or meeting media.
 const packageRoot = process.env.AGENT_BROWSER_SAFEJS_SOURCE_ROOT;
 if (!packageRoot)
 	throw new Error("Select the compiled SafeJS package explicitly");
@@ -48,6 +52,16 @@ if (
 	observationMs > 30000
 )
 	throw new Error("Zoom observation window must be between 0 and 30000 ms");
+
+const importWaitMs = Number(
+	process.env.AGENT_BROWSER_ZOOM_IMPORT_WAIT_MS ?? 30000,
+);
+if (
+	!Number.isSafeInteger(importWaitMs) ||
+	importWaitMs < 0 ||
+	importWaitMs > 120000
+)
+	throw new Error("Zoom import wait must be between 0 and 120000 ms");
 
 const userAgent = process.env.AGENT_BROWSER_ZOOM_USER_AGENT;
 
@@ -79,7 +93,48 @@ const { factory } = await loadPageRuntime(
 			return {
 				...core,
 				createRealm(options: Parameters<ReleasedCore["createRealm"]>[0]) {
-					const realm = core.createRealm(options);
+					const resolver = options.sourceResolver;
+					const realm = core.createRealm({
+						...options,
+						...(resolver
+							? {
+									sourceResolver: async (
+										...args: Parameters<NonNullable<typeof resolver>>
+									) => {
+										const start = performance.now();
+										try {
+											const result = await resolver(...args);
+											console.log(
+												JSON.stringify({
+													event: "module-source",
+													specifier: moduleLabel(args[0]),
+													referrer: moduleLabel(args[1]),
+													admitted: result !== undefined,
+													filename: result ? moduleLabel(result.id) : undefined,
+													characters: result?.source.length,
+													elapsedMs: Math.round(performance.now() - start),
+												}),
+											);
+											return result;
+										} catch (failure) {
+											console.log(
+												JSON.stringify({
+													event: "module-source-failure",
+													specifier: moduleLabel(args[0]),
+													referrer: moduleLabel(args[1]),
+													elapsedMs: Math.round(performance.now() - start),
+													code:
+														failure instanceof AgentBrowserError
+															? failure.code
+															: "source-failed",
+												}),
+											);
+											throw failure;
+										}
+									},
+								}
+							: {}),
+					});
 					const evaluate: ReleasedRealm["evaluate"] = async (
 						source,
 						evaluationOptions,
@@ -137,6 +192,23 @@ function scriptLabel(filename: string | undefined): string | undefined {
 		return `${parsed.origin}${parsed.pathname}`;
 	} catch {
 		return filename;
+	}
+}
+
+function moduleLabel(value: string): string {
+	if (
+		/^urn:agent-browser:html-(?:classic|module):[1-9][0-9]{0,15}$/.test(value)
+	)
+		return value;
+	if (value.length > 4096) return "[source-label-too-long]";
+	try {
+		const absolute = /^[A-Za-z][A-Za-z0-9+.-]*:/.test(value);
+		const parsed = new URL(value, "https://module-relative.invalid/");
+		if (parsed.protocol !== "https:" && parsed.protocol !== "http:")
+			return "[non-network-source]";
+		return `${absolute ? parsed.origin : ""}${parsed.pathname}`.slice(0, 512);
+	} catch {
+		return "[invalid-source-label]";
 	}
 }
 
@@ -322,7 +394,7 @@ const browser = new BrowserSession({
 				fetchWithPolicy: context.fetchScriptWithPolicy,
 				limits: loaderLimits,
 				owner(document) {
-					if (!context.fetchScriptWithPolicy)
+					if (!context.fetchScriptWithPolicy || !context.fetchModuleWithPolicy)
 						throw new AgentBrowserError(
 							"unsupported",
 							"Zoom modules require policy-aware script fetching",
@@ -336,7 +408,7 @@ const browser = new BrowserSession({
 								documentUrl: response.url,
 								entries: [],
 								htmlEntries: true,
-								fetchWithPolicy: context.fetchScriptWithPolicy,
+								fetchWithPolicy: context.fetchModuleWithPolicy,
 							},
 							budgetProfile: "application-unicode-v1",
 							limits: { timeoutMs },
@@ -351,22 +423,68 @@ const browser = new BrowserSession({
 let report: Readonly<ScriptLoadReport> | undefined;
 let navigationError: string | undefined;
 let status: number | undefined;
+let webclientImports: Record<string, unknown>[] = [];
+let importObservationTimedOut = false;
+let webclientFetchVerified = false;
 try {
 	const tab = browser.createTab();
 	const navigation = await browser.navigate(tab.id, url);
 	status = navigation.response?.status;
 	if (observationMs > 0) {
-		console.log(JSON.stringify({ event: "post-navigation", observationMs }));
-		await new Promise<void>((resolve) => setTimeout(resolve, observationMs));
-		// Navigation completion does not drain future timer tasks. Keep the page
-		// alive for the selected window, then settle scripts those tasks inserted.
-		await Promise.all([...loaders].map((loader) => loader.settle()));
+		for (let round = 1; round <= 2; round++) {
+			console.log(
+				JSON.stringify({ event: "post-navigation", observationMs, round }),
+			);
+			await new Promise<void>((resolve) => setTimeout(resolve, observationMs));
+			// Settlement can outlast its window. Give timers scheduled by those
+			// scripts a bounded second window before inspecting the final state.
+			await Promise.all([...loaders].map((loader) => loader.settle()));
+		}
 	}
+	const imports = () =>
+		browser
+			.requests(tab.id)
+			.entries.filter(
+				(entry) =>
+					entry.kind === "script" &&
+					new URL(entry.url).pathname.endsWith("/webclient.es.min.js"),
+			);
+	const importDeadline = performance.now() + importWaitMs;
+	if (imports().some((entry) => entry.state === "pending")) {
+		console.log(
+			JSON.stringify({ event: "pending-webclient-import", importWaitMs }),
+		);
+		while (
+			imports().some((entry) => entry.state === "pending") &&
+			performance.now() < importDeadline &&
+			![...owners].every((owner) => owner.closed)
+		)
+			await new Promise<void>((resolve) => setTimeout(resolve, 250));
+	}
+	importObservationTimedOut = imports().some(
+		(entry) => entry.state === "pending",
+	);
 	report = documentScriptState(browser.page(tab.id).document)?.report;
+	webclientImports = imports()
+		.slice(0, 16)
+		.map((entry) => ({
+			state: entry.state,
+			status: entry.status,
+			error: entry.error,
+			elapsedMs: entry.elapsedMs,
+			decodedBytes: entry.decodedBytes,
+		}));
+	webclientFetchVerified =
+		webclientImports.length > 0 &&
+		webclientImports.every(
+			(entry) => entry.state === "complete" && entry.status === 200,
+		);
 } catch (failure) {
 	navigationError =
 		failure instanceof AgentBrowserError ? failure.code : "probe-failed";
 } finally {
+	const pageRuntimeClosedBeforeCleanup =
+		owners.size > 0 && [...owners].every((owner) => owner.closed);
 	browser.close();
 	const closes = await Promise.allSettled(
 		[...owners].map((owner) => owner.close()),
@@ -391,6 +509,8 @@ try {
 			scope: "Native Zoom navigation and script initialization only",
 			timeoutMs,
 			observationMs,
+			importWaitMs,
+			importObservationTimedOut,
 			userAgent: browser.identity.userAgent,
 			loaderLimits,
 			blockedOrigins,
@@ -398,6 +518,9 @@ try {
 			status,
 			navigationError,
 			report,
+			webclientImports,
+			webclientFetchVerified,
+			pageRuntimeClosedBeforeCleanup,
 			applicationReadinessVerified: false,
 			meetingJoinVerified: false,
 			webSockets,
@@ -408,6 +531,9 @@ try {
 	if (
 		navigationError ||
 		!report?.complete ||
+		pageRuntimeClosedBeforeCleanup ||
+		importObservationTimedOut ||
+		!webclientFetchVerified ||
 		report.failed ||
 		report.halted ||
 		!cleanupVerified
