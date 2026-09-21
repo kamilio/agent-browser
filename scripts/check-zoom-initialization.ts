@@ -244,6 +244,7 @@ const observed: PageRuntimeFactory = {
 					event: "script-start",
 					filename,
 					characters: source.length,
+					currentDataSize: currentDataSize(runtime),
 				}),
 			);
 			let ok = false;
@@ -268,6 +269,7 @@ const observed: PageRuntimeFactory = {
 						error,
 						stepsUsed: runtime.budget.stepsUsed,
 						stepsDelta: runtime.budget.stepsUsed - stepsBefore,
+						currentDataSize: currentDataSize(runtime),
 						peakDataSize: runtime.budget.peakDataSize,
 					}),
 				);

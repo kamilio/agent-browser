@@ -23,6 +23,22 @@
 
 ## Current verified state
 
+- Script-boundary diagnostics now report current SDK data charge alongside peak
+  usage. Native build and actual SDK 128 MB allocation/release fixture pass: a
+  20000-character payload raises current charge to 85744, clearing it drops to
+  45744 while peak stays 85797; zero sockets and verified cleanup zero.
+  Public externals.min.js (163960 characters, SHA256 c646c4d8a4f3b714abc1c424b4373ef70cca93f7d39cf25576a8ce90dddb8231)
+  completes in an isolated native document under 128 MB: 25.7 s, 212732 steps,
+  317987 peak units, zero sockets, cleanup zero. The selected 120 s diagnostic
+  limit is not a default-timeout, interactive readiness or actor acceptance pass.
+  Live 128 MB executes nine scripts then vendor fetch times out. Current charge
+  after callback-heavy configuration is 184678 versus 1003950 peak; after all
+  nine scripts it is 370122. Earlier peaks do not prove persistent retention.
+  Separate native public-vendor transport requests return HTTP 200 in 47/42 ms
+  for default/desktop headers, with closed/zero-active transports. Fetch timing
+  during page execution remains unexplained; transport or scheduling changes need
+  a controlled reproduction. No meeting joined; SDK source/build unchanged and
+  no fixture/source artifacts retained.
 - Global leaf/seen-identity dispatch outside the SDK classification visitor is
   rejected and reverted. Candidate passes 56 focused SDK checks and scoped core/
   new-test compilation; baseline preserves all six new checks. Exact charges,
