@@ -1,0 +1,1433 @@
+--- a/packages/safe-js/src/parse/parser.ts
++++ b/packages/safe-js/src/parse/parser.ts
+@@ -1,7 +1,7 @@
+ import { boundIdentifiers } from "./bindings.js";
+ import { validatePrivateNames } from "./private-names.js";
+ import { RESERVED_IDENTIFIER_SPELLINGS, tokenize, type Position, type Token } from "./tokenizer.js";
+-import { assignIds } from "./assign-ids.js";
++import { assignFreshIds, assignIds } from "./assign-ids.js";
+ import { evalFunctionDeclarations, functionSources, functionStrictness, templateSources } from "./function-source.js";
+ import { formatParseError } from "./format-error.js";
+ import { createSyntaxDiagnostic } from "./syntax-diagnostic.js";
+@@ -37,6 +37,8 @@
+   }
+ }
+ 
++// Parser literals reserve the ID slot to avoid a separate property backing store
++// when final assignment makes nodeId non-enumerable.
+ type BaseNode = {
+   nodeId?: number;
+   labels?: string[];
+@@ -718,7 +720,7 @@
+       {...ordinaryFunctionContext, newTarget: false, return: false, requireAsyncAwait: true,
+         grammar: {await: true, yield: false, strict: true}}, true, syntax, options.sharedPositions === true
+     );
+-    const module = assignIds(parser.parseModule());
++    const module = (options.sharedPositions ? assignFreshIds : assignIds)(parser.parseModule());
+     if (source.includes("#")) validatePrivateNames(module);
+     let hasTLA = false;
+     const pending: unknown[] = [module];
+@@ -996,7 +998,8 @@
+     return {
+       type: "Module",
+       body,
+-      span: createSpan(body[0]?.span.start ?? end, body[body.length - 1]?.span.end ?? end)
++      span: createSpan(body[0]?.span.start ?? end, body[body.length - 1]?.span.end ?? end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -1005,7 +1008,8 @@
+     const end = this.currentToken().end;
+     return {
+       type: "Module", body,
+-      span: createSpan(body[0]?.span.start ?? end, body[body.length - 1]?.span.end ?? end)
++      span: createSpan(body[0]?.span.start ?? end, body[body.length - 1]?.span.end ?? end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -1053,7 +1057,8 @@
+     return {
+       type: "ExpressionStatement",
+       expression,
+-      span: expression.span
++      span: expression.span,
++      nodeId: undefined
+     };
+   }
+ 
+@@ -1075,7 +1080,8 @@
+         node: {
+           type: "SequenceExpression",
+           expressions,
+-          span: createSpan(expressions[0]!.span.start, expressions[expressions.length - 1]!.span.end)
++          span: createSpan(expressions[0]!.span.start, expressions[expressions.length - 1]!.span.end),
++          nodeId: undefined
+         },
+         parenthesized: false
+       };
+@@ -1117,7 +1123,8 @@
+           type: "YieldExpression",
+           argument,
+           delegate,
+-          span: createSpan(token.start, argument?.span.end ?? token.end)
++          span: createSpan(token.start, argument?.span.end ?? token.end),
++          nodeId: undefined
+         },
+         parenthesized: false
+       };
+@@ -1153,7 +1160,8 @@
+         left: this.toAssignmentTarget(left.node),
+         ...(left.parenthesized ? { parenthesizedLeft: true as const } : {}),
+         right: right.node,
+-        span: createSpan(left.node.span.start, right.node.span.end)
++        span: createSpan(left.node.span.start, right.node.span.end),
++        nodeId: undefined
+       },
+       parenthesized: false
+     };
+@@ -1215,7 +1223,8 @@
+       body,
+       expression: body.type !== "BlockStatement",
+       params,
+-      span: createSpan(start, body.span.end)
++      span: createSpan(start, body.span.end),
++      nodeId: undefined
+     });
+   }
+ 
+@@ -1243,7 +1252,8 @@
+           test: test.node,
+           consequent: consequent.node,
+           alternate: alternate.node,
+-          span: createSpan(test.node.span.start, alternate.node.span.end)
++          span: createSpan(test.node.span.start, alternate.node.span.end),
++          nodeId: undefined
+         },
+         parenthesized: false
+       };
+@@ -1318,7 +1328,8 @@
+     const body = this.parseStatementList(start, functionBody);
+     return {
+       type: "BlockStatement", body,
+-      span: createSpan(start.start, this.previousToken().end)
++      span: createSpan(start.start, this.previousToken().end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -1407,7 +1418,7 @@
+       if (semicolon === undefined && next.type !== "eof" && next.value !== "}" &&
+         !hasLineBreakBetween(token, next)) throw unexpectedTokenError(next);
+       // No debugging facility is exposed: DebuggerStatement has empty completion.
+-      return { type: "EmptyStatement", span: createSpan(token.start, semicolon?.end ?? token.end) };
++      return { type: "EmptyStatement", span: createSpan(token.start, semicolon?.end ?? token.end), nodeId: undefined };
+     }
+ 
+     if (token.value === "class") return this.parseClass(true) as ClassDeclaration;
+@@ -1448,7 +1459,7 @@
+       const object = this.parseExpression({allowSequence: true}).node;
+       this.expectPunctuator(")");
+       const body = this.parseStatement(false);
+-      return {type: "WithStatement", object, body, span: createSpan(token.start, body.span.end)};
++      return {type: "WithStatement", object, body, span: createSpan(token.start, body.span.end), nodeId: undefined};
+     }
+ 
+     if (token.type === "keyword" && token.value === "do") {
+@@ -1473,7 +1484,8 @@
+       return {
+         type: "ReturnStatement",
+         argument,
+-        span: createSpan(token.start, end)
++        span: createSpan(token.start, end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -1497,7 +1509,8 @@
+       return {
+         type: "ThrowStatement",
+         argument,
+-        span: createSpan(token.start, argument.span.end)
++        span: createSpan(token.start, argument.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -1517,7 +1530,8 @@
+       return {
+         type: "BreakStatement",
+         ...(label === undefined ? {} : { label: label.value }),
+-        span: createSpan(token.start, label?.end ?? token.end)
++        span: createSpan(token.start, label?.end ?? token.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -1533,7 +1547,8 @@
+       return {
+         type: "ContinueStatement",
+         ...(label === undefined ? {} : { label: label.value }),
+-        span: createSpan(token.start, label?.end ?? token.end)
++        span: createSpan(token.start, label?.end ?? token.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -1541,7 +1556,8 @@
+     return {
+       type: "ExpressionStatement",
+       expression,
+-      span: createSpan(expression.span.start, expression.span.end)
++      span: createSpan(expression.span.start, expression.span.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -1553,7 +1569,8 @@
+ 
+     return {
+       type: "EmptyStatement",
+-      span: createTokenSpan(token)
++      span: createTokenSpan(token),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -1608,7 +1625,7 @@
+     if (statement.type !== "FunctionDeclaration") return statement;
+     if (this.lexicalContext.grammar?.strict !== false || statement.async || statement.generator)
+       throw new DisallowedSyntaxError("function declaration in an if clause", start);
+-    return {type: "BlockStatement", body: [statement], span: statement.span};
++    return {type: "BlockStatement", body: [statement], span: statement.span, nodeId: undefined};
+   }
+ 
+   private parseIfStatement(): IfStatement {
+@@ -1633,7 +1650,8 @@
+         test,
+         consequent,
+         alternate,
+-        span: createSpan(ifToken.start, alternate?.span.end ?? consequent.span.end)
++        span: createSpan(ifToken.start, alternate?.span.end ?? consequent.span.end),
++        nodeId: undefined
+       };
+     } finally {
+       this.ifStatementDepth -= 1;
+@@ -1696,7 +1714,8 @@
+             type: "SwitchCase",
+             test,
+             consequent,
+-            span: createSpan(clauseToken.start, consequent.at(-1)?.span.end ?? colon.end)
++            span: createSpan(clauseToken.start, consequent.at(-1)?.span.end ?? colon.end),
++            nodeId: undefined
+           });
+         }
+ 
+@@ -1704,7 +1723,8 @@
+           type: "SwitchStatement",
+           discriminant,
+           cases,
+-          span: createSpan(switchToken.start, this.previousToken().end)
++          span: createSpan(switchToken.start, this.previousToken().end),
++          nodeId: undefined
+         };
+       })
+     );
+@@ -1747,13 +1767,14 @@
+           right,
+           body,
+           ...createLoopLabelFields(labels),
+-          span: createSpan(forToken.start, body.span.end)
++          span: createSpan(forToken.start, body.span.end),
++          nodeId: undefined
+         };
+         const declaration = left.type === "VariableDeclaration" ? left.declarations[0] : undefined;
+         if (left.type === "VariableDeclaration" && declaration?.init !== undefined && declaration.id.type === "Identifier") {
+           const { init: ignoredInit, ...binding } = declaration;
+           loop.left = {...left, declarations: [{...binding, id: {...declaration.id}, span: declaration.id.span}]};
+-          return {type: "BlockStatement", body: [left, loop], span: loop.span};
++          return {type: "BlockStatement", body: [left, loop], span: loop.span, nodeId: undefined};
+         }
+         return loop;
+       }
+@@ -1776,7 +1797,8 @@
+           right,
+           body,
+           ...createLoopLabelFields(labels),
+-          span: createSpan(forToken.start, body.span.end)
++          span: createSpan(forToken.start, body.span.end),
++          nodeId: undefined
+         };
+       }
+ 
+@@ -1809,7 +1831,8 @@
+         update,
+         body,
+         ...createLoopLabelFields(labels),
+-        span: createSpan(forToken.start, body.span.end)
++        span: createSpan(forToken.start, body.span.end),
++        nodeId: undefined
+       };
+     });
+   }
+@@ -1860,7 +1883,8 @@
+       type: "VariableDeclarator",
+       id,
+       ...(init === undefined ? {} : {init}),
+-      span: createSpan(id.span.start, init?.span.end ?? id.span.end)
++      span: createSpan(id.span.start, init?.span.end ?? id.span.end),
++      nodeId: undefined
+     };
+     if (kindToken.value === "var") {
+       for (const identifier of boundIdentifiers(id)) this.declareVarBinding(identifier);
+@@ -1870,7 +1894,8 @@
+       type: "VariableDeclaration",
+       declarations: [declarator],
+       kind: kindToken.value,
+-      span: createSpan(kindToken.start, init?.span.end ?? id.span.end)
++      span: createSpan(kindToken.start, init?.span.end ?? id.span.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -1885,7 +1910,8 @@
+       test,
+       body,
+       ...createLoopLabelFields(labels),
+-      span: createSpan(whileToken.start, body.span.end)
++      span: createSpan(whileToken.start, body.span.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -1901,7 +1927,8 @@
+       body,
+       test,
+       ...createLoopLabelFields(labels),
+-      span: createSpan(doToken.start, closeParen.end)
++      span: createSpan(doToken.start, closeParen.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -1936,7 +1963,8 @@
+       block,
+       handler,
+       finalizer,
+-      span: createSpan(tryToken.start, finalizer?.span.end ?? handler?.span.end ?? block.span.end)
++      span: createSpan(tryToken.start, finalizer?.span.end ?? handler?.span.end ?? block.span.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -2127,7 +2155,8 @@
+         {
+           type: "ImportNamespaceSpecifier",
+           local,
+-          span: createSpan(start.start, local.span.end)
++          span: createSpan(start.start, local.span.end),
++          nodeId: undefined
+         }
+       ];
+     } else {
+@@ -2136,7 +2165,8 @@
+         {
+           type: "ImportDefaultSpecifier",
+           local,
+-          span: local.span
++          span: local.span,
++          nodeId: undefined
+         }
+       ];
+     }
+@@ -2165,7 +2195,8 @@
+       type: "ImportDeclaration",
+       specifiers,
+       source,
+-      span: createSpan(importToken.start, source.span.end)
++      span: createSpan(importToken.start, source.span.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -2185,7 +2216,8 @@
+         type: "ImportSpecifier",
+         imported,
+         local,
+-        span: createSpan(imported.span.start, local.span.end)
++        span: createSpan(imported.span.start, local.span.end),
++        nodeId: undefined
+       });
+ 
+       const comma = this.consumePunctuator(",");
+@@ -2266,7 +2298,8 @@
+       type: "CatchClause",
+       param,
+       body,
+-      span: createSpan(catchToken.start, body.span.end)
++      span: createSpan(catchToken.start, body.span.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -2318,7 +2351,8 @@
+       type: "VariableDeclaration",
+       declarations,
+       kind: kindToken.value,
+-      span: createSpan(kindToken.start, declarations[declarations.length - 1]!.span.end)
++      span: createSpan(kindToken.start, declarations[declarations.length - 1]!.span.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -2350,9 +2384,9 @@
+           (iteration && disposal === "sync" && id.name === "of")) throw new Error(`Invalid resource binding '${id.name}'.`);
+       this.declarePatternBindings(id);
+       const init = iteration ? undefined : (this.expectPunctuator("="), this.parseExpression({ allowIn }).node);
+-      declarations.push({type: "VariableDeclarator", id, ...(init === undefined ? {} : {init}), span: createSpan(id.span.start, init?.span.end ?? id.span.end)});
++      declarations.push({type: "VariableDeclarator", id, ...(init === undefined ? {} : {init}), span: createSpan(id.span.start, init?.span.end ?? id.span.end), nodeId: undefined});
+     } while (!iteration && this.consumePunctuator(",") !== undefined);
+-    return {type: "VariableDeclaration", kind: "const", disposal, declarations, span: createSpan(start.start, declarations.at(-1)!.span.end)};
++    return {type: "VariableDeclaration", kind: "const", disposal, declarations, span: createSpan(start.start, declarations.at(-1)!.span.end), nodeId: undefined};
+   }
+ 
+   private parseFunctionDeclaration(defaultExport = false): FunctionDeclaration {
+@@ -2374,7 +2408,8 @@
+       generator,
+       id,
+       params,
+-      span: createSpan(asyncToken?.start ?? functionToken.start, body.span.end)
++      span: createSpan(asyncToken?.start ?? functionToken.start, body.span.end),
++      nodeId: undefined
+     });
+   }
+ 
+@@ -2412,11 +2447,13 @@
+       }
+       const body: ClassBody = {
+         type: "ClassBody", body: elements,
+-        span: createSpan(open.start, this.previousToken().end)
++        span: createSpan(open.start, this.previousToken().end),
++        nodeId: undefined
+       };
+       return this.withFunctionSource({
+         type: declaration ? "ClassDeclaration" : "ClassExpression",
+-        id, superClass, body, span: createSpan(start.start, body.span.end)
++        id, superClass, body, span: createSpan(start.start, body.span.end),
++        nodeId: undefined
+       } as ClassNode);
+     });
+   }
+@@ -2474,7 +2511,7 @@
+             grammar: {...this.lexicalContext.grammar, await: true}
+           })
+         }, () => this.withFunctionContext("normal", () => this.parseBlockStatement([])));
+-        return { type: "StaticBlock", body, span: createSpan(start.start, body.span.end) };
++        return { type: "StaticBlock", body, span: createSpan(start.start, body.span.end), nodeId: undefined };
+       }
+     }
+     const methodStart = this.currentToken();
+@@ -2516,12 +2553,14 @@
+       }, accessor, async);
+       const value = this.withFunctionSource({
+         type: "FunctionExpression", async, generator, method: true, params, body,
+-        span: createSpan(methodStart.start, body.span.end)
++        span: createSpan(methodStart.start, body.span.end),
++        nodeId: undefined
+       } as FunctionExpression);
+       return {
+         type: "MethodDefinition", key, computed, static: isStatic,
+         kind: accessor ?? (constructor ? "constructor" : "method"), value,
+-        span: createSpan(start.start, value.span.end)
++        span: createSpan(start.start, value.span.end),
++        nodeId: undefined
+       };
+     }
+     if (async || generator) throw unexpectedTokenError(this.currentToken());
+@@ -2534,7 +2573,7 @@
+     if (this.consumePunctuator(";") === undefined && this.currentToken().value !== "}" &&
+         !hasLineBreakBetween(this.previousToken(), this.currentToken()))
+       throw unexpectedTokenError(this.currentToken());
+-    return { type: "PropertyDefinition", key, computed, static: isStatic, value, span: createSpan(start.start, end) };
++    return { type: "PropertyDefinition", key, computed, static: isStatic, value, span: createSpan(start.start, end), nodeId: undefined };
+   }
+ 
+   private parseVariableDeclarator(kind: VariableDeclarationKind, allowIn = true): VariableDeclarator {
+@@ -2561,7 +2600,8 @@
+       type: "VariableDeclarator",
+       id,
+       init,
+-      span: createSpan(id.span.start, init?.span.end ?? id.span.end)
++      span: createSpan(id.span.start, init?.span.end ?? id.span.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -2614,7 +2654,8 @@
+       return {
+         type: "RestElement",
+         argument,
+-        span: createSpan(start, argument.span.end)
++        span: createSpan(start, argument.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -2628,7 +2669,8 @@
+       type: "AssignmentPattern",
+       left,
+       right,
+-      span: createSpan(left.span.start, right.span.end)
++      span: createSpan(left.span.start, right.span.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -2678,7 +2720,8 @@
+       return {
+         type: "ArrayPattern",
+         elements,
+-        span: createSpan(start.start, this.previousToken().end)
++        span: createSpan(start.start, this.previousToken().end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -2718,7 +2761,8 @@
+     return {
+       type: "ArrayPattern",
+       elements,
+-      span: createSpan(start.start, end.end)
++      span: createSpan(start.start, end.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -2730,7 +2774,8 @@
+       return {
+         type: "ObjectPattern",
+         properties,
+-        span: createSpan(start.start, this.previousToken().end)
++        span: createSpan(start.start, this.previousToken().end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -2766,7 +2811,8 @@
+     return {
+       type: "ObjectPattern",
+       properties,
+-      span: createSpan(start.start, end.end)
++      span: createSpan(start.start, end.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -2783,7 +2829,8 @@
+       return {
+         type: "RestElement",
+         argument,
+-        span: createSpan(start, argument.span.end)
++        span: createSpan(start, argument.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -2801,7 +2848,8 @@
+         shorthand: false,
+         key,
+         value,
+-        span: createSpan(start, value.span.end)
++        span: createSpan(start, value.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -2820,7 +2868,8 @@
+           shorthand: false,
+           key,
+           value,
+-          span: createSpan(key.span.start, value.span.end)
++          span: createSpan(key.span.start, value.span.end),
++          nodeId: undefined
+         };
+       }
+ 
+@@ -2834,7 +2883,8 @@
+           type: "AssignmentPattern",
+           left: createIdentifier(token),
+           right,
+-          span: createSpan(key.span.start, right.span.end)
++          span: createSpan(key.span.start, right.span.end),
++          nodeId: undefined
+         };
+       }
+       return {
+@@ -2843,7 +2893,8 @@
+         shorthand: true,
+         key,
+         value,
+-        span: createSpan(key.span.start, value.span.end)
++        span: createSpan(key.span.start, value.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -2861,7 +2912,8 @@
+         shorthand: false,
+         key,
+         value,
+-        span: createSpan(key.span.start, value.span.end)
++        span: createSpan(key.span.start, value.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -2891,7 +2943,8 @@
+       operator: "=",
+       left,
+       right,
+-      span: createSpan(left.span.start, right.span.end)
++      span: createSpan(left.span.start, right.span.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -2908,7 +2961,8 @@
+       return {
+         type: "RestElement",
+         argument,
+-        span: createSpan(start, argument.span.end)
++        span: createSpan(start, argument.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -2922,7 +2976,8 @@
+       type: "AssignmentPattern",
+       left: this.toPatternTarget(left),
+       right,
+-      span: createSpan(left.span.start, right.span.end)
++      span: createSpan(left.span.start, right.span.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -2964,7 +3019,8 @@
+       return {
+         type: "ArrayPattern",
+         elements,
+-        span: createSpan(start.start, this.previousToken().end)
++        span: createSpan(start.start, this.previousToken().end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -3004,7 +3060,8 @@
+     return {
+       type: "ArrayPattern",
+       elements,
+-      span: createSpan(start.start, end.end)
++      span: createSpan(start.start, end.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -3016,7 +3073,8 @@
+       return {
+         type: "ObjectPattern",
+         properties,
+-        span: createSpan(start.start, this.previousToken().end)
++        span: createSpan(start.start, this.previousToken().end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -3052,7 +3110,8 @@
+     return {
+       type: "ObjectPattern",
+       properties,
+-      span: createSpan(start.start, end.end)
++      span: createSpan(start.start, end.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -3069,7 +3128,8 @@
+       return {
+         type: "RestElement",
+         argument,
+-        span: createSpan(start, argument.span.end)
++        span: createSpan(start, argument.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -3087,7 +3147,8 @@
+         shorthand: false,
+         key,
+         value,
+-        span: createSpan(start, value.span.end)
++        span: createSpan(start, value.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -3106,7 +3167,8 @@
+           shorthand: false,
+           key,
+           value,
+-          span: createSpan(key.span.start, value.span.end)
++          span: createSpan(key.span.start, value.span.end),
++          nodeId: undefined
+         };
+       }
+ 
+@@ -3121,7 +3183,8 @@
+           type: "AssignmentPattern",
+           left: createIdentifier(token),
+           right,
+-          span: createSpan(key.span.start, right.span.end)
++          span: createSpan(key.span.start, right.span.end),
++          nodeId: undefined
+         };
+       }
+       return {
+@@ -3130,7 +3193,8 @@
+         shorthand: true,
+         key,
+         value,
+-        span: createSpan(key.span.start, value.span.end)
++        span: createSpan(key.span.start, value.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -3148,7 +3212,8 @@
+         shorthand: false,
+         key,
+         value,
+-        span: createSpan(key.span.start, value.span.end)
++        span: createSpan(key.span.start, value.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -3175,7 +3240,8 @@
+           operator: "??",
+           left: left.node,
+           right: right.node,
+-          span: createSpan(left.node.span.start, right.node.span.end)
++          span: createSpan(left.node.span.start, right.node.span.end),
++          nodeId: undefined
+         },
+         parenthesized: false
+       };
+@@ -3219,7 +3285,7 @@
+       const right = this.parseShiftExpression();
+       return this.parseBinaryExpression(() => this.parseShiftExpression(), RELATIONAL_OPERATORS,
+         { node: { type: "BinaryExpression", operator: "in", left, right: right.node,
+-          span: createSpan(left.span.start, right.node.span.end) }, parenthesized: false });
++          span: createSpan(left.span.start, right.node.span.end), nodeId: undefined }, parenthesized: false });
+     }
+     return this.parseBinaryExpression(() => this.parseShiftExpression(), RELATIONAL_OPERATORS);
+   }
+@@ -3263,7 +3329,8 @@
+         operator: "**",
+         left: left.node,
+         right: right.node,
+-        span: createSpan(left.node.span.start, right.node.span.end)
++        span: createSpan(left.node.span.start, right.node.span.end),
++        nodeId: undefined
+       },
+       parenthesized: false
+     };
+@@ -3281,7 +3348,8 @@
+           operator: token.value,
+           prefix: true,
+           argument: target,
+-          span: createSpan(token.start, argument.node.span.end)
++          span: createSpan(token.start, argument.node.span.end),
++          nodeId: undefined
+         },
+         parenthesized: false
+       };
+@@ -3310,7 +3378,8 @@
+         node: {
+           type: "AwaitExpression",
+           argument: argument.node,
+-          span: createSpan(token.start, argument.node.span.end)
++          span: createSpan(token.start, argument.node.span.end),
++          nodeId: undefined
+         },
+         parenthesized: false
+       };
+@@ -3330,7 +3399,8 @@
+           operator: token.value,
+           prefix: true,
+           argument: argument.node,
+-          span: createSpan(token.start, argument.node.span.end)
++          span: createSpan(token.start, argument.node.span.end),
++          nodeId: undefined
+         },
+         parenthesized: false
+       };
+@@ -3348,7 +3418,8 @@
+           operator: token.value as UnaryOperator,
+           prefix: true,
+           argument: argument.node,
+-          span: createSpan(token.start, argument.node.span.end)
++          span: createSpan(token.start, argument.node.span.end),
++          nodeId: undefined
+         },
+         parenthesized: false
+       };
+@@ -3386,7 +3457,8 @@
+               optional: true,
+               ...(continuesOptionalChain ? { continuesOptionalChain: true as const } : {}),
+               property: property.node,
+-              span: createSpan(expression.node.span.start, end.end)
++              span: createSpan(expression.node.span.start, end.end),
++              nodeId: undefined
+             },
+             parenthesized: false
+           };
+@@ -3402,7 +3474,8 @@
+             optional: true,
+             ...(continuesOptionalChain ? { continuesOptionalChain: true as const } : {}),
+             property,
+-            span: createSpan(expression.node.span.start, property.span.end)
++            span: createSpan(expression.node.span.start, property.span.end),
++            nodeId: undefined
+           },
+           parenthesized: false
+         };
+@@ -3419,7 +3492,8 @@
+             optional: false,
+             ...(continuesOptionalChain ? { continuesOptionalChain: true as const } : {}),
+             property,
+-            span: createSpan(expression.node.span.start, property.span.end)
++            span: createSpan(expression.node.span.start, property.span.end),
++            nodeId: undefined
+           },
+           parenthesized: false
+         };
+@@ -3437,7 +3511,8 @@
+             optional: false,
+             ...(continuesOptionalChain ? { continuesOptionalChain: true as const } : {}),
+             property: property.node,
+-            span: createSpan(expression.node.span.start, end.end)
++            span: createSpan(expression.node.span.start, end.end),
++            nodeId: undefined
+           },
+           parenthesized: false
+         };
+@@ -3481,7 +3556,8 @@
+           operator: token.value,
+           prefix: false,
+           argument: target,
+-          span: createSpan(expression.node.span.start, token.end)
++          span: createSpan(expression.node.span.start, token.end),
++          nodeId: undefined
+         },
+         parenthesized: false
+       };
+@@ -3500,7 +3576,7 @@
+           (next === "." || next === "[") && this.lexicalContext.superProperty))
+         throw new DisallowedSyntaxError("super", token.start);
+       this.index++;
+-      return { node: { type: "Super", span: createTokenSpan(token) }, parenthesized: false };
++      return { node: { type: "Super", span: createTokenSpan(token), nodeId: undefined }, parenthesized: false };
+     }
+     if (token.value === "arguments" && !this.lexicalContext.arguments)
+       throw new DisallowedSyntaxError("arguments in a class element", token.start);
+@@ -3510,7 +3586,8 @@
+       return {
+         node: {
+           type: "ThisExpression",
+-          span: createTokenSpan(token)
++          span: createTokenSpan(token),
++          nodeId: undefined
+         },
+         parenthesized: false
+       };
+@@ -3590,7 +3667,7 @@
+           this.consumePunctuator(",");
+         }
+         const end = this.expectPunctuator(")");
+-        return {node:{type:"ImportExpression",source,...(options === undefined ? {} : {options}),span:createSpan(token.start,end.end)},parenthesized:false};
++        return {node:{type:"ImportExpression",source,...(options === undefined ? {} : {options}),span:createSpan(token.start,end.end), nodeId: undefined},parenthesized:false};
+       }
+       if (this.isImportMetaStart()) {
+         return {
+@@ -3648,7 +3725,7 @@
+           !this.lexicalContext.newTarget)
+         throw new DisallowedSyntaxError(newToken.value, newToken.start);
+       this.index++;
+-      return { node: { type: "NewTargetExpression", span: createSpan(newToken.start, target.end) }, parenthesized: false };
++      return { node: { type: "NewTargetExpression", span: createSpan(newToken.start, target.end), nodeId: undefined }, parenthesized: false };
+     }
+ 
+     let callee = this.parsePrimaryExpression();
+@@ -3662,7 +3739,8 @@
+             object: callee.node,
+             optional: false,
+             property,
+-            span: createSpan(callee.node.span.start, property.span.end)
++            span: createSpan(callee.node.span.start, property.span.end),
++            nodeId: undefined
+           },
+           parenthesized: false
+         };
+@@ -3679,7 +3757,8 @@
+             object: callee.node,
+             optional: false,
+             property: property.node,
+-            span: createSpan(callee.node.span.start, end.end)
++            span: createSpan(callee.node.span.start, end.end),
++            nodeId: undefined
+           },
+           parenthesized: false
+         };
+@@ -3707,7 +3786,8 @@
+         type: "NewExpression",
+         arguments: args,
+         callee: callee.node,
+-        span: createSpan(newToken.start, end.end)
++        span: createSpan(newToken.start, end.end),
++        nodeId: undefined
+       },
+       parenthesized: false
+     };
+@@ -3729,7 +3809,8 @@
+       type: "TaggedTemplateExpression",
+       tag,
+       quasi,
+-      span: createSpan(tag.span.start, quasi.span.end)
++      span: createSpan(tag.span.start, quasi.span.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -3754,7 +3835,8 @@
+       generator,
+       id,
+       params,
+-      span: createSpan(asyncToken?.start ?? functionToken.start, body.span.end)
++      span: createSpan(asyncToken?.start ?? functionToken.start, body.span.end),
++      nodeId: undefined
+     });
+   }
+ 
+@@ -3767,7 +3849,8 @@
+       return {
+         type: "ArrayExpression",
+         elements,
+-        span: createSpan(start.start, emptyEnd.end)
++        span: createSpan(start.start, emptyEnd.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -3779,7 +3862,8 @@
+           raw: "undefined",
+           value: undefined,
+           elision: true,
+-          span: createSpan(comma.start, comma.end)
++          span: createSpan(comma.start, comma.end),
++          nodeId: undefined
+         });
+         if (this.currentToken().type === "punctuator" && this.currentToken().value === "]") {
+           break;
+@@ -3793,7 +3877,8 @@
+         elements.push({
+           type: "SpreadElement",
+           argument: argument.node,
+-          span: createSpan(spreadStart.start, argument.node.span.end)
++          span: createSpan(spreadStart.start, argument.node.span.end),
++          nodeId: undefined
+         });
+       } else {
+         elements.push(this.parseExpression().node);
+@@ -3813,7 +3898,8 @@
+     return {
+       type: "ArrayExpression",
+       elements,
+-      span: createSpan(start.start, end.end)
++      span: createSpan(start.start, end.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -3827,7 +3913,8 @@
+       return {
+         type: "ObjectExpression",
+         properties,
+-        span: createSpan(start.start, emptyEnd.end)
++        span: createSpan(start.start, emptyEnd.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -3838,7 +3925,8 @@
+         properties.push({
+           type: "SpreadElement",
+           argument: argument.node,
+-          span: createSpan(spreadStart.start, argument.node.span.end)
++          span: createSpan(spreadStart.start, argument.node.span.end),
++          nodeId: undefined
+         });
+       } else {
+         const property = this.parseObjectProperty();
+@@ -3868,7 +3956,8 @@
+     return {
+       type: "ObjectExpression",
+       properties,
+-      span: createSpan(start.start, end.end)
++      span: createSpan(start.start, end.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -3933,7 +4022,8 @@
+           shorthand: false,
+           key: key.node,
+           value,
+-          span: createSpan(value.span.start, value.span.end)
++          span: createSpan(value.span.start, value.span.end),
++          nodeId: undefined
+         };
+       }
+       if (generatorToken !== undefined) throw unexpectedTokenError(this.currentToken());
+@@ -3945,7 +4035,8 @@
+         shorthand: false,
+         key: key.node,
+         value: value.node,
+-        span: createSpan(propertyStart.start, value.node.span.end)
++        span: createSpan(propertyStart.start, value.node.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -3962,7 +4053,8 @@
+           shorthand: false,
+           key,
+           value,
+-          span: createSpan(value.span.start, value.span.end)
++          span: createSpan(value.span.start, value.span.end),
++          nodeId: undefined
+         };
+       }
+       if (generatorToken !== undefined) throw unexpectedTokenError(this.currentToken());
+@@ -3975,7 +4067,8 @@
+           shorthand: true,
+           key,
+           value: createIdentifier(token),
+-          span: key.span
++          span: key.span,
++          nodeId: undefined
+         };
+       }
+       const value = this.parseExpression();
+@@ -3985,7 +4078,8 @@
+         shorthand: false,
+         key,
+         value: value.node,
+-        span: createSpan(key.span.start, value.node.span.end)
++        span: createSpan(key.span.start, value.node.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -4001,7 +4095,8 @@
+           shorthand: false,
+           key,
+           value,
+-          span: createSpan(value.span.start, value.span.end)
++          span: createSpan(value.span.start, value.span.end),
++          nodeId: undefined
+         };
+       }
+       if (generatorToken !== undefined) throw unexpectedTokenError(this.currentToken());
+@@ -4013,7 +4108,8 @@
+         shorthand: false,
+         key,
+         value: value.node,
+-        span: createSpan(key.span.start, value.node.span.end)
++        span: createSpan(key.span.start, value.node.span.end),
++        nodeId: undefined
+       };
+     }
+ 
+@@ -4074,7 +4170,8 @@
+       id: undefined,
+       method: true,
+       params,
+-      span: createSpan(asyncToken?.start ?? generatorToken?.start ?? methodStart, body.span.end)
++      span: createSpan(asyncToken?.start ?? generatorToken?.start ?? methodStart, body.span.end),
++      nodeId: undefined
+     });
+   }
+ 
+@@ -4091,7 +4188,7 @@
+     const token = this.currentToken();
+     if (token.type !== "private-identifier") throw unexpectedTokenError(token);
+     this.index++;
+-    return { type: "PrivateIdentifier", name: token.value, span: createSpan(token.start, token.end) };
++    return { type: "PrivateIdentifier", name: token.value, span: createSpan(token.start, token.end), nodeId: undefined };
+   }
+ 
+   private parseArguments(): Array<Expression | SpreadElement> {
+@@ -4113,7 +4210,8 @@
+         args.push({
+           type: "SpreadElement",
+           argument: argument.node,
+-          span: createSpan(spreadStart.start, argument.node.span.end)
++          span: createSpan(spreadStart.start, argument.node.span.end),
++          nodeId: undefined
+         });
+       } else {
+         args.push(this.parseExpression().node);
+@@ -4142,7 +4240,8 @@
+       callee,
+       optional,
+       ...(continuesOptionalChain ? { continuesOptionalChain: true as const } : {}),
+-      span: createSpan(callee.span.start, end.end)
++      span: createSpan(callee.span.start, end.end),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -4160,7 +4259,8 @@
+           operator,
+           left: left.node,
+           right: right.node,
+-          span: createSpan(left.node.span.start, right.node.span.end)
++          span: createSpan(left.node.span.start, right.node.span.end),
++          nodeId: undefined
+         },
+         parenthesized: false
+       };
+@@ -4190,7 +4290,8 @@
+           operator: token.value as BinaryOperator,
+           left: left.node,
+           right: right.node,
+-          span: createSpan(left.node.span.start, right.node.span.end)
++          span: createSpan(left.node.span.start, right.node.span.end),
++          nodeId: undefined
+         },
+         parenthesized: false
+       };
+@@ -4273,7 +4374,8 @@
+     return {
+       type: "ArrayPattern",
+       elements,
+-      span: node.span
++      span: node.span,
++      nodeId: undefined
+     };
+   }
+ 
+@@ -4291,7 +4393,8 @@
+       return {
+         type: "RestElement",
+         argument,
+-        span: element.span
++        span: element.span,
++        nodeId: undefined
+       };
+     }
+ 
+@@ -4300,7 +4403,8 @@
+         type: "AssignmentPattern",
+         left: this.toPatternTarget(element.left),
+         right: element.right,
+-        span: element.span
++        span: element.span,
++        nodeId: undefined
+       };
+     }
+ 
+@@ -4331,7 +4435,8 @@
+     return {
+       type: "ObjectPattern",
+       properties,
+-      span: node.span
++      span: node.span,
++      nodeId: undefined
+     };
+   }
+ 
+@@ -4349,7 +4454,8 @@
+       return {
+         type: "RestElement",
+         argument: this.toPatternTarget(this.toAssignmentTarget(property.argument)),
+-        span: property.span
++        span: property.span,
++        nodeId: undefined
+       };
+     }
+ 
+@@ -4361,7 +4467,8 @@
+       shorthand: property.shorthand,
+       key: property.key,
+       value,
+-      span: property.span
++      span: property.span,
++      nodeId: undefined
+     };
+   }
+ 
+@@ -4383,7 +4490,8 @@
+         type: "AssignmentPattern",
+         left: this.toPatternTarget(value.left),
+         right: value.right,
+-        span: value.span
++        span: value.span,
++        nodeId: undefined
+       };
+     }
+ 
+@@ -4870,7 +4978,8 @@
+   return {
+     type: "Identifier",
+     name: token.value,
+-    span: createTokenSpan(token)
++    span: createTokenSpan(token),
++    nodeId: undefined
+   };
+ }
+ 
+@@ -4878,7 +4987,8 @@
+   return {
+     type: "Identifier",
+     name: token.value,
+-    span: createTokenSpan(token)
++    span: createTokenSpan(token),
++    nodeId: undefined
+   };
+ }
+ 
+@@ -5144,14 +5254,16 @@
+     type: "BigIntLiteral",
+     raw: token.value,
+     value: token.value.slice(0, -1).replaceAll("_", ""),
+-    span: createTokenSpan(token)
++    span: createTokenSpan(token),
++    nodeId: undefined
+   };
+   return {
+     type: "NumericLiteral",
+     raw: token.value,
+     value: token.value.length > 1 && token.value[0] === "0" && [...token.value].every(isOctalDigit)
+       ? Number.parseInt(token.value, 8) : Number(token.value.replaceAll("_", "")),
+-    span: createTokenSpan(token)
++    span: createTokenSpan(token),
++    nodeId: undefined
+   };
+ }
+ 
+@@ -5160,7 +5272,8 @@
+     type: "StringLiteral",
+     raw: token.value,
+     value: decodeEscapedText(token.value.slice(1, -1), token.legacyEscape),
+-    span: createTokenSpan(token)
++    span: createTokenSpan(token),
++    nodeId: undefined
+   };
+ }
+ 
+@@ -5192,7 +5305,8 @@
+   return {
+     type: "RegexLiteral",
+     raw: token.value,
+-    span: createTokenSpan(token)
++    span: createTokenSpan(token),
++    nodeId: undefined
+   };
+ }
+ 
+@@ -5210,7 +5324,8 @@
+       type: "BooleanLiteral",
+       raw: token.value,
+       value: token.value === "true",
+-      span: createTokenSpan(token)
++      span: createTokenSpan(token),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -5219,7 +5334,8 @@
+       type: "NullLiteral",
+       raw: "null",
+       value: null,
+-      span: createTokenSpan(token)
++      span: createTokenSpan(token),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -5228,7 +5344,8 @@
+       type: "UndefinedLiteral",
+       raw: "undefined",
+       value: undefined,
+-      span: createTokenSpan(token)
++      span: createTokenSpan(token),
++      nodeId: undefined
+     };
+   }
+ 
+@@ -5285,7 +5402,8 @@
+     type: "TemplateLiteral",
+     expressions,
+     quasis,
+-    span: createTokenSpan(token)
++    span: createTokenSpan(token),
++    nodeId: undefined
+   };
+   templateSources.set(node, options.source);
+   return node;
+@@ -5392,7 +5510,8 @@
+     span: createSpan(
+       positionWithinRaw(templateStart, rawTemplate, rawStart),
+       positionWithinRaw(templateStart, rawTemplate, rawEnd)
+-    )
++    ),
++    nodeId: undefined
+   };
+ }
+ 
+--- a/packages/safe-js/src/parse/assign-ids.ts
++++ b/packages/safe-js/src/parse/assign-ids.ts
+@@ -8,18 +8,28 @@
+ };
+ 
+ export function assignIds<T extends Module | ParseResult>(root: T): T {
+-  const visited = new Set<AstNode>();
++  return assignNodeIds(root, new Set<AstNode>());
++}
++
++/** Internal first assignment only: every AST node must start without an ID. */
++export function assignFreshIds<T extends Module | ParseResult>(root: T): T {
++  return assignNodeIds(root);
++}
++
++function assignNodeIds<T extends Module | ParseResult>(root: T, visited?: Set<AstNode>): T {
++  // A fresh parser-owned AST can use its assigned IDs to mark visits, avoiding
++  // a large temporary Set. Public reassignment still renumbers existing IDs.
+   const children: AstNode[] = [];
+   let nextId = 0;
+   const stack: AstNode[] = [root];
+ 
+   while (stack.length > 0) {
+     const node = stack.pop()!;
+-    if (visited.has(node)) {
++    if (visited === undefined ? node.nodeId !== undefined : visited.has(node)) {
+       continue;
+     }
+ 
+-    visited.add(node);
++    visited?.add(node);
+     Object.defineProperty(node, "nodeId", {
+       value: nextId,
+       writable: true,
+--- /dev/null
++++ b/packages/safe-js/src/parse/assign-fresh-ids.test.ts
+@@ -0,0 +1,96 @@
++import { expect, it } from "vitest";
++import { assignFreshIds, assignIds } from "./assign-ids.js";
++import { parseSourceModule } from "./source-module.js";
++import type { ParseResult, SourceSpan } from "./parser.js";
++
++const span: SourceSpan = {
++  start: { line: 1, column: 1, offset: 0 },
++  end: { line: 1, column: 2, offset: 1 },
++};
++function nodes(root: unknown) {
++  const visited = new Set<object>();
++  const pending = [root];
++  const result: Array<{ type: string; nodeId?: number; span: SourceSpan }> = [];
++  while (pending.length) {
++    const item = pending.pop();
++    if (!item || typeof item !== "object" || visited.has(item)) continue;
++    visited.add(item);
++    if ("type" in item && "span" in item)
++      result.push(item as (typeof result)[number]);
++    pending.push(...Object.values(item));
++  }
++  return result.sort((a, b) => a.nodeId! - b.nodeId!);
++}
++
++it("assigns a shared child once and terminates on a back edge", () => {
++  const child = { type: "Identifier", name: "x", span };
++  const root = {
++    type: "BinaryExpression",
++    operator: "+",
++    left: child,
++    right: child,
++    span,
++  };
++  Object.assign(child, { parent: root });
++  assignFreshIds(root as ParseResult);
++  expect(nodes(root).map(({ nodeId }) => nodeId)).toEqual([0, 1]);
++  expect(root.left).toBe(root.right);
++  for (const node of nodes(root)) {
++    expect(Object.getOwnPropertyDescriptor(node, "nodeId")).toMatchObject({
++      value: node.nodeId,
++      enumerable: false,
++      writable: true,
++      configurable: true,
++    });
++    expect(node.span).toBe(span);
++  }
++});
++
++it("keeps public reassignment active after fresh assignment and mutated IDs", () => {
++  const root = {
++    type: "BinaryExpression",
++    operator: "+",
++    left: { type: "Identifier", name: "x", span },
++    right: { type: "NumericLiteral", value: 1, span },
++    span,
++  };
++  assignFreshIds(root as ParseResult);
++  for (const node of nodes(root)) node.nodeId = -100;
++  assignIds(root as ParseResult);
++  expect(nodes(root).map(({ nodeId }) => nodeId)).toEqual([0, 1, 2]);
++});
++
++it.each([
++  "export const value={x:1};export function result({x=value.x}={}){return x+value.x}",
++  "import {x} from './dep.js';export default function named(){return x;}export {x};",
++  "export const result=await Promise.resolve(42);export const pattern=/a[b-c]+/g;",
++  "export class Example {#x=1;get value(){return this.#x;}static {this.marker=2;}}",
++  "export const result=`a${1+2}b${`c${3*4}`}`;outer:for(const item of [1]){if(item)break outer;}",
++  "export const result=(x)=>({x,method(){return this.x;}});const {a:b=1,...rest}={a:2};export {b};",
++])(
++  "preserves all node IDs, spans and descriptors in fresh module parsing for %j",
++  (source) => {
++    const original = parseSourceModule(source);
++    const compact = parseSourceModule(source, "<input>", undefined, {
++      sharedPositions: true,
++    });
++    const expected = nodes(original.module);
++    const actual = nodes(compact.module);
++    expect(
++      actual.map(({ type, nodeId, span }) => ({ type, nodeId, span })),
++    ).toEqual(
++      expected.map(({ type, nodeId, span }) => ({ type, nodeId, span })),
++    );
++    expect(actual.map(({ nodeId }) => nodeId)).toEqual(
++      actual.map((_, index) => index),
++    );
++    for (const node of actual)
++      expect(Object.getOwnPropertyDescriptor(node, "nodeId")).toMatchObject({
++        value: node.nodeId,
++        enumerable: false,
++        writable: true,
++        configurable: true,
++      });
++    expect(JSON.stringify(compact)).toBe(JSON.stringify(original));
++  },
++);

@@ -23,22 +23,24 @@
 
 ## Current verified state
 
-- SafeJS module graphs share frozen token positions and preserve them in AST spans,
-  retiring completed top-level token prefixes while keeping lookahead/previous-token
-  diagnostics. Public tokenizer/parser defaults retain mutable independent positions.
-  Isolated editor compilation retains about 75.8 MB versus 86.5 MB without sharing;
-  identical module structure and work counts. I18n plus editor now compile together
-  at 128 MB; sharing without token retirement exhausted that heap. The explicit
-  application-unicode-v1 profile selects a 16384-character regex-source allowance
-  for the editor's 12820-character pattern; other profiles/source defaults and
-  compilation allocation/depth/data/step quotas remain effective. Native build and
-  177 manifest-listed profile/runtime checks pass; 229 focused SDK checks, scoped
-  core/new-test compilation, new-test formatting/lint and exact patch forward/reverse
-  application pass. The 22 new SDK checks produce 14 expected failures and eight
-  preservation passes against the exact baseline. Actual native/SDK 128 MB
-  expanded-class module renders 12818,
-  while the ordinary application profile revokes its realm at 8192; cleanup zero
-  and zero sockets. SDK source/build retain these two contribution candidates.
+- SafeJS canonical modules share frozen token positions, retire completed token
+  prefixes and assign fresh AST IDs without a large temporary visited Set. Parser
+  node literals reserve ID slots; final IDs remain non-enumerable/writable/configurable
+  and public reassignment still renumbers mutated IDs. The editor's exact AST/span/
+  function-source/strictness/template digest matches baseline: 328515 nodes, 2101 body
+  items and 1396344 steps. Added retained compilation heap falls from 76.6 to 68.9 MB.
+  Exact baseline and reserved-slots-only native fixtures exhaust 128 MB; the combined
+  compiled SDK/native editor fixture now requests loginview at 128 MB. That fixture
+  deliberately denies the missing dependency, then closes at retained data zero,
+  active requests zero and zero sockets; no complete module evaluation claimed.
+  379 focused SDK checks pass; one broader parser else-if stack failure reproduces
+  on the exact baseline. Eight new ID/alias/order/descriptor checks pass; six also
+  pass baseline. Scoped core/new-test compilation/declarations, new-test formatting/
+  lint and exact contribution forward/reverse application pass. Public position
+  defaults and all guest quotas remain effective. Earlier native build and 177
+  manifest-listed profile/runtime checks establish the explicit Unicode profile's
+  16384 regex-source/65536 compilation-allocation selection; ordinary profiles retain
+  8192/default bounds. Working SDK source/build retain these contribution candidates.
 
 - Prepared classic source admission is wired through ScriptLoader, PageScripts and
   the extension runtime. Original inline bases and verified external redirect paths
@@ -844,29 +846,21 @@
 
 ## Outstanding gates
 
-- Live Zoom resolves webclient ES, rolldown, i18n and editor sources, but the
-  final run with position sharing, token retirement and the selected 16384 regex
-  allowance still aborts at the 192 MB diagnostic heap limit after editor resolution.
-  No final report or cleanup verification for that run; no interactive readiness/join.
-  Offline actual native/SDK editor and i18n/editor fixtures at 192 MB advance through
-  compilation and request loginview.min.js, which those fixtures deliberately lack;
-  guest rejection leaves the realm live and host close verifies data zero/sockets zero.
-  They do not prove complete module evaluation. The native editor fixture still
-  exhausts 128 MB, even though isolated combined compilation fits. A temporary
-  WeakSet node-ID traversal did not fix that gate and was restored exactly.
-  Offline forced-GC diagnostics isolate the editor fixture at about 47 MB before
-  tokenization, 99 MB after tokenization, 117 MB after parsing and 128 MB after
-  assigning AST IDs; after dependency resolution it retains about 123 MB.
-  A separate 128 MB expanded-class fixture measures 12 MB before SDK loading,
-  30 MB after loading, 37 MB after runtime creation and 45 MB after initialization;
-  it renders 12818 and closes with data zero/requests zero/sockets zero. Diagnostic
-  GC changes allocation timing; these samples do not certify normal-run peaks.
-  Both processes terminated and compiler instrumentation was restored exactly.
-  Reduce cumulative runtime/compiler memory, including AST storage, and complete
-  the loginview graph before another live initialization attempt. Earlier short runs have a green
-  classic report and a pending ES request; classic reports prove no app readiness.
-  Diagnostic source labels remain bounded without credentials/query/fragment/source
-  text, and pending ES fetch absence/errors/timeouts are distinct from readiness.
+- The last live 192 MB diagnostic, before the node-ID storage change, aborted after
+  editor resolution without a final report/cleanup certification. The editor alone
+  now clears its offline 128 MB compilation gate above. The complete static graph
+  includes loginview (3485587 chars), editor (1095001), emoji (888017), i18n (362461),
+  lodash (126038) and rolldown (1365), plus the 4383-char entry. These public sources
+  were downloaded through native transport; transport closes with zero active requests.
+  The real webclient entry's actual native/SDK offline fixture at a 768 MB diagnostic
+  heap fetches all static sources but remains pending after its bounded observation
+  (about 36 s total, 8398782 steps, about 530 MB heap used before close). Cleanup
+  verifies retained data zero, requests zero and sockets zero. A component-root cycle
+  error does not establish a failure of Zoom's real entry order. Reduce cumulative
+  runtime/compiler memory and complete graph evaluation; diagnostic heap allowances
+  do not clear production/default 128 MB, interactive readiness or meeting gates.
+  Module labels stay bounded without credentials/query/fragment/source text; fetch
+  completion and green classic reports prove no readiness.
 - Background dynamic imports outlive the classic evaluation's PageScripts timer.
   The realm graph has document cancellation and shared step/data limits, but no
   demonstrated per-import evaluation deadline/TLA timeout. Do not clear the default
@@ -885,7 +879,8 @@
   media-device capture and AudioWorklet processing; native PCM chunk handling is
   not a Zoom audio source. Media transport/rendering APIs need implementation,
   separately from initialization performance and later live acceptance.
-- Default-stack dataDepth for direct symbol descendants, closure property
+- Baseline parser else-if nesting raises RangeError before its intended syntax
+  limit diagnostic. Default-stack dataDepth for direct symbol descendants, closure property
   paths and other untested graph edges; deep-copy host ingress/result export and
   deep plain-object copying also overflow the native stack on baseline. Older
   scope-root shape expectations and a
