@@ -23,6 +23,18 @@
 
 ## Current verified state
 
+- A provenance census narrows the primary-walk target to interpreted capture
+  graphs: Vue alone performs 13,759 measurements / 116.0 million entries,
+  including 18.1 million closure visits (14.5 million interpreted) and 26.3 million
+  capture yields (21.8 million interpreted). Native bindings also contribute;
+  these frequency counts prove neither CPU attribution nor safe graph reuse.
+  Compiled mutation/callback/iterator/scope/held-quota/symbol/prototype fixtures
+  match before, during and after instrumentation. Live HTTP 200, 16 scripts then
+  Vue timeout at 958505 steps / 893240 peak, zero sockets and cleanup zero.
+  No join or speed claim; SDK source unchanged, compiled module restored exactly
+  after process exit and all census artifacts removed. Investigate repeated
+  interpreted capture traversal while preserving fresh foreign observations and
+  full active-invocation accounting; escaped-capture pruning alone previously failed.
 - Tracked record/function table backings now stay private across later native
   Reflect/Object/Proxy hooks; native copying/construction/mutation operations are
   pinned. Retained contribution: safejs-tracked-backing-ownership.patch. Exact baseline
