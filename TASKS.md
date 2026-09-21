@@ -23,6 +23,18 @@
 
 ## Current verified state
 
+- SafeJS classic Scripts can now use an explicitly configured source resolver,
+  sharing the realm's canonical module graph. The incremental contribution
+  safejs-classic-dynamic-import.patch preserves original referrers through later
+  evaluations, async host callbacks and suspended generators; frozen shared
+  referrer records remain charged and registered modules retain precedence.
+  Nine regressions fail the exact compiled baseline; 126 focused SDK checks
+  pass (six skipped), scoped core/test compilation and exact patch forward/reverse
+  application pass. Compiled SDK probes under 128 MB preserve callback/generator
+  referrers in both scheduling modes, cancel pending resolution on close and
+  enforce imported-source quotas; all verify cleanup zero and zero sockets.
+  Scratch SDK source/build retain this fix. Native classic-source admission is
+  still missing, so this does not clear the Zoom network-import or join gates.
 - Actual SDK/native 128 MB comparison isolates the import gate: identical
   import("./dep.js") code fetches /dep.js as a module, but makes no dependency
   request as a classic script. Both guest catch handlers suppress rejection;
@@ -796,12 +808,13 @@
 
 ## Outstanding gates
 
-- Classic-script dynamic import cannot reach the network source graph. The SDK
-  creates that graph only in its module-evaluation branch; Zoom's classic
-  webclient.min.js imports ./webclient.es.min.js and rejects before any request.
-  Preserve each script's original referrer across later closures/callbacks and
-  evaluations without overwriting shared global scope identity; retain native
-  source admission, CSP, credentials, limits and cancellation checks.
+- Native classic-script dynamic import still cannot reach the network source
+  graph: its resolver admits only registered source identities, and ScriptLoader
+  does not register classic entries. The SDK contribution above clears the
+  resolver-only gate; integrate explicit admission bound to each prepared classic
+  Script's source, original base, policy and credentials. Keep distinct inline
+  identities across later closures/base changes, source validation, integrity,
+  CSP, limits and cancellation. Do not grant arbitrary referrer URLs authority.
 - Interactive Zoom initialization/join and every notetaker capability listed above.
   Iframe navigation, srcdoc/policy contexts and child script realms remain unsupported.
   Diagnostics block optional file-paa.zoom.us and cdn.cookielaw.org origins;

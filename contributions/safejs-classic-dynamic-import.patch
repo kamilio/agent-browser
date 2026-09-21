@@ -1,0 +1,663 @@
+diff --git a/packages/safe-js/src/realm.ts b/packages/safe-js/src/realm.ts
+--- a/packages/safe-js/src/realm.ts
++++ b/packages/safe-js/src/realm.ts
+@@ -65,7 +65,7 @@
+   type SafeJSExtension
+ } from "./extensions.js";
+ import {SourceModuleGraph, type SourceResolver} from "./modules/source-graph.js";
+-import { createImmutableEmptyModuleEnvironment, createModuleEnvironment, resolveModuleImports, type ModuleRegistry } from "./modules/registry.js";
++import { attachSourceLoader, createImmutableEmptyModuleEnvironment, createModuleEnvironment, resolveModuleImports, type ModuleRegistry } from "./modules/registry.js";
+ import { parseExecutableModule } from "./parse/parser.js";
+ import { createEvalSource } from "./parse/dynamic-source.js";
+ import { createReplayableRandom } from "./random.js";
+@@ -127,6 +127,7 @@
+   failure?: { reason: unknown };
+ };
+ type Callback = (...args: readonly unknown[]) => Promise<unknown>;
++const freezeSourceReference = Object.freeze;
+ 
+ class RealmState {
+   readonly budget: Budget;
+@@ -825,6 +826,26 @@
+       this.scope.declare("this", "const", getRealmGlobalObject(this.budget));
+   }
+ 
++  private ensureSourceGraph(): SourceModuleGraph {
++    this.assertOpen();
++    this.initialize();
++    return (this.sourceGraph ??= new SourceModuleGraph({
++      resolver: this.options.sourceResolver ?? (() => undefined),
++      scope: this.scope!,
++      modules: createModuleEnvironment(this.modules, {
++        ...this.bridgeOptions(),
++        wrappedModules: this.convertedModules,
++      }),
++      budget: this.budget,
++      compilation: this.compilation,
++      signal: this.controller.signal,
++      jobs: this.queue,
++      assertActive: this.assertOpen,
++      surfaceUnhandledThrows: true,
++      serializePreparation: this.options.callbackScheduling === "after-prefix",
++    }));
++  }
++
+   async evaluateRaw(
+     source: string,
+     filename = "<realm>",
+@@ -836,14 +857,7 @@
+     if (typeof source !== "string") throw new TypeError("Realm source must be a string.");
+     if (sourceType === "module") {
+       const prepare = () => {
+-        this.initialize();
+-        this.sourceGraph ??= new SourceModuleGraph({
+-          resolver: this.options.sourceResolver ?? (() => undefined), scope: this.scope!,
+-          modules: createModuleEnvironment(this.modules, { ...this.bridgeOptions(), wrappedModules: this.convertedModules }),
+-          budget: this.budget, compilation: this.compilation, signal: this.controller.signal,
+-          jobs: this.queue, assertActive: this.assertOpen, surfaceUnhandledThrows: true,
+-          serializePreparation: this.options.callbackScheduling === "after-prefix"
+-        });
++        this.ensureSourceGraph();
+       };
+       const scheduled = this.options.callbackScheduling === "after-prefix";
+       if (scheduled) await this.queue.run(prepare);
+@@ -861,15 +875,22 @@
+       return {ok:true,returnValue:namespace,snapshot:{bindings:{}},stats:{nodeVisits:graph.stats.nodeVisits - before,currentDataSize:this.budget.currentDataSize,peakDataSize:this.budget.peakDataSize}};
+     }
+     const script = this.options.classicScripts ? createEvalSource(source, {}, this.lease.owner, filename) : undefined;
+-    const releaseSource = script ? retainValues(this.budget, () => [script.source]) : undefined;
++    // Closures share this charged identity; later Scripts must not overwrite it
++    // through the realm's shared global scope.
++    const sourceReference = script && this.options.sourceResolver !== undefined
++      ? freezeSourceReference({ referrer: filename }) : undefined;
++    const releaseSource = script ? retainValues(this.budget, () => [script.source, sourceReference]) : undefined;
+     try {
+       if (script) this.budget.chargeDataUsage(measureSandboxData([script.source]));
++      if (sourceReference) this.budget.chargeDataUsage(measureSandboxData([sourceReference]));
+       const module = script?.node ?? parseExecutableModule(source, filename, this.lease.owner);
+       this.initialize();
+       const moduleOptions = {...this.bridgeOptions(),wrappedModules:this.convertedModules};
+       const moduleEnvironment = script && Object.keys(this.modules).length === 0 && this.convertedModules.size === 0
+         ? createImmutableEmptyModuleEnvironment(moduleOptions)
+         : createModuleEnvironment(this.modules, moduleOptions);
++      if (sourceReference)
++        attachSourceLoader(moduleEnvironment, (specifier, referrer) => this.ensureSourceGraph().import(specifier, referrer));
+       const imports = script ? {} : resolveModuleImports(module, this.modules, {
+         environment: moduleEnvironment,
+         ...this.bridgeOptions(),
+@@ -889,6 +910,7 @@
+         },
+         {
+           ...(script ? { script: { strict: script.strict } } : {}),
++          sourceReference,
+           scope: this.scope,
+           useScopeDirectly: true,
+           budget: this.budget,
+diff --git a/packages/safe-js/src/interp/async.ts b/packages/safe-js/src/interp/async.ts
+--- a/packages/safe-js/src/interp/async.ts
++++ b/packages/safe-js/src/interp/async.ts
+@@ -77,6 +77,7 @@
+ export type AsyncEvaluationResult = EvaluationResult<AsyncInterpreterError>;
+ 
+ export type AsyncEvaluationContext = {
++  sourceReference?: Readonly<{ referrer: string }>;
+   scriptScope?: Scope;
+   evalCompletion?: boolean;
+   callee?: SandboxClosure;
+@@ -252,6 +253,7 @@
+     ...(construct === undefined ? {} : { construct }),
+     retainedValues: () => {
+       const values = context.scope.retainedDataRoots();
++      if (context.sourceReference !== undefined) values.push(context.sourceReference);
+       const homeObject = context.functionEnvironment?.homeObject;
+       const newTarget = context.functionEnvironment?.newTarget;
+       if (homeObject !== undefined) values.push(homeObject);
+@@ -371,6 +373,7 @@
+     ...(node.id === undefined ? { name: context.inferredName } : { name: node.id.name }),
+     retainedValues: () => {
+       const values = context.scope.retainedDataRoots();
++      if (context.sourceReference !== undefined) values.push(context.sourceReference);
+       const homeObject = context.functionEnvironment?.homeObject;
+       const newTarget = context.functionEnvironment?.newTarget;
+       if (homeObject !== undefined) values.push(homeObject);
+diff --git a/packages/safe-js/src/interp/interpreter.ts b/packages/safe-js/src/interp/interpreter.ts
+--- a/packages/safe-js/src/interp/interpreter.ts
++++ b/packages/safe-js/src/interp/interpreter.ts
+@@ -256,6 +256,7 @@
+     };
+ 
+ export type InterpretOptions = {
++  sourceReference?: AsyncEvaluationContext["sourceReference"];
+   modulePhase?: "link" | "evaluate";
+   script?: { strict: boolean };
+   assertActive?: () => void;
+@@ -390,7 +391,7 @@
+       }
+       const environment = context.scope.lookupModuleEnvironment();
+       if (environment === undefined) throw new Error(`Unknown module '${specifier}'. No modules are registered.`);
+-      const namespace = importModuleNamespace(environment,specifier,context.scope.lookupModuleId());
++      const namespace = importModuleNamespace(environment,specifier,context.sourceReference?.referrer ?? context.scope.lookupModuleId());
+       if (namespace instanceof Promise) {
+         void namespace.then(
+           value => invokeBuiltinClosure(capability.resolve,[value],context.budget,callContext,undefined),
+@@ -499,6 +500,7 @@
+     if (options.script?.strict === false && node.type === "BlockStatement")
+       prepareLegacyEvalFunctions(node.body, scope, { deletable: false });
+     const context = {
++      sourceReference: options.sourceReference,
+       strict: options.script?.strict,
+       evalCompletion: options.script !== undefined,
+       scriptScope: options.script === undefined ? undefined : scope,
+diff --git a/packages/safe-js/src/interp/closure-origin.ts b/packages/safe-js/src/interp/closure-origin.ts
+--- a/packages/safe-js/src/interp/closure-origin.ts
++++ b/packages/safe-js/src/interp/closure-origin.ts
+@@ -27,6 +27,15 @@
+   expressionStates?: AsyncEvaluationContext["generatorExpressionStates"];
+ };
+ const generatorOrigins = new WeakMap<object, GeneratorOrigin>();
++// Retention accounting must not depend on mutable exported origin metadata.
++const generatorSourceReferences = new WeakMap<object, NonNullable<AsyncEvaluationContext["sourceReference"]>>();
++const readSourceReference: typeof generatorSourceReferences.get = WeakMap.prototype.get.bind(generatorSourceReferences);
++const saveSourceReference: typeof generatorSourceReferences.set = WeakMap.prototype.set.bind(generatorSourceReferences);
++
++export function getGeneratorSourceReference(value: object): AsyncEvaluationContext["sourceReference"] {
++  return readSourceReference(value);
++}
++
+ export function registerClosureOrigin(closure: SandboxClosure, node: ClosureOrigin["node"], context: AsyncEvaluationContext): void {
+   registerFunctionRealm(closure, context.budget);
+   origins.set(closure, { node, scope: context.scope, environment: context.functionEnvironment });
+@@ -45,6 +54,7 @@
+     ...(node.type !== "ArrowFunctionExpression" && node.generator && node.async
+       ? {resultPrototype: getSandboxPrototype({}, context.budget)} : {}) };
+   generatorOrigins.set(generator, origin);
++  if (context.sourceReference !== undefined) saveSourceReference(generator, context.sourceReference);
+   const source = dynamicNodeSources.get(node);
+   if (source !== undefined) dynamicValueSources.set(generator, source);
+   return origin;
+diff --git a/packages/safe-js/src/interp/values.ts b/packages/safe-js/src/interp/values.ts
+--- a/packages/safe-js/src/interp/values.ts
++++ b/packages/safe-js/src/interp/values.ts
+@@ -3,7 +3,7 @@
+ import { bindOtelSpan, getBoundOtelSpan } from "../observability/otel.js";
+ import { readNativeRegExp } from "./native-regexp.js";
+ import { getScopeDataRoot } from "./scope-data-roots.js";
+-import { getGeneratorOrigin } from "./closure-origin.js";
++import { getGeneratorOrigin, getGeneratorSourceReference } from "./closure-origin.js";
+ import { intrinsicDataRoots } from "./intrinsic-data-roots.js";
+ import { guestProxyStates } from "./guest-proxy.js";
+ import { weakReferenceStates } from "./weak-reference.js";
+@@ -1223,6 +1223,7 @@
+         }
+         if (isSandboxGenerator(value)) {
+           const origin = getGeneratorOrigin(value);
++          visit(getGeneratorSourceReference(value), depth + 1);
+           visit(origin?.resultPrototype, depth + 1);
+           if (origin !== undefined) {
+             for (const root of (origin.suspendedScope ?? origin.closureScope).retainedDataRoots()) visit(root, depth + 1);
+diff --git a/packages/safe-js/src/realm-classic-dynamic-import.test.ts b/packages/safe-js/src/realm-classic-dynamic-import.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/safe-js/src/realm-classic-dynamic-import.test.ts
+@@ -0,0 +1,461 @@
++import { expect, it } from "vitest";
++import { createRealm } from "./realm.js";
++import { Budget } from "./interp/budget.js";
++
++it.each([undefined, "after-prefix"] as const)(
++  "resolves classic imports with stable closure referrers in %s mode",
++  async (callbackScheduling) => {
++    const requested: Array<[string, string]> = [];
++    let finish!: () => void;
++    let done = new Promise<void>((resolve) => {
++      finish = resolve;
++    });
++    const realm = createRealm({
++      classicScripts: true,
++      callbackScheduling,
++      bindings: { finish: () => finish() },
++      sourceResolver: (specifier, referrer) => {
++        requested.push([specifier, referrer]);
++        return {
++          id: new URL(specifier, referrer).href,
++          source: "export const answer=42;",
++        };
++      },
++    });
++    try {
++      expect(
++        await realm.evaluate(
++          `var answer; var failed=false;
++      function later(){ import('./dep.js').then(function(m){answer=m.answer;finish()},function(){failed=true;finish()}) }
++    `,
++          { filename: "https://fixture.example/first/entry.js" },
++        ),
++      ).toMatchObject({ ok: true });
++      expect(
++        await realm.evaluate("later()", {
++          filename: "https://fixture.example/second/entry.js",
++        }),
++      ).toMatchObject({ ok: true });
++      await done;
++      expect(requested).toEqual([
++        ["./dep.js", "https://fixture.example/first/entry.js"],
++      ]);
++      expect(await realm.evaluate("[answer,failed]")).toMatchObject({
++        ok: true,
++        returnValue: [42, false],
++      });
++      done = new Promise<void>((resolve) => {
++        finish = resolve;
++      });
++      expect(
++        await realm.evaluate(
++          "import('./next.js').then(function(){finish()},function(){failed=true;finish()})",
++          {
++            filename: "https://fixture.example/third/entry.js",
++            discardResult: true,
++          },
++        ),
++      ).toMatchObject({ ok: true });
++      await done;
++      expect(requested[1]).toEqual([
++        "./next.js",
++        "https://fixture.example/third/entry.js",
++      ]);
++      expect(await realm.evaluate("failed")).toMatchObject({
++        ok: true,
++        returnValue: false,
++      });
++    } finally {
++      await realm.close();
++    }
++  },
++);
++
++it("charges a shared original referrer once and releases it with its closures", async () => {
++  const sizes: number[] = [];
++  const cleared: number[] = [];
++  for (const length of [40, 20040]) {
++    const budget = new Budget({ dataSize: 100000 });
++    const realm = createRealm({
++      classicScripts: true,
++      budget,
++      sourceResolver: () => undefined,
++    });
++    try {
++      expect(
++        await realm.evaluate("var first=()=>0; var second=()=>0;", {
++          filename: "x".repeat(length),
++        }),
++      ).toMatchObject({ ok: true });
++      sizes.push(budget.currentDataSize);
++      expect(
++        await realm.evaluate("first=null; second=null;", { filename: "clear" }),
++      ).toMatchObject({ ok: true });
++      cleared.push(budget.currentDataSize);
++    } finally {
++      await realm.close();
++    }
++    expect(budget.currentDataSize).toBe(0);
++  }
++  expect(sizes[1]! - sizes[0]!).toBe(20000);
++  expect(cleared[1]).toBe(cleared[0]);
++});
++
++it("keeps one canonical module instance across classic imports and module evaluation", async () => {
++  let finish!: () => void;
++  const done = new Promise<void>((resolve) => {
++    finish = resolve;
++  });
++  const realm = createRealm({
++    classicScripts: true,
++    callbackScheduling: "after-prefix",
++    bindings: { finish },
++    sourceResolver: () => ({
++      id: "canonical",
++      source: "export const token={};",
++    }),
++  });
++  try {
++    expect(
++      await realm.evaluate(
++        "var first; import('dep').then(m=>{first=m; finish()});",
++        { filename: "classic", discardResult: true },
++      ),
++    ).toMatchObject({ ok: true });
++    await done;
++    expect(
++      await realm.evaluate(
++        "import * as next from 'dep'; export const same=next===first;",
++        {
++          filename: "module",
++          sourceType: "module",
++        },
++      ),
++    ).toMatchObject({ ok: true, returnValue: { same: true } });
++  } finally {
++    await realm.close();
++  }
++});
++
++it("prefers explicitly registered modules to the source resolver", async () => {
++  let finish!: () => void;
++  const done = new Promise<void>((resolve) => {
++    finish = resolve;
++  });
++  let calls = 0;
++  const realm = createRealm({
++    classicScripts: true,
++    modules: { dep: { answer: 7 } },
++    bindings: { finish },
++    sourceResolver: () => {
++      calls++;
++      return { id: "wrong", source: "export const answer=0;" };
++    },
++  });
++  try {
++    expect(
++      await realm.evaluate(
++        "var answer; import('dep').then(m=>{answer=m.answer; finish()});",
++        { filename: "classic", discardResult: true },
++      ),
++    ).toMatchObject({ ok: true });
++    await done;
++    expect(calls).toBe(0);
++    expect(await realm.evaluate("answer")).toMatchObject({
++      ok: true,
++      returnValue: 7,
++    });
++  } finally {
++    await realm.close();
++  }
++});
++
++it("still denies unconfigured imports without adding source authority", async () => {
++  let finish!: () => void;
++  const done = new Promise<void>((resolve) => {
++    finish = resolve;
++  });
++  const realm = createRealm({ classicScripts: true, bindings: { finish } });
++  try {
++    expect(
++      await realm.evaluate(
++        "var denied=false; import('node:fs').catch(()=>{denied=true; finish()});",
++        { filename: "classic", discardResult: true },
++      ),
++    ).toMatchObject({ ok: true });
++    await done;
++    expect(await realm.evaluate("denied")).toMatchObject({
++      ok: true,
++      returnValue: true,
++    });
++  } finally {
++    await realm.close();
++  }
++});
++
++it("keeps a suspended generator's original referrer after clearing its function", async () => {
++  const requested: string[] = [];
++  let finish!: () => void;
++  const done = new Promise<void>((resolve) => {
++    finish = resolve;
++  });
++  const realm = createRealm({
++    classicScripts: true,
++    callbackScheduling: "after-prefix",
++    bindings: { finish },
++    sourceResolver: (specifier, referrer) => {
++      requested.push(referrer);
++      return {
++        id: new URL(specifier, referrer).href,
++        source: "export const answer=42;",
++      };
++    },
++  });
++  try {
++    expect(
++      await realm.evaluate(
++        "var producer=function*(){yield 1; return import('./dep.js')}; var held=producer(); held.next(); producer=null;",
++        {
++          filename: "https://fixture.example/original/entry.js",
++          discardResult: true,
++        },
++      ),
++    ).toMatchObject({ ok: true });
++    expect(
++      await realm.evaluate("held.next().value.then(()=>finish());", {
++        filename: "https://fixture.example/later/entry.js",
++        discardResult: true,
++      }),
++    ).toMatchObject({ ok: true });
++    await done;
++    expect(requested).toEqual(["https://fixture.example/original/entry.js"]);
++  } finally {
++    await realm.close();
++  }
++});
++
++it("retains generator referrer charge independently of its creating function", async () => {
++  const sizes: number[] = [];
++  for (const length of [40, 20040]) {
++    const budget = new Budget({ dataSize: 100000 });
++    const realm = createRealm({
++      classicScripts: true,
++      budget,
++      sourceResolver: () => undefined,
++    });
++    try {
++      expect(
++        await realm.evaluate(
++          "var producer=function*(){yield 1;yield 2}; var held=producer(); held.next(); producer=null;",
++          {
++            filename: "x".repeat(length),
++            discardResult: true,
++          },
++        ),
++      ).toMatchObject({ ok: true });
++      sizes.push(budget.currentDataSize);
++    } finally {
++      await realm.close();
++    }
++    expect(budget.currentDataSize).toBe(0);
++  }
++  expect(sizes[1]! - sizes[0]!).toBe(20000);
++});
++
++it.each([undefined, "after-prefix"] as const)(
++  "cancels pending classic imports on close in %s mode",
++  async (callbackScheduling) => {
++    let ready!: () => void;
++    const started = new Promise<void>((resolve) => {
++      ready = resolve;
++    });
++    let signal: AbortSignal | undefined;
++    let resumed = false;
++    const budget = new Budget({ dataSize: 100000 });
++    const realm = createRealm({
++      classicScripts: true,
++      callbackScheduling,
++      budget,
++      bindings: {
++        resumed: () => {
++          resumed = true;
++        },
++      },
++      sourceResolver: (_specifier, _referrer, context) => {
++        signal = context.signal;
++        ready();
++        return new Promise(() => {});
++      },
++    });
++    try {
++      expect(
++        await realm.evaluate("import('pending').then(()=>resumed(),()=>{});", {
++          filename: "original",
++          discardResult: true,
++        }),
++      ).toMatchObject({ ok: true });
++      await started;
++      expect(signal?.aborted).toBe(false);
++      await realm.close();
++      expect(signal?.aborted).toBe(true);
++      expect(resumed).toBe(false);
++      expect(budget.currentDataSize).toBe(0);
++    } finally {
++      await realm.close();
++    }
++  },
++);
++
++it("keeps a resolver denial catchable without granting another source", async () => {
++  let finish!: () => void;
++  const done = new Promise<void>((resolve) => {
++    finish = resolve;
++  });
++  const requested: string[] = [];
++  const realm = createRealm({
++    classicScripts: true,
++    callbackScheduling: "after-prefix",
++    bindings: { finish },
++    sourceResolver: (specifier) => {
++      requested.push(specifier);
++      return undefined;
++    },
++  });
++  try {
++    expect(
++      await realm.evaluate(
++        "var denied=false; import('denied').catch(()=>{denied=true;finish()});",
++        {
++          filename: "classic",
++          discardResult: true,
++        },
++      ),
++    ).toMatchObject({ ok: true });
++    await done;
++    expect(requested).toEqual(["denied"]);
++    expect(await realm.evaluate("denied")).toMatchObject({
++      ok: true,
++      returnValue: true,
++    });
++  } finally {
++    await realm.close();
++  }
++});
++
++it("charges original source identities before retaining classic closures", async () => {
++  const budget = new Budget({ dataSize: 5000 });
++  const realm = createRealm({
++    classicScripts: true,
++    budget,
++    sourceResolver: () => undefined,
++  });
++  try {
++    await expect(
++      realm.evaluate("var held=()=>0", { filename: "x".repeat(10000) }),
++    ).rejects.toMatchObject({
++      code: "budgetExceeded",
++      budget: "dataSize",
++    });
++  } finally {
++    await realm.close();
++  }
++  expect(budget.currentDataSize).toBe(0);
++});
++
++it("rejects resolver reentry during a classic import", async () => {
++  let finish!: () => void;
++  const done = new Promise<void>((resolve) => {
++    finish = resolve;
++  });
++  let denied = false;
++  const realm = createRealm({
++    classicScripts: true,
++    bindings: { finish },
++    sourceResolver: async () => {
++      try {
++        await realm.evaluate("var entered=true");
++      } catch (error) {
++        denied = (error as { code?: string }).code === "reentry";
++      }
++      return undefined;
++    },
++  });
++  try {
++    expect(
++      await realm.evaluate("import('dep').catch(()=>finish());", {
++        filename: "classic",
++        discardResult: true,
++      }),
++    ).toMatchObject({ ok: true });
++    await done;
++    expect(denied).toBe(true);
++  } finally {
++    await realm.close();
++  }
++});
++
++it("preserves async host callback referrers after later source evaluation", async () => {
++  let callback: unknown;
++  const requested: string[] = [];
++  const realm = createRealm({
++    classicScripts: true,
++    callbackScheduling: "after-prefix",
++    bindings: {
++      save: (value: unknown) => {
++        callback = value;
++      },
++    },
++    sourceResolver: (_specifier, referrer) => {
++      requested.push(referrer);
++      return { id: "dep", source: "export const answer=42;" };
++    },
++  });
++  try {
++    expect(
++      await realm.evaluate(
++        "save(async()=>{const m=await import('dep');return m.answer});",
++        { filename: "original" },
++      ),
++    ).toMatchObject({ ok: true });
++    expect(
++      await realm.evaluate("var later=1", { filename: "later" }),
++    ).toMatchObject({ ok: true });
++    expect(await realm.invokeCallback(callback)).toBe(42);
++    expect(requested).toEqual(["original"]);
++  } finally {
++    await realm.close();
++  }
++});
++
++it("enforces imported source quotas through a classic callback", async () => {
++  let callback: unknown;
++  const budget = new Budget({ dataSize: 5000 });
++  const realm = createRealm({
++    classicScripts: true,
++    callbackScheduling: "after-prefix",
++    budget,
++    bindings: {
++      save: (value: unknown) => {
++        callback = value;
++      },
++    },
++    sourceResolver: () => ({
++      id: "dep",
++      source: `/*${"x".repeat(10000)}*/export const answer=42;`,
++    }),
++  });
++  try {
++    expect(
++      await realm.evaluate("save(async()=>await import('dep'));", {
++        filename: "original",
++      }),
++    ).toMatchObject({ ok: true });
++    await expect(realm.invokeCallback(callback)).rejects.toMatchObject({
++      code: "budgetExceeded",
++      budget: "dataSize",
++    });
++  } finally {
++    await realm.close();
++  }
++  expect(budget.currentDataSize).toBe(0);
++});
