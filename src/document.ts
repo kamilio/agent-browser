@@ -542,6 +542,11 @@ export class DocumentTree {
 		return this.resources;
 	}
 
+	// Auxiliary browsing documents and template contents consume the same quotas.
+	sharedResources(): DocumentResources {
+		return this.templateResources();
+	}
+
 	private prepareTemplate(text: number): DocumentTree {
 		const resources = this.templateResources();
 		const count = this.templateOwner || this.templateDocument ? 2 : 3;

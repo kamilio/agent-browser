@@ -2,6 +2,7 @@ import { controlChecked, controlValue, inputType } from "./controls.js";
 import {
 	HtmlDocumentFamily,
 	htmlDocumentFamily,
+	documentOrigin,
 } from "./html-document-family.js";
 import { DocumentEvents } from "./events.js";
 import type { PageEventConstructors } from "./page-event-constructors.js";
@@ -91,6 +92,7 @@ import { scriptCanvasBindings } from "./script-canvases.js";
 import { initializeScriptElement } from "./script-element-state.js";
 import { DocumentQueries } from "./selectors.js";
 import { documentHitTesting, type DocumentHitTesting } from "./hit-testing.js";
+import { ScriptBlankFrames } from "./script-blank-frames.js";
 
 function reflectedTagName(node: Readonly<DocumentNode>): string {
 	return isHtmlElement(node)
@@ -159,6 +161,7 @@ export class ScriptDom {
 	private publishingTemplate = false;
 	private readonly callbacks?: ScriptCallbackRuntime;
 	private readonly window?: object;
+	private blankFrames?: ScriptBlankFrames;
 	private mutationRecordOwner?: ScriptMutationRecords;
 	private rangeBindings?: ScriptRanges;
 	private mutationObserverOwner?: {
@@ -692,7 +695,8 @@ export class ScriptDom {
 				domain: {
 					get: () => {
 						this.read(id);
-						return new URL(this.tree.url).hostname;
+						const origin = documentOrigin(this.tree);
+						return origin.opaque ? "" : new URL(origin.serialized).hostname;
 					},
 				},
 				body: {
@@ -826,6 +830,25 @@ export class ScriptDom {
 			}
 		}
 		if (initial.kind === "element") {
+			if (isHtmlElement(initial, "iframe"))
+				for (const name of ["contentWindow", "contentDocument"] as const)
+					definition.properties[name] = {
+						get: () => {
+							this.read(id);
+							if (this.inert || !this.window) return null;
+							this.blankFrames ??= new ScriptBlankFrames(
+								this.tree,
+								this.factory,
+								this.window,
+								(target) => this.node(target),
+								this.callbacks,
+							);
+							const frame = this.blankFrames.get(id);
+							return name === "contentWindow"
+								? (frame?.window ?? null)
+								: (frame?.dom.document ?? null);
+						},
+					};
 			if (isHtmlElement(initial, "canvas")) {
 				const canvas = scriptCanvasBindings(
 					this.tree,
@@ -1209,6 +1232,7 @@ export class ScriptDom {
 		if (this.closed) return;
 		this.closed = true;
 		try {
+			this.blankFrames?.close();
 			this.publications.close();
 			this.implementation = undefined;
 			this.mutationObserverOwner?.bindings.close();

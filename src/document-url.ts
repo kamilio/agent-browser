@@ -5,6 +5,15 @@ import {
 import type { DocumentTree } from "./document.js";
 import { isHtmlElement } from "./dom-namespaces.js";
 
+const fallbackBaseUrls = new WeakMap<DocumentTree, string>();
+
+export function inheritDocumentBaseUrl(tree: DocumentTree, creator: DocumentTree) {
+	tree.get(tree.root);
+	fallbackBaseUrls.set(tree, documentBaseUrl(creator));
+	baseUrlCache.delete(tree);
+	tree.onClose(() => fallbackBaseUrls.delete(tree));
+}
+
 const baseUrlCache = new WeakMap<
 	DocumentTree,
 	{
@@ -79,19 +88,20 @@ export function documentBaseUrl(tree: DocumentTree) {
 		cached.policyVersion === policyVersion
 	)
 		return cached.url;
-	let baseUrl = tree.url;
+	const fallback = fallbackBaseUrls.get(tree) ?? tree.url;
+	let baseUrl = fallback;
 	for (const { node } of tree.walk()) {
 		if (!isHtmlElement(node, "base") || !Object.hasOwn(node.attributes, "href"))
 			continue;
 		try {
-			const url = new URL(node.attributes.href, tree.url);
+			const url = new URL(node.attributes.href, fallback);
 			baseUrl =
 				["data:", "javascript:"].includes(url.protocol) ||
 				(policy !== undefined && !policy.allowsBase(url.href))
-					? tree.url
+					? fallback
 					: url.href;
 		} catch {
-			baseUrl = tree.url;
+			baseUrl = fallback;
 		}
 		break;
 	}

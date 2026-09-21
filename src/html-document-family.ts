@@ -31,6 +31,14 @@ export function documentOrigin(tree: DocumentTree): DocumentOrigin {
 	return origin;
 }
 
+export function inheritDocumentOrigin(tree: DocumentTree, creator: DocumentTree) {
+	tree.get(tree.root);
+	if (origins.has(tree))
+		throw new AgentBrowserError("invalid-input", "Document origin already bound");
+	origins.set(tree, documentOrigin(creator));
+	tree.onClose(() => origins.delete(tree));
+}
+
 export function htmlDocumentContext(tree: DocumentTree) {
 	return contexts.get(tree);
 }

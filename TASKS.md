@@ -23,6 +23,24 @@
 
 ## Current verified state
 
+- Initial unsandboxed about:blank iframes now expose separate native documents,
+  stable window/document links, inherited origin/base URL and child computed styles.
+  Frame documents share parent/template node, text and document quotas; nested and
+  repeated creation is bounded. Detach, ancestor removal and unsupported source or
+  policy changes revoke retained child capabilities and release documents. All 209
+  focused manifest-listed checks, native build and new-file lint/format pass. Actual
+  SDK probes under 128 MB verify blank/nested documents, an awaited timer, links,
+  retained-capability revocation and cleanup zero without real network/socket requests.
+  FingerprintJS's public iframe helper
+  can now progress beyond its otherwise endless readyState polling into font work.
+  Live 192 MB: nine initial scripts execute, vendor times out after 190479 steps;
+  614481 total / 1341339 peak, zero sockets and verified cleanup zero. Live 128 MB:
+  nine initial scripts execute; vendor fetch times out, zero sockets and cleanup zero.
+  No speedup, interactive readiness, actor acceptance or join established. Child
+  script realms, navigation, srcdoc, sandbox and credentialless contexts remain
+  unsupported; these sources/configurations expose no child document. Requested
+  static security reviewer cannot read the repository: its read-only bwrap sandbox
+  fails to configure loopback (Operation not permitted); no review pass claimed.
 - Zoom initialization diagnostic now observes raw SDK evaluation failures through
   a frozen facade that preserves the SDK's descriptors. Output admits only known
   error identifiers and bounded positions; no messages, stacks or source excerpts.
@@ -705,6 +723,7 @@
 ## Outstanding gates
 
 - Interactive Zoom initialization/join and every notetaker capability listed above.
+  Iframe navigation, srcdoc/policy contexts and child script realms remain unsupported.
   Diagnostics block optional file-paa.zoom.us and cdn.cookielaw.org origins;
   production actor/default 128 MB heap, meeting sockets, media and transcription
   acceptance remain unverified. Invitation landing reports unsupported OS; an
