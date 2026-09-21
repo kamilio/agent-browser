@@ -23,6 +23,13 @@
 
 ## Current verified state
 
+- Shallow capture-root dispatch outside the large visitor is rejected and reverted.
+  All 66 focused SDK checks and scoped compilation pass; compiled baseline/candidate
+  usage, provider/identity-lookup counts, reentry, mutation, held quota and iterator
+  close order match. Small first-benchmark gains are inconclusive: repeat empty-case
+  timings also swing about 30%. No live gain or join claimed. SDK source/build are
+  restored exactly and temporary artifacts removed. Broader graph reuse still needs
+  complete ownership/mutation witnesses; dispatch-only reduction is insufficient.
 - Frozen factory-closure symbol caches now verify actual freezing and retain
   privately captured, immutable descriptors/vectors through pinned native reads,
   construction and WeakMap operations. Retained contribution:
