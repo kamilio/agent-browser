@@ -23,6 +23,18 @@
 
 ## Current verified state
 
+- Capture-root admission/cardinality census rules out empty-private-map shortcuts
+  and weak-snapshot churn as major reuse targets: 24.36 million snapshot hits /
+  17,696 eligible misses / 257 collected snapshots; all 7.87 million declines
+  involve six populated private-name maps (three single-entry, two two-entry,
+  one larger), none empty. 30.50 of 34.14 million interpreted capture-root yields
+  already have seen identities. These are availability counts, not CPU attribution
+  or ownership proof. Compiled alias/mutation/snapshot/with/private/module/capture/
+  iterator/depth/held-quota fixtures and private/module getter counts match before,
+  during and after the cardinality probe. Live HTTP 200, 16 scripts then Vue timeout
+  at 958679 steps / 893365 peak, zero sockets and cleanup zero; no join or speed
+  claim. SDK source unchanged, two compiled modules restored exactly after process
+  exit; temporary artifacts removed. Broader primary-graph traversal remains the target.
 - Tracked string-property projections now keep immutable units/edge snapshots,
   using pinned native reads, freeze and own-entry construction; inherited numeric
   setters and later push/iterator/reflection hooks cannot corrupt these caches.
