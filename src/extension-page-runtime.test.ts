@@ -609,7 +609,8 @@ it.each([
 		)
 			expect(test.budgetOptions[0]).toMatchObject({
 				maxSteps: 16_000_000,
-				regexSourceLength: 8192,
+				regexSourceLength:
+					budgetProfile === "application-unicode-v1" ? 16384 : 8192,
 				regexCompileAllocations:
 					budgetProfile === "application-unicode-v1" ? 65536 : 32768,
 			});

@@ -1,0 +1,216 @@
+--- a/packages/safe-js/src/parse/tokenizer.ts
++++ b/packages/safe-js/src/parse/tokenizer.ts
+@@ -42,6 +42,8 @@
+   allowHtmlComments?: boolean;
+   comments?: Comment[];
+   compilation?: CompileScope;
++  // Internal module graphs can share immutable snapshots at adjacent boundaries.
++  sharedPositions?: boolean;
+ };
+ 
+ const KEYWORDS = new Set([
+@@ -186,6 +188,7 @@
+   private lastClosedStatementBoundary = false;
+   private legacyStringEscape = false;
+   private lineHasToken = false;
++  private lastPosition?: Position;
+ 
+   constructor(
+     private readonly source: string,
+@@ -1141,11 +1144,18 @@
+   }
+ 
+   private position(): Position {
+-    return {
++    if (
++      this.options.sharedPositions &&
++      this.lastPosition?.offset === this.index
++    )
++      return this.lastPosition;
++    const position = {
+       line: this.line,
+       column: this.column,
+-      offset: this.index
++      offset: this.index,
+     };
++    if (!this.options.sharedPositions) return position;
++    return (this.lastPosition = Object.freeze(position));
+   }
+ 
+   private advance(): void {
+--- a/packages/safe-js/src/parse/parser.ts
++++ b/packages/safe-js/src/parse/parser.ts
+@@ -703,7 +703,7 @@
+   }
+ }
+ 
+-export function parseSourceModule(source: string, filename = "<input>", owner?: CompileOwner): ParsedSourceModule {
++export function parseSourceModule(source: string, filename = "<input>", owner?: CompileOwner, options: {sharedPositions?: boolean} = {}): ParsedSourceModule {
+   const compilation = new CompileScope(owner);
+   const syntax: SourceModuleSyntax = {imports: [], exports: [], moduleRequests: []};
+   let parser: Parser | undefined;
+@@ -713,10 +713,10 @@
+       throw new SandboxError({budget: "stringLength", current: source.length, limit});
+     owner?.budget.visitNode(source.length);
+     parser = new Parser(
+-      tokenize(source, {allowRegexLiterals: true, statementList: true, compilation}),
++      tokenize(source, {allowRegexLiterals: true, statementList: true, compilation, sharedPositions: options.sharedPositions}),
+       source, compilation, "top-level",
+       {...ordinaryFunctionContext, newTarget: false, return: false, requireAsyncAwait: true,
+-        grammar: {await: true, yield: false, strict: true}}, true, syntax
++        grammar: {await: true, yield: false, strict: true}}, true, syntax, options.sharedPositions === true
+     );
+     const module = assignIds(parser.parseModule());
+     if (source.includes("#")) validatePrivateNames(module);
+@@ -896,7 +896,8 @@
+     private functionContext: FunctionParseContext = "top-level",
+     private lexicalContext: LexicalParseContext = { ...ordinaryFunctionContext, newTarget: false },
+     private readonly allowImportMeta = true,
+-    private readonly moduleSyntax?: SourceModuleSyntax
++    private readonly moduleSyntax?: SourceModuleSyntax,
++    private readonly releaseModuleTokens = false
+   ) {
+     this.functionScopes.add(this.scopes[0]!);
+   }
+@@ -948,6 +949,17 @@
+     return node;
+   }
+ 
++  private retiredTokens = 0;
++
++  private retireModuleTokens(): void {
++    if (!this.releaseModuleTokens) return;
++    // Lookahead starts at the current item. Keep previousToken for ASI/errors;
++    // completed items are represented by their AST and source spans, not tokens.
++    const end = this.index - 1;
++    for (; this.retiredTokens < end; this.retiredTokens++)
++      this.tokens[this.retiredTokens] = undefined!;
++  }
++
+   parseModule(): Module {
+     const body: Statement[] = [];
+ 
+@@ -957,11 +969,13 @@
+         if (token.value === "import" && token.type === "keyword" &&
+             this.peekToken(1).value !== "(" && !this.isImportMetaStart()) {
+           this.parseSourceImport();
++          this.retireModuleTokens();
+           continue;
+         }
+         if (this.isExportToken(token)) {
+           const statement = this.parseSourceExport();
+           if (statement !== undefined) body.push(statement);
++          this.retireModuleTokens();
+           continue;
+         }
+       }
+@@ -970,6 +984,7 @@
+       while (statement.type !== "EmptyStatement" && this.consumePunctuator(";") !== undefined) {
+         continue;
+       }
++      this.retireModuleTokens();
+     }
+ 
+     for (const [name, identifier] of this.sourceLocalExports) {
+@@ -5753,8 +5768,8 @@
+ 
+ function createSpan(start: Position, end: Position): SourceSpan {
+   return {
+-    start: { ...start },
+-    end: { ...end }
++    start: Object.isFrozen(start) ? start : { ...start },
++    end: Object.isFrozen(end) ? end : { ...end }
+   };
+ }
+ 
+--- a/packages/safe-js/src/modules/source-graph.ts
++++ b/packages/safe-js/src/modules/source-graph.ts
+@@ -128,7 +128,7 @@
+         return known;
+       }
+       this.options.budget?.chargeDataUsage(source.source.length + source.id.length + 1);
+-      const parsed = parseSourceModule(source.source, source.id, this.options.compilation?.owner ?? this.options.compileOwner);
++      const parsed = parseSourceModule(source.source, source.id, this.options.compilation?.owner ?? this.options.compileOwner, {sharedPositions:true});
+       const importMeta = Object.create(null) as SandboxObject;
+       setSandboxPrototype(importMeta,null);
+       const record: RecordEntry = {id:source.id, source:source.source, parsed,
+--- /dev/null
++++ b/packages/safe-js/src/parse/module-positions.test.ts
+@@ -0,0 +1,77 @@
++import { expect, it } from "vitest";
++import { parseSourceModule } from "./source-module.js";
++import { tokenize } from "./tokenizer.js";
++
++it("preserves public tokenizer boundary identity and mutation", () => {
++  const tokens = tokenize("a+b");
++  expect(tokens[0].end).not.toBe(tokens[1].start);
++  expect(Object.isFrozen(tokens[0].end)).toBe(false);
++  tokens[0].end.column = -1;
++  expect(tokens[1].start.column).toBe(2);
++});
++
++it("shares immutable adjacent positions only when selected", () => {
++  const tokens = tokenize("a+b", { sharedPositions: true });
++  expect(tokens[0].end).toBe(tokens[1].start);
++  expect(tokens[1].end).toBe(tokens[2].start);
++  expect(tokens[2].end).toBe(tokens[3].start);
++  expect(Object.isFrozen(tokens[0].end)).toBe(true);
++  expect(() => {
++    tokens[0].end.column = -1;
++  }).toThrow(TypeError);
++  expect(tokens[1].start.column).toBe(2);
++});
++
++it.each([
++  "const a=1;export{a};",
++  "/* before */\r\nexport const astral='😀';\u2028// comment\u2029export const result=`a${astral}b`;",
++  "export const regex=/a[b-c]+/g;\nexport const division=6/2;",
++  "export const result=await Promise.resolve(42);",
++  "import {x as y} from './dep.js';export const second=2;const first=1;export {first};export {default as other} from './other.js';function later(){\"use strict\";return y+first;}class Example{method(){return later();}}",
++  "export {};;let first=1\nfirst++\nconst arrow=(x)=>x+first;export {arrow};",
++])("preserves complete token and module positions for %j", (source) => {
++  expect(
++    tokenize(source, {
++      allowRegexLiterals: true,
++      statementList: true,
++      sharedPositions: true,
++    }),
++  ).toEqual(
++    tokenize(source, { allowRegexLiterals: true, statementList: true }),
++  );
++  const normal = parseSourceModule(source);
++  const shared = parseSourceModule(source, "<input>", undefined, {
++    sharedPositions: true,
++  });
++  expect(shared).toEqual(normal);
++  expect(Object.isFrozen(normal.module.body[0].span.start)).toBe(false);
++  expect(Object.isFrozen(shared.module.body[0].span.start)).toBe(true);
++});
++
++it.each([
++  "export const = 1;",
++  "export const value=`bad${;}`;",
++  "export const value='a';\nimport {x} from ;",
++  "export const first=1;export const first=2;",
++  "import {x} from './dep.js';export {missing};",
++])("preserves syntax diagnostics for %j", (source) => {
++  let normal: unknown, shared: unknown;
++  try {
++    parseSourceModule(source, "fixture.js");
++  } catch (error) {
++    normal = error;
++  }
++  try {
++    parseSourceModule(source, "fixture.js", undefined, {
++      sharedPositions: true,
++    });
++  } catch (error) {
++    shared = error;
++  }
++  expect(normal).toBeInstanceOf(SyntaxError);
++  expect(shared).toBeInstanceOf(SyntaxError);
++  expect(shared).toMatchObject({ message: (normal as Error).message });
++  expect(Object.getOwnPropertyNames(shared)).toEqual(
++    Object.getOwnPropertyNames(normal),
++  );
++});

@@ -23,6 +23,23 @@
 
 ## Current verified state
 
+- SafeJS module graphs share frozen token positions and preserve them in AST spans,
+  retiring completed top-level token prefixes while keeping lookahead/previous-token
+  diagnostics. Public tokenizer/parser defaults retain mutable independent positions.
+  Isolated editor compilation retains about 75.8 MB versus 86.5 MB without sharing;
+  identical module structure and work counts. I18n plus editor now compile together
+  at 128 MB; sharing without token retirement exhausted that heap. The explicit
+  application-unicode-v1 profile selects a 16384-character regex-source allowance
+  for the editor's 12820-character pattern; other profiles/source defaults and
+  compilation allocation/depth/data/step quotas remain effective. Native build and
+  177 manifest-listed profile/runtime checks pass; 229 focused SDK checks, scoped
+  core/new-test compilation, new-test formatting/lint and exact patch forward/reverse
+  application pass. The 22 new SDK checks produce 14 expected failures and eight
+  preservation passes against the exact baseline. Actual native/SDK 128 MB
+  expanded-class module renders 12818,
+  while the ordinary application profile revokes its realm at 8192; cleanup zero
+  and zero sockets. SDK source/build retain these two contribution candidates.
+
 - Prepared classic source admission is wired through ScriptLoader, PageScripts and
   the extension runtime. Original inline bases and verified external redirect paths
   remain stable; exact source validation keeps named host evaluations from borrowing
@@ -35,10 +52,10 @@
   Five actual SDK/native fixtures at 128 MB render imported results for immediate,
   timer, nonce-CSP/base-change and default/explicit-credential CDN cases. A named
   host evaluation cannot borrow a cached dependency; every fixture closes with
-  retained data zero, active requests zero and zero sockets. Two additional actual
-  SDK/native public-chunk fixtures at 128 MB close their realm before host cleanup
-  with retained data zero and zero sockets; the editor chunk is incompatible with
-  the regex-source budget below. Earlier direct registry
+  retained data zero, active requests zero and zero sockets. Earlier public-chunk
+  probes at the original 8192 regex-source bound close their realm before host cleanup
+  at 128 MB with retained data zero and zero sockets. Current chunk heap gates are
+  below. Earlier direct registry
   checks pass separately; no full-suite pass is claimed. Seven older HTML-runtime
   bootstrap contracts, five static-module contracts and one classic-loader limits
   expectation reproduce on the baseline.
@@ -827,24 +844,21 @@
 
 ## Outstanding gates
 
-- Live Zoom now resolves webclient.es.min.js (4383 characters), its rolldown runtime
-  (1365), i18n-core (362461) and editor-core (1095001) into the actual SDK graph.
-  Extended observation aborts with V8 heap exhaustion at the 192 MB diagnostic
-  limit after editor-core resolution, before final reporting. SDK module compilation/
-  evaluation, interactive controls and cleanup for that failed run remain unverified;
-  compilation memory remains unresolved. Isolated actual SDK compilation of i18n-core
-  succeeds (roughly 17 MB added retained JS heap); editor-core rejects at 8193
-  regex-source characters against the current 8192 maximum. Its native fixture and
-  a partial i18n/editor graph both revoke the realm before host cleanup under 128 MB
-  without a process crash, rendering no import result. These isolated checks do not
-  reproduce or explain the cumulative live heap failure. Handle legitimate editor
-  regex compatibility while retaining bounded compilation, and investigate cumulative
-  compilation memory before another live initialization attempt. The prior
-  shorter run executes twelve classics, records the ES request pending and verifies
-  cleanup zero; a green classic report alone proves no application readiness.
-  Diagnostic source logging uses bounded labels without credentials/query/fragment/
-  embedded source; it waits within an explicit bound for pending ES fetches and
-  marks absence, errors and timeout separately from application readiness.
+- Live Zoom resolves webclient ES, rolldown, i18n and editor sources, but the
+  final run with position sharing, token retirement and the selected 16384 regex
+  allowance still aborts at the 192 MB diagnostic heap limit after editor resolution.
+  No final report or cleanup verification for that run; no interactive readiness/join.
+  Offline actual native/SDK editor and i18n/editor fixtures at 192 MB advance through
+  compilation and request loginview.min.js, which those fixtures deliberately lack;
+  guest rejection leaves the realm live and host close verifies data zero/sockets zero.
+  They do not prove complete module evaluation. The native editor fixture still
+  exhausts 128 MB, even though isolated combined compilation fits. A temporary
+  WeakSet node-ID traversal did not fix that gate and was restored exactly.
+  Reduce cumulative native realm/compiler memory and complete the loginview graph
+  before another live initialization attempt. Earlier short runs have a green
+  classic report and a pending ES request; classic reports prove no app readiness.
+  Diagnostic source labels remain bounded without credentials/query/fragment/source
+  text, and pending ES fetch absence/errors/timeouts are distinct from readiness.
 - Background dynamic imports outlive the classic evaluation's PageScripts timer.
   The realm graph has document cancellation and shared step/data limits, but no
   demonstrated per-import evaluation deadline/TLA timeout. Do not clear the default

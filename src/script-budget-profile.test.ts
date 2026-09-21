@@ -225,7 +225,10 @@ it.each([
 			profile === "application-v1" ||
 			profile === "application-unicode-v1"
 		) {
-			expect(received).toHaveProperty("regexSourceLength", 8192);
+			expect(received).toHaveProperty(
+				"regexSourceLength",
+				profile === "application-unicode-v1" ? 16384 : 8192,
+			);
 			expect(received).toHaveProperty(
 				"regexCompileAllocations",
 				profile === "application-unicode-v1" ? 65536 : 32768,
