@@ -35,7 +35,10 @@
   Five actual SDK/native fixtures at 128 MB render imported results for immediate,
   timer, nonce-CSP/base-change and default/explicit-credential CDN cases. A named
   host evaluation cannot borrow a cached dependency; every fixture closes with
-  retained data zero, active requests zero and zero sockets. Earlier direct registry
+  retained data zero, active requests zero and zero sockets. Two additional actual
+  SDK/native public-chunk fixtures at 128 MB close their realm before host cleanup
+  with retained data zero and zero sockets; the editor chunk is incompatible with
+  the regex-source budget below. Earlier direct registry
   checks pass separately; no full-suite pass is claimed. Seven older HTML-runtime
   bootstrap contracts, five static-module contracts and one classic-loader limits
   expectation reproduce on the baseline.
@@ -829,7 +832,14 @@
   Extended observation aborts with V8 heap exhaustion at the 192 MB diagnostic
   limit after editor-core resolution, before final reporting. SDK module compilation/
   evaluation, interactive controls and cleanup for that failed run remain unverified;
-  isolate compilation memory before another live initialization attempt. The prior
+  compilation memory remains unresolved. Isolated actual SDK compilation of i18n-core
+  succeeds (roughly 17 MB added retained JS heap); editor-core rejects at 8193
+  regex-source characters against the current 8192 maximum. Its native fixture and
+  a partial i18n/editor graph both revoke the realm before host cleanup under 128 MB
+  without a process crash, rendering no import result. These isolated checks do not
+  reproduce or explain the cumulative live heap failure. Handle legitimate editor
+  regex compatibility while retaining bounded compilation, and investigate cumulative
+  compilation memory before another live initialization attempt. The prior
   shorter run executes twelve classics, records the ES request pending and verifies
   cleanup zero; a green classic report alone proves no application readiness.
   Diagnostic source logging uses bounded labels without credentials/query/fragment/
