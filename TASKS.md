@@ -23,6 +23,21 @@
 
 ## Current verified state
 
+- Frozen factory-closure symbol caches now verify actual freezing and retain
+  privately captured, immutable descriptors/vectors through pinned native reads,
+  construction and WeakMap operations. Retained contribution:
+  safejs-frozen-symbol-cache-ownership.patch. Baseline fails six of ten new checks;
+  candidate passes all ten and 81 focused checks, scoped compilation, new-test
+  lint/format and exact patch forward/reverse. Broader validation passes 192 checks;
+  two deep-copy stack failures reproduce on baseline. Compiled quota probe keeps
+  1017 units / rejects quota500 instead of leaked-cache baseline 2 units / admitted;
+  mutable factory symbol growth measures 1008 instead of stale 1. Native adapter
+  matches baseline: 150399 retained / 29999 cleared, closure/private/disposal/locked
+  descriptor behavior, quota rejection and close zero. Empty-symbol catalogue
+  optimization is removed after mixed benchmarks; no speed claim. CPU-contended
+  live baseline and final fix fail the first script; final HTTP 200, zero executed,
+  167407 steps / 187906 peak, zero sockets and cleanup zero. No join verified.
+  Temporary validation artifacts removed; broader capture traversal remains open.
 - Deep closure prototype traversal now resumes from off-stack continuations;
   parent properties/providers stay fresh after the complete prototype subtree.
   Retained contribution: safejs-closure-prototype-data-walk.patch. Baseline fails
@@ -642,7 +657,9 @@
   not a Zoom audio source. Media transport/rendering APIs need implementation,
   separately from initialization performance and later live acceptance.
 - Default-stack dataDepth for direct symbol descendants, closure property
-  paths and other untested graph edges; older scope-root shape expectations and a
+  paths and other untested graph edges; deep-copy host ingress/result export and
+  deep plain-object copying also overflow the native stack on baseline. Older
+  scope-root shape expectations and a
   baseline Promise snapshot timeout. Tested capture/prototype fixes do not clear this gate.
 - Three baseline joined-callback rejection failures, earlier shared-budget realm
   reentry failure, a PageScripts timer probe's generic callback script-error and

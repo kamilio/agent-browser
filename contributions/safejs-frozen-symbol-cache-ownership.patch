@@ -1,0 +1,322 @@
+diff --git a/src/interp/values.ts b/src/interp/values.ts
+--- a/src/interp/values.ts
++++ b/src/interp/values.ts
+@@ -109,9 +109,17 @@
+ const sandboxRetainedValues = Symbol("SandboxRetainedValues");
+ // Only direct factory results are frozen here. Restored records, derived
+ // closures and proxy wrappers keep their conservative descriptor inspection.
+-const frozenClosureSymbolData = new WeakMap<object, {
+-  descriptors?: Array<readonly [symbol, PropertyDescriptor]>;
+-}>();
++const nativeSymbolKeys = Object.getOwnPropertySymbols;
++const nativeSymbolDescriptor = Object.getOwnPropertyDescriptor;
++const nativeSymbolFreeze = Object.freeze;
++const nativeClosureFrozen = Object.isFrozen;
++const nativeSymbolDefine = Reflect.defineProperty;
++type FrozenClosureSymbolData = {
++  descriptors?: readonly (readonly [symbol, PropertyDescriptor])[];
++};
++const frozenClosureSymbolData = new WeakMap<object, FrozenClosureSymbolData>();
++const frozenSymbolDataGet: (value: object) => FrozenClosureSymbolData | undefined = WeakMap.prototype.get.bind(frozenClosureSymbolData);
++const frozenSymbolDataSet: (value: object, data: FrozenClosureSymbolData) => unknown = WeakMap.prototype.set.bind(frozenClosureSymbolData);
+ export const snapshotRuntimeGetters = new WeakSet<() => unknown>();
+ for (const marker of [sandboxClosureBrand, sandboxGeneratorBrand, sandboxPromiseBrand, sandboxRegexBrand, sandboxRegexPattern, sandboxRetainedValues]) internalSymbols.add(marker);
+ 
+@@ -364,7 +372,7 @@
+   }
+ 
+   Object.freeze(closure);
+-  frozenClosureSymbolData.set(closure, {});
++  if (nativeClosureFrozen(closure)) frozenSymbolDataSet(closure, {});
+   return closure;
+ }
+ 
+@@ -1435,20 +1443,34 @@
+       }
+     }
+     if (!isGuestHostObject(value)) {
+-      const frozen = frozenClosureSymbolData.get(value);
++      const frozen = frozenSymbolDataGet(value);
+       let descriptors = frozen?.descriptors ?? trackedObjectSymbolDescriptors(value);
+-      // Capture before visiting: retained callbacks can mutate later properties.
++      // Keep first-inspection observer/throw behavior, but privately capture
++      // actual frozen fields with native operations before retaining descriptors.
+       if (descriptors === undefined) {
+-        const keys = Object.getOwnPropertySymbols(value);
+-        for (let index = 0; index < keys.length; index++) {
+-          const key = keys[index]!;
+-          // Frozen factory records have no proxy traps. Capture all their
+-          // symbols so a later internal-symbol registration is still observed.
+-          if (frozen === undefined && internalSymbols.has(key)) continue;
+-          const descriptor = Object.getOwnPropertyDescriptor(value, key);
+-          if (descriptor !== undefined) (descriptors ??= []).push([key, descriptor]);
+-        }
+-        if (frozen !== undefined) frozen.descriptors = descriptors ??= [];
++        const observedKeys = Object.getOwnPropertySymbols(value);
++        if (frozen !== undefined) {
++          const keys = nativeSymbolKeys(value);
++          const captured: Array<readonly [symbol, PropertyDescriptor]> = [];
++          for (let index = 0; index < keys.length; index++) {
++            const key = keys[index]!;
++            const descriptor = nativeSymbolDescriptor(value, key);
++            if (descriptor !== undefined) nativeSymbolDefine(captured, captured.length, {
++              value: nativeSymbolFreeze([key, nativeSymbolFreeze(descriptor)] as const),
++              writable: true, enumerable: true, configurable: true
++            });
++          }
++          frozen.descriptors = descriptors = nativeSymbolFreeze(captured);
++        } else {
++          const captured: Array<readonly [symbol, PropertyDescriptor]> = [];
++          for (let index = 0; index < observedKeys.length; index++) {
++            const key = observedKeys[index]!;
++            if (internalSymbols.has(key)) continue;
++            const descriptor = Object.getOwnPropertyDescriptor(value, key);
++            if (descriptor !== undefined) captured.push([key, descriptor]);
++          }
++          descriptors = captured;
++        }
+       }
+       if (descriptors !== undefined) for (let index = 0; index < descriptors.length; index++) {
+         const entry = descriptors[index]!;
+diff --git a/src/interp/frozen-symbol-cache-ownership.test.ts b/src/interp/frozen-symbol-cache-ownership.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/interp/frozen-symbol-cache-ownership.test.ts
+@@ -0,0 +1,237 @@
++import { expect, it } from "vitest";
++import { Budget } from "./budget.js";
++import { internalSymbols } from "./internal-symbols.js";
++import { createIntrinsicObject } from "./object-model.js";
++import {
++  createSandboxClosure,
++  measureSandboxData,
++  reconcileCompiledValues,
++} from "./values.js";
++
++it("remeasures cached symbols when an internal marker is removed and restored", () => {
++  const closure = createSandboxClosure({ call: () => undefined });
++  const marker = Object.getOwnPropertySymbols(closure)[0]!;
++  const before = measureSandboxData([closure]);
++  expect(internalSymbols.has(marker)).toBe(true);
++  internalSymbols.delete(marker);
++  try {
++    expect(measureSandboxData([closure])).toBe(
++      before + 2 + marker.description!.length,
++    );
++  } finally {
++    internalSymbols.add(marker);
++  }
++  expect(measureSandboxData([closure])).toBe(before);
++});
++
++it("remeasures cached symbols after catalogue clear", () => {
++  const all = [...internalSymbols];
++  const closure = createSandboxClosure({ call: () => undefined });
++  const before = measureSandboxData([closure]);
++  internalSymbols.clear();
++  try {
++    expect(measureSandboxData([closure])).toBeGreaterThan(before);
++  } finally {
++    for (const key of all) internalSymbols.add(key);
++  }
++  expect(measureSandboxData([closure])).toBe(before);
++});
++
++for (const hide of [false, true])
++  it(`observes catalogue mutation between custom symbol descendants (hide=${hide})`, () => {
++    const first = Symbol("first"),
++      later = Symbol("later");
++    let reads = 0;
++    const mutator = createSandboxClosure({
++      call: () => undefined,
++      retainedValues: () => {
++        reads++;
++        if (hide) internalSymbols.add(later);
++        else internalSymbols.delete(later);
++        return [];
++      },
++    });
++    const root = createSandboxClosure({
++      call: () => undefined,
++      properties: (value) => {
++        Object.defineProperty(value, first, { value: mutator });
++        Object.defineProperty(value, later, { value: "x".repeat(1000) });
++        return createIntrinsicObject();
++      },
++    });
++    if (!hide) internalSymbols.add(later);
++    try {
++      expect(measureSandboxData([root])).toBe(hide ? 10 : 1017);
++      expect(measureSandboxData([root])).toBe(hide ? 10 : 1017);
++      expect(reads).toBe(2);
++    } finally {
++      internalSymbols.delete(later);
++    }
++  });
++
++it("does not cache a factory result whose later freeze hook leaves it mutable", () => {
++  const original = Object.freeze;
++  let root;
++  try {
++    Object.freeze = <T>(value: T): Readonly<T> => value;
++    root = createSandboxClosure({ call: () => undefined });
++  } finally {
++    Object.freeze = original;
++  }
++  const before = measureSandboxData([root]);
++  Object.defineProperty(root, Symbol("payload"), {
++    value: createIntrinsicObject({ text: "x".repeat(1000) }),
++  });
++  expect(measureSandboxData([root])).toBeGreaterThan(before + 1000);
++  expect(() =>
++    reconcileCompiledValues(new Budget({ dataSize: 500 }), [root]),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it("does not expose cached descriptor vectors through later push hooks", () => {
++  const key = Symbol("payload");
++  const child = createIntrinsicObject({ text: "x".repeat(1000) });
++  const root = createSandboxClosure({
++    call: () => undefined,
++    properties: (value) => {
++      Object.defineProperty(value, key, { value: child });
++      return createIntrinsicObject();
++    },
++  });
++  const original = Array.prototype.push;
++  const aliases = new Set<unknown[]>();
++  try {
++    Array.prototype.push = function (...items: unknown[]) {
++      if (items.some((item) => Array.isArray(item) && item[0] === key))
++        aliases.add(this);
++      return Reflect.apply(original, this, items);
++    };
++    measureSandboxData([root]);
++  } finally {
++    Array.prototype.push = original;
++  }
++  for (const alias of aliases) alias.length = 0;
++  expect(aliases.size).toBe(0);
++  expect(() =>
++    reconcileCompiledValues(new Budget({ dataSize: 500 }), [root]),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it("does not cache descriptor objects exposed by later reflection hooks", () => {
++  const key = Symbol("payload");
++  const child = createIntrinsicObject({ text: "x".repeat(1000) });
++  const root = createSandboxClosure({
++    call: () => undefined,
++    properties: (value) => {
++      Object.defineProperty(value, key, { value: child });
++      return createIntrinsicObject();
++    },
++  });
++  const original = Object.getOwnPropertyDescriptor;
++  let alias: PropertyDescriptor | undefined;
++  try {
++    Object.getOwnPropertyDescriptor = (target, name) => {
++      const descriptor = original(target, name);
++      if (target === root && name === key) alias = descriptor;
++      return descriptor;
++    };
++    measureSandboxData([root]);
++  } finally {
++    Object.getOwnPropertyDescriptor = original;
++  }
++  if (alias) alias.value = undefined;
++  expect(alias).toBeUndefined();
++  expect(() =>
++    reconcileCompiledValues(new Budget({ dataSize: 500 }), [root]),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it("does not expose frozen cache state through later WeakMap.set hooks", () => {
++  const original = WeakMap.prototype.set;
++  let alias;
++  let root;
++  try {
++    WeakMap.prototype.set = function (key: object, value: unknown) {
++      alias = value;
++      return Reflect.apply(original, this, [key, value]);
++    };
++    root = createSandboxClosure({ call: () => undefined });
++  } finally {
++    WeakMap.prototype.set = original;
++  }
++  expect(alias).toBeUndefined();
++  expect(measureSandboxData([root])).toBe(1);
++});
++
++it("does not expose cached metadata through later WeakMap.get hooks", () => {
++  const key = Symbol("payload");
++  const root = createSandboxClosure({
++    call: () => undefined,
++    properties: (value) => {
++      Object.defineProperty(value, key, { value: "x".repeat(1000) });
++      return createIntrinsicObject();
++    },
++  });
++  const before = measureSandboxData([root]);
++  const original = WeakMap.prototype.get;
++  let alias: { descriptors: unknown } | undefined;
++  try {
++    WeakMap.prototype.get = function (value: object) {
++      const result = Reflect.apply(original, this, [value]);
++      if (
++        value === root &&
++        result &&
++        typeof result === "object" &&
++        "descriptors" in result
++      )
++        alias = result;
++      return result;
++    };
++    expect(measureSandboxData([root])).toBe(before);
++  } finally {
++    WeakMap.prototype.get = original;
++  }
++  if (alias) alias.descriptors = [];
++  expect(alias).toBeUndefined();
++  expect(measureSandboxData([root])).toBe(before);
++  expect(() =>
++    reconcileCompiledValues(new Budget({ dataSize: 500 }), [root]),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
++
++it("does not expose descriptor vectors to inherited numeric setters", () => {
++  const key = Symbol("payload");
++  const root = createSandboxClosure({
++    call: () => undefined,
++    properties: (value) => {
++      Object.defineProperty(value, key, { value: "x".repeat(1000) });
++      return createIntrinsicObject();
++    },
++  });
++  const original = Object.getOwnPropertyDescriptor(Array.prototype, "0");
++  const aliases = new Set<unknown[]>();
++  try {
++    Object.defineProperty(Array.prototype, "0", {
++      configurable: true,
++      set(value: unknown) {
++        if (Array.isArray(value) && typeof value[0] === "symbol")
++          aliases.add(this);
++        Object.defineProperty(this, "0", {
++          value,
++          writable: true,
++          enumerable: true,
++          configurable: true,
++        });
++      },
++    });
++    measureSandboxData([root]);
++  } finally {
++    if (original) Object.defineProperty(Array.prototype, "0", original);
++    else Reflect.deleteProperty(Array.prototype, "0");
++  }
++  for (const alias of aliases) alias.length = 0;
++  expect(aliases.size).toBe(0);
++  expect(() =>
++    reconcileCompiledValues(new Budget({ dataSize: 500 }), [root]),
++  ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++});
