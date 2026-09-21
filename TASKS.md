@@ -23,6 +23,18 @@
 
 ## Current verified state
 
+- Actual SDK/native 128 MB comparison isolates the import gate: identical
+  import("./dep.js") code fetches /dep.js as a module, but makes no dependency
+  request as a classic script. Both guest catch handlers suppress rejection;
+  both loader reports are green, with zero sockets and verified cleanup zero.
+  A script report alone does not establish successful application imports.
+- Completed one-shot timer retains a captured 50000-character payload: actual
+  SDK/native 128 MB current charge 95882 versus synchronous control 45704.
+  Both render "50000"; timer case has one fired / zero active, queued or pending
+  callbacks, not running; cleanup zero. Native timers discard their callback,
+  but the SDK callback registry retains it. Investigate independent registration
+  ownership; blanket revocation can invalidate shared callbacks/exported aliases.
+  No SDK source/build edits or memory-accounting bypass introduced by this probe.
 - Document loading now settles scripts inserted by load handlers/final image
   completion before bootstrap retirement. Three new native regressions fail
   baseline; all 269 focused manifest-listed checks and native build pass, including
