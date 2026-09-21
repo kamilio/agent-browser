@@ -1051,3 +1051,213 @@ it("charges failed roots and dependencies to the same fetch budget and releases 
 		pageNetworkModuleLimits.fetches,
 	);
 });
+
+const classicId = "urn:agent-browser:html-classic:1";
+const classicSource =
+	"var answer; import('./child.js').then(m=>answer=m.value);";
+
+function classic(
+	overrides: Partial<import("./html-module.js").HtmlClassicScriptRequest> = {},
+): import("./html-module.js").HtmlClassicScriptRequest {
+	return {
+		id: classicId,
+		source: classicSource,
+		baseUrl: "https://page.example/original/",
+		credentials: "same-origin",
+		signal: new AbortController().signal,
+		...overrides,
+	};
+}
+
+it("admits distinct classic identities with exact source validation and original inline bases", async () => {
+	const { scope, fetchWithPolicy } = fixture();
+	const first = await scope.prepareHtmlClassicScript(classic());
+	const second = await scope.prepareHtmlClassicScript(
+		classic({
+			id: "urn:agent-browser:html-classic:2",
+			baseUrl: "https://page.example/later/",
+		}),
+	);
+	expect(first).toEqual({ id: classicId, source: classicSource });
+	expect(() =>
+		scope.validateClassicEntry(classicSource, first.id),
+	).not.toThrow();
+	expect(() =>
+		scope.validateClassicEntry(`${classicSource} `, first.id),
+	).toThrow();
+	expect(() => scope.validateClassicEntry(classicSource, rootId)).toThrow();
+	expect(() => scope.validateEntry(classicSource, first.id)).toThrow();
+	await scope.resolve("./child.js", first.id, {});
+	await scope.resolve("./child.js", second.id, {});
+	expect(
+		fetchWithPolicy.mock.calls.map(([url, policy]) => [url, policy]),
+	).toEqual([
+		[
+			"https://page.example/original/child.js",
+			{ mode: "cors", credentials: "same-origin" },
+		],
+		[
+			"https://page.example/later/child.js",
+			{ mode: "cors", credentials: "same-origin" },
+		],
+	]);
+	await expect(
+		scope.resolve("./unauthorized.js", documentUrl, {}),
+	).resolves.toBeUndefined();
+	expect(fetchWithPolicy).toHaveBeenCalledTimes(2);
+});
+
+it("snapshots external classic redirect admission and credentials without refetching the entry", async () => {
+	const allowed = vi.fn(() => true);
+	const admission = { allows: allowed } as DocumentScriptAdmission;
+	const redirects = ["https://cdn.example/start.js"];
+	const external = { requestUrl: "https://cdn.example/start.js", redirects };
+	const input = classic({
+		baseUrl: "https://cdn.example/final/entry.js",
+		credentials: "include",
+		external,
+		admission,
+	});
+	const { scope, fetchWithPolicy } = fixture(async (url) =>
+		response(url, { type: "cors" }),
+	);
+	await scope.prepareHtmlClassicScript(input);
+	expect(fetchWithPolicy).not.toHaveBeenCalled();
+	redirects[0] = "https://changed.example/entry.js";
+	external.requestUrl = "https://changed.example/entry.js";
+	allowed.mockClear();
+	await scope.resolve("./child.js", input.id, {});
+	expect(allowed.mock.calls).toContainEqual([
+		"https://cdn.example/start.js",
+		0,
+	]);
+	expect(allowed.mock.calls).toContainEqual([
+		"https://cdn.example/final/entry.js",
+		1,
+	]);
+	expect(allowed.mock.calls.flat()).not.toContain(
+		"https://changed.example/entry.js",
+	);
+	expect(fetchWithPolicy).toHaveBeenCalledWith(
+		"https://cdn.example/final/child.js",
+		{ mode: "cors", credentials: "include" },
+		expect.any(AbortSignal),
+		admission,
+	);
+});
+
+it("rechecks classic admission before entry validation and dependency fetch", async () => {
+	let allowed = true;
+	const admission = { allows: () => allowed } as DocumentScriptAdmission;
+	const { scope, fetchWithPolicy } = fixture();
+	await scope.prepareHtmlClassicScript(classic({ admission }));
+	allowed = false;
+	expect(() => scope.validateClassicEntry(classicSource, classicId)).toThrow();
+	await expect(
+		scope.resolve("./child.js", classicId, {}),
+	).rejects.toMatchObject({ code: "policy-denied" });
+	expect(fetchWithPolicy).not.toHaveBeenCalled();
+});
+
+it("requires explicit HTML entry authorization for classic registration", async () => {
+	const { scope } = fixture(undefined, {
+		htmlEntries: false,
+		entries: [{ id: rootId, source: moduleSource }],
+	});
+	let read = false;
+	const input = Object.defineProperty({}, "id", {
+		get() {
+			read = true;
+			return classicId;
+		},
+	});
+	await expect(
+		scope.prepareHtmlClassicScript(input as never),
+	).rejects.toMatchObject({ code: "policy-denied" });
+	expect(read).toBe(false);
+});
+
+it.each([
+	{ id: rootId },
+	{ id: "urn:agent-browser:html-classic:0" },
+	{ id: "urn:agent-browser:html-classic:9007199254740992" },
+	{ baseUrl: "http://page.example/" },
+	{ credentials: "invalid" },
+	{
+		external: {
+			requestUrl: "https://cdn.example/start.js",
+			redirects: Array(21).fill("https://cdn.example/start.js"),
+		},
+	},
+	{
+		external: {
+			requestUrl: "https://user@cdn.example/start.js",
+			redirects: [],
+		},
+	},
+])("rejects invalid classic admission metadata %j", async (overrides) => {
+	const { scope, fetchWithPolicy } = fixture();
+	await expect(
+		scope.prepareHtmlClassicScript(classic(overrides as never)),
+	).rejects.toBeDefined();
+	expect(fetchWithPolicy).not.toHaveBeenCalled();
+	await expect(
+		scope.resolve("./child.js", classicId, {}),
+	).resolves.toBeUndefined();
+});
+
+it("rejects classic metadata getters without invoking them and rejects changed identities", async () => {
+	const { scope } = fixture();
+	let read = false;
+	const input = classic();
+	Object.defineProperty(input, "source", {
+		get() {
+			read = true;
+			return classicSource;
+		},
+	});
+	await expect(scope.prepareHtmlClassicScript(input)).rejects.toMatchObject({
+		code: "invalid-input",
+	});
+	expect(read).toBe(false);
+	await scope.prepareHtmlClassicScript(classic());
+	await expect(
+		scope.prepareHtmlClassicScript(classic({ source: "var changed=true" })),
+	).rejects.toMatchObject({ code: "invalid-input" });
+});
+
+it("shares classic source-count and source-size limits with admitted modules", async () => {
+	const { scope } = fixture(undefined, {}, 100);
+	await expect(
+		scope.prepareHtmlClassicScript(classic({ source: "x".repeat(101) })),
+	).rejects.toMatchObject({ code: "resource-limit" });
+	for (let index = 1; index <= pageNetworkModuleLimits.sources; index++) {
+		await scope.prepareHtmlClassicScript(
+			classic({ id: `urn:agent-browser:html-classic:${index}`, source: "x" }),
+		);
+	}
+	await expect(
+		scope.prepareHtmlModule(inline({ source: "x" })),
+	).rejects.toMatchObject({ code: "resource-limit" });
+	await expect(
+		scope.prepareHtmlClassicScript(
+			classic({ id: "urn:agent-browser:html-classic:129", source: "x" }),
+		),
+	).rejects.toMatchObject({ code: "resource-limit" });
+});
+
+it("revokes classic entry and resolver authority on owner cancellation", async () => {
+	const { scope, owner, fetchWithPolicy } = fixture();
+	await scope.prepareHtmlClassicScript(classic());
+	owner.abort();
+	expect(() => scope.validateClassicEntry(classicSource, classicId)).toThrow();
+	await expect(
+		scope.resolve("./child.js", classicId, {}),
+	).rejects.toMatchObject({ code: "aborted" });
+	await expect(
+		scope.prepareHtmlClassicScript(
+			classic({ id: "urn:agent-browser:html-classic:2" }),
+		),
+	).rejects.toMatchObject({ code: "aborted" });
+	expect(fetchWithPolicy).not.toHaveBeenCalled();
+});

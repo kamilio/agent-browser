@@ -23,6 +23,19 @@
 
 ## Current verified state
 
+- Native network registry now explicitly admits prepared classic source identities
+  under HTML-entry configuration, with exact source validation, distinct inline
+  bases, snapshotted external redirect paths and inherited credentials for CORS
+  dependency fetches. Admission is rechecked, source/count limits remain shared
+  with modules and owner cancellation revokes authority. All 272 checks across
+  three manifest-listed registry/loader files and native build pass; fourteen
+  new checks fail the baseline's absent registration API. Compiled explicit
+  registry + actual SDK probes under 128 MB preserve inline/external resolution
+  through later callbacks in both scheduling modes, reject changed source and
+  revoke on cancellation, cleanup zero and zero sockets. These probes wire the
+  registry directly: ScriptLoader/PageScripts/runtime integration is still open.
+  Seven broader HTML-runtime contract failures reproduce with the registry
+  changes removed, from pre-existing DOM-branding bootstrap expectations.
 - SafeJS classic Scripts can now use an explicitly configured source resolver,
   sharing the realm's canonical module graph. The incremental contribution
   safejs-classic-dynamic-import.patch preserves original referrers through later
@@ -809,12 +822,15 @@
 ## Outstanding gates
 
 - Native classic-script dynamic import still cannot reach the network source
-  graph: its resolver admits only registered source identities, and ScriptLoader
-  does not register classic entries. The SDK contribution above clears the
-  resolver-only gate; integrate explicit admission bound to each prepared classic
-  Script's source, original base, policy and credentials. Keep distinct inline
-  identities across later closures/base changes, source validation, integrity,
-  CSP, limits and cancellation. Do not grant arbitrary referrer URLs authority.
+  graph through ScriptLoader/PageScripts/runtime: the new registry registration
+  API is not wired into them. Bind admission to each prepared classic Script's
+  source, original base, policy, credentials and verified external redirect path;
+  preserve existing integrity checks. Forward the distinct admitted identity to
+  SafeJS and validate exact source before evaluation. Named host evaluations and
+  bootstrap closures must not borrow admitted module/classic referrer authority.
+  Keep inline bases stable across later closures/base changes, CSP, limits and
+  cancellation. The SDK and directly wired registry probes above clear only their
+  respective gates; do not grant arbitrary referrer URLs authority.
 - Interactive Zoom initialization/join and every notetaker capability listed above.
   Iframe navigation, srcdoc/policy contexts and child script realms remain unsupported.
   Diagnostics block optional file-paa.zoom.us and cdn.cookielaw.org origins;
@@ -843,6 +859,8 @@
 - Older native capability metadata and classic-loader limit expectations; no full
   native-suite pass is claimed. DOM branding lacks full prototype method tables;
   namespaced creation currently supports only unprefixed HTML, SVG and MathML names.
+  Seven HTML-runtime fake-SDK contract checks have pre-existing DOM-branding
+  bootstrap source expectations that differ from the current dirty worktree.
 - Keep native, SafeJS, live-network, socket and TTY/PTY gates separate. Use only
   manifest-listed native tests from native-tests.json. The user approved SafeJS,
   live Zoom and necessary sockets; native passes prove none of the other gates.

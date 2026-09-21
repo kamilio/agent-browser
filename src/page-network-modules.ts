@@ -3,6 +3,7 @@ import type { FetchCredentials } from "./cors.js";
 import type { DocumentScriptAdmission } from "./document-script-csp.js";
 import { AgentBrowserError } from "./errors.js";
 import {
+	type HtmlClassicScriptRequest,
 	type HtmlModuleRequest,
 	type HtmlModuleSource,
 	moduleInputData,
@@ -153,6 +154,11 @@ function inlineIdentity(value: string): boolean {
 	return match !== null && Number.isSafeInteger(Number(match[1]));
 }
 
+function classicIdentity(value: string): boolean {
+	const match = /^urn:agent-browser:html-classic:([1-9][0-9]*)$/.exec(value);
+	return match !== null && Number.isSafeInteger(Number(match[1]));
+}
+
 function integrityDenied(): AgentBrowserError {
 	return new AgentBrowserError(
 		"policy-denied",
@@ -286,6 +292,7 @@ export class PageNetworkModuleRegistry {
 		for (const entry of this.#entries.values())
 			if (entry.source.length > maximum) throw limited();
 		const sources = new Map(this.#entries);
+		const classicEntries = new Set<string>();
 		const bases = new Map(this.#entryBases);
 		const policies = new Map(
 			Array.from(sources.keys(), (id) => [id, this.#policy] as const),
@@ -313,6 +320,7 @@ export class PageNetworkModuleRegistry {
 			closed = true;
 			signal.removeEventListener("abort", close);
 			sources.clear();
+			classicEntries.clear();
 			bases.clear();
 			policies.clear();
 			digests.clear();
@@ -464,7 +472,12 @@ export class PageNetworkModuleRegistry {
 			id: string,
 			admission: DocumentScriptAdmission | undefined,
 		) => {
-			if (inlineIdentity(id)) checkAdmission(admission);
+			if (classicEntries.has(id)) {
+				const path = paths.get(id) ?? [];
+				if (!path.length) checkAdmission(admission);
+				for (const target of path)
+					checkAdmission(admission, target.url, target.redirectCount);
+			} else if (inlineIdentity(id)) checkAdmission(admission);
 			else {
 				checkAdmission(admission, id, 0);
 				for (const target of paths.get(id) ?? [])
@@ -502,6 +515,94 @@ export class PageNetworkModuleRegistry {
 		};
 		return Object.freeze({
 			close,
+			prepareHtmlClassicScript: async (
+				input: HtmlClassicScriptRequest,
+			): Promise<Readonly<HtmlModuleSource>> => {
+				live();
+				if (!this.#htmlEntries)
+					throw new AgentBrowserError(
+						"policy-denied",
+						"HTML classic entries are not enabled",
+					);
+				if (Array.isArray(input)) throw invalid();
+				const caller = data(input, "signal");
+				checkSignal(caller);
+				const id = text(
+					data(input, "id"),
+					pageNetworkModuleLimits.identifierCodeUnits,
+				);
+				if (!classicIdentity(id)) throw invalid();
+				const source = text(data(input, "source"), maximum, true);
+				const baseInput = data(input, "baseUrl");
+				const base = moduleUrl(baseInput, this.#document).href;
+				if (base !== baseInput) throw invalid();
+				const credentials = data(input, "credentials");
+				if (!["omit", "same-origin", "include"].includes(credentials as string))
+					throw invalid();
+				const admission = data(input, "admission", true) as
+					| DocumentScriptAdmission
+					| undefined;
+				const external = data(input, "external", true);
+				const path: { url: string; redirectCount: number }[] = [];
+				if (external !== undefined) {
+					const requested = data(external, "requestUrl");
+					const requestUrl = moduleUrl(requested, this.#document).href;
+					if (requested !== requestUrl) throw invalid();
+					const redirects = data(external, "redirects");
+					if (!Array.isArray(redirects)) throw invalid();
+					const length = data(redirects, "length");
+					if (!Number.isSafeInteger(length) || (length as number) > 20)
+						throw invalid();
+					path.push({ url: requestUrl, redirectCount: 0 });
+					for (let index = 0; index < (length as number); index++) {
+						const inputUrl = data(redirects, String(index));
+						const url = moduleUrl(inputUrl, this.#document).href;
+						if (url !== inputUrl) throw invalid();
+						path.push({ url, redirectCount: index });
+					}
+					path.push({ url: base, redirectCount: length as number });
+				}
+				if (resolutions++ >= pageNetworkModuleLimits.resolutions) throw limited();
+				if (external === undefined) checkAdmission(admission);
+				for (const target of path)
+					checkAdmission(admission, target.url, target.redirectCount);
+				live();
+				checkSignal(caller);
+				if (sources.has(id)) throw invalid();
+				if (
+					sources.size + reservations >= pageNetworkModuleLimits.sources ||
+					units + source.length > totalMaximum
+				)
+					throw limited();
+				const value = Object.freeze({ id, source });
+				units += source.length;
+				sources.set(id, value);
+				classicEntries.add(id);
+				bases.set(id, base);
+				policies.set(
+					id,
+					Object.freeze({
+						mode: "cors",
+						credentials: credentials as FetchCredentials,
+					}),
+				);
+				admissions.set(id, admission);
+				paths.set(id, Object.freeze(path.map((target) => Object.freeze(target))));
+				return value;
+			},
+			validateClassicEntry: (
+				source: string,
+				filename: string | undefined,
+			): void => {
+				live();
+				const id = text(filename, pageNetworkModuleLimits.identifierCodeUnits);
+				if (
+					!classicEntries.has(id) ||
+					sources.get(id)?.source !== text(source, maximum, true)
+				)
+					throw invalid();
+				checkSourceAdmission(id, admissions.get(id));
+			},
 			prepareHtmlModule: async (
 				input: HtmlModuleRequest,
 			): Promise<Readonly<HtmlModuleSource>> => {

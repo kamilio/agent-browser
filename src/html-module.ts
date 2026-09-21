@@ -18,6 +18,19 @@ export interface HtmlModuleSource {
 	readonly source: string;
 }
 
+export interface HtmlClassicScriptRequest {
+	readonly id: string;
+	readonly source: string;
+	readonly baseUrl: string;
+	readonly credentials: FetchCredentials;
+	readonly admission?: DocumentScriptAdmission;
+	readonly signal: AbortSignal;
+	readonly external?: Readonly<{
+		requestUrl: string;
+		redirects: readonly string[];
+	}>;
+}
+
 function invalidModuleInput(): AgentBrowserError {
 	return new AgentBrowserError("invalid-input", "Invalid module input");
 }
