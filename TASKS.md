@@ -312,9 +312,18 @@
   collections 39/39 versus 16/16. Actual five-case JSPI/WASM and public initializer
   pass at unchanged totals, cleanup zero; initializer takes 14.1 s on this loaded run.
   Full Worker still times out at 30279 ms / 881108 steps, parent success, no completion/
-  status and cleanup zero. No useful actual startup gain established. Owned builds,
-  profiles and probes removed. Next: reduce visited-bookkeeping call allocations and
-  remaining graph-walk work while preserving primary scans and fresh foreign reads.
+  status and cleanup zero. No useful actual startup gain established. Further
+  experiments rejected: uncurried WeakMap calls do not improve full scans; wrapping
+  literals in native Proxies breaks host copying; fresh bulk literal descriptors and
+  a reusable Set registry are slower on representative scans. All candidate edits
+  removed; no new SDK commit. Per-source AST traces locate ongoing Webpack module/
+  export initialization in the 286-factory public Worker bundle, not parent cleanup.
+  Unchanged Worker profile times out at 30815 ms / 879192 steps, parent success,
+  no completion/status and cleanup zero. Of roughly 40 s sampled startup time,
+  GC accounts for 14.9 s and recursive graph visits 11.4 s; closure root append/
+  collection remains visible. Owned builds, profiles and probes removed. Next:
+  reduce closure-capture allocation and redundant graph work without cross-walk
+  caching of mutable/foreign objects or weakening full primary scans.
   Full startup/default limits and all joining/meeting/media gates remain open.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
