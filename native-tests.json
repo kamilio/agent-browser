@@ -4,6 +4,7 @@
 	"src/node-wasm-memories.test.ts",
 	"src/node-wasm-modules.test.ts",
 	"src/node-wasm-instances.test.ts",
+	"src/page-wasm.test.ts",
 	"src/page-dom-methods.test.ts",
 	"src/script-blank-frames.test.ts",
 	"src/canvas-draw-image.test.ts",

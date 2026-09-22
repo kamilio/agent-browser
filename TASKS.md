@@ -50,7 +50,7 @@
   survive close until instance leases release. Close instances before awaiting
   module-owner close. Native compilation is not preemptible; source/metadata and
   table/global slot charges do not measure V8 object/generated-code allocation.
-- All 104 focused checks across five manifest-listed native files, browser build,
+- All 111 focused checks across six manifest-listed native files, browser build,
   strict new/changed-test typing and changed-file lint/format pass. Opt-in actual
   SDK/WASM at 128 MiB passes one/320-page aliases, bidirectional WASM/guest writes,
   JS/native growth and cleanup memory/data/depth zero. Actual Node24 JSPI/SafeJS
@@ -67,8 +67,15 @@
   table.grow counts are zero. Source/metadata charge 1366307 bytes releases on close,
   as do active requests. No public binary instantiation performed. Current admission
   rejects reference boundaries, table/global imports, defined memories and native
-  table.grow; async start imports reject before guest invocation. Table/Global export
-  wrappers and page/Worker WebAssembly APIs remain absent. Diagnostic 32 MiB quotas
+  table.grow; async start imports reject before guest invocation. The guest bridge
+  now provides branded Memory/Module/Instance, original imports/exports reflection,
+  validate, compile and both instantiate overloads. Actual offline SafeJS/Node24
+  JSPI at 128 MiB verifies synchronous guest results, callback reentry, 320-page
+  memory growth/detachment/identity, async overloads and compile/link/runtime-trap
+  error brands; 1717 steps/depth eight and cleanup resources/data/depth/pending zero.
+  Table/Global wrappers, streaming/custom sections and page/Worker installers remain
+  absent. The maintained SDK lacks shared-realm ownership required by Workers;
+  reconcile and test that directly before installation. Diagnostic 32 MiB quotas
   do not clear default page 16 MiB/262144-element limits. Next: page/Worker installers,
   actual Zoom instantiation with its real imports, initialization performance and
   every joining/admission/presence/roster/chat/audio/transcription/playback/microphone/
