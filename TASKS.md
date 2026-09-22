@@ -23,6 +23,20 @@
 
 ## Current verified state
 
+- Authorized phase/CPU trace narrows the pending Zoom import to editor evaluation.
+  All seven module-instantiation phases finish in 0–15 ms each; rolldown evaluation
+  finishes in 360 ms. Editor evaluation remains active for 83 s until host cleanup
+  interrupts it. In the final 83 s profile window, about 79 s of sampled CPU time is
+  under retained-graph accounting (nested frames counted once). Heap snapshots around
+  linking/evaluation are 575–629 million bytes; these are live diagnostic heap usage,
+  not retained-after-GC measurements or a default 128 MB pass. The 768 MB/120 s
+  diagnostic again executes 13 classics with zero failures but exits nonzero with
+  pending/prepared/fulfilled/rejected imports 1/7/0/0. No readiness or meeting join;
+  zero socket attempts and cleanup data zero. Temporary dist instrumentation restored
+  exactly; process terminated and trace/profile artifacts removed. Next: isolate
+  retained-graph traversal cost with a controlled compatibility fixture; preserve
+  full primary reconciliation, depth/data limits, callback ownership and reentry.
+
 - SDK source-module status exposes immutable pending/prepared/fulfilled/rejected
   counts to the native runtime. The diagnostic observes imports outside classic
   tasks and requires settled successful imports separately from entry-fetch success;
@@ -38,8 +52,9 @@
   static modules but still has one pending import, zero fulfilled and zero rejected.
   It exits nonzero, verifies retained data zero and zero sockets; no interactive
   readiness/meeting join. All live/fixture processes terminated; working source/build
-  remain reusable and validation artifacts are removed. Next: isolate cumulative
-  module linking/evaluation cost and memory; default 30 s/128 MB remain open.
+  remain reusable and validation artifacts are removed. The phase trace above
+  identifies editor evaluation accounting as the next target; default 30 s/128 MB
+  remain open.
 
 - SafeJS canonical modules share frozen token positions, retire completed token
   prefixes and assign fresh AST IDs without a large temporary visited Set. Parser
