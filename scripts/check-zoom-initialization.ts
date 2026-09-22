@@ -16,11 +16,11 @@ import type {
 	PageSourceModuleStatus,
 } from "../src/page-runtime.js";
 import { PageScripts } from "../src/page-scripts.js";
-import { ScriptLoader } from "../src/script-loader.js";
 import type {
 	ReleasedCore,
 	ReleasedRealm,
 } from "../src/safejs-extension-types.js";
+import { ScriptLoader } from "../src/script-loader.js";
 import { BrowserSession } from "../src/session.js";
 
 // Live-network/socket/SafeJS diagnostic, separate from native-tests.json. Run only
@@ -34,7 +34,9 @@ import { BrowserSession } from "../src/session.js";
 // by scripts whose execution outlasts the first window. Set
 // AGENT_BROWSER_ZOOM_OBSERVATION_MS between 0 and 30000 for each window.
 // Observe pending source imports outside classic tasks for up to 30 s afterward. Set
-// AGENT_BROWSER_ZOOM_IMPORT_WAIT_MS between 0 and 120000 to change that bound.
+// AGENT_BROWSER_ZOOM_IMPORT_WAIT_MS between 0 and 1800000 to change that bound.
+// Set AGENT_BROWSER_ZOOM_NETWORK_TIMEOUT_MS between 1000 and 120000 to diagnose
+// fetch deadlines during costly compilation; the default remains 15000 ms.
 // Import settlement does not certify interactive readiness, admission or meeting media.
 const packageRoot = process.env.AGENT_BROWSER_SAFEJS_SOURCE_ROOT;
 if (!packageRoot)
@@ -60,9 +62,19 @@ const importWaitMs = Number(
 if (
 	!Number.isSafeInteger(importWaitMs) ||
 	importWaitMs < 0 ||
-	importWaitMs > 120000
+	importWaitMs > 1800000
 )
-	throw new Error("Zoom import wait must be between 0 and 120000 ms");
+	throw new Error("Zoom import wait must be between 0 and 1800000 ms");
+
+const networkTimeoutMs = Number(
+	process.env.AGENT_BROWSER_ZOOM_NETWORK_TIMEOUT_MS ?? 15000,
+);
+if (
+	!Number.isSafeInteger(networkTimeoutMs) ||
+	networkTimeoutMs < 1000 ||
+	networkTimeoutMs > 120000
+)
+	throw new Error("Zoom network timeout must be between 1000 and 120000 ms");
 
 const userAgent = process.env.AGENT_BROWSER_ZOOM_USER_AGENT;
 
@@ -73,7 +85,10 @@ const blockedOrigins = [
 ];
 // The loginview module exceeds the transport default of 2 MiB. Keep the
 // diagnostic allowance explicit and bounded separately from guest source quotas.
-const transportLimits = { maxResponseBytes: 4_194_304 };
+const transportLimits = {
+	maxResponseBytes: 4_194_304,
+	timeoutMs: networkTimeoutMs,
+};
 const loaderLimits = {
 	modules: true,
 	maxScripts: 256,
@@ -468,6 +483,8 @@ try {
 		moduleStatuses().some((status) => status && status.pendingImports > 0);
 	const importDeadline = performance.now() + importWaitMs;
 	if (importsPending()) {
+		const importStart = performance.now();
+		let nextProgress = importStart;
 		console.log(
 			JSON.stringify({ event: "pending-source-modules", importWaitMs }),
 		);
@@ -475,8 +492,25 @@ try {
 			importsPending() &&
 			performance.now() < importDeadline &&
 			![...owners].every((owner) => owner.closed)
-		)
+		) {
+			const now = performance.now();
+			if (now >= nextProgress) {
+				nextProgress = now + 10000;
+				console.log(
+					JSON.stringify({
+						event: "source-module-progress",
+						elapsedMs: Math.round(now - importStart),
+						sourceModuleStatuses: moduleStatuses(),
+						runtimes: runtimes.map((runtime) => ({
+							closed: runtime.closed,
+							stepsUsed: runtime.budget.stepsUsed,
+							currentDataSize: currentDataSize(runtime),
+						})),
+					}),
+				);
+			}
 			await new Promise<void>((resolve) => setTimeout(resolve, 250));
+		}
 	}
 	importObservationTimedOut = importsPending();
 	sourceModuleStatuses = moduleStatuses();

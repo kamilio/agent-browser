@@ -23,6 +23,23 @@
 
 ## Current verified state
 
+- The initialization diagnostic now permits a bounded 0–30 min import observation
+  (default remains 30 s), reports source-module counts/steps/data every 10 s, and
+  accepts an explicit 1–120 s network deadline (default remains 15 s). Native build,
+  diagnostic Biome checks and five invalid-setting rejection probes pass. The
+  authorized 768 MB/120 s-script/120 s-network/15 min-import run is still active:
+  seven static modules prepare, one import remains pending and step counts advance.
+  Let this existing run reach settlement or its observation bound before changing
+  builds or starting another live run. Full initialization/join remains unverified.
+  Offline compiled-SDK scaling isolates the first three editor declarations with
+  actual rolldown helpers: retaining 1000 extra closures raises diagnostic time from
+  12.9 to 43.5 s with identical 227104 import steps; both return initialized `object`
+  and close at data zero under 128 MB. Current charge rises only 2105 units. CPU
+  samples identify the primary graph visitor and repeated scope snapshots as the
+  largest costs; the extra-state fixture reproduces the slowdown without Zoom's
+  full graph. Completed fixtures/profiles are removed; only the active live log is
+  ephemeral. Extended diagnostic allowances clear no default or meeting/media gate.
+
 - Editor initialization is narrowed to React DOM's lazy initializer. The earlier
   live root-statement trace completes statement 0 in 19.5 s / 3594 steps and
   statement 1 in 0.6 s / nine steps; statement 2 advances 25458 steps before
