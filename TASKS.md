@@ -197,6 +197,12 @@
   still observes stateful host-map reads. The candidate fails the benign successive-
   read contract (12 versus 18 units); exact saved source passes it. SDK source/build
   and interpreter are restored exactly, processes terminate and artifacts are removed.
+  A two-read factory-getter variant preserves that contract and passes 36 focused
+  SDK checks, strict core/test typing and all six new checks on saved source. Direct
+  getter access alone is about 50% faster, but isolated complete 512-function walks
+  are mixed: empty functions ~7% faster, property tables ~4% slower, varied shapes
+  ~2% slower, with identical charges (512/5522/14546/12041). Rejected before a live
+  retry; exact source/build restoration verified and temporary tests/artifacts removed.
   Extended allowances and component results remain diagnostic.
   Default performance and every readiness/meeting/media gate remain open.
 
