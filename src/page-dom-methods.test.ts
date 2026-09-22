@@ -1,13 +1,17 @@
 import { createContext, runInContext } from "node:vm";
 import { afterEach, expect, it, vi } from "vitest";
+import { controlledEventListener } from "./events.js";
 import { parseHtmlDocument } from "./html-parser.js";
+import { documentInteractions } from "./interactions.js";
 import type { PageBindingContext } from "./page-bindings.js";
 import { pageDomConstructorBootstrapSource } from "./page-dom-constructor-bootstrap.js";
 import {
 	PageDomMethods,
 	pageDomMethodsBootstrapGlobal,
 } from "./page-dom-methods.js";
+import { PageFocus } from "./page-focus.js";
 import { ScriptDom, type ScriptHostObjectDefinition } from "./script-dom.js";
+import { DocumentQueries } from "./selectors.js";
 
 const cleanups: (() => void)[] = [];
 afterEach(() => {
@@ -30,23 +34,52 @@ function hostObject(definition: ScriptHostObjectDefinition): object {
 		},
 	});
 }
-function fixture(createHostObject = hostObject) {
+function fixture(createHostObject = hostObject, enableFocus = false) {
 	const tree = parseHtmlDocument(
 		"<main><b>original</b></main>",
 		"https://example.com/",
 	);
 	cleanups.push(() => tree.close());
 	const release = vi.fn();
+	const nested = new Set<(...args: readonly unknown[]) => unknown>();
 	const context: PageBindingContext = {
 		createHostObject,
+		...(enableFocus
+			? {
+					nestedOperation<
+						Operation extends (...args: readonly unknown[]) => unknown,
+					>(operation: Operation): Operation {
+						nested.add(operation);
+						return operation;
+					},
+				}
+			: {}),
 		retainGuestArguments: (operation) => operation,
 		releaseGuestReference: release,
 	};
 	const bridge = new PageDomMethods(tree, context);
-	const dom = new ScriptDom(tree, bridge.factory);
+	const interactions = documentInteractions(tree);
+	const focus = context.nestedOperation
+		? new PageFocus(interactions.focus, undefined, {
+				document: tree,
+				register: context.nestedOperation,
+				maxBindings: 32,
+			})
+		: undefined;
+	if (focus) cleanups.push(() => focus.close());
+	const dom = new ScriptDom(
+		tree,
+		bridge.factory,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		focus,
+	);
 	let port!: {
 		publish(...args: unknown[]): void;
 		invoke(...args: unknown[]): unknown;
+		invokeFocus(...args: unknown[]): Promise<void>;
 	};
 	const realm = createContext({
 		document: dom.document,
@@ -66,10 +99,139 @@ function fixture(createHostObject = hostObject) {
 		dom,
 		bridge,
 		release,
+		nested,
+		interactions,
 		port,
 		evaluate: (source: string) => runInContext(source, realm),
 	};
 }
+
+it("forwards captured HTMLElement focus and blur to the borrowed receiver", async () => {
+	const { evaluate, tree, release, nested, port } = fixture(hostObject, true);
+	expect(nested.has(port.invokeFocus)).toBe(true);
+	expect(
+		evaluate(
+			'var a=document.createElement("input");var b=document.createElement("input");document.body.appendChild(a);document.body.appendChild(b);typeof HTMLElement.prototype.focus',
+		),
+	).toBe("function");
+	await evaluate(
+		"var captured=HTMLElement.prototype.focus;captured.call(a,Object.assign(Object.create(null),{preventScroll:true,focusVisible:true}))",
+	);
+	expect(evaluate("document.activeElement===a")).toBe(true);
+	expect(tree.focusIndicated).toBe(true);
+	await evaluate(
+		"captured.call(b,Object.assign(Object.create(null),{preventScroll:true}))",
+	);
+	expect(evaluate("document.activeElement===b")).toBe(true);
+	await evaluate("HTMLElement.prototype.blur.call(b)");
+	expect(evaluate("document.activeElement===document.body")).toBe(true);
+	tree.close();
+	expect(release).toHaveBeenCalledTimes(11);
+});
+
+it("rejects forged, foreign and non-HTML captured focus receivers and revokes saved methods", async () => {
+	const a = fixture(hostObject, true);
+	const b = fixture(hostObject, true);
+	const focus = a.evaluate("HTMLElement.prototype.focus") as (
+		...args: unknown[]
+	) => Promise<void>;
+	for (const receiver of [
+		{},
+		null,
+		a.dom.document,
+		b.evaluate("document.body"),
+		a.evaluate("Object.create(HTMLElement.prototype)"),
+		a.evaluate('document.createElementNS("http://www.w3.org/2000/svg","svg")'),
+	])
+		await expect(focus.call(receiver)).rejects.toThrow(/receiver/);
+	const receiver = a.evaluate('document.createElement("input")');
+	a.tree.close();
+	await expect(focus.call(receiver)).rejects.toThrow("closed");
+});
+
+it("retains focus publication readiness and rejects use through the synchronous dispatcher", async () => {
+	let attempt: Promise<void> | undefined;
+	const publication: { port?: ReturnType<typeof fixture>["port"] } = {};
+	const test = fixture((definition) => {
+		if (publication.port && definition.methods?.focus) {
+			const receiver = hostObject(definition);
+			attempt = publication.port.invokeFocus(receiver, "HTMLElement.focus");
+			void attempt.catch(() => undefined);
+			return receiver;
+		}
+		return hostObject(definition);
+	}, true);
+	publication.port = test.port;
+	const input = test.evaluate('document.createElement("input")');
+	await expect(attempt).rejects.toThrow("registered HTMLElement receiver");
+	expect(() => test.port.invoke(input, "HTMLElement.focus")).toThrow(
+		"registered receiver",
+	);
+});
+
+it("waits for controlled focus listeners and rejects a suspended captured call after close", async () => {
+	const test = fixture(hostObject, true);
+	test.evaluate(
+		'var one=document.createElement("input");one.id="one";document.body.appendChild(one)',
+	);
+	const id = new DocumentQueries(test.tree).querySelector("#one");
+	if (id === null) throw new Error("Missing focus target");
+	let enter!: () => void;
+	let resume!: () => void;
+	const entered = new Promise<void>((resolve) => {
+		enter = resolve;
+	});
+	const gate = new Promise<void>((resolve) => {
+		resume = resolve;
+	});
+	test.interactions.events.addEventListener(
+		id,
+		"focus",
+		controlledEventListener(async () => {
+			enter();
+			await gate;
+		}),
+	);
+	let settled = false;
+	const pending = test.evaluate(
+		"HTMLElement.prototype.focus.call(one)",
+	) as Promise<void>;
+	void pending.then(
+		() => {
+			settled = true;
+		},
+		() => {
+			settled = true;
+		},
+	);
+	await entered;
+	expect(settled).toBe(false);
+	test.tree.close();
+	resume();
+	await expect(pending).rejects.toThrow(/closed|abort/i);
+	expect(test.release).toHaveBeenCalledTimes(11);
+});
+
+it("rejects focus registration that replaces the operation identity", async () => {
+	const tree = parseHtmlDocument("<input>", "https://example.test/");
+	cleanups.push(() => tree.close());
+	let captured: ((...args: readonly unknown[]) => unknown) | undefined;
+	expect(
+		() =>
+			new PageDomMethods(tree, {
+				createHostObject: hostObject,
+				retainGuestArguments: (operation) => operation,
+				releaseGuestReference() {},
+				nestedOperation(operation) {
+					captured = operation;
+					return ((...args: readonly unknown[]) =>
+						operation(...args)) as typeof operation;
+				},
+			}),
+	).toThrow("identity");
+	if (!captured) throw new Error("Missing captured focus operation");
+	await expect(captured({}, "HTMLElement.focus")).rejects.toThrow("closed");
+});
 
 it("uses the borrowed receiver for parsed-document tag queries", () => {
 	const { evaluate } = fixture();

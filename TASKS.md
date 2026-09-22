@@ -23,6 +23,20 @@
 
 ## Current verified state
 
+- Captured HTMLElement.prototype.focus/blur now dispatch to registered receiver
+  operations through setup-time nested registration, preserving controlled-listener
+  scheduling, original node publication guards and close revocation. Foreign,
+  forged and non-HTML receivers reject; synchronous DOM dispatch cannot invoke
+  focus operations. Five new contracts fail on saved source and pass fixed;
+  252 selected native checks, build and changed-file format/lint pass. One existing
+  PageScripts lifecycle fixture fails on both saved and fixed source and is excluded
+  from that passing count. Actual SDK/native 128 MB/30 s probe verifies nested
+  captured focus, event order, four invalid receivers and blur (5592 steps / 13372
+  peak units); cleanup closes with data zero. Processes terminate; no artifacts.
+  Existing node-own focus methods remain bound; prototype overrides, inert-document
+  focus and broader DOM prototype behavior remain incomplete. This clears no full
+  client initialization, default performance, meeting or media gate.
+
 - Cached full-client diagnostic after the document-method fix reaches its 30 min
   observation bound: seven modules prepared, one import pending, none fulfilled
   or rejected, 8624169 total steps. Cleanup interrupts editor statement 1237
@@ -104,7 +118,8 @@
   Borrowed calls dispatch to
   registered receiver operations, including parsed/auxiliary/template documents,
   with interface/owner checks, publication readiness and lifecycle revocation.
-  Nine retained functions are shared per page and released on close; recycled node/
+  Nine retained document/node functions are shared per page and released on close;
+  nested-focus contexts also retain the two HTMLElement methods above. Recycled node/
   port identities and invalid publications reject. Other methods remain bound to
   their original native node; full prototype tables remain incomplete. Callback
   filters and foreign iterator roots remain

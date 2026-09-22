@@ -1,4 +1,5 @@
 import type { DocumentTree } from "./document.js";
+import { htmlNamespace } from "./dom-namespaces.js";
 import { AgentBrowserError } from "./errors.js";
 import type { PageBindingContext } from "./page-bindings.js";
 import type { ScriptHostObjectFactory } from "./script-dom.js";
@@ -13,9 +14,11 @@ const methodNames = new Set([
 	"Node.cloneNode",
 ]);
 const nodeGetterNames = ["parentNode", "childNodes", "nextSibling"] as const;
+const focusNames = new Set(["HTMLElement.focus", "HTMLElement.blur"]);
 const operationNames = new Set([
 	...methodNames,
 	...nodeGetterNames.map((name) => `Node.${name}`),
+	...focusNames,
 ]);
 const ownedFunctions = new WeakSet<object>();
 const claimedNodes = new WeakSet<object>();
@@ -39,6 +42,33 @@ export class PageDomMethods {
 	) {
 		this.unregisterClose = tree.onClose(() => this.close());
 		try {
+			const focus = async (
+				receiver: unknown,
+				name: unknown,
+				...args: readonly unknown[]
+			) => {
+				this.ensureOpen();
+				const method =
+					receiver &&
+					typeof receiver === "object" &&
+					typeof name === "string" &&
+					focusNames.has(name)
+						? this.nodes.get(receiver)?.[name]
+						: undefined;
+				if (!method)
+					throw new TypeError(
+						"DOM focus requires a registered HTMLElement receiver",
+					);
+				await method(...args);
+				this.ensureOpen();
+			};
+			const invokeFocus = context.nestedOperation
+				? context.nestedOperation(focus)
+				: undefined;
+			if (context.nestedOperation && invokeFocus !== focus)
+				throw new TypeError(
+					"DOM focus registration must preserve operation identity",
+				);
 			const publish = context.retainGuestArguments(
 				(...args: readonly unknown[]) => {
 					const [name, value] = args;
@@ -82,6 +112,7 @@ export class PageDomMethods {
 				const port = context.createHostObject({
 					methods: {
 						publish,
+						...(invokeFocus ? { invokeFocus } : {}),
 						invoke: (receiver, name, ...args) => {
 							this.ensureOpen();
 							const methods =
@@ -89,7 +120,9 @@ export class PageDomMethods {
 									? this.nodes.get(receiver)
 									: undefined;
 							const method =
-								typeof name === "string" && operationNames.has(name)
+								typeof name === "string" &&
+								operationNames.has(name) &&
+								!focusNames.has(name)
 									? methods?.[name]
 									: undefined;
 							if (!method)
@@ -132,6 +165,21 @@ export class PageDomMethods {
 						(...args: readonly unknown[]) => unknown
 					> = {};
 					const kind = methods.createNodeIterator ? "Document" : "Element";
+					if (invokeFocus && definition.properties.namespaceURI) {
+						for (const name of ["focus", "blur"]) {
+							const method = methods[name];
+							if (method)
+								registered[`HTMLElement.${name}`] = (...args) => {
+									if (
+										definition.properties?.namespaceURI?.get() !== htmlNamespace
+									)
+										throw new TypeError(
+											"DOM focus requires an HTMLElement receiver",
+										);
+									return method(...args);
+								};
+						}
+					}
 					for (const key of methodNames) {
 						const [iface, name] = key.split(".") as [string, string];
 						if ((iface !== "Node" && iface !== kind) || !methods[name])

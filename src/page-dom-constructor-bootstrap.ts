@@ -46,6 +46,15 @@ if (typeof __agentBrowserDomHasInstance === "function") {
 	if (typeof __agentBrowserDomMethods === "function") {
 		const port = __agentBrowserDomMethods();
 		const invoke = port.invoke;
+		if (typeof port.invokeFocus === "function") {
+			const invokeFocus = port.invokeFocus;
+			for (const name of ["focus", "blur"]) {
+				const key = "HTMLElement." + name;
+				const method = function(...args) { return invokeFocus(this, key, ...args); };
+				port.publish(key, method);
+				Object.defineProperty(HTMLElement.prototype, name, {value: method, writable:true, configurable:true});
+			}
+		}
 		for (const [Interface, name] of [[Document, "getElementsByTagName"], [Element, "getElementsByTagName"], [Document, "createNodeIterator"], [Document, "createDocumentFragment"], [Document, "importNode"], [Node, "cloneNode"]]) {
 			const key = Interface.name + "." + name;
 			const method = function(...args) { return invoke(this, key, ...args); };
