@@ -483,3 +483,44 @@ it("rejects unowned entries and prevents nested entry from releasing a caller le
 	});
 	expect(owner.current).toBe(2);
 });
+
+it("holds WASM depth leases until an asynchronous entry settles", async () => {
+	const owner = depthOwner();
+	let finish!: () => void;
+	const pause = new Promise<void>((resolve) => {
+		finish = resolve;
+	});
+	const pending = owner.depth.runAsync(async () => {
+		owner.depth.enter();
+		await pause;
+		owner.depth.leave();
+		return 42;
+	});
+	expect(owner.current).toBe(3);
+	expect(owner.depth.depth).toBe(1);
+	finish();
+	expect(await pending).toBe(42);
+	expect(owner.current).toBe(2);
+	expect(owner.depth.depth).toBe(0);
+});
+it("unwinds asynchronous rejection and refuses overlapping entries on one depth owner", async () => {
+	const owner = depthOwner();
+	let fail!: (error: Error) => void;
+	const pause = new Promise<void>((_resolve, reject) => {
+		fail = reject;
+	});
+	const pending = owner.depth.runAsync(async () => {
+		owner.depth.enter();
+		await pause;
+	});
+	await expect(owner.depth.runAsync(async () => 42)).rejects.toThrow(
+		/Overlapping/,
+	);
+	expect(owner.depth.depth).toBe(1);
+	const error = new Error("suspended import failed");
+	fail(error);
+	await expect(pending).rejects.toBe(error);
+	expect(owner.current).toBe(2);
+	expect(owner.depth.depth).toBe(0);
+	expect(owner.depth.run(() => 42)).toBe(42);
+});

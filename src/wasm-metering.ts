@@ -525,6 +525,20 @@ export class WasmCallDepth {
 			this.boundaries.pop();
 		}
 	}
+	async runAsync<Result>(operation: () => Promise<Result>): Promise<Result> {
+		if (this.boundaries.length)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Overlapping asynchronous WASM entries",
+			);
+		this.boundaries.push(0);
+		try {
+			return await operation();
+		} finally {
+			while (this.frames.length) this.frames.pop()?.();
+			this.boundaries.pop();
+		}
+	}
 	enter(): void {
 		if (!this.boundaries.length)
 			throw new AgentBrowserError("invalid-input", "Unowned WASM entry");
