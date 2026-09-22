@@ -1,3 +1,5 @@
+import { pageBlobBootstrapSource } from "./page-blob-bootstrap.js";
+import { PageBlobs } from "./page-blobs.js";
 import { AgentBrowserError } from "./errors.js";
 import { pageIdleCallbackBootstrapSource } from "./page-idle-callback-bootstrap.js";
 import { pageUrlBootstrapSource } from "./page-url-bootstrap.js";
@@ -51,6 +53,7 @@ export class PageWindowGlobal {
 		}
 		${pageIdleCallbackBootstrapSource}
 		${pageUrlBootstrapSource}
+		${pageBlobBootstrapSource}
 	})();`;
 	private readonly definitions = new WeakMap<object, ReleasedHostDefinition>();
 	private window?: object;
@@ -143,8 +146,18 @@ export class PageWindowGlobal {
 			this.bound = true;
 		}, 0);
 		const urls = new PageUrls(owner);
+		const location = globals.location;
+		const origin =
+			location && typeof location === "object"
+				? this.definitions.get(location)?.properties?.origin?.get
+				: undefined;
+		const blobs = new PageBlobs(owner, () => {
+			const value = origin?.();
+			return typeof value === "string" ? value : "null";
+		});
 		owner.onCleanup(() => {
 			urls.close();
+			blobs.close();
 			this.bound = false;
 			this.reference = undefined;
 			this.window = undefined;
@@ -158,6 +171,7 @@ export class PageWindowGlobal {
 			[bridgeName]: owner.createHostObject({
 				properties: {
 					urls: { get: () => urls.port },
+					blobs: { get: () => blobs.port },
 					hasNativeDocument: { get: () => createElement !== undefined },
 					window: { get: () => window },
 					names: { get: () => names },

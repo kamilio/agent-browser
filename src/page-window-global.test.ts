@@ -1067,3 +1067,27 @@ it("isolates window mappings and retained-reference cleanup between page owners"
 		second.nativeWindow,
 	);
 });
+
+it("installs page-owned Blob URLs using trusted location origin and revokes saved capabilities on cleanup", async () => {
+	const owner = fakeOwner();
+	const windowGlobal = new PageWindowGlobal([...aliases, "location"]);
+	const location = windowGlobal.createHostObject(owner.context, {
+		properties: { origin: { get: () => "https://example.test" } },
+	});
+	const window = windowGlobal.createHostObject(owner.context, {
+		properties: { location: { get: () => location } },
+	});
+	const context = createContext(
+		windowGlobal.install(owner.context, { window, self: window, location }),
+	);
+	runInContext(windowGlobal.source, context);
+	expect(
+		runInContext(
+			"var SavedBlob = Blob, blob = new Blob(['ok']), savedCreate = URL.createObjectURL; [window.Blob === Blob, self.Blob === Blob, savedCreate(blob).startsWith('blob:https://example.test/')]",
+			context,
+		),
+	).toEqual([true, true, true]);
+	await owner.close();
+	for (const source of ["blob.size", "new SavedBlob()", "savedCreate(blob)"])
+		expect(() => runInContext(source, context)).toThrow(/closed/i);
+});

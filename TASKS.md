@@ -23,6 +23,19 @@
 
 ## Current verified state
 
+- Page-owned Blob/object URL primitives now provide immutable UTF-8/buffer-view/blob
+  parts, bounded storage/work, slice/text/arrayBuffer/bytes, trusted origin URLs,
+  snapshot resolution, revocation and cleanup. 194 selected native checks across
+  four manifest-listed files and native build pass. Broader adapter selection:
+  323 checks pass, two pre-existing manifest/retention expectations fail identically
+  with the original window implementation. Offline real SafeJS at 128 MB passes
+  Unicode, view/copy, slicing, branding and URL origin; cleanup data/pending zero.
+  The diagnostic uses 16 s: its first default 1 s initialization attempt times out,
+  so default timing reliability remains open. Blob records have a page-lifetime
+  count limit; SafeJS array/data limits also bound binary conversion. Blob.stream,
+  blob fetch/image consumers, Worker/importScripts and every Zoom/media gate remain
+  open. These primitives establish no initialization/readiness/join capability.
+
 - Nine-classification shared metadata records are rejected and reverted: revised
   candidate passes 327 SDK checks across 35 files, strict typing and scoped build.
   Four prototype/classifier freshness cases fail the initial candidate and pass
