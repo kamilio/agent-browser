@@ -238,6 +238,7 @@ try {
 	});
 	const classicRealm = core.createRealm({
 		classicScripts: true,
+		stringCompilation: "deny",
 		...(callbackScheduling ? { callbackScheduling } : {}),
 		extensions: [classicExtension],
 		grants: ["source:nested", "array-buffer:share"],
@@ -252,6 +253,13 @@ try {
 		check(
 			(await classicRealm.evaluate(pageWasmBootstrapSource)).ok,
 			"Classic guest namespace failed",
+		);
+		const compilationPolicy = await classicRealm.evaluate(
+			'var evalDenied=false;try{eval("1");}catch(error){evalDenied=error.name==="EvalError";}evalDenied;',
+		);
+		check(
+			compilationPolicy.ok && compilationPolicy.returnValue === true,
+			"Classic guest string compilation policy failed",
 		);
 		const classic = await classicRealm.evaluate(
 			"var nativeResult=new WebAssembly.Instance(new WebAssembly.Module(fixture.plain)).exports.run(41);[nativeResult,nativeResult instanceof Promise,globalThis.nativeResult===nativeResult,this===globalThis];",
@@ -275,7 +283,10 @@ try {
 			"Classic guest WASM cleanup leaked",
 		);
 	}
-	reports.push({ case: "classic-script-shared-realm", passed: true });
+	reports.push({
+		case: "classic-script-shared-realm-with-string-compilation-denied",
+		passed: true,
+	});
 } finally {
 	await realm.close();
 	await bridge?.close();

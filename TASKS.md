@@ -56,8 +56,7 @@
   formatting pass. Actual offline Node24 JSPI/SafeJS verifies synchronous WASM in
   a classic child realm, persistent global var identity and preserved shared steps;
   all five guest API diagnostic cases and cleanup resources/data/depth/pending zero
-  pass at 128 MiB with explicit diagnostic quotas. String
-  compilation policy, classic error reporting/dynamic imports and related scratch
+  pass at 128 MiB with explicit diagnostic quotas. Classic error reporting/dynamic imports and related scratch
   SDK contributions still require reconciliation before page/Worker integration.
 - Maintained SafeJS now supports opt-in callbackScheduling: "after-prefix": later
   source can run once all callback prefixes finish, while tails retain their scopes,
@@ -70,6 +69,14 @@
   guest WASM diagnostics pass all five cases in both exclusive and after-prefix
   modes against the rebuilt maintained SDK; cleanup resources/data/depth/pending
   return to zero. This does not clear page/Worker installation or Zoom/media gates.
+- Maintained SafeJS now exposes immutable stringCompilation: allow|deny. Denial
+  raises a catchable guest EvalError for direct/indirect string eval and all four
+  dynamic function constructors, including retained callbacks and classic Scripts;
+  host source/module evaluation and nonstring eval stay available. All 133 selected
+  policy/eval/function checks, SDK build/eight entry checks, strict new-test typing
+  and changed-file lint pass. Actual offline guest WASM diagnostics pass in both
+  scheduling modes with string compilation denied in the classic child realm;
+  cleanup returns to zero. WASM CSP admission remains a separate installer gate.
 - Native WASM owners now provide original validation, stable bounded binary
   instrumentation, declared allocation/import/export admission, compilation leases,
   ordered imports through null-prototype maps, realm invokeCallback dispatch, owned
