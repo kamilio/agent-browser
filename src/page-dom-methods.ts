@@ -8,6 +8,8 @@ const methodNames = new Set([
 	"Document.getElementsByTagName",
 	"Element.getElementsByTagName",
 	"Document.createNodeIterator",
+	"Document.createDocumentFragment",
+	"Document.importNode",
 	"Node.cloneNode",
 ]);
 const nodeGetterNames = ["parentNode", "childNodes", "nextSibling"] as const;

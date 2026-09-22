@@ -46,7 +46,7 @@ if (typeof __agentBrowserDomHasInstance === "function") {
 	if (typeof __agentBrowserDomMethods === "function") {
 		const port = __agentBrowserDomMethods();
 		const invoke = port.invoke;
-		for (const [Interface, name] of [[Document, "getElementsByTagName"], [Element, "getElementsByTagName"], [Document, "createNodeIterator"], [Node, "cloneNode"]]) {
+		for (const [Interface, name] of [[Document, "getElementsByTagName"], [Element, "getElementsByTagName"], [Document, "createNodeIterator"], [Document, "createDocumentFragment"], [Document, "importNode"], [Node, "cloneNode"]]) {
 			const key = Interface.name + "." + name;
 			const method = function(...args) { return invoke(this, key, ...args); };
 			port.publish(key, method);

@@ -106,6 +106,75 @@ it("creates the borrowed iterator in the receiver's document", () => {
 	).toThrow("Expected a node from this script document");
 });
 
+it("creates captured fragments in parsed, auxiliary and template documents", () => {
+	const { evaluate } = fixture();
+	expect(
+		evaluate(
+			'var parsed=new DOMParser().parseFromString("<b>hello</b>","text/html");var auxiliary=document.implementation.createHTMLDocument();var template=document.createElement("template").content.ownerDocument;var create=document.createDocumentFragment;[parsed,auxiliary,template].every(owner=>{var fragment=create.call(owner);return fragment.ownerDocument===owner && fragment instanceof DocumentFragment && fragment.childNodes.length===0;})',
+		),
+	).toBe(true);
+	expect(
+		evaluate(
+			"create===Document.prototype.createDocumentFragment && create===parsed.createDocumentFragment",
+		),
+	).toBe(true);
+});
+
+it("imports captured nodes into the explicit receiver without changing the source", () => {
+	const { evaluate } = fixture();
+	expect(
+		evaluate(
+			'var parsed=new DOMParser().parseFromString("<b>hello<i>world</i></b>","text/html");var auxiliary=document.implementation.createHTMLDocument();var source=parsed.body.firstChild;var copy=document.importNode.call(auxiliary,source,true);copy.outerHTML',
+		),
+	).toBe("<b>hello<i>world</i></b>");
+	expect(
+		evaluate(
+			"copy.ownerDocument===auxiliary && copy.parentNode===null && source.ownerDocument===parsed && source.parentNode===parsed.body && document.importNode===Document.prototype.importNode",
+		),
+	).toBe(true);
+	expect(
+		evaluate("Document.prototype.importNode.call(parsed,copy,false).outerHTML"),
+	).toBe("<b></b>");
+	expect(
+		evaluate(
+			'var attr=document.createAttribute("title");attr.value="hello";var imported=document.importNode.call(auxiliary,attr);imported.ownerDocument===auxiliary && imported.value==="hello" && imported!==attr',
+		),
+	).toBe(true);
+});
+
+it("guards captured document creation and import receivers and revokes them on close", () => {
+	const a = fixture();
+	const b = fixture();
+	for (const name of ["createDocumentFragment", "importNode"]) {
+		const method = a.evaluate(`document.${name}`) as (
+			...args: unknown[]
+		) => unknown;
+		const source = a.evaluate("document.body");
+		for (const receiver of [
+			{},
+			null,
+			a.evaluate("document.body"),
+			b.dom.document,
+		])
+			expect(() => method.call(receiver, source)).toThrow(
+				"registered receiver",
+			);
+		expect(() =>
+			a.evaluate(
+				`Document.prototype.${name}.call(Object.create(Document.prototype),document.body)`,
+			),
+		).toThrow("registered receiver");
+	}
+	const create = a.evaluate("document.createDocumentFragment") as () => unknown;
+	const importNode = a.evaluate("document.importNode") as (
+		node: unknown,
+	) => unknown;
+	const source = a.evaluate("document.body");
+	a.tree.close();
+	expect(() => create.call(a.dom.document)).toThrow("closed");
+	expect(() => importNode.call(a.dom.document, source)).toThrow("closed");
+});
+
 it("shares method identity with interface prototypes and auxiliary documents", () => {
 	const { evaluate } = fixture();
 	expect(
@@ -157,7 +226,7 @@ it("revokes saved methods and releases each retained function once", () => {
 	tree.close();
 	bridge.close();
 	expect(() => method.call(receiver)).toThrow("closed");
-	expect(release).toHaveBeenCalledTimes(7);
+	expect(release).toHaveBeenCalledTimes(9);
 });
 
 it("retains publication readiness through reentrant host-object creation", () => {
