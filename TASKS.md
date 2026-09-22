@@ -37,8 +37,12 @@
   Public current net_thread.min.js fetch succeeds (390978 units); instrumented actual
   source runs in a native Worker at 128 MB with the application profile, then hits its
   30 s initialization deadline at 493789 shared steps before the diagnostic marker.
-  One request, no socket API, cleanup data/page callbacks/active requests zero. This
-  proves neither source initialization nor any Zoom/media acceptance gate.
+  One request, no socket API, cleanup data/page callbacks/active requests zero. A
+  second 128 MB/30 s CPU-profiled run also times out (493639 shared steps): about
+  26.0 sampled seconds are in retained-data reconciliation, including 24.8 in graph
+  measurement. The next startup target is this full accounting cost; preserve
+  primary scans, quota/depth enforcement and cancellation. Profile artifacts removed.
+  This proves neither source initialization nor any Zoom/media acceptance gate.
 
 - Child Workers now publish the document's validated userAgent/language/languages
   profile as a frozen guest snapshot with WorkerNavigator toString branding. The
