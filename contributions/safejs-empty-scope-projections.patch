@@ -1,0 +1,148 @@
+diff --git a/src/interp/scope.ts b/src/interp/scope.ts
+--- a/src/interp/scope.ts
++++ b/src/interp/scope.ts
+@@ -343,7 +343,9 @@
+       if (captured!.scopes.length === scopeCount) return [...captured!.roots];
+       scopes = captured!.scopes.slice(0, scopeCount);
+     }
+-    const values = this.parent?.retainedDataRoots() ?? [];
++    const parent = this.parent;
++    const values = parent?.retainedDataRoots() ?? [];
++    const inheritedCount = values.length;
+     if (this.#globalVarNames !== undefined) values.push(this.#globalVarNameValues ??= [...this.#globalVarNames]);
+     if (this.withEnvironment && this.objectEnvironment !== undefined) values.push(this.objectEnvironment);
+     if (this.moduleEnvironment !== undefined) values.push(...Object.values(this.moduleEnvironment.namespaces));
+@@ -388,9 +390,14 @@
+       this.#retainedDataSnapshot = undefined;
+       return values;
+     }
+-    const group = Object.freeze({});
+-    setScopeDataRoot(group, { values });
+-    const roots = [group];
++    // An empty local frame adds neither units nor edges. Keep validating the
++    // full ancestry, but share its parent's projection instead of wrapping it.
++    let roots = values;
++    if (parent === undefined || values.length !== inheritedCount) {
++      const group = Object.freeze({});
++      setScopeDataRoot(group, { values });
++      roots = [group];
++    }
+     this.#retainedDataSnapshot = new WeakRef({ scopes, roots });
+     return [...roots];
+   }
+diff --git a/src/interp/scope-empty-projection-sharing.test.ts b/src/interp/scope-empty-projection-sharing.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/interp/scope-empty-projection-sharing.test.ts
+@@ -0,0 +1,111 @@
++import { expect, it } from "vitest";
++import { Budget } from "./budget.js";
++import { Scope } from "./scope.js";
++import {
++  createSandboxClosure,
++  measureSandboxData,
++  reconcileCompiledValues,
++} from "./values.js";
++
++it("shares an ancestor projection through numeric-only frames without sharing returned arrays", () => {
++  const parent = new Scope({ text: "abc" });
++  const expected = parent.retainedDataRoots();
++  const child = parent.child({ index: 0 }).child({ flag: true });
++  const before = child.retainedDataRoots();
++  expect(before[0]).toBe(expected[0]);
++  before.push("extra");
++  expect(measureSandboxData(child.retainedDataRoots())).toBe(3);
++  expect(measureSandboxData([...expected, ...child.retainedDataRoots()])).toBe(
++    3,
++  );
++});
++
++it("retains independent primitive charges when a transparent frame gains and loses a string", () => {
++  const parent = new Scope({ text: "abc" });
++  const child = parent.child();
++  child.declare("index", "let", 0);
++  const before = child.retainedDataRoots();
++  child.assign("index", "abc");
++  const withText = child.retainedDataRoots();
++  expect(measureSandboxData(withText)).toBe(6);
++  expect(measureSandboxData(before)).toBe(3);
++  child.assign("index", 0);
++  expect(child.retainedDataRoots()[0]).toBe(parent.retainedDataRoots()[0]);
++  expect(measureSandboxData(withText)).toBe(6);
++});
++
++it("still validates metadata getters on every transparent-frame cache hit", () => {
++  const parent = new Scope({ text: "abc" });
++  const child = parent.child({ index: 0 });
++  const before = child.retainedDataRoots();
++  let reads = 0;
++  Object.defineProperty(parent, "moduleEnvironment", {
++    get() {
++      reads++;
++      return undefined;
++    },
++  });
++  expect(child.retainedDataRoots()[0]).toBe(before[0]);
++  expect(child.retainedDataRoots()[0]).toBe(before[0]);
++  expect(reads).toBe(2);
++});
++
++it("observes later ancestor bindings and preserves earlier snapshots", () => {
++  const parent = new Scope();
++  parent.declare("text", "let", "abc");
++  const child = parent.child({ index: 0 });
++  const before = child.retainedDataRoots();
++  parent.assign("text", "longer");
++  const after = child.retainedDataRoots();
++  expect(after[0]).toBe(parent.retainedDataRoots()[0]);
++  expect(measureSandboxData(before)).toBe(3);
++  expect(measureSandboxData(after)).toBe(6);
++});
++
++it("does not treat a frame with object import metadata as transparent", () => {
++  const parent = new Scope({ text: "abc" });
++  const metadata = { text: "first" };
++  const child = new Scope({ index: 0 }, parent, metadata);
++  const before = child.retainedDataRoots();
++  expect(before[0]).not.toBe(parent.retainedDataRoots()[0]);
++  const charge = measureSandboxData(before);
++  metadata.text = "a much longer replacement";
++  expect(measureSandboxData(child.retainedDataRoots())).toBeGreaterThan(charge);
++});
++
++it("keeps callback providers fresh after transparent projections are shared", () => {
++  const parent = new Scope({ text: "abc" });
++  const child = parent.child({ index: 0 });
++  let calls = 0;
++  const closure = createSandboxClosure({
++    call: () => 0,
++    retainedValues: () => {
++      calls++;
++      return child.retainedDataRoots();
++    },
++  });
++  const first = measureSandboxData([closure]);
++  expect(measureSandboxData([closure])).toBe(first);
++  expect(calls).toBe(2);
++});
++
++it("reconciles live captured descendants and enforces their quota during a hold", () => {
++  const object = { text: "first" };
++  const parent = new Scope({ object });
++  const child = parent.child({ index: 0 });
++  const closure = createSandboxClosure({
++    call: () => 0,
++    retainedValues: () => child.retainedDataRoots(),
++  });
++  const budget = new Budget({ dataSize: 500 });
++  const release = budget.deferReconciliation();
++  try {
++    reconcileCompiledValues(budget, [closure]);
++    object.text = "x".repeat(1000);
++    expect(() => reconcileCompiledValues(budget, [closure])).toThrow(
++      expect.objectContaining({ code: "budgetExceeded", budget: "dataSize" }),
++    );
++  } finally {
++    release();
++  }
++});

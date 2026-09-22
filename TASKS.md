@@ -23,22 +23,33 @@
 
 ## Current verified state
 
-- The initialization diagnostic now permits a bounded 0–30 min import observation
-  (default remains 30 s), reports source-module counts/steps/data every 10 s, and
-  accepts an explicit 1–120 s network deadline (default remains 15 s). Native build,
-  diagnostic Biome checks and five invalid-setting rejection probes pass. The
-  authorized 768 MB/120 s-script/120 s-network/15 min-import run is still active:
-  seven static modules prepare, one import remains pending and step counts advance.
-  Let this existing run reach settlement or its observation bound before changing
-  builds or starting another live run. Full initialization/join remains unverified.
-  Offline compiled-SDK scaling isolates the first three editor declarations with
-  actual rolldown helpers: retaining 1000 extra closures raises diagnostic time from
-  12.9 to 43.5 s with identical 227104 import steps; both return initialized `object`
-  and close at data zero under 128 MB. Current charge rises only 2105 units. CPU
-  samples identify the primary graph visitor and repeated scope snapshots as the
-  largest costs; the extra-state fixture reproduces the slowdown without Zoom's
-  full graph. Completed fixtures/profiles are removed; only the active live log is
-  ephemeral. Extended diagnostic allowances clear no default or meeting/media gate.
+- SDK numeric-only/otherwise empty child frames share their parent's accounting
+  projection instead of adding zero-unit wrapper groups. Full ancestry validation,
+  metadata getter order and retained callbacks remain active; charged bindings,
+  object metadata and existing mutable-environment fallbacks remain represented.
+  Contribution: safejs-empty-scope-projections.patch. Seven new contracts and
+  existing quotas/holds, snapshots, frame/source imports and ownership cases pass
+  (89 focused SDK checks). The existing empty-child sharing contract now passes;
+  four older environment root-length expectations still fail on the exact baseline.
+  Scoped core/new-test compilation, new-test format/lint and exact patch application/
+  reversal pass. Compiled 128 MB warm closure fixture: 48 to 31 ms (~35%), charge
+  2004 unchanged. Fixed-seed editor initializer with 1000 retained extra closures:
+  35.5 to 30.6 s (~14%), identical 227104 steps / 230326 current / 230367 peak.
+  Both compiled runs close at data zero. Actual SDK/native DOM initializer under
+  128 MB renders `object`, fetches nothing and closes at data zero; its diagnostic
+  allowance is 120 s, not a full default timing or application-readiness pass.
+  Working SDK source/build retain the candidate; processes terminate and temporary
+  fixtures/logs/profiles are removed. Next: trace the remaining full-graph initializer
+  stages before more caching; this candidate has no complete live Zoom speedup proof.
+
+- The longer pre-candidate live diagnostic reaches its 15 min import-observation
+  bound without initialization: 13 classic scripts pass, seven modules prepare,
+  import counts stay 1/7/0/0 while 234176 steps advance across 895 s of progress
+  reports. Zero socket attempts and cleanup data zero verified; no meeting joined.
+  The driver permits a bounded 0–30 min import wait (default 30 s), reports counts/
+  steps/data every 10 s and accepts an explicit 1–120 s network deadline (default
+  15 s). Build, Biome and five invalid-setting rejection probes pass. Extended
+  768 MB/120 s-script/120 s-network allowances clear no default or meeting/media gate.
 
 - Editor initialization is narrowed to React DOM's lazy initializer. The earlier
   live root-statement trace completes statement 0 in 19.5 s / 3594 steps and
