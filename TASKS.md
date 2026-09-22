@@ -23,6 +23,21 @@
 
 ## Current verified state
 
+- A diagnostic indexed-code prototype round-trips all seven exact Zoom static
+  modules with matching tree/ID/function-source/strictness/template digests:
+  5962852 characters / 1628032 nodes / 30762 source ranges. Retained graph storage
+  measures 40594496 heap bytes beyond preload baseline plus 63626012 numeric-buffer
+  bytes (104220508 combined). The login-only probe measures 24141528 heap plus
+  34747824 buffer bytes versus 159669312 retained tree heap. Its census finds
+  757163 of 889089 nodes inside outer function bodies; the largest holds 7714 nodes.
+  Graph probes select the existing Unicode regex bounds (16384/65536); the initial
+  unprofiled 4096 regex-source bound rejects editor. This is after-parse storage research
+  under 512 MB, not a 128 MB compiler or runtime pass. No SDK/native source change
+  or codec candidate is retained. All probes terminate and the driver is removed.
+  Next: retire completed function-body trees during parsing while preserving fresh
+  IDs, private-name validation, mutation/alias identity, snapshots and source bounds;
+  validators and hashing must avoid expanding the whole packed tree.
+
 - Canonical modules now trim completed parser lists into ordinary mutable arrays.
   Contribution: safejs-compact-module-arrays.patch. Exact loginview retained heap
   beyond baseline falls from 174708960 to 159669144 bytes (~8.6% less); tree, IDs,
@@ -1283,6 +1298,8 @@
   fails. Completed parser-list trimming saves a further ~15 MB above, but complete
   loginview parsing still exhausts 128 MB. AST nodes, spans and remaining strings/
   storage require further work; the whole static graph must fit, not just loginview.
+  The indexed-code diagnostic above verifies smaller final storage across all seven
+  modules, but initial parse peak and executable/lazy representation remain open.
 
 - Background dynamic imports outlive the classic evaluation's PageScripts timer.
   The realm graph has document cancellation and shared step/data limits, but no
