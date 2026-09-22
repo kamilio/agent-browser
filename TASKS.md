@@ -23,6 +23,23 @@
 
 ## Current verified state
 
+- Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
+  options.transfer iterable), using SafeJS structuredClone for serialization and
+  sender detachment. Up to 64 entries/65536 initial buffer bytes are admitted;
+  existing message/queue/shared-budget limits remain active. All 365 selected native
+  checks across eight manifest-listed files, native build, strict Worker-test typing
+  and Worker lint/format pass. Real offline PageScripts/DOM/SafeJS at 128 MB/16 s
+  verifies transfers in both directions, view aliases, getter-once/final-byte behavior
+  and invalid-list/serialization rejection preserving donors; cleanup data/callbacks
+  zero. MessagePort, streams and media-object transfers remain unsupported. The
+  native realm bridge still copies bytes; this is ownership semantics, not zero-copy.
+  Custom graph/queue limits can reject after successful serialization/detachment.
+  Public current net_thread.min.js fetch succeeds (390978 units); instrumented actual
+  source runs in a native Worker at 128 MB with the application profile, then hits its
+  30 s initialization deadline at 493789 shared steps before the diagnostic marker.
+  One request, no socket API, cleanup data/page callbacks/active requests zero. This
+  proves neither source initialization nor any Zoom/media acceptance gate.
+
 - Child Workers now publish the document's validated userAgent/language/languages
   profile as a frozen guest snapshot with WorkerNavigator toString branding. The
   profile is pinned by the Worker owner, uses the same identity as page/HTTP requests
@@ -51,8 +68,9 @@
   matching; sharing Blob URLs between sibling Workers is unsupported. Classic
   same-origin entry loading, worker-src, cookies/lifetime and response CSP remain
   verified. Current Zoom media assets use Blob Workers/importScripts; native fetch
-  decoded net_thread.min.js without executing it. Module workers, transfers, full
-  WorkerNavigator, WebAssembly, media and every default/live Zoom initialization/join/
+  decoded net_thread.min.js; the later instrumented execution times out above. Module
+  workers, MessagePort transfers, full WorkerNavigator, WebAssembly, media and every
+  default/live Zoom initialization/join/
   notetaker gate remain open. Automations is untouched; no meeting has been joined.
 
 - Blob classic Workers now use isolated, cooperative SafeJS realms with a shared
@@ -68,7 +86,7 @@
   callback termination/page cleanup; tracked data/callbacks return to zero. Source,
   message-callback and timer step-budget exhaustion close the whole page and release
   tracked data to zero. These diagnostic allowances clear no default timing gate.
-  Module workers, transfers, full EventTarget/MessageEvent branding, child
+  Module workers, MessagePort transfers, full EventTarget/MessageEvent branding, child
   navigator APIs, WebAssembly and media remain unsupported; importScripts, child
   Blob/URL and the three-field navigator identity subset are verified above.
   Default timing, live initialization/readiness/join and every notetaker gate remain
@@ -84,7 +102,8 @@
   the native page, isolates globals, copies bytes, shares limits and cleans data/
   callbacks to zero. SDK source/build/tests retained; temporary probes removed.
   Page classic Blob/network Worker and import APIs are verified above; module
-  Worker loading, transfers, WebAssembly, media and every Zoom/notetaker gate remain open.
+  Worker loading, MessagePort transfers, WebAssembly, media and every Zoom/notetaker
+  gate remain open.
 
 - Page-owned Blob/object URL primitives now provide immutable UTF-8/buffer-view/blob
   parts, bounded storage/work, slice/text/arrayBuffer/bytes, trusted origin URLs,

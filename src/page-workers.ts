@@ -47,6 +47,7 @@ export const pageWorkerLimits = Object.freeze({
 	active: 4,
 	created: 16,
 	messages: 4096,
+	transfers: 64,
 	pending: 64,
 	messageUnits: 65536,
 	queuedUnits: 262144,

@@ -375,8 +375,8 @@ it("rejects noncloneable messages, oversize graphs and unsupported transfers wit
 		expect(() => test.evaluate(source)).toThrow();
 	test.evaluate("var bytes=new Uint8Array([1]);");
 	expect(() =>
-		test.evaluate("worker.postMessage(bytes.buffer,[bytes.buffer])"),
-	).toThrow(/transfer/i);
+		test.evaluate("worker.postMessage(bytes.buffer,[bytes.buffer,{}])"),
+	).toThrow();
 	expect(test.evaluate("[bytes.byteLength,bytes[0]]")).toEqual([1, 1]);
 	expect(test.workers.metrics().pending).toBe(0);
 });
@@ -753,4 +753,80 @@ it("rejects a forged Worker identity without invoking native getters", () => {
 		"Expected an identity created by this module",
 	);
 	expect(getter).not.toHaveBeenCalled();
+});
+
+it("transfers ArrayBuffer ownership in both directions while preserving view aliases and bytes", async () => {
+	const test = fixture();
+	test.start(
+		"onmessage=e=>{e.data.bytes[0]=9;postMessage({bytes:e.data.bytes,alias:e.data.buffer===e.data.bytes.buffer},{transfer:[e.data.buffer]});postMessage(['detached',e.data.bytes.byteLength]);};",
+	);
+	test.evaluate(
+		"var seen=[];worker.onmessage=e=>seen.push(Array.isArray(e.data)?e.data:[[...e.data.bytes],e.data.alias]);var bytes=new Uint8Array([1,2]);worker.postMessage({buffer:bytes.buffer,bytes},[bytes.buffer]);",
+	);
+	expect(test.evaluate("[bytes.byteLength,bytes.buffer.byteLength]")).toEqual([
+		0, 0,
+	]);
+	await vi.waitFor(() =>
+		expect(test.evaluate("seen")).toEqual([
+			[[9, 2], true],
+			["detached", 0],
+		]),
+	);
+	await vi.waitFor(() => expect(test.workers.metrics().pending).toBe(0));
+	expect(test.units.size).toBe(0);
+});
+
+it("serializes getters once before transferring the final buffer bytes", async () => {
+	const test = fixture();
+	test.start(
+		"onmessage=e=>postMessage([e.data.self===e.data,[...new Uint8Array(e.data.buffer)]]);",
+	);
+	test.evaluate(
+		"var received;worker.onmessage=e=>received=e.data;var reads=0;var buffer=new ArrayBuffer(2);var value={buffer,get self(){reads++;new Uint8Array(buffer)[1]=7;return this;}};worker.postMessage(value,{transfer:new Set([buffer])});",
+	);
+	expect(test.evaluate("[reads,buffer.byteLength]")).toEqual([1, 0]);
+	await vi.waitFor(() =>
+		expect(test.evaluate("received")).toEqual([true, [0, 7]]),
+	);
+});
+
+it("rejects invalid transfer lists and serialization errors before detaching valid buffers", () => {
+	const test = fixture();
+	test.start("");
+	test.evaluate("var buffer=new ArrayBuffer(2);new Uint8Array(buffer)[0]=7;");
+	for (const source of [
+		"worker.postMessage(buffer,[buffer,buffer])",
+		"worker.postMessage(buffer,{transfer:[buffer,new Uint8Array(1)]})",
+		"worker.postMessage(buffer,{transfer:[buffer,new SharedArrayBuffer(1)]})",
+		"worker.postMessage(buffer,{transfer:null})",
+		"worker.postMessage(buffer,{transfer:1})",
+		"worker.postMessage(buffer,{transfer:{}})",
+		"worker.postMessage(()=>{},{transfer:[buffer]})",
+		"worker.postMessage({get secret(){throw Error('getter');}},{transfer:[buffer]})",
+	]) {
+		expect(() => test.evaluate(source)).toThrow();
+		expect(
+			test.evaluate("[buffer.byteLength,new Uint8Array(buffer)[0]]"),
+		).toEqual([2, 7]);
+	}
+	expect(test.workers.metrics().pending).toBe(0);
+});
+
+it("bounds transferred bytes and list iteration before committing ownership loss", () => {
+	const test = fixture();
+	test.start("");
+	test.evaluate(
+		"var buffer=new ArrayBuffer(65537);var small=new ArrayBuffer(1);",
+	);
+	expect(() => test.evaluate("worker.postMessage(0,[buffer])")).toThrow(
+		/limit/i,
+	);
+	expect(test.evaluate("buffer.byteLength")).toBe(65537);
+	expect(() =>
+		test.evaluate(
+			"worker.postMessage(0,{transfer:{*[Symbol.iterator](){while(true)yield small;}}})",
+		),
+	).toThrow(/limit/i);
+	expect(test.evaluate("small.byteLength")).toBe(1);
+	expect(test.workers.metrics().pending).toBe(0);
 });

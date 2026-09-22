@@ -24,15 +24,22 @@ function text(value) {
  return result;
 }
 function copied(value, options) {
+ let transfers;
  if (options != null) {
   if (typeof options !== 'object' && typeof options !== 'function') throw new TypeError('Invalid Worker message options');
   const transfer = Array.isArray(options) ? options : options.transfer;
   if (transfer !== undefined) {
    if (transfer === null || (typeof transfer !== 'object' && typeof transfer !== 'function')) throw new TypeError('Invalid Worker transfer list');
-   for (const entry of transfer) throw new TypeError('Worker transfer lists are not yet supported');
+   transfers=[]; let bytes=0;
+   for (const entry of transfer) {
+    if (transfers.length >= 64) throw new RangeError('Worker transfer list limit exceeded');
+    let length; try {length=apply(bufferLength,entry,[]);} catch {}
+    if (length !== undefined) {bytes+=length; if(bytes>65536) throw new RangeError('Worker transfer byte limit exceeded');}
+    apply(push,transfers,[entry]);
+   }
   }
  }
- const result = clone(value);
+ const result = transfers === undefined ? clone(value) : clone(value,{transfer:transfers});
  // Bound the first traversal before exporting a native graph. No guest getter
  // runs here: structuredClone already converted own enumerable accessors.
  const pending = [[result, 0]], seen = new NativeWeakSet(); let units = 0;
