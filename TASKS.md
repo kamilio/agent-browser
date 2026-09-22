@@ -44,8 +44,21 @@
   all 163 selected SDK checks across sixteen files, selected SDK build/eight built-entry
   checks, strict new-test typing and changed-file lint/new-test format pass. The actual
   guest WASM diagnostic below also passes against the rebuilt maintained SDK. Worker
-  installation still requires reconciling classic-script/callback-scheduling support
-  with the scratch SDK; these ownership fixes alone do not clear that gate.
+  installation still requires reconciling callback scheduling with the scratch SDK;
+  these ownership fixes alone do not clear that gate.
+- Maintained SafeJS now supports opt-in classicScripts with persistent intrinsic
+  globals, immutable injected lexical capabilities, Script grammar and retained
+  global declaration history. Snapshot validation/hydration preserves that history
+  and meters names. The retained classic-script contribution is reconciled directly
+  without overwriting the shared-realm or nested-callback fixes. All 126 classic
+  checks plus 62 selected existing realm/module/snapshot checks, selected SDK build/
+  eight built-entry checks, strict new-test typing, changed-file lint and new-test
+  formatting pass. Actual offline Node24 JSPI/SafeJS verifies synchronous WASM in
+  a classic child realm, persistent global var identity and preserved shared steps;
+  all five guest API diagnostic cases and cleanup resources/data/depth/pending zero
+  pass at 128 MiB with explicit diagnostic quotas. Callback scheduling, string
+  compilation policy, classic error reporting/dynamic imports and related scratch
+  SDK contributions still require reconciliation before page/Worker integration.
 - Native WASM owners now provide original validation, stable bounded binary
   instrumentation, declared allocation/import/export admission, compilation leases,
   ordered imports through null-prototype maps, realm invokeCallback dispatch, owned
@@ -86,7 +99,7 @@
   error brands; 1717 steps/depth eight and cleanup resources/data/depth/pending zero.
   Table/Global wrappers, streaming/custom sections and page/Worker installers remain
   absent. Shared-realm ownership is now fixed in the maintained SDK; reconcile its
-  remaining classic-script/callback-scheduling support before installation.
+  remaining callback scheduling and guest compilation/error policies before installation.
   Diagnostic 32 MiB quotas
   do not clear default page 16 MiB/262144-element limits. Next: page/Worker installers,
   actual Zoom instantiation with its real imports, initialization performance and

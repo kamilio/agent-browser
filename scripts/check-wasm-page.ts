@@ -208,6 +208,69 @@ try {
 		"Guest trap error brand failed",
 	);
 	reports.push({ case: "runtime-trap", passed: true });
+	const classicBudget = (
+		budget as typeof budget & { forkRealm(): typeof budget }
+	).forkRealm();
+	const stepsBeforeClassic = budget.stepsUsed;
+	let classicBridge: PageWasm | undefined;
+	const classicExtension = core.defineExtension({
+		manifest: {
+			version: 1,
+			name: "classic-guest-wasm-fixture",
+			globals: ["__agentBrowserWasm", "fixture"],
+			capabilities: ["source:nested", "array-buffer:share"],
+		},
+		setup(context) {
+			classicBridge = new PageWasm(context, classicBudget);
+			return {
+				globals: {
+					__agentBrowserWasm: classicBridge.port,
+					fixture: context.createHostObject({
+						properties: { plain: { get: () => plain } },
+					}),
+				},
+			};
+		},
+	});
+	const classicRealm = core.createRealm({
+		classicScripts: true,
+		extensions: [classicExtension],
+		grants: ["source:nested", "array-buffer:share"],
+		budget: classicBudget,
+		signal: controller.signal,
+	});
+	try {
+		check(
+			budget.stepsUsed === stepsBeforeClassic,
+			"Classic realm reset shared steps",
+		);
+		check(
+			(await classicRealm.evaluate(pageWasmBootstrapSource)).ok,
+			"Classic guest namespace failed",
+		);
+		const classic = await classicRealm.evaluate(
+			"var nativeResult=new WebAssembly.Instance(new WebAssembly.Module(fixture.plain)).exports.run(41);[nativeResult,nativeResult instanceof Promise,globalThis.nativeResult===nativeResult,this===globalThis];",
+		);
+		check(
+			classic.ok &&
+				JSON.stringify(classic.returnValue) === "[42,false,true,true]",
+			"Classic guest WASM execution failed",
+		);
+	} finally {
+		await classicRealm.close();
+		await classicBridge?.close();
+		const metrics = classicBridge?.metrics();
+		check(
+			metrics &&
+				metrics.modules.modules === 0 &&
+				metrics.modules.leases === 0 &&
+				metrics.instances.instances === 0 &&
+				metrics.depth === 0 &&
+				metrics.pending === 0,
+			"Classic guest WASM cleanup leaked",
+		);
+	}
+	reports.push({ case: "classic-script-shared-realm", passed: true });
 } finally {
 	await realm.close();
 	await bridge?.close();
@@ -228,7 +291,7 @@ try {
 		JSON.stringify({
 			scope: "Offline actual SafeJS/JSPI guest WebAssembly API",
 			node: process.version,
-			passed: reports.length === 4,
+			passed: reports.length === 5,
 			reports,
 			cleanup: { ...metrics, currentDataSize: budget.currentDataSize },
 		}),
