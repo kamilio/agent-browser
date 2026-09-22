@@ -144,19 +144,28 @@
   and allowed/denied page/Blob Worker installation pass at 128 MiB; cleanup data zero.
   Local poe-code commit 6070c8217; no push. Default 1 s timing remains open: the existing
   DOM bootstrap measured 2.7 s before 1.2 s of fixture code at the diagnostic allowance.
+  Secondary escaping-ticket ownership now scans only when accounting is unheld and an
+  included ticket has a positive staged charge. Hold state is checked after the full
+  primary walk; captures can acquire or release the last hold. Primary limits, held
+  ticket ownership, forwarding and unheld escaping transfers remain active. Five of
+  six new cases fail on baseline; all 252 selected SDK checks, strict typing/lint/new-
+  test formatting and SDK build/eight entries pass. Actual JSPI/WASM reentry/growth/
+  errors and allowed/denied page/Blob Worker installation pass; cleanup data/resources
+  zero. Local poe-code commit 7b3e2d0fe; no push. Metadata providers must not depend on
+  optional ownership scans for side effects. This establishes less duplicate capture
+  work, not a public startup speedup.
   Public net_thread.min.js (390978 units) clears parent setup and enters its child,
   but source completion/readiness still fails. Latest exact-build 30 s run settles at
-  31473 ms / 883027 shared steps with AgentBrowserError timeout; outer wait does not
+  30266 ms / 885931 shared steps with AgentBrowserError timeout; outer wait does not
   expire first, cleanup data/page callbacks/active requests zero. Earlier instrumented
   baseline controls varied from 2696 to 7081 child graph passes; no startup speedup is
   established. String-field/frozen-symbol cache candidates remain discarded. A coarse
   8 MiB allocation sample including collected objects estimates 28.8 GB total churn:
   visitor 12.6 GB, scope-root vectors 3.3 GB and closure-root vectors 1.6 GB. The finer
   profile exhausted the heap during export after Worker cleanup; no profile retained.
-  Next: qualify conditional secondary escaping-ticket ownership scans in maintained
-  SafeJS while retaining every primary graph scan, then real WASM imports/initializer
-  and every meeting/media gate. Diagnostic allowances clear no default startup or
-  notetaker gate.
+  Next: measure primary primitive/name-root bookkeeping allocations and reduce them
+  without caching mutable descendants, then real WASM imports/initializer and every
+  meeting/media gate. Diagnostic allowances clear no default startup or notetaker gate.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
