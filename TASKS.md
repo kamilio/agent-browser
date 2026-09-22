@@ -23,6 +23,25 @@
 
 ## Current verified state
 
+- Deep untracked symbol/private metadata and foreign proxy symbol chains now
+  suspend traversal at depth 128: depth 1024 measures correctly, depth 1025 rejects
+  with dataDepth, and held primary quotas remain active. Fresh providers, live
+  private iterators, frozen symbol catalogue changes and pre-metadata array/resource
+  snapshots preserve ordering. Contribution: safejs-generic-metadata-data-walk.patch.
+  All 171 selected SDK checks across 24 files, strict core/new-test typing and scoped
+  build pass; baseline fails seven depth/quota regressions and passes 11 preservation
+  checks. Compiled default-stack/128 MB probes pass (2054 symbol/proxy / 1042 private
+  units), including fresh captures and held quota rejection. New-test lint/format
+  passes; three source lint warnings match baseline. Patch forward/reverse is exact.
+  Serial live 384 MB candidate/control both pass 13 classics, prepare seven modules,
+  revoke at the 120 s import deadline, attempt zero sockets and clean up at data zero
+  (exit 1), without readiness/join. Vendor CPU is 63.25 / 57.53 s in this pair;
+  prior controls vary, so no absence of live performance regression is established.
+  A warmed 2000-closure fixture preserves 12933 units/all provider calls and measures
+  0.645 / 0.767 ms medians; this proves no live speedup. Candidate source/build/tests
+  are retained, owned probes terminate and temporary validation artifacts are removed.
+  Default Zoom heap/time, readiness/join and every media gate remain open.
+
 - Desktop module census observes 3703 top-level function declarations created
   with no lookup/copy/snapshot/frame reads before deadline (webclient 1, loginview
   2049, editor 1363, lodash 124, i18n 166). An exported-function fixture verifies
@@ -78,7 +97,8 @@
   format/lint passes, with only three reproduced baseline source lint warnings.
   Owned probes terminate and temporary validation inputs/logs are removed.
   This is a correctness fix; no speedup or default Zoom gate is established.
-  Untracked/foreign deep symbol graphs and other graph edges remain open.
+  The later generic-metadata fix above covers untracked/foreign symbol chains;
+  untracked prototypes and other graph edges remain open.
 
 - Shallow recursive child traversal is rejected and reverted: avoiding continuation
   allocation below depth 16 passed 125 selected SDK preservation checks across 18
@@ -1511,8 +1531,8 @@
   Media transport/rendering APIs need implementation,
   separately from initialization performance and later live acceptance.
 - Baseline parser else-if nesting raises RangeError before its intended syntax
-  limit diagnostic. Default-stack dataDepth for untracked/foreign symbol descendants, closure property
-  paths and other untested graph edges; deep-copy host ingress/result export and
+  limit diagnostic. Default-stack dataDepth for untracked prototype chains, closure
+  property paths and other untested graph edges; deep-copy host ingress/result export and
   deep plain-object copying also overflow the native stack on baseline. Older
   scope-root shape expectations and a
   baseline Promise snapshot timeout. Tested capture/prototype fixes do not clear this gate.
