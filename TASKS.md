@@ -27,6 +27,19 @@
   accounting, shared forkRealm ownership and retained suspended scope/generator
   roots. Full primary graph reconciliation stays active. Full invokeCallback
   settlement still joins granted nestedOperation execution.
+- Maintained SafeJS now includes classic source imports with stable saved-function/
+  generator referrers, immutable source-module status and opt-in per-import elapsed
+  deadlines (poe-code 7bc7da83a, d0ed7a6e9, f1b358919; no push). Deadlines cover
+  resolution through top-level await, revoke the whole realm and clear on settlement
+  or cancellation; synchronous host work can delay delivery. All 323 selected checks
+  across 14 files pass with actual GC, strict test typing, scoped lint/new-test format,
+  isolated SDK compilation/eight entry checks and offline five-case JSPI/WASM
+  (cleanup zero). Working compiled modules refreshed; owned temporary artifacts
+  removed. The maintained full-page
+  probe now loads HTTP 200 and executes 16 scripts, clearing the previous unsupported
+  sourceImportTimeoutMs loader failure. Vue still exceeds the 30 s script gate
+  (30093 ms, 603265 steps, peak 807885 units); cleanup data zero, socket attempts zero,
+  no interactive readiness or meeting join. Default heap/time and media gates remain.
 - Opt-in callbackScheduling: "after-prefix" admits later source only after all
   callback prefixes finish; tails preserve data/compilation charges and their own
   rejection ownership. Source stays exclusive. Close/cancellation waits for queued
@@ -43,9 +56,9 @@
   offline Node24 JSPI guest WASM passes five cases in both scheduling modes,
   including string compilation denied and recovery after a Script throw in a
   classic child realm. Cleanup resources/data/depth/pending return to zero.
-  Public Zoom WASM initialization remains open, as do
-  classic dynamic imports and other required scratch SDK compatibility/performance
-  fixes. These checks do not establish public Zoom or meeting/media readiness.
+  Full public Zoom initialization remains open, along with other required scratch
+  SDK compatibility/performance fixes. These checks do not establish public Zoom
+  or meeting/media readiness.
 - WASM compilation CSP is now distinct from string eval: script-src/default-src
   'wasm-unsafe-eval' or 'unsafe-eval' admits WASM; script-src-elem does not grant it.
   Policies intersect and unsupported inputs deny. Document owners and network
