@@ -173,12 +173,12 @@
   21cb74d71; no push. No public startup speedup is established.
   Public net_thread.min.js (390978 units) clears parent setup and enters its child,
   but source completion/readiness still fails. Latest exact-build 30 s run settles at
-  30155 ms / 885686 shared steps with AgentBrowserError timeout; outer wait does not
+  30466 ms / 883026 shared steps with AgentBrowserError timeout; outer wait does not
   expire first. A subsequent exact-build 120 s diagnostic still fails source
   completion at 120457 ms / 900405 shared steps with no status messages; cleanup
   data/page callbacks/active requests zero on both. Earlier instrumented
   baseline controls varied from 2696 to 7081 child graph passes; no startup speedup is
-  established. String-field/frozen-symbol cache candidates remain discarded. A coarse
+  established. Earlier rejected string-field/frozen-symbol variants remain discarded. A coarse
   8 MiB allocation sample including collected objects estimates 28.8 GB total churn:
   visitor 12.6 GB, scope-root vectors 3.3 GB and closure-root vectors 1.6 GB. The finer
   profile exhausted the heap during export after Worker cleanup; no profile retained.
@@ -215,6 +215,27 @@
   Next: repeated graph traversal across node checkpoints, preserving fresh foreign
   observations, primary quota/depth enforcement and cancellation. Scope carrier
   reuse and accounting-only omission remain unsafe without provenance guarantees.
+
+- Maintained SafeJS now reuses immutable descriptors and scalar string charges for
+  privately owned, revision-tracked property tables. Writes/deletes retire snapshots;
+  descendants, symbols, prototypes, bigint conversions and accessor captures remain
+  fresh. Foreign proxies/restored tables keep conservative scans. Pinned native
+  operations prevent backing/cache escape through later hooks or inherited setters.
+  Two baseline failures reproduce; all 180 selected SDK checks across 18 files,
+  strict new-test typing, scoped lint/format and SDK build/eight entry checks pass.
+  Actual quota/deletion/GC, five-case after-prefix JSPI/WASM and page/Blob Worker
+  compilation-policy probes pass; cleanup zero. Public real-import/export-w
+  initializer passes in 8.3 s / 39087 steps / 22395140 units with cleanup zero.
+  Local poe-code commit 843951a9f; no push. Warm table/mixed fixtures retain identical
+  42000/98000 units with roughly 17%/20% less CPU. Serial full Worker baseline
+  30404 ms / 886789 steps versus candidate 30466 ms / 883026 establishes no useful
+  startup gain; neither completes source or emits statuses, both clean up at zero.
+  A temporary census counts 72.8 million entries, 38.1 million already-seen objects
+  and 36.2 million capture yields across 12429 measurements. Counters establish
+  traversal volume, not cache safety. Instrumentation restored; probes removed.
+  Next: reduce repeated capture/graph traversal across checkpoints while preserving
+  fresh observations and complete primary limits. Full startup/defaults and every
+  meeting/media acceptance gate remain open.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
