@@ -23,129 +23,56 @@
 
 ## Current verified state
 
-- The maintained poe-code SafeJS package now tracks metadata on SDK-created typed
-  arrays without enumerating numeric indices, while retaining primary accounting,
-  backing-buffer charges, symbols, mutations and guest reflection. Live fixed
-  ArrayBuffer references require declared and granted array-buffer:share, enforce
-  array/data/reference quotas and use existing realm ownership/revocation/cleanup.
-  The offline scripts/check-wasm-memory.ts diagnostic passes full Uint8/Int32/Float64
-  aliases over an actual 320-page (20 MiB) WASM memory in an owned 128 MiB process:
-  guest writes reach WASM loads, WASM stores reach guest reads, retained data is
-  20972066 bytes, and close leaves data/depth zero. The one-page regression also
-  passes. All 527 focused SDK checks across 28 files, maintained SDK build with eight
-  built-entry checks, strict new-test typing and changed-file lint pass; the full
-  1471-file SDK suite was stopped and has no full pass. Browser build, 84 checks in
-  two manifest-listed native files and changed-file lint/format pass.
-  Native API consumers must copy sandbox views through deepCopyFromSandbox because
-  internal wrappers do not satisfy host ArrayBuffer.isView; guest isView is preserved.
-  Ordinary host ingress still copies. Untracked host views retain conservative scans,
-  and huge explicit guest key enumeration remains unbounded by this accounting fix.
-  Diagnostic 32 MiB quotas do not clear the default page 16 MiB/262144-element gate.
-  Actual Zoom WASM imports, page/Worker API integration, initialization performance
-  and joining/media acceptance remain open; offline callback ownership passes below.
-
-- Offline actual JSPI/SafeJS callback and WASM reentry now pass at 20 MiB in a
-  128 MiB process: guest calls receive scalar results without adding await, native
-  and guest memory writes agree, and close leaves data/depth/pending zero. The
-  maintained SDK fixes full invokeCallback settlement inside a granted nestedOperation;
-  startCallback retains separate prefix/tail behavior. Seven regressions and 109
-  focused SDK checks across nine files, SDK build/eight built-entry checks, typing
-  and changed-file lint pass. Browser 49 manifest-listed checks, build, typing and
-  changed-file lint/format pass. Actual JSPI also verifies suspended cancellation,
-  steps (26 for limit 25), depth eight and sampled deadline (1024 steps).
-  NodeWasmCalls requires the modern Suspending/promising API: the diagnostic uses
-  /tmp/agent-browser-node24-runtime/bin/node v24.14.0 with explicit
-  --experimental-wasm-jspi; default Node v22 rejects with controlled unsupported.
-  Asynchronous imports in start functions are unsupported. This is a low-level
-  owned execution bridge, not a page/Worker WebAssembly global or Zoom startup pass.
-  Compile/import/memory admission, default page quotas, actual Zoom instantiation,
-  initialization and every joining/media gate remain open.
-
-- Bounded native WASM memory ownership and a reusable guest Memory wrapper now
-  pass 24 manifest-listed native checks, build, strict test typing and changed-file
-  lint/format. Creation/growth preflight SDK array/data quotas, enforce eight-memory,
-  2048-page aggregate and 4096-growth limits, retain one live reference per memory
-  and revoke ownership on failed admission after irreversible growth. Actual offline
-  SafeJS at 128 MiB passes one-page and 320-page fixtures: full aliases, guest/WASM
-  writes, growth preserving bytes and detaching old views, guest constructor/grow(0),
-  WASM reads after growth and cleanup memory/data/depth zero. The grown large fixture
-  now retains 21234428 bytes after both JS and guarded native growth under explicit
-  32 MiB quotas. This reusable bridge is not installed into page/Worker globals yet.
-  Module admission must require guarded instrumentation, validate imports and prevent
-  unowned memory exports before integration; default quotas and all Zoom gates remain open.
-
-- Portable instrumentation now optionally replaces every memory.grow with a reserved
-  i32 -> i32 hook; guarded modules reject multiple memories. NodeWasmCalls requires
-  the hook and checks execution ownership/steps; NodeWasmMemories accepts signed i32
-  deltas, returns -1 on maximum/native allocation failure and enforces SDK quotas
-  before allocation. All 77 focused checks across three manifest-listed files,
-  browser build, strict test typing and changed-file lint/format pass. Existing
-  execution fixtures now exercise guarded function/type indices, calls, globals,
-  elements, indirect calls, starts, exits and multi-value wrappers. Offline actual
-  SDK/WASM fixtures pass one/320 pages, native growth preserving bytes and refreshing
-  views, maximum failure and cleanup zero. Actual Node24 JSPI passes growth during
-  guest-callback reentry with owned compilation (99 steps, depth five, 21039185 retained bytes), cancellation
-  and prior step/depth/deadline cases; cleanup data/depth/pending/memory zero. Current
-  public net.wasm (465602 bytes) has zero native growth instructions; guarded output
-  888011 bytes/205697 checks validates in 35 ms, no instantiation and zero active
-  requests. Original validation remains required. Declared module admission passes
-  below; binding imports, per-instance table/global charges and owned memory exports,
-  page/Worker integration, initialization and every joining/media gate remain open.
-
-- Native module ownership now validates the stable original before compilation,
-  reports original signatures/imports/exports and bounds declared memory/table/global
-  sizes. Admission supports numeric function imports and one imported owned-memory
-  slot; reference boundaries, table/global imports, defined memories and native
-  table.grow reject. Eight retained modules, two pending compilations and sixteen
-  compile attempts bound ownership. Source/metadata credits and slots survive
-  cancellation until native settlement; close awaits work and discards late results.
-  All 92 native checks across four manifest-listed files, build, strict new/changed
-  test typing and changed-file lint/format pass. Public current net.wasm admits and
-  compiles with actual SDK budget at 128 MiB in 61 ms: 21 numeric functions, one
-  320/2048-page memory import, fixed 1026-element table, one mutable i32 global and
-  41 function exports. Its retained source/metadata charge is 1366307 bytes; close
-  releases module/data/requests to zero. No public binary instantiation performed.
-  Actual SDK/JSPI fixture also passes owned synchronous compilation, callback/reentry,
-  native memory growth, cancellation and prior CPU limits with cleanup zero. Native
-  compilation is not preemptible; credits do not measure V8 generated machine code.
-  Owned instantiation/import binding now passes below; page/Worker WebAssembly APIs,
-  actual Zoom initialization and all joining/media gates remain open.
-
-- Owned WASM instantiation now resolves ordered imports through null-prototype maps,
-  invokes borrowed callbacks only through the realm's full invokeCallback API, binds
-  owned memory handles and returns the original handle for memory exports. All
-  exported numeric calls use NodeWasmCalls; native function/Table/Global objects are
-  not exposed. Dense data arguments reject native accessors/proxies. Per-instance
-  table/global/import/export slot charges precede allocation; module leases retain
-  source credits until instances settle and release them. Close cancels/waits calls
-  before releasing instances/leases. Eight retained instances and sixteen attempts
-  bound admission. Borrowed callbacks remain SDK-owned until realm cleanup; async
-  start imports remain unsupported and reject before guest invocation. All 104
-  focused checks across five manifest-listed files, build, strict new/changed-test
-  typing and changed-file lint/format pass. Actual Node24 JSPI/SafeJS at 128 MiB
-  now exercises this owner with 20 MiB memory, callback reentry, native growth and
-  cancellation: 99 steps, depth five, 21039185 retained bytes; cleanup instance,
-  module/lease, memory, data, depth and pending calls zero. Slot charges are bounded
-  accounting estimates, not measured V8 object/native-code allocation. Table/Global
-  export wrappers, page/Worker WebAssembly APIs and actual public Zoom instantiation,
-  initialization, joining and every notetaker/media gate remain open.
-
-- Portable WASM binary instrumentation now inserts reserved step/enter/leave imports.
-  Typed outer blocks route returns and function-target branches through depth cleanup;
-  direct calls, exports, start, globals and element references retain their targets.
-  Stable original/output snapshots are bounded; validate originalBytes before compiling
-  output. MVP/reference/bulk-memory forms are supported; SIMD, threads, GC, exceptions
-  and tail calls reject. All 36 manifest-listed native checks, native build, strict
-  test typing and changed-file lint/format pass, including every exit form, indirect
-  calls, multi-value/parameter signatures, traps and nested entry ownership.
-  Offline real SDK Budget stops recursion at configured depth eight, restores the
-  caller depth one and permits reuse; step exhaustion (26 for limit 25) and sampled
-  deadline (1024 steps) unwind owned depths to zero. Authorized current net.wasm
-  instrumentation produces 887959 bytes/205697 checks from 465602 bytes in 54 ms;
-  original and output validate, no instantiation performed. Transport closes active
-  requests zero. This is not a page API or Zoom startup pass: bounded imports,
-  page/Worker integration remain open. The offline memory and callback bridges
-  above pass separately; default Node v22 has no supported Suspending/promising API.
+- Maintained poe-code SafeJS avoids numeric-index enumeration when accounting
+  SDK-created typed-array metadata while preserving primary reconciliation, backing
+  storage, symbols, mutations and guest reflection. Fixed attached live buffers
+  require declared/granted array-buffer:share and enforce array/data/reference quotas,
+  ownership and cleanup. Ordinary host ingress copies; native consumers must use
+  deepCopyFromSandbox because internal view wrappers fail host ArrayBuffer.isView.
+  Untracked host views retain conservative scans; explicit huge guest key enumeration
+  remains unbounded. Full invokeCallback settlement joins a granted nestedOperation;
+  startCallback retains separate prefix/tail behavior. Scoped SDK checks (527 across
+  28 files plus 109 across nine callback/ownership files), SDK build/eight built-entry
+  checks, strict new-test typing and changed-file lint pass. The full 1471-file suite
+  was stopped and has no full pass.
+- Native WASM owners now provide original validation, stable bounded binary
+  instrumentation, declared allocation/import/export admission, compilation leases,
+  ordered imports through null-prototype maps, realm invokeCallback dispatch, owned
+  memory aliases/growth and metered numeric exports. MVP/reference/bulk-memory forms
+  pass; SIMD, threads, GC, exceptions and tail calls reject. Guarded memory.grow
+  uses an owned i32 hook, preserves -1 maximum-failure semantics and checks SDK
+  quotas before allocation; original memory export handles retain identity. Primary
+  SDK scans continue during suspended callbacks. Dense host arguments reject
+  accessors/proxies. Borrowed callbacks remain SDK-owned until realm cleanup.
+  Eight modules/sixteen attempts/two pending compilations, eight instances/sixteen
+  attempts and eight memories/2048 aggregate pages/4096 growth calls bound ownership.
+  Compilation credits survive cancellation until native settlement; module credits
+  survive close until instance leases release. Close instances before awaiting
+  module-owner close. Native compilation is not preemptible; source/metadata and
+  table/global slot charges do not measure V8 object/generated-code allocation.
+- All 104 focused checks across five manifest-listed native files, browser build,
+  strict new/changed-test typing and changed-file lint/format pass. Opt-in actual
+  SDK/WASM at 128 MiB passes one/320-page aliases, bidirectional WASM/guest writes,
+  JS/native growth and cleanup memory/data/depth zero. Actual Node24 JSPI/SafeJS
+  exercises owned compilation/instantiation, callback reentry, growth and cancellation:
+  99 steps, depth five, 21039185 retained bytes, cleanup instance/module/lease/memory/
+  data/depth/pending zero. CPU fixtures stop at 26 for 25 steps, depth eight and
+  1024 sampled deadline checks. Modern Suspending/promising is required; the working
+  diagnostic runtime is /tmp/agent-browser-node24-runtime/bin/node v24.14.0 with
+  explicit --experimental-wasm-jspi. Default Node v22 rejects with controlled unsupported.
+- Current public net.wasm (465602 bytes) admits/compiles with actual SDK budget at
+  128 MiB in 61 ms: 21 numeric function imports plus one 320/2048-page memory import,
+  a fixed 1026-element table, one mutable i32 global and 41 function exports.
+  Guarded output (888011 bytes/205697 checks) validates; native memory.grow and
+  table.grow counts are zero. Source/metadata charge 1366307 bytes releases on close,
+  as do active requests. No public binary instantiation performed. Current admission
+  rejects reference boundaries, table/global imports, defined memories and native
+  table.grow; async start imports reject before guest invocation. Table/Global export
+  wrappers and page/Worker WebAssembly APIs remain absent. Diagnostic 32 MiB quotas
+  do not clear default page 16 MiB/262144-element limits. Next: page/Worker installers,
+  actual Zoom instantiation with its real imports, initialization performance and
+  every joining/admission/presence/roster/chat/audio/transcription/playback/microphone/
+  avatar/leaving/cleanup gate. Automations is untouched; no meeting has been joined.
 
 - Child Workers now reuse the bounded native performance clock and user timing:
   monotonic/coarsened now/timeOrigin, marks/measures, isolated JSON details and
