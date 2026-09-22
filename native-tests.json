@@ -1,4 +1,5 @@
 [
+	"src/wasm-metering.test.ts",
 	"src/page-dom-methods.test.ts",
 	"src/script-blank-frames.test.ts",
 	"src/canvas-draw-image.test.ts",

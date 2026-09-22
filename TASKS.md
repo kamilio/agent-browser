@@ -23,6 +23,21 @@
 
 ## Current verified state
 
+- Portable WASM binary instrumentation now inserts a reserved void budget import
+  before instructions and rewrites defined-function references in calls, exports,
+  start, globals and element segments. Stable original/output snapshots are bounded;
+  the backend must validate originalBytes before compiling the output. MVP/reference/
+  bulk-memory forms are supported; SIMD, threads, GC, exceptions and tail calls reject.
+  All 19 new manifest-listed native checks, native build, strict test typing and
+  changed-file lint/format pass, including loop/recursive/start termination and
+  indirect-call/operand/local preservation. Offline real SDK Budget stops a metered
+  loop at 26 steps for a 25-step limit and at its sampled deadline (1024 steps).
+  Authorized current net.wasm instrumentation produces 877335 bytes/205697 checks
+  from 465602 bytes in 34 ms; original and output validate, no instantiation performed.
+  Public transport closes with active requests zero. This is not a page API or a
+  Zoom startup pass: memory accounting/view identity, bounded imports, synchronous
+  SafeJS callbacks, call-depth ownership and page/Worker integration remain open.
+
 - Child Workers now reuse the bounded native performance clock and user timing:
   monotonic/coarsened now/timeOrigin, marks/measures, isolated JSON details and
   lifetime cleanup. All 556 selected native checks across ten manifest-listed
