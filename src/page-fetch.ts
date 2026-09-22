@@ -59,6 +59,7 @@ export interface PageFetchLimits {
 	maxRequests: number;
 	maxPending: number;
 	maxRequestBytes: number;
+	/** Defaults to 256 KiB; explicit overrides admit at most 1 MiB. */
 	maxResponseBytes: number;
 	maxRetainedBytes: number;
 	maxTotalBytes: number;
@@ -307,7 +308,8 @@ export class PageFetch {
 				"Fetch signals belong to another document",
 			);
 		const limits = { ...defaults, ...options.limits };
-		for (const [name, maximum] of Object.entries(defaults)) {
+		for (const [name, defaultMaximum] of Object.entries(defaults)) {
+			const maximum = name === "maxResponseBytes" ? 1_048_576 : defaultMaximum;
 			const value = limits[name as keyof PageFetchLimits];
 			if (!Number.isSafeInteger(value) || value < 1 || value > maximum)
 				throw new AgentBrowserError(

@@ -555,3 +555,80 @@ it.each(["json", "text"] as const)(
 		expect(test.owner.metrics().retainedBytes).toBe(0);
 	},
 );
+
+it("requires an explicit response limit to download a Zoom-sized binary", async () => {
+	const bytes = new Uint8Array(465602);
+	bytes[0] = 97;
+	bytes[bytes.length - 1] = 255;
+	const ordinary = fixture({ body: bytes });
+	await expect(ordinary.fetch()).rejects.toMatchObject({
+		code: "resource-limit",
+	});
+	expect(ordinary.owner.metrics().retainedBytes).toBe(0);
+	const enabled = fixture({
+		body: bytes,
+		limits: { maxResponseBytes: 1048576 },
+	});
+	const result = await enabled.fetch();
+	expect(enabled.request.mock.calls[0][0].maxResponseBytes).toBe(1048576);
+	const buffer = await result.arrayBuffer();
+	expect(new Uint8Array(buffer)).toEqual(bytes);
+	expect(enabled.owner.metrics()).toMatchObject({
+		retainedBytes: 0,
+		totalBytes: bytes.length,
+	});
+});
+
+it("admits the explicit response ceiling and rejects a provider body one byte larger", async () => {
+	const enabled = fixture({
+		body: new Uint8Array(1048576),
+		limits: { maxResponseBytes: 1048576 },
+	});
+	const result = await enabled.fetch();
+	expect((await result.arrayBuffer()).byteLength).toBe(1048576);
+	const oversized = fixture({
+		body: new Uint8Array(1048577),
+		limits: { maxResponseBytes: 1048576 },
+	});
+	await expect(oversized.fetch()).rejects.toMatchObject({
+		code: "resource-limit",
+	});
+	expect(oversized.owner.metrics()).toMatchObject({
+		active: 0,
+		retainedBytes: 0,
+		responses: 0,
+	});
+});
+
+it.each([1048577, Number.POSITIVE_INFINITY, Number.NaN, 465602.5])(
+	"rejects response limit %s beyond the bounded integer ceiling",
+	(maxResponseBytes) => {
+		expect(() => fixture({ limits: { maxResponseBytes } })).toThrow(
+			"Invalid page fetch limits",
+		);
+	},
+);
+
+it("keeps retention, cloning and cumulative quotas active for larger responses", async () => {
+	const bytes = new Uint8Array(465602);
+	const test = fixture({
+		body: bytes,
+		limits: {
+			maxResponseBytes: 1048576,
+			maxRetainedBytes: bytes.length * 2,
+			maxTotalBytes: bytes.length * 2,
+		},
+	});
+	const result = await test.fetch();
+	const clone = result.clone();
+	expect(() => clone.clone()).toThrow("retention");
+	await result.arrayBuffer();
+	await clone.arrayBuffer();
+	await (await test.fetch()).arrayBuffer();
+	await expect(test.fetch()).rejects.toMatchObject({ code: "resource-limit" });
+	expect(test.request).toHaveBeenCalledTimes(2);
+	expect(test.owner.metrics()).toMatchObject({
+		retainedBytes: 0,
+		totalBytes: bytes.length * 2,
+	});
+});
