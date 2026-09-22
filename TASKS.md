@@ -355,6 +355,20 @@
   owned validation artifacts removed. Next: reduce full graph-accounting cost while
   preserving mutable descendant scans, held quotas and callback ownership.
 
+- Maintained SafeJS now walks record/array descendants and transparent scope roots
+  off the native stack (poe-code 92a70d7a2, no push). Actual compiled default-stack
+  plain/scoped 1024-level graphs measure 6145 units instead of baseline RangeError;
+  level 1025 rejects with dataDepth. Ordered children, descriptor observations,
+  callback mutations and cycles remain covered. Pinned continuation writes prevent
+  a reproduced late Array.push hook from erasing 1019 units to 13. All 111 selected
+  checks across 14 files pass with explicit GC; strict test typing, scoped lint/format,
+  isolated build/eight imports, offline five-case JSPI/WASM and public initializer
+  pass, cleanup zero. Full Worker still times out at 30480 ms / 883532 steps with
+  no source completion/status; no useful startup gain claimed. Private capture-buffer
+  pooling was rejected and removed after no Worker gain. Working compiled values
+  are refreshed; owned temporary probes/builds removed. Next: reduce repeated
+  graph-wide accounting work without weakening mutable/foreign scans or held quotas.
+
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
   sender detachment. Up to 64 entries/65536 initial buffer bytes are admitted;
@@ -2032,8 +2046,8 @@
   limit diagnostic. Default-stack dataDepth for untracked prototype chains, closure
   property paths and other untested graph edges; deep-copy host ingress/result export and
   deep plain-object copying also overflow the native stack on baseline. Older
-  scope-root shape expectations and a
-  baseline Promise snapshot timeout. Tested capture/prototype fixes do not clear this gate.
+  scope-root shape expectations remain unresolved. Record/array measurement now
+  reaches its depth boundary above; prototype/capture/copy paths retain separate gates.
 - Three baseline joined-callback rejection failures, a PageScripts timer probe's
   generic callback script-error and
   an onload non-callable-handler failure. Prior intermittent default 1 s idle
