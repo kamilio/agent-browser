@@ -23,6 +23,22 @@
 
 ## Current verified state
 
+- Desktop module census observes 3703 top-level function declarations created
+  with no lookup/copy/snapshot/frame reads before deadline (webclient 1, loginview
+  2049, editor 1363, lodash 124, i18n 166). An exported-function fixture verifies
+  that observed lookup/snapshot reads are counted. No capture accounting is skipped.
+  Module-only physical declaration deferral is rejected and reverted: 178 selected
+  SDK checks across 18 files and strict core/new-test typing/scoped build pass;
+  baseline fails the physical-deferral regression and passes three preservation
+  checks. Serial candidate/control at 384 MB both pass 13 classics, prepare seven
+  modules, revoke at the 120 s import deadline, attempt zero sockets and clean up
+  at data zero (exit 1). Last observed progress is 9015051 / 9013085 steps and
+  12811623 / 12811479 data units; differing observation times prove no speedup.
+  No useful initialization gain is established; candidate source-reference capture
+  coverage also remains incomplete. Original six source files and rebuilt compiled
+  control are restored exactly; temporary tests/configs/backups/logs are removed.
+  Default heap/time, readiness/join and every media gate remain open.
+
 - Desktop late-graph census keeps all reconciliation/callback checks active:
   final two 30 s measurement windows have 47.79% / 45.82% repeated object entries,
   69.65% / 66.57% closures among fresh objects, and 95.40% / 95.25% already-seen
