@@ -23,60 +23,29 @@
 
 ## Current verified state
 
-- Maintained poe-code SafeJS avoids numeric-index enumeration when accounting
-  SDK-created typed-array metadata while preserving primary reconciliation, backing
-  storage, symbols, mutations and guest reflection. Fixed attached live buffers
-  require declared/granted array-buffer:share and enforce array/data/reference quotas,
-  ownership and cleanup. Ordinary host ingress copies; native consumers must use
-  deepCopyFromSandbox because internal view wrappers fail host ArrayBuffer.isView.
-  Untracked host views retain conservative scans; explicit huge guest key enumeration
-  remains unbounded. Full invokeCallback settlement joins a granted nestedOperation;
-  startCallback retains separate prefix/tail behavior. Scoped SDK checks (527 across
-  28 files plus 109 across nine callback/ownership files), SDK build/eight built-entry
-  checks, strict new-test typing and changed-file lint pass. The full 1471-file suite
-  was stopped and has no full pass.
-- Maintained SafeJS now leases explicit forkRealm views against their shared compile
-  owner without resetting consumed allowances or admitting a duplicate live view.
-  Sibling close/cancellation and failed construction/cleanup preserve the surviving
-  realm. Suspended guest awaits and native asynchronous calls register their real
-  invocation-scope roots until resumption/disposal, so sibling reconciliation keeps
-  their data charged. Full primary reconciliation remains active. Eleven regressions,
-  all 163 selected SDK checks across sixteen files, selected SDK build/eight built-entry
-  checks, strict new-test typing and changed-file lint/new-test format pass. The actual
-  guest WASM diagnostic below also passes against the rebuilt maintained SDK. Worker
-  installation still requires reconciling the remaining compilation/error policies;
-  these ownership fixes alone do not clear that gate.
-- Maintained SafeJS now supports opt-in classicScripts with persistent intrinsic
-  globals, immutable injected lexical capabilities, Script grammar and retained
-  global declaration history. Snapshot validation/hydration preserves that history
-  and meters names. The retained classic-script contribution is reconciled directly
-  without overwriting the shared-realm or nested-callback fixes. All 126 classic
-  checks plus 62 selected existing realm/module/snapshot checks, selected SDK build/
-  eight built-entry checks, strict new-test typing, changed-file lint and new-test
-  formatting pass. Actual offline Node24 JSPI/SafeJS verifies synchronous WASM in
-  a classic child realm, persistent global var identity and preserved shared steps;
-  all five guest API diagnostic cases and cleanup resources/data/depth/pending zero
-  pass at 128 MiB with explicit diagnostic quotas. Classic error reporting/dynamic imports and related scratch
-  SDK contributions still require reconciliation before page/Worker integration.
-- Maintained SafeJS now supports opt-in callbackScheduling: "after-prefix": later
-  source can run once all callback prefixes finish, while tails retain their scopes,
-  compilation tickets and operation-specific rejection ownership. Source remains
-  exclusive; cancellation/close waits for queued work before resource release. Full
-  primary graph reconciliation stays active. Suspended generator locals now count
-  toward data limits. All 122 selected scheduling/callback/ownership/module checks
-  and 55 generator/snapshot checks pass, along with SDK build/eight entry checks,
-  strict new-test typing and changed-file lint/new-test formatting. Actual offline
-  guest WASM diagnostics pass all five cases in both exclusive and after-prefix
-  modes against the rebuilt maintained SDK; cleanup resources/data/depth/pending
-  return to zero. This does not clear page/Worker installation or Zoom/media gates.
-- Maintained SafeJS now exposes immutable stringCompilation: allow|deny. Denial
-  raises a catchable guest EvalError for direct/indirect string eval and all four
-  dynamic function constructors, including retained callbacks and classic Scripts;
-  host source/module evaluation and nonstring eval stay available. All 133 selected
-  policy/eval/function checks, SDK build/eight entry checks, strict new-test typing
-  and changed-file lint pass. Actual offline guest WASM diagnostics pass in both
-  scheduling modes with string compilation denied in the classic child realm;
-  cleanup returns to zero. WASM CSP admission remains a separate installer gate.
+- Maintained poe-code SafeJS now has guarded live buffers, typed-array metadata
+  accounting, shared forkRealm ownership and retained suspended scope/generator
+  roots. Full primary graph reconciliation stays active. Full invokeCallback
+  settlement still joins granted nestedOperation execution.
+- Opt-in callbackScheduling: "after-prefix" admits later source only after all
+  callback prefixes finish; tails preserve data/compilation charges and their own
+  rejection ownership. Source stays exclusive. Close/cancellation waits for queued
+  work before releasing resources. Classic Scripts preserve intrinsic globals and
+  declaration history. Immutable stringCompilation: allow|deny controls eval and
+  all four dynamic function constructors. Opt-in classicScriptErrors: report
+  preserves state after ordinary escaped Script throws; syntax, budget, cancellation,
+  module, callback and unhandled rejection failures remain fatal.
+- Verification: 122 selected scheduling/callback/ownership/module checks and 55
+  generator/snapshot checks pass; subsequent policy changes pass 133 eval/function
+  checks, 137 classic/error/module/nested-callback checks and all 76 scheduling/
+  string-policy regressions. SDK builds/eight entry checks, strict new-test typing,
+  changed-file lint/new-test formatting and browser build/script lint pass. Actual
+  offline Node24 JSPI guest WASM passes five cases in both scheduling modes,
+  including string compilation denied and recovery after a Script throw in a
+  classic child realm. Cleanup resources/data/depth/pending return to zero.
+  Page/Worker WASM installation and its separate CSP policy remain open, as do
+  classic dynamic imports and other required scratch SDK compatibility/performance
+  fixes. These checks do not establish public Zoom or meeting/media readiness.
 - Native WASM owners now provide original validation, stable bounded binary
   instrumentation, declared allocation/import/export admission, compilation leases,
   ordered imports through null-prototype maps, realm invokeCallback dispatch, owned

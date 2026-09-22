@@ -238,6 +238,7 @@ try {
 	});
 	const classicRealm = core.createRealm({
 		classicScripts: true,
+		classicScriptErrors: "report",
 		stringCompilation: "deny",
 		...(callbackScheduling ? { callbackScheduling } : {}),
 		extensions: [classicExtension],
@@ -269,6 +270,18 @@ try {
 				JSON.stringify(classic.returnValue) === "[42,false,true,true]",
 			"Classic guest WASM execution failed",
 		);
+		const reported = await classicRealm.evaluate(
+			'throw "ordinary Script failure";',
+		);
+		check(
+			!reported.ok && reported.recoverable === true,
+			"Classic guest Script error reporting failed",
+		);
+		const surviving = await classicRealm.evaluate("nativeResult");
+		check(
+			surviving.ok && surviving.returnValue === 42,
+			"Reported Script exception discarded the classic realm",
+		);
 	} finally {
 		await classicRealm.close();
 		await classicBridge?.close();
@@ -284,7 +297,7 @@ try {
 		);
 	}
 	reports.push({
-		case: "classic-script-shared-realm-with-string-compilation-denied",
+		case: "classic-script-policies-and-shared-realm",
 		passed: true,
 	});
 } finally {
