@@ -197,3 +197,23 @@ it("enforces retained-byte quotas before starting native compilation", async () 
 	expect(f.owner.metrics().retainedBytes).toBe(0);
 	await f.owner.close();
 });
+
+it("retains module credit while an instance lease survives owner close", async () => {
+	const f = fixture();
+	const token = f.owner.compileSync(valid);
+	const lease = f.owner.retain(token);
+	const closing = f.owner.close();
+	let settled = false;
+	void closing.then(() => {
+		settled = true;
+	});
+	await Promise.resolve();
+	expect(f.credits.size).toBe(1);
+	expect(settled).toBe(false);
+	expect(lease.record.module).toBeInstanceOf(WebAssembly.Module);
+	lease.release();
+	lease.release();
+	await closing;
+	expect(f.credits.size).toBe(0);
+	expect(f.owner.metrics().leases).toBe(0);
+});

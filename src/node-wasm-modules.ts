@@ -43,6 +43,7 @@ interface Prepared {
 }
 interface Stored extends Prepared {
 	record: Readonly<WasmModuleRecord>;
+	leases: number;
 }
 function unsupported(): never {
 	throw new AgentBrowserError(
@@ -134,6 +135,8 @@ function freezeMetadata(
  * imports, guard memory growth and own every execution using NodeWasmCalls.
  * Native compilation cannot be interrupted: canceled work retains its credit
  * and slot until settlement; close waits for it and never admits a late result.
+ * Instance leases retain compiled source credits until released; close instances
+ * before awaiting module-owner close.
  * Source-byte charges do not measure V8's generated machine-code allocation.
  */
 export class NodeWasmModules {
@@ -143,6 +146,8 @@ export class NodeWasmModules {
 	private readonly pending = new Set<Promise<void>>();
 	private retainedBytes = 0;
 	private calls = 0;
+	private leases = 0;
+	private drainLeases?: () => void;
 	private closed = false;
 	private closing?: Promise<void>;
 	constructor(
@@ -161,6 +166,7 @@ export class NodeWasmModules {
 			modules: this.records.size,
 			pending: this.pending.size,
 			compileCalls: this.calls,
+			leases: this.leases,
 			retainedBytes: this.retainedBytes,
 		};
 	}
@@ -221,7 +227,7 @@ export class NodeWasmModules {
 			metering: prepared.metering,
 			declarations: prepared.declarations,
 		});
-		this.records.set(prepared.token, { ...prepared, record });
+		this.records.set(prepared.token, { ...prepared, record, leases: 0 });
 		return prepared.token;
 	}
 	compileSync(input: Uint8Array): object {
@@ -277,15 +283,49 @@ export class NodeWasmModules {
 			throw new AgentBrowserError("invalid-input", "Unowned WASM module");
 		return stored.record;
 	}
+	retain(token: unknown): {
+		record: Readonly<WasmModuleRecord>;
+		release(): void;
+	} {
+		const record = this.record(token);
+		const stored = this.records.get(token as object);
+		if (!stored)
+			throw new AgentBrowserError("invalid-input", "Unowned WASM module");
+		stored.leases++;
+		this.leases++;
+		let released = false;
+		return {
+			record,
+			release: () => {
+				if (released) return;
+				released = true;
+				stored.leases--;
+				this.leases--;
+				if (this.closed && stored.leases === 0) {
+					this.records.delete(token as object);
+					this.release(stored);
+				}
+				if (this.leases === 0) this.drainLeases?.();
+			},
+		};
+	}
 	close(): Promise<void> {
 		if (this.closing) return this.closing;
 		this.closed = true;
 		this.controller.abort(
 			new AgentBrowserError("closed", "WASM module owner closed"),
 		);
-		for (const stored of this.records.values()) this.release(stored);
-		this.records.clear();
-		this.closing = Promise.allSettled([...this.pending]).then(() => {});
+		for (const [token, stored] of this.records)
+			if (stored.leases === 0) {
+				this.release(stored);
+				this.records.delete(token);
+			}
+		const leased = this.leases
+			? new Promise<void>((resolve) => {
+					this.drainLeases = resolve;
+				})
+			: Promise.resolve();
+		this.closing = Promise.allSettled([...this.pending, leased]).then(() => {});
 		return this.closing;
 	}
 }
