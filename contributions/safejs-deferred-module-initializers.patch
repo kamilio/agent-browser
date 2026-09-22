@@ -1,0 +1,65 @@
+diff --git a/src/parse/compact-module-ast.ts b/src/parse/compact-module-ast.ts
+--- a/src/parse/compact-module-ast.ts
++++ b/src/parse/compact-module-ast.ts
+@@ -202,6 +202,11 @@
+         this.write(row, kind);
+       }
+       seen.set(value, row);
++      // Linking reads declarator binding names, but must leave initializers packed.
++      if ((value as { type?: unknown }).type === "VariableDeclarator") {
++        this.boundaries.add(row);
++        this.persistentBoundaries.add(row);
++      }
+       if (kind === 0 || kind >= 3) {
+         const type = (value as { type?: unknown }).type;
+         const bodyIndex = [
+diff --git a/src/parse/compact-module-ast.test.ts b/src/parse/compact-module-ast.test.ts
+--- a/src/parse/compact-module-ast.test.ts
++++ b/src/parse/compact-module-ast.test.ts
+@@ -290,3 +290,46 @@
+   other.finish();
+   expect(() => other.pack({})).toThrow("finished");
+ });
++
++it("links binding names without decoding or executing large initializers", async () => {
++  const { SourceModuleGraph } = await import("../modules/source-graph.js");
++  const { Scope } = await import("../interp/scope.js");
++  const { createModuleEnvironment } = await import("../modules/registry.js");
++  const budget = new Budget({ maxSteps: 1000000, dataSize: 1000000 });
++  const lease = budget.acquireCompileOwner();
++  const graph = new SourceModuleGraph({
++    resolver: () => undefined,
++    scope: new Scope({}),
++    budget,
++    compileOwner: lease.owner,
++    modules: createModuleEnvironment(undefined, {
++      budget,
++      compileOwner: lease.owner,
++    }),
++  });
++  const values = Array.from(
++    { length: 250 },
++    (_, i) => `{value:[${i},${i + 1}]}`,
++  ).join(",");
++  try {
++    const namespace = await graph.evaluateSource(
++      {
++        id: "large.js",
++        source: `let runs=0; export const values=(runs++, [${values}]); export {runs};`,
++      },
++      (module) => {
++        expect(compactAstStatistics(module)!.materializedRecords).toBeLessThan(
++          80,
++        );
++      },
++    );
++    expect(namespace.runs).toBe(1);
++    const result = namespace.values as Array<{ value: number[] }>;
++    expect(result.length).toBe(250);
++    expect(result[0]!.value).toEqual([0, 1]);
++    expect(result[249]!.value).toEqual([249, 250]);
++  } finally {
++    graph.close();
++    lease.release();
++  }
++});

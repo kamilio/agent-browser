@@ -23,6 +23,24 @@
 
 ## Current verified state
 
+- Module declarators now defer initializer trees during linking. Contribution:
+  safejs-deferred-module-initializers.patch (applies after compact-module-ast).
+  A regression reproduces 3529 premature decoded records on the saved codec and
+  passes with the fix, including evaluation exactly once and preserved values.
+  All seven exact static modules compile AND link at a 128 MB heap limit: 105455216
+  retained heap bytes plus 63527792 code-buffer bytes, 8353220 steps / 5965049
+  current units. Emoji linking decodes 1206 records; loginview 56436, editor 21025.
+  Selected SDK checks pass 223 tests across 16 files, with strict test typing/scoped
+  build, format/lint and byte-exact two-file patch application/reversal. Public parser
+  defaults stay unchanged. Full native initialization/default runtime heap remain open.
+  Before this fix, the live 192 MB module client exhausted heap during loading;
+  a transient 384 MB memory probe compiled all seven but exhausted heap during linking.
+  That probe measured 142526696 retained heap bytes before the first module compiled,
+  then 280511 loginview / 659645 emoji decoded records during linking. Both OOM runs
+  exit 134 before cleanup verification. The default-identity legacy Vue probe still
+  times out at 120 s with zero sockets and verified cleanup data zero. Probe processes
+  terminate; compiled SDK instrumentation is restored exactly.
+
 - Canonical modules now compact completed ASTs into source-local numeric rows,
   materializing ordinary mutable children on demand and retaining decoded identity.
   Contribution: safejs-compact-module-ast.patch. All seven exact static modules
@@ -1279,8 +1297,8 @@
 
 ## Outstanding gates
 
-- The complete seven-module static graph now clears offline compilation at a
-  128 MB heap limit above. Runtime materialization retains decoded AST nodes, so
+- The complete seven-module static graph now clears offline compilation and linking
+  at a 128 MB heap limit above. Runtime materialization retains decoded AST nodes, so
   full-client runtime heap and initialization performance remain unverified.
   The earlier 768 MB statement trace prepares all seven but stays pending at 15 min,
   reaching editor statement 1353 after React DOM and DOMPurify complete; the later
