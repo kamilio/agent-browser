@@ -10,6 +10,23 @@ import {
 
 const reserved = new Set(["constructor", "prototype", "__proto__"]);
 
+const mapBrands = new WeakMap<
+	object,
+	{ owner: object; assertActive: () => void }
+>();
+export function scriptAttributeMapHasInstance(
+	value: unknown,
+	owner: object,
+): boolean {
+	const brand =
+		value !== null && typeof value === "object"
+			? mapBrands.get(value)
+			: undefined;
+	if (!brand || brand.owner !== owner) return false;
+	brand.assertActive();
+	return true;
+}
+
 export class ScriptAttributes {
 	private readonly maps = new Map<number, object>();
 	private readonly attributes = new Map<number, object>();
@@ -148,6 +165,13 @@ export class ScriptAttributes {
 			(capability) => {
 				this.ensureOpen();
 				this.maps.set(id, capability);
+				mapBrands.set(capability, {
+					owner: this.factory,
+					assertActive: () => {
+						this.ensureOpen();
+						this.tree.get(id);
+					},
+				});
 			},
 		);
 	}

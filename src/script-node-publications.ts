@@ -9,7 +9,8 @@ type PublicationKind =
 	| "node"
 	| "attribute"
 	| "attribute-map"
-	| "implementation";
+	| "implementation"
+	| "node-iterator";
 const usedCapabilities = new WeakSet<object>();
 
 export class ScriptNodePublications {
@@ -18,6 +19,7 @@ export class ScriptNodePublications {
 		attribute: new Set<number>(),
 		"attribute-map": new Set<number>(),
 		implementation: new Set<number>(),
+		"node-iterator": new Set<number>(),
 	};
 	private closed = false;
 	private published = 0;
@@ -49,7 +51,8 @@ export class ScriptNodePublications {
 				this.active.node.size +
 				this.active.attribute.size +
 				this.active["attribute-map"].size +
-				this.active.implementation.size,
+				this.active.implementation.size +
+				this.active["node-iterator"].size,
 			published: this.published,
 			failed: this.failed,
 			closed: this.closed,

@@ -12,6 +12,10 @@ import { ScriptMutationRecords } from "./script-mutation-records.js";
 import { ScriptMutationObservers } from "./script-mutation-observers.js";
 import { ScriptNodePublications } from "./script-node-publications.js";
 import {
+	ScriptNodeIterators,
+	scriptNodeIteratorHasInstance,
+} from "./script-node-iterators.js";
+import {
 	registerScriptNodeBrand,
 	scriptNodeHasInstance,
 } from "./script-dom-brands.js";
@@ -62,7 +66,10 @@ import { serializeHtml } from "./html-serialization.js";
 import { sanitizeInputValue } from "./input-values.js";
 import { InlineStyles } from "./inline-styles.js";
 import { ComputedStyles } from "./computed-styles.js";
-import { ScriptAttributes } from "./script-attributes.js";
+import {
+	ScriptAttributes,
+	scriptAttributeMapHasInstance,
+} from "./script-attributes.js";
 import { ScriptClassLists } from "./script-class-list.js";
 import { scriptCharacterData } from "./script-character-data.js";
 import { ScriptCollections } from "./script-collections.js";
@@ -164,6 +171,7 @@ export class ScriptDom {
 	private blankFrames?: ScriptBlankFrames;
 	private mutationRecordOwner?: ScriptMutationRecords;
 	private rangeBindings?: ScriptRanges;
+	private nodeIterators?: ScriptNodeIterators;
 	private mutationObserverOwner?: {
 		runtime: ScriptCallbackRuntime;
 		bindings: ScriptMutationObservers;
@@ -731,6 +739,19 @@ export class ScriptDom {
 			Object.assign(definition.methods, {
 				write: (...values: readonly unknown[]) => this.write(values, false),
 				createRange: () => this.ranges().createRange(),
+				createNodeIterator: (...args: readonly unknown[]) => {
+					this.read(id);
+					if (!args.length)
+						throw new TypeError("createNodeIterator requires a root");
+					const root = this.identify(args[0]);
+					this.nodeIterators ??= new ScriptNodeIterators(
+						this.tree,
+						this.factory,
+						this.publications,
+						(node) => this.node(node),
+					);
+					return this.nodeIterators.create(root, args[1], args[2]);
+				},
 				getSelection: () => this.getSelection(),
 				importNode: (...values: readonly unknown[]) => this.importNode(values),
 				createAttribute: (...args: readonly unknown[]) => {
@@ -1238,6 +1259,8 @@ export class ScriptDom {
 			this.mutationObserverOwner = undefined;
 			this.mutationRecordOwner?.close();
 			this.rangeBindings?.close();
+			this.nodeIterators?.close();
+			this.nodeIterators = undefined;
 			this.rangeBindings = undefined;
 			this.eventBindings?.close();
 			this.queries.close();
@@ -1296,6 +1319,10 @@ export class ScriptDom {
 
 	hasInstance(value: unknown, name: unknown): boolean {
 		this.ensureOpen();
+		if (name === "NodeIterator")
+			return scriptNodeIteratorHasInstance(value, this.factory);
+		if (name === "NamedNodeMap")
+			return scriptAttributeMapHasInstance(value, this.factory);
 		return scriptNodeHasInstance(value, this.factory, name);
 	}
 
@@ -1328,6 +1355,7 @@ export class ScriptDom {
 	metrics() {
 		return Object.freeze({
 			documents: (this.ownedFamily ?? this.inheritedFamily)?.metrics() ?? null,
+			nodeIterators: this.nodeIterators?.metrics() ?? null,
 			publications: this.publications.metrics(),
 			queries: this.queries.metrics(),
 			classLists: this.classLists.metrics(),

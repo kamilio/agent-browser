@@ -27,11 +27,19 @@ if (typeof __agentBrowserDomHasInstance === "function") {
 	}
 	const Node = install("Node", null);
 	const Element = install("Element", Node);
-	install("HTMLElement", Element);
+	const HTMLElement = install("HTMLElement", Element);
+	install("HTMLFormElement", HTMLElement);
+	install("NamedNodeMap", null);
 	install("SVGElement", Element);
 	install("Document", Node);
 	install("DocumentFragment", Node);
 	install("DocumentType", Node);
+	install("NodeIterator", null);
+	const NodeFilter = install("NodeFilter", null);
+	for (const [name, value] of [["FILTER_ACCEPT",1],["FILTER_REJECT",2],["FILTER_SKIP",3],["SHOW_ALL",4294967295],["SHOW_ELEMENT",1],["SHOW_ATTRIBUTE",2],["SHOW_TEXT",4],["SHOW_CDATA_SECTION",8],["SHOW_ENTITY_REFERENCE",16],["SHOW_ENTITY",32],["SHOW_PROCESSING_INSTRUCTION",64],["SHOW_COMMENT",128],["SHOW_DOCUMENT",256],["SHOW_DOCUMENT_TYPE",512],["SHOW_DOCUMENT_FRAGMENT",1024],["SHOW_NOTATION",2048]]) {
+		Object.defineProperty(NodeFilter, name, {value, enumerable:true});
+		Object.defineProperty(NodeFilter.prototype, name, {value, enumerable:true});
+	}
 	const CharacterData = install("CharacterData", Node);
 	install("Text", CharacterData);
 	install("Comment", CharacterData);

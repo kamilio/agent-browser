@@ -33,6 +33,12 @@ export function scriptNodeHasInstance(
 			return (
 				node.kind === "element" && elementNamespace(node) === htmlNamespace
 			);
+		case "HTMLFormElement":
+			return (
+				node.kind === "element" &&
+				elementNamespace(node) === htmlNamespace &&
+				node.tagName === "form"
+			);
 		case "SVGElement":
 			return node.kind === "element" && elementNamespace(node) === svgNamespace;
 		case "Document":

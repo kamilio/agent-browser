@@ -56,22 +56,35 @@
   The driver retains bounded 0–30 min import observation, 10 s progress reports and
   explicit 1–120 s network deadlines; prior build/format/invalid-setting checks pass.
 
-- Native DOMParser now parses `text/html` through the existing inert HTML parser.
+- Native DOMParser parses `text/html` through the existing inert HTML parser.
   Parsed documents inherit the creator URL/origin, have null window/location and
   no creator credentials, retain parser-selected quirks mode, and share auxiliary
   document creation/node/text limits and cleanup. XML MIME types reject explicitly;
-  DOMImplementation.createDocument remains absent. Twelve new contracts plus existing
-  HTML/template/window/parser-limit/namespace checks pass (132 native checks from
-  native-tests.json). Working build and new-test/bootstrap Biome checks pass.
+  DOMImplementation.createDocument remains absent. Twelve new contracts and existing
+  HTML/template/window/parser-limit/namespace cases pass (132 focused native checks).
   Actual SDK/native 128 MB probe verifies parsed HTML, detached window, URL/mode,
   Document/Node branding and Window alias; cleanup releases all SDK data.
-  This addresses Zoom DOMPurify's initial parsing failure: its isolated 21008-char
-  initializer still completes (~18.8 s), while benign `<b>hello</b>` now reaches `yo`
-  and fails reading missing NodeFilter, before document.createNodeIterator can run.
-  No successful sanitization or full application initialization is claimed.
-  Next: implement native NodeFilter/NodeIterator traversal and required interface
-  brands/method tables; HTMLFormElement and NamedNodeMap remain absent. Performance,
-  complete application initialization and every meeting/media gate remain open.
+
+- Native NodeFilter constants and null-filter NodeIterator now support live preorder
+  traversal, direction reversals, node-type masks, reference-position recovery after
+  node/subtree removal, insertions, detached roots and teardown. Iterators use the
+  existing guarded publication/identity registry; lifetime creation and per-operation
+  work limits remain bounded, as do sibling caches. Callback filters, mask-object
+  conversion, attribute roots and roots from another document remain unsupported.
+  HTMLFormElement and NamedNodeMap have owner-checked branding; prototype method
+  tables remain incomplete. Sixteen new contracts plus existing publication/parser/
+  node-brand/attribute cases pass (55 focused checks from native-tests.json).
+  Working build and new iterator/bootstrap format/lint checks pass. Actual SDK/native
+  128 MB probes verify traversal/reference state, iterator/form/map brands and cleanup
+  data zero. Zoom's isolated bundled DOMPurify initializer completes (~20 s); four
+  benign markup calls stop throwing but incorrectly return empty strings.
+  Actual SDK probes narrow the next blocker to borrowed document methods: direct
+  parsed-document tag queries return `<b>hello</b>`, while the creator's tag query
+  called on that document still selects its original empty body. Borrowed
+  createNodeIterator likewise rejects the parsed body as foreign. Next: preserve
+  the call receiver in native DOM method dispatch, then verify benign sanitizer
+  outputs and continue full application initialization. No sanitizer correctness,
+  complete application readiness, default performance or meeting/media gate clears.
   Probe processes terminate; temporary fixtures/logs are removed.
 
 - Editor initialization is narrowed to React DOM's lazy initializer. The earlier
@@ -989,7 +1002,7 @@
   i18n (362461), lodash (126038), rolldown (1365) and the 4383-char entry. The latest
   768 MB live trace prepares all seven but remains pending at the 15 min observation
   bound, reaching editor statement 1353 after React DOM and DOMPurify complete.
-  The isolated sanitizer's benign-markup failure now reaches missing traversal APIs;
+  The isolated sanitizer now exposes incorrect receivers in borrowed DOM methods;
   initialization performance and library compatibility both require work. Diagnostic
   heap/time/response allowances do not clear default 128 MB, interactive readiness
   or meeting gates. Fetch completion and green classic reports prove no readiness.
