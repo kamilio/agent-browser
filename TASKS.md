@@ -134,21 +134,29 @@
   allowed/denied page/Blob Worker installation pass; cleanup data/resources zero.
   Local poe-code commit ba19c0538; no push. Individual native calls/scans remain
   nonpreemptible, and host-clock changes retain the node-limit fallback.
-  Public net_thread.min.js (390978 units) clears parent setup and enters its child
-  Worker, but source completion/readiness still fails. Latest baseline 30 s control
-  settles at 30765 ms / 880194 shared steps with AgentBrowserError timeout; the prior
-  120 s control settled at 120781 ms / 887517 steps. Neither outer wait expires first;
-  cleanup tracked data/page callbacks/active requests zero. Instrumented 30 s baseline
-  controls vary from 2696 to 7081 child graph passes, so candidate timing establishes
-  no startup gain. String-field and frozen-symbol cache candidates were discarded;
-  254/251 selected SDK checks passed, but public readiness never passed. Candidate
-  WASM reentry/growth passes; DOM and page/Worker installation deadlines fail on both
-  candidate and restored baseline in this validation. Timing gates remain open.
-  Committed source/build restored to ba19c0538, candidate tests removed. Full graph
-  reconciliation and GC remain the measured costs. Next: establish reliable actual
-  DOM/page/Worker timing and reduce startup accounting cost without bypassing primary
-  scans, then qualify real WASM imports/initializer and every meeting/media gate.
-  These diagnostic allowances clear no default startup or notetaker gate.
+  Generic string fields now charge directly during descriptor capture; inert primitive
+  fields no longer enter reference snapshots, and leaf-only records allocate no such
+  vector. Full reference/symbol/bigint traversal and capture-before-mutation order stay
+  active. A host snapshot hook previously reduced a 1000-character field from 1009
+  units to 9; the regression now charges 1009 and rejects quota 500. Four new and 210
+  selected existing SDK checks, strict typing/lint/format and SDK build/eight entries
+  pass. Actual DOM 18 checks at explicit 16 s, five JSPI/WASM reentry/growth/error cases
+  and allowed/denied page/Blob Worker installation pass at 128 MiB; cleanup data zero.
+  Local poe-code commit 6070c8217; no push. Default 1 s timing remains open: the existing
+  DOM bootstrap measured 2.7 s before 1.2 s of fixture code at the diagnostic allowance.
+  Public net_thread.min.js (390978 units) clears parent setup and enters its child,
+  but source completion/readiness still fails. Latest exact-build 30 s run settles at
+  31473 ms / 883027 shared steps with AgentBrowserError timeout; outer wait does not
+  expire first, cleanup data/page callbacks/active requests zero. Earlier instrumented
+  baseline controls varied from 2696 to 7081 child graph passes; no startup speedup is
+  established. String-field/frozen-symbol cache candidates remain discarded. A coarse
+  8 MiB allocation sample including collected objects estimates 28.8 GB total churn:
+  visitor 12.6 GB, scope-root vectors 3.3 GB and closure-root vectors 1.6 GB. The finer
+  profile exhausted the heap during export after Worker cleanup; no profile retained.
+  Next: qualify conditional secondary escaping-ticket ownership scans in maintained
+  SafeJS while retaining every primary graph scan, then real WASM imports/initializer
+  and every meeting/media gate. Diagnostic allowances clear no default startup or
+  notetaker gate.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
