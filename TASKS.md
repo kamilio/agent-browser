@@ -173,7 +173,7 @@
   21cb74d71; no push. No public startup speedup is established.
   Public net_thread.min.js (390978 units) clears parent setup and enters its child,
   but source completion/readiness still fails. Latest exact-build 30 s run settles at
-  30374 ms / 886585 shared steps with AgentBrowserError timeout; outer wait does not
+  30155 ms / 885686 shared steps with AgentBrowserError timeout; outer wait does not
   expire first. A subsequent exact-build 120 s diagnostic still fails source
   completion at 120457 ms / 900405 shared steps with no status messages; cleanup
   data/page callbacks/active requests zero on both. Earlier instrumented
@@ -192,6 +192,29 @@
   binary snapshot/primary root collection/capture allocation cost
   without caching mutable descendants, then integrated initialization and every
   meeting/media gate. Diagnostic allowances clear no default startup or notetaker gate.
+
+- Maintained SafeJS now uses object/symbol identities directly in scope accounting
+  groups instead of extra cell projections; strings/bigints retain per-cell roots.
+  Old/new charged values both invalidate groups, preserving object-to-primitive
+  replacement, aliases, historical snapshots, copy destinations and held quotas.
+  This ports the existing direct-scope-reference-roots contribution into poe-code.
+  Two baseline identity contracts fail; eight preservation cases pass both.
+  All 157 selected SDK checks across 15 files, strict new-test typing, scoped lint/
+  new-test format and SDK build/eight entry checks pass. Actual JSPI/WASM five-case
+  guest APIs pass under exclusive/after-prefix scheduling (1717 steps, 21040407
+  units); public real imports/initializer passes (39087 steps, 22395140 units,
+  8.8 s). Cleanup resources/data/requests zero. Local poe-code commit 973937536;
+  no push. Serial full Worker baseline 30354 ms / 884264 steps versus candidate
+  30155 ms / 885686 establishes no useful startup gain: both timeout before source
+  completion/status messages with cleanup zero. The full mission remains open.
+  Temporary execution-location attribution on the candidate records 11626 nodes /
+  11655 reconciliation calls taking 28.6 s; source samples advance through early
+  bundled module/helper code, with no download-status message or established new
+  API/loop failure. Instrumented run times out at 30325 ms / 886265 steps, cleanup
+  zero. Exact compiled restoration is verified and the ephemeral probe is removed.
+  Next: repeated graph traversal across node checkpoints, preserving fresh foreign
+  observations, primary quota/depth enforcement and cancellation. Scope carrier
+  reuse and accounting-only omission remain unsafe without provenance guarantees.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
@@ -253,7 +276,6 @@
   measurement. The next startup target is this full accounting cost; preserve
   primary scans, quota/depth enforcement and cancellation. Profile artifacts removed.
   This proves neither source initialization nor any Zoom/media acceptance gate.
-
 
 - PageFetch now accepts an explicit maxResponseBytes override up to 1 MiB while
   retaining its 256 KiB default and all other ceilings. Existing PageBindingOptions
