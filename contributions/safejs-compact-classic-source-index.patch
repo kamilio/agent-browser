@@ -1,0 +1,672 @@
+diff --git a/src/parse/parser.ts b/src/parse/parser.ts
+--- a/src/parse/parser.ts
++++ b/src/parse/parser.ts
+@@ -818,33 +818,76 @@
+   source: string,
+   context: EvalParseContext = {},
+   owner?: CompileOwner,
+-  filename = "<eval>"
+-): {node: Module; strict: boolean} {
++  filename = "<eval>",
++  options: { compactAst?: boolean } = {},
++): { node: Module; strict: boolean } {
+   const compilation = new CompileScope(owner);
+   try {
+     const limit = owner?.budget.limits.stringLength;
+     if (limit !== undefined && source.length > limit)
+-      throw new SandboxError({budget: "stringLength", current: source.length, limit});
+-    if (owner !== undefined) for (let index = 0; index < source.length; index++) owner.budget.visitNode();
+-    const grammar = {await: false, yield: false, strict: context.strict === true};
+-    const parser = new Parser(tokenize(source, {
+-      allowRegexLiterals: true, statementList: true, allowLegacyNumbers: true, allowLegacyEscapes: true,
+-      allowHtmlComments: true, compilation
+-    }), source, compilation, "normal", {
+-      grammar, newTarget: context.newTarget === true,
+-      superProperty: context.superProperty === true, superCall: context.superCall === true,
+-      arguments: context.arguments !== false, return: false, await: false, strictAwait: true
+-    }, false);
+-    const node = assignIds(parser.parseScript());
++      throw new SandboxError({
++        budget: "stringLength",
++        current: source.length,
++        limit,
++      });
++    if (owner !== undefined)
++      for (let index = 0; index < source.length; index++)
++        owner.budget.visitNode();
++    const grammar = {
++      await: false,
++      yield: false,
++      strict: context.strict === true,
++    };
++    const positions = options.compactAst
++      ? new CompactSourcePositions(source)
++      : undefined;
++    const parser = new Parser(
++      (options.compactAst ? tokenizeModule : tokenize)(
++        source,
++        {
++          allowRegexLiterals: true,
++          statementList: true,
++          allowLegacyNumbers: true,
++          allowLegacyEscapes: true,
++          allowHtmlComments: true,
++          compilation,
++        },
++        positions,
++      ),
++      source,
++      compilation,
++      "normal",
++      {
++        grammar,
++        newTarget: context.newTarget === true,
++        superProperty: context.superProperty === true,
++        superCall: context.superCall === true,
++        arguments: context.arguments !== false,
++        return: false,
++        await: false,
++        strictAwait: true,
++      },
++      false,
++      undefined,
++      options.compactAst === true,
++      options.compactAst === true,
++      options.compactAst === true,
++    );
++    const parsed = parser.parseScript();
++    parser.finishAstStorage();
++    const node = (options.compactAst ? assignCompactIds : assignIds)(parsed);
+     if (source.includes("#")) validatePrivateNames(node, context.privateNames);
+     for (const statement of node.body) {
+-      if (statement.type === "FunctionDeclaration") evalFunctionDeclarations.add(statement);
+-    }
+-    return {node, strict: grammar.strict};
++      if (statement.type === "FunctionDeclaration")
++        evalFunctionDeclarations.add(statement);
++    }
++    return { node, strict: grammar.strict };
+   } catch (error) {
+     if (error instanceof SandboxError) throw error;
+     throw createSyntaxDiagnostic(source, filename, error);
+-  } finally { compilation.dispose(); }
++  } finally {
++    compilation.dispose();
++  }
+ }
+
+ export type DynamicFunctionKind = "normal" | "generator" | "async" | "async-generator";
+@@ -1055,11 +1098,12 @@
+   parseScript(): Module {
+     const body = this.parseStatementList(undefined, true);
+     const end = this.currentToken().end;
+-    return {
++    const module: Module = {
+       type: "Module", body,
+       span: createSpan(body[0]?.span.start ?? end, body[body.length - 1]?.span.end ?? end),
+       nodeId: undefined
+     };
++    return this.astStorage?.pack(module, false, true) ?? module;
+   }
+
+   parseExpressionOnly(): Expression {
+@@ -1412,6 +1456,10 @@
+       let semicolons = 0;
+       while (statement.type !== "EmptyStatement" && this.consumePunctuator(";") !== undefined) {
+         if (++semicolons > 1) directivePrologue = false;
++      }
++      if (start === undefined) {
++        if (this.astStorage) body[body.length - 1] = this.astStorage.pack(statement, false, true);
++        this.retireModuleTokens();
+       }
+     }
+
+diff --git a/src/parse/dynamic-source.ts b/src/parse/dynamic-source.ts
+--- a/src/parse/dynamic-source.ts
++++ b/src/parse/dynamic-source.ts
+@@ -1,3 +1,4 @@
++import { compactDynamicNodes } from "./compact-module-ast.js";
+ import { SandboxError, type CompileOwner } from "../interp/budget.js";
+ import { parseExecutableModule, parseDynamicFunction, parseEvalScript, type EvalParseContext, type DynamicFunctionKind, type ParseResult } from "./parser.js";
+
+@@ -22,16 +23,43 @@
+   return {node, source};
+ }
+
+-export function createEvalSource(body: string,
+-  context: Omit<EvalParseContext, "privateNames"> & {privateNames?: Iterable<string>}, owner?: CompileOwner, filename?: string) {
+-  const source: DynamicSource = {kind: "eval", body, nodes: new Map(), context: {
+-    strict: context.strict === true, newTarget: context.newTarget === true,
+-    superProperty: context.superProperty === true, superCall: context.superCall === true,
+-    arguments: context.arguments !== false, privateNames: [...(context.privateNames ?? [])]
+-  }};
+-  const parsed = parseEvalScript(body, {...source.context, privateNames: new Set(source.context.privateNames)}, owner, filename);
+-  registerDynamicSource(parsed.node, source);
+-  return {...parsed, source};
++export function createEvalSource(
++  body: string,
++  context: Omit<EvalParseContext, "privateNames"> & {
++    privateNames?: Iterable<string>;
++  },
++  owner?: CompileOwner,
++  filename?: string,
++  options: { compactAst?: boolean } = {},
++) {
++  const source: DynamicSource = {
++    kind: "eval",
++    body,
++    nodes: new Map(),
++    context: {
++      strict: context.strict === true,
++      newTarget: context.newTarget === true,
++      superProperty: context.superProperty === true,
++      superCall: context.superCall === true,
++      arguments: context.arguments !== false,
++      privateNames: [...(context.privateNames ?? [])],
++    },
++  };
++  const parsed = parseEvalScript(
++    body,
++    { ...source.context, privateNames: new Set(source.context.privateNames) },
++    owner,
++    filename,
++    options,
++  );
++  const nodes = options.compactAst
++    ? compactDynamicNodes(parsed.node, source)
++    : undefined;
++  if (nodes) {
++    source.nodes = nodes;
++    dynamicSourceRecords.add(source);
++  } else registerDynamicSource(parsed.node, source);
++  return { ...parsed, source };
+ }
+
+ function registerDynamicSource(node: unknown, source: DynamicSource): void {
+diff --git a/src/parse/compact-module-ast.ts b/src/parse/compact-module-ast.ts
+--- a/src/parse/compact-module-ast.ts
++++ b/src/parse/compact-module-ast.ts
+@@ -1,11 +1,13 @@
+ import { SandboxError } from "../interp/budget.js";
+ import { CompactSourcePositions } from "./compact-spans.js";
+ import {
++  dynamicNodeSources,
++  type DynamicSource,
+   functionSources,
+   functionStrictness,
+   templateSources,
+ } from "./function-source.js";
+-import type { SourceSpan } from "./parser.js";
++import type { ParseResult, SourceSpan } from "./parser.js";
+
+ const chunkLength = 65536;
+ const scalarMask = 0x0fffffff;
+@@ -14,6 +16,35 @@
+ type Shape = { keys: string[]; descriptors: PropertyDescriptorMap };
+
+ const recordToken = Symbol("compiler traversal authority");
++const NativeRowMap = Map;
++const nativeIndexMap = {
++  get: Function.prototype.call.bind(Map.prototype.get) as <K, V>(
++    map: Map<K, V>,
++    key: K,
++  ) => V | undefined,
++  has: Function.prototype.call.bind(Map.prototype.has) as <K, V>(
++    map: Map<K, V>,
++    key: K,
++  ) => boolean,
++  set: Function.prototype.call.bind(Map.prototype.set) as <K, V>(
++    map: Map<K, V>,
++    key: K,
++    value: V,
++  ) => Map<K, V>,
++  delete: Function.prototype.call.bind(Map.prototype.delete) as <K, V>(
++    map: Map<K, V>,
++    key: K,
++  ) => boolean,
++  clear: Function.prototype.call.bind(Map.prototype.clear) as <K, V>(
++    map: Map<K, V>,
++  ) => void,
++  keys: Function.prototype.call.bind(Map.prototype.keys) as <K, V>(
++    map: Map<K, V>,
++  ) => MapIterator<K>,
++  size: Function.prototype.call.bind(
++    Object.getOwnPropertyDescriptor(Map.prototype, "size")!.get!,
++  ) as <K, V>(map: Map<K, V>) => number,
++};
+
+ /** Private compiler traversal handle; never a guest-visible AST value. */
+ class CodeRecord {
+@@ -54,6 +85,7 @@
+   private readonly maxWords: number;
+   private used = 0;
+   private bodies = 0;
++  private dynamicSource?: DynamicSource;
+
+   constructor(private readonly source: string) {
+     this.positions = new CompactSourcePositions(source);
+@@ -241,6 +273,56 @@
+     if (persistent) this.persistentBoundaries.add(reference - 1);
+     if (body) this.bodies++;
+     return this.decode(reference) as T;
++  }
++
++  /** Install source metadata and index numeric rows without publishing every node. */
++  dynamicNodes(root: number, source: DynamicSource): Map<number, ParseResult> {
++    if (!this.finished) throw new TypeError("Unfinished compiler storage.");
++    if (source.body !== this.source)
++      throw new TypeError("Foreign compiler dynamic source text.");
++    if (this.dynamicSource && this.dynamicSource !== source)
++      throw new TypeError("Foreign compiler dynamic source owner.");
++    this.dynamicSource = source;
++    const rows = new NativeRowMap<number, number>(),
++      seen = new Set<number>(),
++      pending = [root];
++    while (pending.length) {
++      const row = pending.pop()!;
++      if (seen.has(row)) continue;
++      seen.add(row);
++      const kind = this.read(row);
++      if (kind === 0) {
++        for (let i = 0, n = this.read(row + 1); i < n; i++) {
++          const ref = this.read(row + 2 + i);
++          if (ref >>> 28 === 0) pending.push((ref & scalarMask) - 1);
++        }
++      } else if (kind >= 3) {
++        const keys = this.shapes[kind - 3]!.keys;
++        const idIndex = keys.indexOf("@id"),
++          typeIndex = keys.indexOf("type");
++        if (idIndex >= 0 && typeIndex >= 0) {
++          const id = this.decode(this.read(row + 1 + idIndex));
++          const type = this.decode(this.read(row + 1 + typeIndex));
++          if (typeof id === "number" && type !== "Module")
++            nativeIndexMap.set(rows, id, row);
++        }
++        for (let i = 0; i < keys.length; i++) {
++          if (keys[i]!.startsWith("@")) continue;
++          const ref = this.read(row + 1 + i);
++          if (ref >>> 28 === 0) pending.push((ref & scalarMask) - 1);
++        }
++      }
++    }
++    for (const node of this.cache.values()) {
++      const id = (node as { nodeId?: unknown }).nodeId;
++      if (typeof id === "number" && nativeIndexMap.has(rows, id))
++        dynamicNodeSources.set(node, source);
++    }
++    return new CompactNodeIndex(
++      recordToken,
++      rows,
++      (row) => this.object(row) as ParseResult,
++    );
+   }
+
+   private scalar(value: unknown): number {
+@@ -377,6 +459,10 @@
+       return index < 0 ? undefined : this.decode(this.read(row + 1 + index));
+     };
+     const id = metadata("@id");
++    if (id !== undefined && this.dynamicSource && shape.keys.includes("type")) {
++      const type = metadata("type");
++      if (type !== "Module") dynamicNodeSources.set(output, this.dynamicSource);
++    }
+     if (id !== undefined)
+       Object.defineProperty(output, "nodeId", {
+         value: id,
+@@ -612,3 +698,75 @@
+ export function compactAstStatistics(value: object) {
+   return record(value)?.owner.statistics();
+ }
++
++/** Internal source index; row authority remains hidden from native Map hooks. */
++class CompactNodeIndex extends Map<number, ParseResult> {
++  #rows: Map<number, number>;
++  #decode: (row: number) => ParseResult;
++  constructor(
++    token: symbol,
++    rows: Map<number, number>,
++    decode: (row: number) => ParseResult,
++  ) {
++    super();
++    if (token !== recordToken)
++      throw new TypeError("Foreign compiler index authority.");
++    this.#rows = rows;
++    this.#decode = decode;
++  }
++  override get size(): number {
++    return nativeIndexMap.size(this.#rows);
++  }
++  override has(key: number): boolean {
++    return nativeIndexMap.has(this.#rows, key);
++  }
++  override get(key: number): ParseResult | undefined {
++    if (nativeIndexMap.has(this, key)) return nativeIndexMap.get(this, key);
++    const row = nativeIndexMap.get(this.#rows, key);
++    return row === undefined ? undefined : this.#decode(row);
++  }
++  override set(key: number, value: ParseResult): this {
++    if (!nativeIndexMap.has(this.#rows, key))
++      nativeIndexMap.set(this.#rows, key, -1);
++    nativeIndexMap.set(this, key, value);
++    return this;
++  }
++  override delete(key: number): boolean {
++    nativeIndexMap.delete(this, key);
++    return nativeIndexMap.delete(this.#rows, key);
++  }
++  override clear(): void {
++    nativeIndexMap.clear(this);
++    nativeIndexMap.clear(this.#rows);
++  }
++  override keys(): MapIterator<number> {
++    return nativeIndexMap.keys(this.#rows);
++  }
++  override *values(): MapIterator<ParseResult> {
++    for (const key of this.keys()) yield this.get(key)!;
++  }
++  override *entries(): MapIterator<[number, ParseResult]> {
++    for (const key of this.keys()) yield [key, this.get(key)!];
++  }
++  override [Symbol.iterator](): MapIterator<[number, ParseResult]> {
++    return this.entries();
++  }
++  override forEach(
++    callback: (
++      value: ParseResult,
++      key: number,
++      map: Map<number, ParseResult>,
++    ) => void,
++    thisArg?: unknown,
++  ): void {
++    for (const [key, value] of this) callback.call(thisArg, value, key, this);
++  }
++}
++
++export function compactDynamicNodes(
++  root: object,
++  source: DynamicSource,
++): Map<number, ParseResult> | undefined {
++  const handle = record(root);
++  return handle?.owner.dynamicNodes(handle.row, source);
++}
+diff --git a/src/realm.ts b/src/realm.ts
+--- a/src/realm.ts
++++ b/src/realm.ts
+@@ -903,7 +903,9 @@
+       const namespace = scheduled ? await graph.withImportGroup(evaluate) : await evaluate();
+       return {ok:true,returnValue:namespace,snapshot:{bindings:{}},stats:{nodeVisits:graph.stats.nodeVisits - before,currentDataSize:this.budget.currentDataSize,peakDataSize:this.budget.peakDataSize}};
+     }
+-    const script = this.options.classicScripts ? createEvalSource(source, {}, this.lease.owner, filename) : undefined;
++    const script = this.options.classicScripts
++      ? createEvalSource(source, {}, this.lease.owner, filename, {compactAst: true})
++      : undefined;
+     // Closures share this charged identity; later Scripts must not overwrite it
+     // through the realm's shared global scope.
+     const sourceReference = script && this.options.sourceResolver !== undefined
+diff --git a/src/parse/compact-eval-source.test.ts b/src/parse/compact-eval-source.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/parse/compact-eval-source.test.ts
+@@ -0,0 +1,262 @@
++import { Scope } from "../interp/scope.js";
++import { createBuiltinBindings } from "../interp/globals.js";
++import { expect, it } from "vitest";
++import { Budget } from "../interp/budget.js";
++import { interpret } from "../interp/interpreter.js";
++import { invokeBuiltinClosure } from "../interp/builtin-call.js";
++import { isSandboxClosure, measureSandboxData } from "../interp/values.js";
++import { serialize } from "../snapshot/serialize.js";
++import { restore } from "../snapshot/restore.js";
++import { createEvalSource } from "./dynamic-source.js";
++import {
++  compactAstStatistics,
++  compactDynamicNodes,
++} from "./compact-module-ast.js";
++import {
++  dynamicNodeSources,
++  evalFunctionDeclarations,
++  functionSources,
++  functionStrictness,
++  templateSources,
++} from "./function-source.js";
++import { hashParsedAst } from "./hash.js";
++
++const pad = `/*${"x".repeat(512)}*/`;
++function compile(body: string, compactAst: boolean, context = {}) {
++  const budget = new Budget({
++    maxSteps: 1000000,
++    stringLength: 1000000,
++    dataSize: 1000000,
++  });
++  const lease = budget.acquireCompileOwner();
++  try {
++    return {
++      parsed: createEvalSource(body, context, lease.owner, "classic.js", {
++        compactAst,
++      }),
++      steps: budget.stepsUsed,
++      data: budget.currentDataSize,
++    };
++  } finally {
++    lease.release();
++  }
++}
++
++it.each([
++  `function f(){${pad}return 1};f;`,
++  `'use strict';function f(x=()=>{${pad}return 1}){${pad}return x()};f;`,
++  `<!-- legacy comment\nvar x=010;function f(){${pad}return '\\123'+x};f;\n--> tail`,
++  `function f(){${pad}var x=1;return ()=>++x};f;`,
++  `function f(){${pad}return class C {#x=1;read(){return this.#x};static {this.y=2}}};f;`,
++  `function tag(s,x){return s};function f(){${pad}return tag\`a\u2028b\${1}c\u2029d\`};f;`,
++  `function f(){${pad}return {x,...obj,method(){return this.x}}};f;`,
++  `function f(){${pad}let a,b;[a,,b]=values;return [a,b,,...rest]};f;`,
++  `function* f(){${pad}yield 1;return 2};f;`,
++  `async function f(){${pad}return await 1};f;`,
++  `function f(){${pad}return /a[b-c]+/giu};f;`,
++  `function f(){${pad}return [1n,-0,Infinity]};f;`,
++])(
++  "preserves classic trees, IDs, source indexes and metadata: %j",
++  (source) => {
++    const control = compile(source, false),
++      candidate = compile(source, true);
++    expect(candidate.steps).toBe(control.steps);
++    expect(candidate.data).toBe(control.data);
++    expect(candidate.parsed.strict).toBe(control.parsed.strict);
++    expect(candidate.parsed.source.nodes.size).toBe(
++      control.parsed.source.nodes.size,
++    );
++    expect([...candidate.parsed.source.nodes.keys()]).toEqual([
++      ...control.parsed.source.nodes.keys(),
++    ]);
++    expect(candidate.parsed.node).toEqual(control.parsed.node);
++    expect(hashParsedAst(candidate.parsed.node)).toBe(
++      hashParsedAst(control.parsed.node),
++    );
++    for (const [id, node] of control.parsed.source.nodes) {
++      const other = candidate.parsed.source.nodes.get(id)!;
++      expect(other).toEqual(node);
++      expect(dynamicNodeSources.get(other)).toBe(candidate.parsed.source);
++      expect(candidate.parsed.source.nodes.get(id)).toBe(other);
++      expect(
++        functionSources.get(other as Parameters<typeof functionSources.get>[0]),
++      ).toEqual(
++        functionSources.get(node as Parameters<typeof functionSources.get>[0]),
++      );
++      expect(
++        functionStrictness.get(
++          other as Parameters<typeof functionStrictness.get>[0],
++        ),
++      ).toBe(
++        functionStrictness.get(
++          node as Parameters<typeof functionStrictness.get>[0],
++        ),
++      );
++      expect(
++        templateSources.get(other as Parameters<typeof templateSources.get>[0]),
++      ).toBe(
++        templateSources.get(node as Parameters<typeof templateSources.get>[0]),
++      );
++      expect(
++        evalFunctionDeclarations.has(
++          other as Parameters<typeof evalFunctionDeclarations.has>[0],
++        ),
++      ).toBe(
++        evalFunctionDeclarations.has(
++          node as Parameters<typeof evalFunctionDeclarations.has>[0],
++        ),
++      );
++    }
++    expect(measureSandboxData([candidate.parsed.source])).toBe(
++      measureSandboxData([control.parsed.source]),
++    );
++  },
++);
++
++it("indexes cold bodies without materializing their nodes", () => {
++  const source = `function cold(){${pad}return [${Array.from({ length: 1000 }, (_, i) => `{value:${i}}`).join(",")}];} cold;`;
++  const { parsed } = compile(source, true);
++  expect(parsed.source.nodes.size).toBeGreaterThan(3000);
++  const before = compactAstStatistics(parsed.node)!.materializedRecords;
++  expect(before).toBeLessThan(30);
++  expect([...parsed.source.nodes.keys()].length).toBe(parsed.source.nodes.size);
++  expect(compactAstStatistics(parsed.node)!.materializedRecords).toBe(before);
++  const key = [...parsed.source.nodes.keys()].find(
++    (id) => parsed.source.nodes.get(id)?.type === "NumericLiteral",
++  )!;
++  const node = parsed.source.nodes.get(key)!;
++  expect(dynamicNodeSources.get(node)).toBe(parsed.source);
++});
++
++it("preserves source-index mutation and iteration semantics", () => {
++  const { parsed } = compile("var x=1;x;", true);
++  const index = parsed.source.nodes,
++    keys = [...index.keys()],
++    first = index.get(keys[0]!)!,
++    last = keys.at(-1)!;
++  expect(index.get(-1)).toBeUndefined();
++  index.set(last, first);
++  expect([...index.keys()]).toEqual(keys);
++  expect(index.get(last)).toBe(first);
++  expect(index.delete(last)).toBe(true);
++  expect(index.delete(last)).toBe(false);
++  index.set(last, first);
++  const entries = [...index];
++  const observed: typeof entries = [];
++  index.forEach((value, key, map) => {
++    expect(map).toBe(index);
++    observed.push([key, value]);
++  });
++  expect(observed).toEqual(entries);
++  expect([...index.values()]).toEqual(entries.map(([, value]) => value));
++  index.clear();
++  expect(index.size).toBe(0);
++  expect([...index]).toEqual([]);
++});
++
++it("restores closures and template identities from a compact classic source", async () => {
++  const { parsed } = compile(
++    `let n=0;function tag(s){return s};function site(){${pad}return tag\`hi\`};const first=site();(()=>[++n,site()===first]);`,
++    true,
++  );
++  const budget = new Budget({ maxSteps: 1000000, dataSize: 1000000 });
++  const scope = new Scope(
++    createBuiltinBindings({ budget }),
++    undefined,
++    undefined,
++    { chargeData: false },
++  ).child({}, { globalEnvironment: true });
++  const result = await interpret(
++    { type: "BlockStatement", body: parsed.node.body, span: parsed.node.span },
++    {
++      script: { strict: parsed.strict },
++      budget,
++      scope,
++      useScopeDirectly: true,
++    },
++  );
++  expect(result.ok).toBe(true);
++  if (!result.ok) throw new Error(result.error.message);
++  const saved = serialize({
++    source: "return 0",
++    currentAstNodeId: 1,
++    scopeChain: [{ id: "classic", bindings: { saved: result.returnValue } }],
++    callStack: [],
++    pendingPromises: [],
++    moduleBindings: {},
++  });
++  const restored = restore(JSON.parse(JSON.stringify(saved)), {
++    source: "return 0",
++  });
++  const lookup = restored.currentScope.lookup("saved");
++  if (!lookup.found) throw new Error("Missing restored binding");
++  const closure = lookup.value;
++  expect(isSandboxClosure(closure)).toBe(true);
++  if (!isSandboxClosure(closure)) throw new Error("Missing closure");
++  expect(
++    await invokeBuiltinClosure(
++      closure,
++      [],
++      restored.budget,
++      undefined,
++      undefined,
++    ),
++  ).toEqual([1, true]);
++  expect(
++    await invokeBuiltinClosure(
++      closure,
++      [],
++      restored.budget,
++      undefined,
++      undefined,
++    ),
++  ).toEqual([2, true]);
++});
++
++it("keeps compiler row authority private across forged receivers and native Map hooks", () => {
++  const { parsed } = compile("function f(){return 7};f;", true);
++  const index = parsed.source.nodes,
++    key = [...index.keys()][0]!;
++  expect(Reflect.ownKeys(index)).toEqual([]);
++  expect(Map.prototype.get.call(index, key)).toBeUndefined();
++  expect([...Map.prototype.entries.call(index)]).toEqual([]);
++  expect(() =>
++    Reflect.construct(index.constructor, [Symbol(), new Map(), () => ({})]),
++  ).toThrow("authority");
++  const forged = Object.create(Object.getPrototypeOf(index)) as Map<
++    number,
++    unknown
++  >;
++  expect(() => forged.get(key)).toThrow(TypeError);
++});
++
++it("does not pass private row storage to later native Map reads", () => {
++  const { parsed } = compile("function f(){return 7};f;", true);
++  const index = parsed.source.nodes,
++    key = [...index.keys()][0]!;
++  const original = Map.prototype.get,
++    observed: object[] = [];
++  Map.prototype.get = function (key: unknown) {
++    const value = Reflect.apply(original, this, [key]);
++    if (typeof value === "number") observed.push(this);
++    return value;
++  };
++  let value;
++  try {
++    value = index.get(key);
++  } finally {
++    Map.prototype.get = original;
++  }
++  expect(value).toBeDefined();
++  expect(observed).toEqual([]);
++});
++
++it("rejects foreign source text and rebinding an index to another owner", () => {
++  const { parsed } = compile("function f(){return 7};f;", true);
++  expect(() =>
++    compactDynamicNodes(parsed.node, { ...parsed.source, body: "0;" }),
++  ).toThrow("source text");
++  expect(() => compactDynamicNodes(parsed.node, { ...parsed.source })).toThrow(
++    "source owner",
++  );
++});

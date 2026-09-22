@@ -23,6 +23,22 @@
 
 ## Current verified state
 
+- Realm classic scripts now opt into compact ASTs and a lazy dynamic-source node
+  index. Contribution: safejs-compact-classic-source-index.patch (after compact AST
+  and deferred initializer patches). Public parser/factory defaults stay unchanged.
+  Numeric rows preserve node lookup/order and attach source metadata on decoding;
+  native Map operations are pinned, foreign source/owner rebinding rejected. Selected
+  SDK checks pass 423 tests across 18 files, including 18 new tree/ID/index/mutation/
+  strictness/metadata/snapshot/template/ownership contracts. Strict test typing/scoped
+  build, new-file format/lint and five-file byte-exact patch application/reversal pass.
+  Exact externals.min.js digest matches control: 54585 nodes / 791 function sources,
+  168460 steps; cold retained heap falls from 18107256 to 6084896 bytes plus 2075356
+  code-buffer bytes. This is storage improvement, not an initialization timing proof.
+  The native 192 MB diagnostic now passes 13 classics and prepares all seven modules
+  without the earlier loading OOM; preload heap measures 133198024 versus the previous
+  142526696 bytes, and post-emoji compile heap 176144320. Import settlement and default
+  128 MB/30 s runtime acceptance remain open. Temporary instrumentation is restored.
+
 - Module declarators now defer initializer trees during linking. Contribution:
   safejs-deferred-module-initializers.patch (applies after compact-module-ast).
   A regression reproduces 3529 premature decoded records on the saved codec and
@@ -97,15 +113,14 @@
   retained syntax trees remain the memory target. No full-client gain or gate pass.
   Probe processes terminate, temporary artifacts are removed, SDK retains candidate.
 
-- The latest full-client diagnostic with compact ASTs and deferred initializers
-  returns HTTP 200, passes all 13 classic scripts and prepares all seven modules
-  under a 384 MB diagnostic heap. The source import remains pending at its 60 s
-  observation bound (one pending / zero fulfilled / zero rejected); last observed
-  progress is 9013413 steps / 12925704 current data units. No readiness or join is
+- The latest full-client diagnostic with compact classic-source indexing returns
+  HTTP 200, passes all 13 classic scripts and prepares all seven modules under a
+  192 MB diagnostic heap. The source import stays pending at its 60 s observation
+  bound (one pending / zero fulfilled / zero rejected); no readiness or join is
   established. Zero socket attempts; cleanup closes the realm with accounted data
-  zero. This replaces the earlier 30 min observation as the current bounded status,
-  not as a speedup or default 128 MB/30 s runtime acceptance claim. All owned probe
-  processes terminate; temporary drivers/configs/backups and instrumentation are removed.
+  zero. This clears the previous loading OOM at that allowance, not the default
+  runtime, timing, interactive or meeting gates. All owned probes terminate and
+  temporary drivers/configs/backups and instrumentation are removed.
 
 - Earlier eager-token parsing verifies a separate default-heap blocker. Under
   128 MB, editor-core parses in 1.8 s and retains 71393848 heap bytes beyond its
@@ -1302,9 +1317,9 @@
 - The complete seven-module static graph now clears offline compilation and linking
   at a 128 MB heap limit above. Runtime materialization retains decoded AST nodes, so
   full-client runtime heap and initialization performance remain unverified.
-  Live preload retains about 142.5 MB before module compilation; classic-script
+  Live preload now measures about 133.2 MB before module compilation; classic-script
   retention and module evaluation/reconciliation cost remain the next memory and
-  performance targets. The latest 384 MB bounded run still has one pending import.
+  performance targets. The latest 192 MB bounded run still has one pending import.
   The earlier 768 MB statement trace prepares all seven but stays pending at 15 min,
   reaching editor statement 1353 after React DOM and DOMPurify complete; the later
   full-client run remains pending at 30 min. Selected borrowed document methods
