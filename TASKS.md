@@ -340,15 +340,20 @@
   become collections in the compiled SDK; retained closures still return 7 at
   unchanged 26 units, while intentional self capture retains/accounts for 60081 units.
   Twelve new regressions, strict typing, lint/format, isolated build/eight imports
-  pass. Broader validation passes 179/180 checks: the Promise-subclass constructor
-  case also times out without this change. Compiled plain/subclass aggregate probes
-  target a finished run queue and stall before snapshot creation; lifecycle repair
-  remains required. Offline five-case JSPI/WASM and public initializer pass with
-  unchanged totals/zero cleanup; loaded initializer 16.8 s. Full Worker still times
-  out at 30317 ms / 880694 steps, parent success, no completion/status, cleanup zero.
-  No startup/join gain claimed; owned validation artifacts removed. Next: repair
-  retained Promise reaction ownership for explicit invocation while preserving
-  closed-realm revocation, then continue reducing full graph-accounting cost.
+  pass. Initial broader validation passed 179/180 checks; the remaining Promise-
+  subclass constructor timeout was reproduced without the runtime change. It was
+  a fixture lifecycle error: run() finishes its queue before raw closure invocation.
+  The snapshot fixture now keeps a live interpreter queue through invocation and
+  restore (poe-code 057a1b2b2, no push). All 184 selected checks across 17 files pass
+  with explicit GC, strict test typing and scoped lint/new-test formatting. Four
+  live-realm checks verify subclass aggregate settlement, pending callback cancellation,
+  closed-realm revocation and zero cleanup data in both scheduling modes. No production
+  Promise lifecycle repair is indicated by this fixture. Offline five-case JSPI/WASM
+  and public initializer previously passed with unchanged totals/zero cleanup;
+  loaded initializer 16.8 s. Full Worker still times out at 30317 ms / 880694 steps,
+  parent success, no completion/status, cleanup zero. No startup/join gain claimed;
+  owned validation artifacts removed. Next: reduce full graph-accounting cost while
+  preserving mutable descendant scans, held quotas and callback ownership.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
@@ -1979,11 +1984,6 @@
   restored; no candidate code, caches or diagnostic artifacts remain.
 
 ## Outstanding gates
-
-- Retained pending Promise reactions can target the finished run queue when a
-  returned closure is explicitly invoked; the Promise-subclass constructor check
-  still stalls before snapshot creation. Repair authorized invocation ownership
-  while preserving cancellation and closed-realm revocation.
 
 - The complete seven-module static graph now clears offline compilation and linking
   at a 128 MB heap limit above. Runtime materialization retains decoded AST nodes, so
