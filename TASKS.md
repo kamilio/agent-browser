@@ -37,6 +37,15 @@
   131 is not readiness. Cleanup data/callbacks/active requests zero. This clears no
   default 30 s, full-client, joining or media gate. The next targets remain
   WebAssembly and full retained-graph accounting cost.
+  Reusable opt-in scripts/check-zoom-worker-initialization.ts now applies the
+  published network configuration, checks both EOF delivery and the child result,
+  bounds status collection and verifies cleanup. Native build and script lint/format
+  pass. Authorized current public-asset run at 128 MB/30 s exits with failure:
+  child timeout at 30009 ms/892133 shared steps, no EOF, cleanup verified zero.
+  Read-only net.wasm metadata (465602 bytes; no instantiation) shows 20 function
+  imports and an unshared memory import, minimum 320/maximum 2048 pages (20/128 MiB).
+  Real WASM support needs memory-view identity, guest callbacks and bounded,
+  cancellable execution; a native host call alone would bypass SafeJS checkpoints.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
