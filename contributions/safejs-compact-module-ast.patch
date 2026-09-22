@@ -1,0 +1,1311 @@
+diff --git a/src/parse/parser.ts b/src/parse/parser.ts
+--- a/src/parse/parser.ts
++++ b/src/parse/parser.ts
+@@ -1,8 +1,13 @@
++import {
++  CompactModuleAst,
++  compilerEntries,
++  compilerField,
++} from "./compact-module-ast.js";
+ import { boundIdentifiers } from "./bindings.js";
+ import { CompactSourcePositions, compactSourceSpan, compactDerivedPosition } from "./compact-spans.js";
+ import { validatePrivateNames } from "./private-names.js";
+ import { RESERVED_IDENTIFIER_SPELLINGS, tokenize, tokenizeModule, type Position, type Token } from "./tokenizer.js";
+-import { assignFreshIds, assignIds } from "./assign-ids.js";
++import { assignCompactIds, assignFreshIds, assignIds } from "./assign-ids.js";
+ import { evalFunctionDeclarations, functionSources, functionStrictness, templateSources } from "./function-source.js";
+ import { formatParseError } from "./format-error.js";
+ import { createSyntaxDiagnostic } from "./syntax-diagnostic.js";
+@@ -715,6 +720,7 @@
+     compactTokens?: boolean;
+     compactSpans?: boolean;
+     compactArrays?: boolean;
++    compactAst?: boolean;
+   } = {},
+ ): ParsedSourceModule {
+   const compilation = new CompileScope(owner);
+@@ -730,9 +736,11 @@
+       source, compilation, "top-level",
+       {...ordinaryFunctionContext, newTarget: false, return: false, requireAsyncAwait: true,
+         grammar: {await: true, yield: false, strict: true}}, true, syntax, options.sharedPositions === true || options.compactTokens === true || options.compactSpans === true,
+-      options.compactArrays === true
++      options.compactArrays === true, options.compactAst === true
+     );
+-    const module = (options.sharedPositions ? assignFreshIds : assignIds)(parser.parseModule());
++    const parsedModule = parser.parseModule();
++    parser.finishAstStorage();
++    const module = (options.compactAst ? assignCompactIds : options.sharedPositions ? assignFreshIds : assignIds)(parsedModule);
+     if (source.includes("#")) validatePrivateNames(module);
+     let hasTLA = false;
+     const pending: unknown[] = [module];
+@@ -740,10 +748,18 @@
+       const node = pending.pop();
+       if (node === null || typeof node !== "object") continue;
+       owner?.budget.visitNode();
+-      if ("type" in node && ["FunctionDeclaration", "FunctionExpression", "ArrowFunctionExpression"].includes(String(node.type))) continue;
+-      if ("type" in node && (node.type === "AwaitExpression" || ("await" in node && node.await === true) ||
+-          (node.type === "VariableDeclaration" && "disposal" in node && node.disposal === "async"))) hasTLA = true;
+-      pending.push(...Object.values(node));
++      if (options.compactAst) {
++        const type = compilerField(node, "type");
++        if (["FunctionDeclaration", "FunctionExpression", "ArrowFunctionExpression"].includes(String(type))) continue;
++        if (type === "AwaitExpression" || compilerField(node, "await") === true ||
++            (type === "VariableDeclaration" && compilerField(node, "disposal") === "async")) hasTLA = true;
++        for (const [, child] of compilerEntries(node)) pending.push(child);
++      } else {
++        if ("type" in node && ["FunctionDeclaration", "FunctionExpression", "ArrowFunctionExpression"].includes(String(node.type))) continue;
++        if ("type" in node && (node.type === "AwaitExpression" || ("await" in node && node.await === true) ||
++            (node.type === "VariableDeclaration" && "disposal" in node && node.disposal === "async"))) hasTLA = true;
++        pending.push(...Object.values(node));
++      }
+     }
+     return {...syntax, module, hasTLA, requests: [...new Set(syntax.moduleRequests.map(request => request.specifier))]};
+   } catch (error) {
+@@ -902,6 +918,7 @@
+   private readonly varNames = new WeakMap<ParserScope, Set<string>>();
+   private readonly sourceExportNames = new Set<string>();
+   private readonly sourceLocalExports = new Map<string, Identifier>();
++  private readonly astStorage?: CompactModuleAst;
+
+   constructor(
+     private readonly tokens: Token[],
+@@ -912,9 +929,19 @@
+     private readonly allowImportMeta = true,
+     private readonly moduleSyntax?: SourceModuleSyntax,
+     private readonly releaseModuleTokens = false,
+-    private readonly compactArrays = false
++    private readonly compactArrays = false,
++    compactAst = false
+   ) {
+     this.functionScopes.add(this.scopes[0]!);
++    if (compactAst) this.astStorage = new CompactModuleAst(source);
++  }
++
++  finishAstStorage(): void {
++    this.astStorage?.finish();
++  }
++
++  private appendLiteral<T extends object>(list: T[], node: T): void {
++    list.push(this.astStorage?.pack(node, false, true, false) ?? node);
+   }
+
+   /** Copy finished scratch lists so small arrays do not retain growth capacity. */
+@@ -935,6 +962,9 @@
+       start: node.span.start.offset,
+       end: node.span.end.offset
+     });
++    if (this.astStorage && node.type !== "ClassDeclaration" && node.type !== "ClassExpression" &&
++        node.body.span.end.offset - node.body.span.start.offset >= 512)
++      node.body = this.astStorage.pack(node.body, true, true);
+     return node;
+   }
+
+@@ -994,13 +1024,13 @@
+         }
+         if (this.isExportToken(token)) {
+           const statement = this.parseSourceExport();
+-          if (statement !== undefined) body.push(statement);
++          if (statement !== undefined) body.push(this.astStorage?.pack(statement, false, true) ?? statement);
+           this.retireModuleTokens();
+           continue;
+         }
+       }
+       const statement = this.parseTopLevelItem();
+-      body.push(statement);
++      body.push(this.astStorage?.pack(statement, false, true) ?? statement);
+       while (statement.type !== "EmptyStatement" && this.consumePunctuator(";") !== undefined) {
+         continue;
+       }
+@@ -1013,12 +1043,13 @@
+     }
+
+     const end = this.currentToken().end;
+-    return {
++    const module: Module = {
+       type: "Module",
+       body: this.finishList(body),
+       span: createSpan(body[0]?.span.start ?? end, body[body.length - 1]?.span.end ?? end),
+       nodeId: undefined
+     };
++    return this.astStorage?.pack(module, false, true) ?? module;
+   }
+
+   parseScript(): Module {
+@@ -3882,7 +3913,7 @@
+     while (true) {
+       if (this.consumePunctuator(",") !== undefined) {
+         const comma = this.previousToken();
+-        elements.push({
++        this.appendLiteral(elements, {
+           type: "UndefinedLiteral",
+           raw: "undefined",
+           value: undefined,
+@@ -3899,14 +3930,14 @@
+       if (this.consumePunctuator("...") !== undefined) {
+         const spreadStart = this.previousToken();
+         const argument = this.parseExpression();
+-        elements.push({
++        this.appendLiteral(elements, {
+           type: "SpreadElement",
+           argument: argument.node,
+           span: createSpan(spreadStart.start, argument.node.span.end),
+           nodeId: undefined
+         });
+       } else {
+-        elements.push(this.parseExpression().node);
++        this.appendLiteral(elements, this.parseExpression().node);
+       }
+
+       if (this.consumePunctuator(",") !== undefined) {
+@@ -3947,7 +3978,7 @@
+       if (this.consumePunctuator("...") !== undefined) {
+         const spreadStart = this.previousToken();
+         const argument = this.parseExpression();
+-        properties.push({
++        this.appendLiteral(properties, {
+           type: "SpreadElement",
+           argument: argument.node,
+           span: createSpan(spreadStart.start, argument.node.span.end),
+@@ -3964,7 +3995,7 @@
+           }
+           hasPrototypeSetter = true;
+         }
+-        properties.push(property);
++        this.appendLiteral(properties, property);
+       }
+
+       if (this.consumePunctuator(",") !== undefined) {
+diff --git a/src/parse/assign-ids.ts b/src/parse/assign-ids.ts
+--- a/src/parse/assign-ids.ts
++++ b/src/parse/assign-ids.ts
+@@ -1,3 +1,11 @@
++import {
++  compilerAssignId,
++  compilerElements,
++  compilerEntries,
++  compilerField,
++  compilerIsArray,
++  compilerOffsets,
++} from "./compact-module-ast.js";
+ import type { Module, ParseResult, SourceSpan } from "./parser.js";
+
+ type AstNode = {
+@@ -142,3 +150,42 @@
+     typeof (value as { span?: SourceSpan }).span?.end.offset === "number"
+   );
+ }
++
++/** First assignment traverses private numeric rows without creating AST facades. */
++export function assignCompactIds<T extends Module | ParseResult>(root: T): T {
++  const stack: unknown[] = [root];
++  let nextId = 0;
++  const isNode = (value: unknown): value is object =>
++    value !== null &&
++    typeof value === "object" &&
++    typeof compilerField(value, "type") === "string" &&
++    compilerOffsets(value) !== undefined;
++  while (stack.length) {
++    const node = stack.pop();
++    if (!isNode(node) || compilerField(node, "nodeId") !== undefined) continue;
++    compilerAssignId(node, nextId++);
++    const type = compilerField(node, "type");
++    const children: object[] = [];
++    const add = (value: unknown) => {
++      if (isNode(value)) children.push(value);
++      else if (compilerIsArray(value))
++        for (const child of compilerElements(value))
++          if (isNode(child)) children.push(child);
++    };
++    if (type === "UnaryExpression") add(compilerField(node, "argument"));
++    else if (type === "ExpressionStatement")
++      add(compilerField(node, "expression"));
++    else if (type === "Module") add(compilerField(node, "body"));
++    else {
++      for (const [key, child] of compilerEntries(node))
++        if (key !== "nodeId" && key !== "span" && key !== "type") add(child);
++      children.sort((left, right) => {
++        const a = compilerOffsets(left)!,
++          b = compilerOffsets(right)!;
++        return a[0] - b[0] || a[1] - b[1];
++      });
++    }
++    for (let i = children.length - 1; i >= 0; i--) stack.push(children[i]);
++  }
++  return root;
++}
+diff --git a/src/parse/private-names.ts b/src/parse/private-names.ts
+--- a/src/parse/private-names.ts
++++ b/src/parse/private-names.ts
+@@ -1,62 +1,117 @@
+-import type { ClassNode } from "./parser.js";
++import {
++  compilerElements,
++  compilerEntries,
++  compilerField,
++  compilerIsArray,
++} from "./compact-module-ast.js";
+
+ type PrivateScope = { names: Set<string>; parent?: PrivateScope };
+
+ /** Check complete class bodies so private references may precede declarations. */
+-export function validatePrivateNames(root: unknown, inheritedNames?: ReadonlySet<string>): void {
+-  const pending: Array<{ value: unknown; scope?: PrivateScope; declaration?: boolean }> = [{
+-    value: root,
+-    scope: inheritedNames === undefined ? undefined : {names: new Set(inheritedNames)}
+-  }];
++export function validatePrivateNames(
++  root: unknown,
++  inheritedNames?: ReadonlySet<string>,
++): void {
++  const pending: Array<{
++    value: unknown;
++    scope?: PrivateScope;
++    declaration?: boolean;
++  }> = [
++    {
++      value: root,
++      scope:
++        inheritedNames === undefined
++          ? undefined
++          : { names: new Set(inheritedNames) },
++    },
++  ];
+   while (pending.length > 0) {
+     const { value, scope, declaration } = pending.pop()!;
+     if (value === null || typeof value !== "object") continue;
+-    if (Array.isArray(value)) {
+-      for (const entry of value) pending.push({ value: entry, scope });
++    if (compilerIsArray(value)) {
++      for (const entry of compilerElements(value))
++        pending.push({ value: entry, scope });
+       continue;
+     }
+-    const node = value as Record<string, unknown>;
+-    if (node.type === "ClassDeclaration" || node.type === "ClassExpression") {
+-      const klass = value as ClassNode;
+-      pending.push({ value: klass.superClass, scope });
++    const type = compilerField(value, "type");
++    if (type === "ClassDeclaration" || type === "ClassExpression") {
++      pending.push({ value: compilerField(value, "superClass"), scope });
+       const inner: PrivateScope = { names: new Set(), parent: scope };
+       const declarations = new Map<string, { kind: string; static: boolean }>();
+-      for (const element of klass.body.body) {
+-        if (element.type === "StaticBlock" || element.key.type !== "PrivateIdentifier") continue;
+-        const name = element.key.name;
+-        if (name === "constructor") throw new Error("Private name #constructor is forbidden.");
+-        const kind = element.type === "MethodDefinition" ? element.kind : "field";
++      const body = compilerField(value, "body");
++      for (const element of compilerElements(compilerField(body, "body"))) {
++        const key = compilerField(element, "key");
++        if (
++          compilerField(element, "type") === "StaticBlock" ||
++          compilerField(key, "type") !== "PrivateIdentifier"
++        )
++          continue;
++        const name = compilerField(key, "name") as string;
++        if (name === "constructor")
++          throw new Error("Private name #constructor is forbidden.");
++        const kind =
++          compilerField(element, "type") === "MethodDefinition"
++            ? (compilerField(element, "kind") as string)
++            : "field";
++        const isStatic = compilerField(element, "static") as boolean;
+         const previous = declarations.get(name);
+-        if (previous !== undefined && !(previous.static === element.static &&
+-            (previous.kind === "get" && kind === "set" || previous.kind === "set" && kind === "get")))
++        if (
++          previous !== undefined &&
++          !(
++            previous.static === isStatic &&
++            ((previous.kind === "get" && kind === "set") ||
++              (previous.kind === "set" && kind === "get"))
++          )
++        )
+           throw new Error(`Duplicate private name #${name}.`);
+-        declarations.set(name, { kind: previous === undefined ? kind : "pair", static: element.static });
++        declarations.set(name, {
++          kind: previous === undefined ? kind : "pair",
++          static: isStatic,
++        });
+         inner.names.add(name);
+       }
+-      pending.push({ value: klass.body, scope: inner });
++      pending.push({ value: body, scope: inner });
+       continue;
+     }
+-    if (node.type === "PrivateIdentifier") {
++    if (type === "PrivateIdentifier") {
+       if (declaration) continue;
++      const name = String(compilerField(value, "name"));
+       let owner = scope;
+-      while (owner !== undefined && !owner.names.has(String(node.name))) owner = owner.parent;
+-      if (owner === undefined) throw new Error(`Undeclared private name #${String(node.name)}.`);
++      while (owner !== undefined && !owner.names.has(name))
++        owner = owner.parent;
++      if (owner === undefined)
++        throw new Error(`Undeclared private name #${name}.`);
+       continue;
+     }
+-    if (node.type === "MemberExpression") {
+-      const property = node.property as Record<string, unknown>;
+-      if (property.type === "PrivateIdentifier" && (node.object as Record<string, unknown>).type === "Super")
++    if (type === "MemberExpression") {
++      const property = compilerField(value, "property");
++      if (
++        compilerField(property, "type") === "PrivateIdentifier" &&
++        compilerField(compilerField(value, "object"), "type") === "Super"
++      )
+         throw new Error("super cannot access a private name.");
+     }
+-    if (node.type === "UnaryExpression" && node.operator === "delete") {
+-      const argument = node.argument as Record<string, unknown>;
+-      if (argument.type === "MemberExpression" && (argument.property as Record<string, unknown>).type === "PrivateIdentifier")
++    if (
++      type === "UnaryExpression" &&
++      compilerField(value, "operator") === "delete"
++    ) {
++      const argument = compilerField(value, "argument");
++      if (
++        compilerField(argument, "type") === "MemberExpression" &&
++        compilerField(compilerField(argument, "property"), "type") ===
++          "PrivateIdentifier"
++      )
+         throw new Error("Private elements cannot be deleted.");
+     }
+-    for (const [key, child] of Object.entries(node)) {
++    for (const [key, child] of compilerEntries(value)) {
+       if (key === "span") continue;
+-      pending.push({ value: child, scope,
+-        declaration: key === "key" && (node.type === "MethodDefinition" || node.type === "PropertyDefinition") });
++      pending.push({
++        value: child,
++        scope,
++        declaration:
++          key === "key" &&
++          (type === "MethodDefinition" || type === "PropertyDefinition"),
++      });
+     }
+   }
+ }
+diff --git a/src/modules/source-graph.ts b/src/modules/source-graph.ts
+--- a/src/modules/source-graph.ts
++++ b/src/modules/source-graph.ts
+@@ -153,6 +153,7 @@
+           compactTokens: true,
+           compactSpans: true,
+           compactArrays: true,
++          compactAst: true,
+         },
+       );
+       const importMeta = Object.create(null) as SandboxObject;
+diff --git a/src/parse/compact-module-ast.ts b/src/parse/compact-module-ast.ts
+new file mode 100644
+--- /dev/null
++++ b/src/parse/compact-module-ast.ts
+@@ -0,0 +1,609 @@
++import { SandboxError } from "../interp/budget.js";
++import { CompactSourcePositions } from "./compact-spans.js";
++import {
++  functionSources,
++  functionStrictness,
++  templateSources,
++} from "./function-source.js";
++import type { SourceSpan } from "./parser.js";
++
++const chunkLength = 65536;
++const scalarMask = 0x0fffffff;
++const handles = new WeakMap<object, CodeRecord>();
++const mutableRecord = Symbol("compiler record writability");
++type Shape = { keys: string[]; descriptors: PropertyDescriptorMap };
++
++const recordToken = Symbol("compiler traversal authority");
++
++/** Private compiler traversal handle; never a guest-visible AST value. */
++class CodeRecord {
++  #brand = true;
++  static authentic(value: object): value is CodeRecord {
++    return #brand in value && value.#brand;
++  }
++  constructor(
++    token: symbol,
++    readonly owner: CompactModuleAst,
++    readonly row: number,
++  ) {
++    if (token !== recordToken)
++      throw new TypeError("Foreign compiler traversal authority.");
++    Object.freeze(this);
++  }
++}
++
++function record(value: unknown): CodeRecord | undefined {
++  if (value === null || typeof value !== "object") return undefined;
++  return CodeRecord.authentic(value) ? value : handles.get(value);
++}
++
++/** Source-local numeric storage. Decoded identities and mutations stay retained. */
++export class CompactModuleAst {
++  private readonly chunks: Uint32Array[] = [];
++  private readonly shapes: Shape[] = [];
++  private readonly shapeIDs = new Map<string, number>();
++  private readonly strings: string[] = [];
++  private readonly stringIDs = new Map<string, number>();
++  private readonly numbers: number[] = [];
++  private readonly cache = new Map<number, object>();
++  private readonly boundaries = new Set<number>();
++  private readonly persistentBoundaries = new Set<number>();
++  private readonly overrides = new WeakMap<object, Map<string, unknown>>();
++  private finished = false;
++  private readonly positions: CompactSourcePositions;
++  private readonly maxWords: number;
++  private used = 0;
++  private bodies = 0;
++
++  constructor(private readonly source: string) {
++    this.positions = new CompactSourcePositions(source);
++    this.maxWords = Math.min(
++      scalarMask - 1,
++      Math.max(1024, source.length * 24 + 1024),
++    );
++  }
++
++  statistics() {
++    return {
++      words: this.used,
++      bufferBytes: this.chunks.reduce((sum, c) => sum + c.byteLength, 0),
++      bodies: this.bodies,
++      materializedRecords: this.cache.size,
++      strings: this.strings.length,
++    };
++  }
++
++  finish(): void {
++    this.finished = true;
++    if (this.chunks.length) {
++      const last = this.chunks.length - 1;
++      this.chunks[last] = this.chunks[last]!.slice(
++        0,
++        ((this.used - 1) % chunkLength) + 1,
++      );
++    }
++    this.stringIDs.clear();
++    this.shapeIDs.clear();
++  }
++
++  /** Called only after the parser has completed and validated function syntax. */
++  pack<T extends object>(
++    root: T,
++    body = true,
++    retire = false,
++    persistent = true,
++  ): T {
++    if (this.finished)
++      throw new TypeError("Compiler body storage is finished.");
++    const seen = new WeakMap<object, number>();
++    const pending: Array<{
++      row: number;
++      kind: number;
++      values: unknown[];
++      bodyIndex?: number;
++    }> = [];
++    const encode = (value: unknown): number => {
++      if (value === null || typeof value !== "object")
++        return this.scalar(value);
++      const existing = record(value);
++      if (existing?.owner === this) {
++        // Parser-only transfer: no caller has observed these temporary roots.
++        if (retire && !this.overrides.has(value)) {
++          this.cache.delete(existing.row);
++          if (!this.persistentBoundaries.has(existing.row))
++            this.boundaries.delete(existing.row);
++        }
++        return existing.row + 1;
++      }
++      const previous = seen.get(value);
++      if (previous !== undefined) return previous + 1;
++      let kind: number,
++        row: number,
++        values: unknown[] = [];
++      const keys = Object.keys(value).filter((key) => key !== "nodeId");
++      if (Array.isArray(value)) {
++        kind = 0;
++        row = this.reserve(2 + value.length);
++        values = value;
++        this.write(row, kind);
++        this.write(row + 1, value.length);
++      } else if (
++        keys.length === 2 &&
++        keys[0] === "start" &&
++        keys[1] === "end"
++      ) {
++        const span = value as SourceSpan,
++          start = span.start,
++          end = span.end;
++        const startPoint = this.positions.compatiblePosition(start);
++        const endPoint = this.positions.compatiblePosition(end);
++        if (startPoint && endPoint) {
++          kind = 1;
++          row = this.reserve(3);
++          this.write(row, kind);
++          this.write(row + 1, start.offset);
++          this.write(row + 2, end.offset);
++        } else {
++          kind = 2;
++          row = this.reserve(7);
++          this.write(row, kind);
++          [
++            start.line,
++            start.column,
++            start.offset,
++            end.line,
++            end.column,
++            end.offset,
++          ].forEach((n, i) => this.write(row + 1 + i, n));
++        }
++      } else {
++        values = keys.map((key) => (value as Record<string, unknown>)[key]);
++        if (
++          "nodeId" in value ||
++          (typeof (value as { type?: unknown }).type === "string" &&
++            "span" in value)
++        ) {
++          keys.push("@id");
++          values.push((value as { nodeId?: number }).nodeId);
++          const metadata = functionSources.get(
++            value as Parameters<typeof functionSources.get>[0],
++          );
++          if (metadata) {
++            if (metadata.text !== this.source)
++              throw new TypeError("Foreign compiler function source.");
++            keys.push("@start", "@end", "@strict");
++            values.push(
++              metadata.start,
++              metadata.end,
++              functionStrictness.get(
++                value as Parameters<typeof functionStrictness.get>[0],
++              ),
++            );
++          }
++          const template = templateSources.get(
++            value as Parameters<typeof templateSources.get>[0],
++          );
++          if (template !== undefined) {
++            if (template !== this.source)
++              throw new TypeError("Foreign compiler template source.");
++            keys.push("@template");
++            values.push(true);
++          }
++        }
++        const key = JSON.stringify(keys);
++        let shape = this.shapeIDs.get(key);
++        if (shape === undefined) {
++          shape = this.shapes.length;
++          this.shapes.push(this.shape(keys));
++          this.shapeIDs.set(key, shape);
++        }
++        kind = shape + 3;
++        row = this.reserve(1 + values.length);
++        this.write(row, kind);
++      }
++      seen.set(value, row);
++      if (kind === 0 || kind >= 3) {
++        const type = (value as { type?: unknown }).type;
++        const bodyIndex = [
++          "FunctionDeclaration",
++          "FunctionExpression",
++          "ArrowFunctionExpression",
++        ].includes(String(type))
++          ? keys.indexOf("body")
++          : -1;
++        pending.push({
++          row,
++          kind,
++          values,
++          bodyIndex: bodyIndex >= 0 ? bodyIndex : undefined,
++        });
++      }
++      return row + 1;
++    };
++    const reference = encode(root);
++    while (pending.length) {
++      const { row, kind, values, bodyIndex } = pending.pop()!;
++      for (let i = 0; i < values.length; i++) {
++        const child = encode(values[i]);
++        this.write(row + (kind === 0 ? 2 : 1) + i, child);
++        if (i === bodyIndex && child >>> 28 === 0) {
++          this.boundaries.add(child - 1);
++          this.persistentBoundaries.add(child - 1);
++        }
++      }
++    }
++    this.boundaries.add(reference - 1);
++    if (persistent) this.persistentBoundaries.add(reference - 1);
++    if (body) this.bodies++;
++    return this.decode(reference) as T;
++  }
++
++  private scalar(value: unknown): number {
++    if (value === undefined) return 0x10000000;
++    if (value === null) return 0x20000000;
++    if (typeof value === "boolean") return 0x30000000 + (value ? 1 : 0);
++    if (typeof value === "string") {
++      let id = this.stringIDs.get(value);
++      if (id === undefined) {
++        id = this.strings.length;
++        this.strings.push(value);
++        this.stringIDs.set(value, id);
++      }
++      return 0x40000000 + id;
++    }
++    if (typeof value === "number") {
++      if (
++        Number.isInteger(value) &&
++        !Object.is(value, -0) &&
++        Math.abs(value) <= scalarMask
++      )
++        return (value < 0 ? 0x60000000 : 0x50000000) + Math.abs(value);
++      const id = this.numbers.length;
++      this.numbers.push(value);
++      return 0x70000000 + id;
++    }
++    throw new TypeError("Unsupported compiler scalar.");
++  }
++
++  private reserve(length: number): number {
++    const row = this.used,
++      next = row + length;
++    if (next > this.maxWords)
++      throw new SandboxError({
++        budget: "dataSize",
++        current: next,
++        limit: this.maxWords,
++      });
++    this.used = next;
++    this.write(next - 1, 0);
++    return row;
++  }
++  private read(index: number): number {
++    return this.chunks[Math.floor(index / chunkLength)]![index % chunkLength]!;
++  }
++  private write(index: number, value: number): void {
++    const chunk = Math.floor(index / chunkLength);
++    this.chunks[chunk] ??= new Uint32Array(chunkLength);
++    this.chunks[chunk]![index % chunkLength] = value;
++  }
++
++  private decode(reference: number, raw = false): unknown {
++    const tag = reference >>> 28,
++      payload = reference & scalarMask;
++    switch (tag) {
++      case 0:
++        return raw
++          ? new CodeRecord(recordToken, this, payload - 1)
++          : this.object(payload - 1);
++      case 1:
++        return undefined;
++      case 2:
++        return null;
++      case 3:
++        return payload !== 0;
++      case 4:
++        return this.strings[payload];
++      case 5:
++        return payload;
++      case 6:
++        return -payload;
++      case 7:
++        return this.numbers[payload];
++      default:
++        throw new TypeError("Invalid compiler reference.");
++    }
++  }
++
++  private shape(keys: string[]): Shape {
++    const descriptors: PropertyDescriptorMap = {};
++    // Accessors have a different receiver, so capture their source-local owner.
++    // eslint-disable-next-line @typescript-eslint/no-this-alias
++    const owner = this;
++    for (let i = 0; i < keys.length; i++) {
++      const key = keys[i]!;
++      if (key.startsWith("@") && key !== "@id") continue;
++      const name = key === "@id" ? "nodeId" : key;
++      descriptors[name] = {
++        enumerable: key !== "@id",
++        configurable: true,
++        get(this: object) {
++          const handle = handles.get(this);
++          if (
++            handle?.owner !== owner ||
++            owner.shapes[owner.read(handle.row) - 3]?.descriptors !==
++              descriptors
++          )
++            throw new TypeError("Foreign compiler record receiver.");
++          const assigned = owner.overrides.get(this);
++          return assigned?.has(name)
++            ? assigned.get(name)
++            : owner.decode(owner.read(handle.row + 1 + i));
++        },
++        set(this: object, value: unknown) {
++          const handle = handles.get(this);
++          if (
++            handle?.owner !== owner ||
++            owner.shapes[owner.read(handle.row) - 3]?.descriptors !==
++              descriptors
++          )
++            throw new TypeError("Foreign compiler record receiver.");
++          if (Object.isFrozen(this))
++            throw new TypeError("Cannot assign to a frozen compiler record.");
++          let assigned = owner.overrides.get(this);
++          if (!assigned) {
++            assigned = new Map();
++            owner.overrides.set(this, assigned);
++          }
++          assigned.set(name, value);
++        },
++      };
++    }
++    descriptors[mutableRecord] = {
++      value: true,
++      writable: true,
++      configurable: true,
++    };
++    return { keys, descriptors };
++  }
++
++  private attachMetadata(output: object, row: number, shape: Shape): void {
++    const metadata = (name: string) => {
++      const index = shape.keys.indexOf(name);
++      return index < 0 ? undefined : this.decode(this.read(row + 1 + index));
++    };
++    const id = metadata("@id");
++    if (id !== undefined)
++      Object.defineProperty(output, "nodeId", {
++        value: id,
++        writable: true,
++        enumerable: false,
++        configurable: true,
++      });
++    const start = metadata("@start");
++    if (start !== undefined) {
++      functionSources.set(output as Parameters<typeof functionSources.set>[0], {
++        text: this.source,
++        start: start as number,
++        end: metadata("@end") as number,
++      });
++      const strict = metadata("@strict");
++      if (strict !== undefined)
++        functionStrictness.set(
++          output as Parameters<typeof functionStrictness.set>[0],
++          strict as boolean,
++        );
++    }
++    if (metadata("@template") === true)
++      templateSources.set(
++        output as Parameters<typeof templateSources.set>[0],
++        this.source,
++      );
++  }
++
++  private object(row: number): object {
++    const cached = this.cache.get(row);
++    if (cached !== undefined) return cached;
++    const tasks: Array<{ row: number; kind: number; output: object }> = [];
++    const make = (index: number): object => {
++      const cached = this.cache.get(index);
++      if (cached) return cached;
++      const kind = this.read(index);
++      let output: object;
++      if (kind === 0) {
++        const array: unknown[] = [];
++        array.length = this.read(index + 1);
++        output = array;
++        tasks.push({ row: index, kind, output });
++      } else if (kind === 1)
++        output = this.positions.span(
++          this.read(index + 1),
++          this.read(index + 2),
++        );
++      else if (kind === 2)
++        output = {
++          start: {
++            line: this.read(index + 1),
++            column: this.read(index + 2),
++            offset: this.read(index + 3),
++          },
++          end: {
++            line: this.read(index + 4),
++            column: this.read(index + 5),
++            offset: this.read(index + 6),
++          },
++        };
++      else {
++        const shape = this.shapes[kind - 3]!;
++        output = {};
++        if (this.boundaries.has(index)) {
++          handles.set(output, new CodeRecord(recordToken, this, index));
++          Object.defineProperties(output, shape.descriptors);
++          this.attachMetadata(output, index, shape);
++        } else tasks.push({ row: index, kind, output });
++      }
++      this.cache.set(index, output);
++      if (!this.finished)
++        handles.set(output, new CodeRecord(recordToken, this, index));
++      return output;
++    };
++    const value = (ref: number): unknown =>
++      ref >>> 28 === 0 ? make((ref & scalarMask) - 1) : this.decode(ref);
++    const output = make(row);
++    while (tasks.length) {
++      const { row: index, kind, output: target } = tasks.pop()!;
++      if (kind === 0) {
++        const array = target as unknown[];
++        for (let i = 0; i < array.length; i++)
++          array[i] = value(this.read(index + 2 + i));
++      } else {
++        const shape = this.shapes[kind - 3]!;
++        for (let i = 0; i < shape.keys.length; i++) {
++          const key = shape.keys[i]!;
++          if (!key.startsWith("@"))
++            Object.defineProperty(target, key, {
++              value: value(this.read(index + 1 + i)),
++              writable: true,
++              enumerable: true,
++              configurable: true,
++            });
++        }
++        this.attachMetadata(target, index, shape);
++      }
++    }
++    return output;
++  }
++
++  // Compiler passes use these private-owner records, not the decoded AST cache.
++  isArray(row: number): boolean {
++    return this.read(row) === 0;
++  }
++  *entries(row: number): Iterable<[string, unknown]> {
++    const kind = this.read(row),
++      cached = this.cache.get(row);
++    if (cached) {
++      for (const key of Object.keys(cached)) yield [key, this.field(row, key)];
++      return;
++    }
++    if (kind === 0) {
++      for (let i = 0, n = this.read(row + 1); i < n; i++)
++        yield [String(i), this.decode(this.read(row + 2 + i), true)];
++    } else if (kind === 1) {
++      yield ["start", this.positions.position(this.read(row + 1))];
++      yield ["end", this.positions.position(this.read(row + 2))];
++    } else if (kind === 2) {
++      yield [
++        "start",
++        {
++          line: this.read(row + 1),
++          column: this.read(row + 2),
++          offset: this.read(row + 3),
++        },
++      ];
++      yield [
++        "end",
++        {
++          line: this.read(row + 4),
++          column: this.read(row + 5),
++          offset: this.read(row + 6),
++        },
++      ];
++    } else if (kind >= 3) {
++      const keys = this.shapes[kind - 3]!.keys;
++      for (let i = 0; i < keys.length; i++) {
++        const key = keys[i]!;
++        if (!key.startsWith("@"))
++          yield [key, this.decode(this.read(row + 1 + i), true)];
++      }
++    }
++  }
++  field(row: number, key: string): unknown {
++    const kind = this.read(row),
++      cached = this.cache.get(row);
++    if (cached) {
++      const descriptor = Object.getOwnPropertyDescriptor(cached, key);
++      if (!descriptor) return undefined;
++      if ("value" in descriptor) return descriptor.value;
++      const assigned = this.overrides.get(cached);
++      if (assigned?.has(key)) return assigned.get(key);
++      if (kind < 3) return Reflect.get(cached, key);
++      if (descriptor.get !== this.shapes[kind - 3]!.descriptors[key]?.get)
++        return Reflect.get(cached, key);
++    }
++    if (kind < 3) return undefined;
++    const keys = this.shapes[kind - 3]!.keys,
++      index = keys.indexOf(key === "nodeId" ? "@id" : key);
++    return index < 0
++      ? undefined
++      : this.decode(this.read(row + 1 + index), true);
++  }
++  assignId(row: number, id: number): void {
++    const keys = this.shapes[this.read(row) - 3]!.keys,
++      index = keys.indexOf("@id");
++    if (index < 0) throw new TypeError("Compiler record is not an AST node.");
++    this.write(row + 1 + index, this.scalar(id));
++    const cached = this.cache.get(row);
++    if (cached)
++      Object.defineProperty(cached, "nodeId", {
++        value: id,
++        writable: true,
++        enumerable: false,
++        configurable: true,
++      });
++  }
++  offsets(row: number): [number, number] | undefined {
++    const span = this.field(row, "span");
++    if (!(span instanceof CodeRecord)) return undefined;
++    const kind = this.read(span.row);
++    return kind === 1
++      ? [this.read(span.row + 1), this.read(span.row + 2)]
++      : kind === 2
++        ? [this.read(span.row + 3), this.read(span.row + 6)]
++        : undefined;
++  }
++}
++
++export function compilerField(value: unknown, key: string): unknown {
++  const handle = record(value);
++  return handle
++    ? handle.owner.field(handle.row, key)
++    : value !== null && typeof value === "object"
++      ? (value as Record<string, unknown>)[key]
++      : undefined;
++}
++export function compilerIsArray(value: unknown): boolean {
++  const handle = record(value);
++  return handle ? handle.owner.isArray(handle.row) : Array.isArray(value);
++}
++export function* compilerEntries(value: object): Iterable<[string, unknown]> {
++  const handle = record(value);
++  if (handle) yield* handle.owner.entries(handle.row);
++  else yield* Object.entries(value);
++}
++export function* compilerElements(value: unknown): Iterable<unknown> {
++  if (value === null || typeof value !== "object") return;
++  if (Array.isArray(value)) {
++    yield* value;
++    return;
++  }
++  for (const [, child] of compilerEntries(value)) yield child;
++}
++export function compilerAssignId(value: object, id: number): void {
++  const handle = record(value);
++  if (handle) handle.owner.assignId(handle.row, id);
++  else
++    Object.defineProperty(value, "nodeId", {
++      value: id,
++      writable: true,
++      enumerable: false,
++      configurable: true,
++    });
++}
++export function compilerOffsets(value: unknown): [number, number] | undefined {
++  const handle = record(value);
++  if (handle) return handle.owner.offsets(handle.row);
++  const span = compilerField(value, "span") as SourceSpan | undefined;
++  return span ? [span.start.offset, span.end.offset] : undefined;
++}
++export function compactAstStatistics(value: object) {
++  return record(value)?.owner.statistics();
++}
+diff --git a/src/parse/compact-module-ast.test.ts b/src/parse/compact-module-ast.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/parse/compact-module-ast.test.ts
+@@ -0,0 +1,292 @@
++import { expect, it } from "vitest";
++import { Budget } from "../interp/budget.js";
++import { interpret } from "../interp/interpreter.js";
++import {
++  CompactModuleAst,
++  compactAstStatistics,
++  compilerEntries,
++  compilerField,
++} from "./compact-module-ast.js";
++import {
++  functionSources,
++  functionStrictness,
++  templateSources,
++} from "./function-source.js";
++import { hashParsedAst } from "./hash.js";
++import { assignIds } from "./assign-ids.js";
++import { validatePrivateNames } from "./private-names.js";
++import { parseSourceModule } from "./source-module.js";
++
++const pad = `/*${"x".repeat(512)}*/`;
++const fixtures = [
++  "export default import.meta.url;",
++  "export default missing;",
++  `export function f(){${pad}}`,
++  `export const f=(x)=>{${pad}return x+1};`,
++  `export function f(a=()=>{${pad}return 1},...rest){${pad}return a()+rest.length;}`,
++  `export function f(){${pad}const x={x};return [x,,...items];}`,
++  `export function f(){${pad}let a,b,rest;[a,,b,...rest]=items;({a,b,...rest}=record);return (a,b,rest);}`,
++  `export function f(){${pad}return class A {#x=1;static {this.y=2};method(){${pad}return this.#x};get x(){return this.#x};set x(x){this.#x=x}}}`,
++  `export function f(){${pad}return class A {#x=1;method(){return class B {#y=2;method(a){return a.#x+this.#y}}}}}`,
++  `export function f(){${pad}return \`first\u2028second\${(()=>{${pad}return 1})()}\u2029third\`}`,
++  `export function f(){${pad}return tag\`invalid\\u{wrong}\${1}\`}`,
++  `export function f(x){${pad}outer:for(const y of [x]){if(y)break outer;}switch(x){case 1:x++;break;default:return x}}`,
++  `export function f(){${pad}try{throw /a[b-c]+/giu}catch(e){return e}finally{cleanup()}}`,
++  `export async function f(){${pad}using x=resource;await using y=other;return await x};`,
++  `export function* f(){${pad}yield 1;yield* [2];return 3}`,
++  `export const f=()=>[${Array.from({ length: 500 }, (_, i) => `{value:${i}}`).join(",")}];`,
++];
++
++function identities(root: unknown) {
++  const pending: Array<[unknown, string]> = [[root, "root"]],
++    seen = new WeakMap<object, string>(),
++    aliases: Array<[string, string]> = [],
++    metadata: unknown[] = [];
++  while (pending.length) {
++    const [value, path] = pending.pop()!;
++    if (!value || typeof value !== "object" || path.endsWith(".span")) continue;
++    const first = seen.get(value);
++    if (first !== undefined) {
++      aliases.push([path, first]);
++      continue;
++    }
++    seen.set(value, path);
++    if ("nodeId" in value)
++      metadata.push([
++        value.nodeId,
++        Object.getOwnPropertyDescriptor(value, "nodeId"),
++        functionSources.get(value as Parameters<typeof functionSources.get>[0]),
++        functionStrictness.get(
++          value as Parameters<typeof functionStrictness.get>[0],
++        ),
++        templateSources.get(value as Parameters<typeof templateSources.get>[0]),
++      ]);
++    for (const key of Object.keys(value))
++      pending.push([(value as Record<string, unknown>)[key], `${path}.${key}`]);
++  }
++  return { aliases, metadata };
++}
++function compile(source: string, compactAst: boolean, limits = {}) {
++  const budget = new Budget({
++      maxSteps: 1000000,
++      stringLength: 100000,
++      dataSize: 1000000,
++      ...limits,
++    }),
++    lease = budget.acquireCompileOwner();
++  try {
++    budget.chargeDataUsage(source.length + "fixture.js".length + 1);
++    const parsed = parseSourceModule(source, "fixture.js", lease.owner, {
++      sharedPositions: true,
++      compactTokens: true,
++      compactSpans: true,
++      compactArrays: true,
++      compactAst,
++    });
++    return {
++      parsed,
++      steps: budget.stepsUsed,
++      data: budget.currentDataSize,
++      peak: budget.peakDataSize,
++    };
++  } finally {
++    lease.release();
++  }
++}
++
++it.each(fixtures)(
++  "preserves trees, IDs, aliases, source metadata, hashes and budgets for %j",
++  (source) => {
++    const control = compile(source, false),
++      candidate = compile(source, true);
++    expect(candidate).toEqual(control);
++    expect(JSON.stringify(candidate)).toBe(JSON.stringify(control));
++    expect(identities(candidate.parsed)).toEqual(identities(control.parsed));
++    expect(hashParsedAst(candidate.parsed.module)).toBe(
++      hashParsedAst(control.parsed.module),
++    );
++    assignIds(candidate.parsed.module);
++    assignIds(control.parsed.module);
++    expect(identities(candidate.parsed)).toEqual(identities(control.parsed));
++  },
++);
++
++it("does not expand function bodies for fresh IDs or complete private-name validation", () => {
++  const source = `export function f(){${pad}class A {#x=1;method(){${pad}return this.#x}};return [${Array.from({ length: 1000 }, (_, i) => i).join(",")}];}`;
++  const parsed = compile(source, true).parsed;
++  const declaration = parsed.module.body[0];
++  expect(declaration.type).toBe("FunctionDeclaration");
++  const body = (declaration as { body: object }).body;
++  const before = compactAstStatistics(body)!;
++  expect(before.bodies).toBe(2);
++  expect(before.materializedRecords).toBeLessThan(20);
++  validatePrivateNames(parsed.module);
++  expect(compactAstStatistics(body)!.materializedRecords).toBe(
++    before.materializedRecords,
++  );
++  expect(JSON.stringify(parsed).length).toBeGreaterThan(10000);
++  expect(compactAstStatistics(body)!.materializedRecords).toBeGreaterThan(1000);
++});
++
++it("keeps ordinary mutable arrays and stable decoded identities through deletion, sealing and freezing", () => {
++  const parsed = compile(
++    `export function f(){${pad}return [first,second]}`,
++    true,
++  ).parsed;
++  const fn = parsed.module.body[0] as {
++    body: { body: Array<{ argument: { elements: Array<{ name: string }> } }> };
++  };
++  const body = fn.body,
++    statements = body.body,
++    elements = statements[0]!.argument.elements;
++  expect(fn.body).toBe(body);
++  (body as { nodeId?: number }).nodeId = 400000;
++  expect((fn.body as { nodeId?: number }).nodeId).toBe(400000);
++  expect(body.body).toBe(statements);
++  expect(Object.getPrototypeOf(body)).toBe(Object.prototype);
++  expect(Object.getPrototypeOf(elements)).toBe(Array.prototype);
++  const first = elements[0]!,
++    second = elements[1]!;
++  Object.seal(first);
++  first.name = "changed";
++  expect(first.name).toBe("changed");
++  Object.freeze(first);
++  expect(() => {
++    first.name = "forbidden";
++  }).toThrow(TypeError);
++  delete (second as { name?: string }).name;
++  expect(second.name).toBeUndefined();
++  expect(Object.keys(second)).not.toContain("name");
++  second.name = "restored";
++  expect(elements[1]).toBe(second);
++  expect(second.name).toBe("restored");
++  elements.push(first);
++  elements.splice(0, 1);
++  expect(elements[1]).toBe(first);
++  expect(statements[0]!.argument.elements).toBe(elements);
++});
++
++it("rejects forged records and foreign/different-shape accessor receivers", () => {
++  const first = compile(`export function f(){${pad}return value}`, true).parsed
++    .module.body[0] as {
++    body: { body: Array<{ argument: { name: string } }> };
++  };
++  const other = compile(`export function f(){${pad}return other}`, true).parsed
++    .module.body[0] as typeof first;
++  const identifier = first.body.body[0]!.argument;
++  const descriptor = Object.getOwnPropertyDescriptor(first.body, "type")!;
++  expect(() => descriptor.get!.call({})).toThrow("Foreign");
++  expect(() => descriptor.get!.call(identifier)).toThrow("Foreign");
++  expect(() => descriptor.set!.call(other.body, "stolen")).toThrow("Foreign");
++  const raw = [...compilerEntries(first.body)].find(
++    ([key]) => key === "body",
++  )![1] as object;
++  const forged = Object.create(Object.getPrototypeOf(raw));
++  expect(compilerField(forged, "type")).toBeUndefined();
++  expect(() => Reflect.construct(raw.constructor, [Symbol(), {}, 0])).toThrow(
++    "authority",
++  );
++});
++
++it.each([
++  `export function f(){${pad}return object.#missing}`,
++  `export function f(){${pad}return class A {#x=1;#x=2}}`,
++  `export function f(){${pad}return class A {#x=1;method(){return delete this.#x}}}`,
++  `export function f(){${pad}return class A {#x=1;method(){return super.#x}}}`,
++  `export function f(){${pad}return class A {#constructor=1}}`,
++  `export function f(){${pad}return class A {static get #x(){};set #x(x){}}}`,
++])("preserves complete private-name rejection for %j", (source) => {
++  const outcome = (compact: boolean) => {
++    try {
++      compile(source, compact);
++      return "success";
++    } catch (error) {
++      return { name: (error as Error).name, message: (error as Error).message };
++    }
++  };
++  expect(outcome(true)).toEqual(outcome(false));
++  expect(outcome(true)).not.toBe("success");
++});
++
++it("validates mutations of exposed private references", () => {
++  const parsed = compile(
++    `export function f(){${pad}return class A {#x=1;method(){return this.#x}}}`,
++    true,
++  ).parsed;
++  const pending: unknown[] = [parsed.module];
++  let changed = false;
++  while (pending.length) {
++    const value = pending.pop();
++    if (!value || typeof value !== "object") continue;
++    if ("type" in value && value.type === "MemberExpression") {
++      const member = value as unknown as {
++        property: { type: string; name: string };
++      };
++      if (member.property.type === "PrivateIdentifier") {
++        member.property.name = "missing";
++        changed = true;
++        break;
++      }
++    }
++    for (const key of Object.keys(value))
++      if (key !== "span") pending.push((value as Record<string, unknown>)[key]);
++  }
++  expect(changed).toBe(true);
++  expect(() => validatePrivateNames(parsed.module)).toThrow(
++    "Undeclared private name #missing",
++  );
++});
++
++it.each([{ maxSteps: 1 }, { stringLength: 5 }, { dataSize: 5 }])(
++  "preserves compile admission failures for %j",
++  (limits) => {
++    const outcome = (compact: boolean) => {
++      try {
++        compile(fixtures[0]!, compact, limits);
++        return "success";
++      } catch (error) {
++        return {
++          name: (error as Error).name,
++          message: (error as Error).message,
++        };
++      }
++    };
++    expect(outcome(true)).toEqual(outcome(false));
++    expect(outcome(true)).not.toBe("success");
++  },
++);
++
++it.each([
++  `function f(x){${pad}return x+1};return f(4)`,
++  `function f(){${pad}return class A {#x=7;get x(){return this.#x}}};return new (f())().x`,
++  `function f(){${pad}return tag=>tag\`a\${1}b\`};const tag=(strings,x)=>[strings[0],x,strings[1]];return f()(tag)`,
++  `function* f(){${pad}yield 1;return 2};const iterator=f();return [iterator.next().value,iterator.next().value]`,
++  `async function f(){${pad}return await 3};return await f()`,
++])("preserves execution for %j", async (body) => {
++  const source = `export async function run(){${body}}`;
++  async function run(compact: boolean) {
++    const parsed = compile(source, compact).parsed;
++    // Execute the original function body directly, with the same interpreted context.
++    const fn = parsed.module.body[0] as {
++      body: Parameters<typeof interpret>[0];
++    };
++    return interpret(fn.body);
++  }
++  const control = await run(false),
++    candidate = await run(true);
++  expect(candidate.ok).toBe(true);
++  expect(control.ok).toBe(true);
++  if (!candidate.ok || !control.ok) throw new Error("Execution failed");
++  expect(candidate.returnValue).toEqual(control.returnValue);
++});
++
++it("bounds numeric storage by its admitted source and rejects unsupported scalar values", () => {
++  const storage = new CompactModuleAst("x");
++  expect(() =>
++    storage.pack({ items: Array.from({ length: 2000 }, (_, i) => i) }),
++  ).toThrow("dataSize");
++  const other = new CompactModuleAst("x");
++  expect(() => other.pack({ value: Symbol() })).toThrow("scalar");
++  other.finish();
++  expect(() => other.pack({})).toThrow("finished");
++});

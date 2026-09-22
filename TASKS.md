@@ -23,20 +23,20 @@
 
 ## Current verified state
 
-- A diagnostic indexed-code prototype round-trips all seven exact Zoom static
-  modules with matching tree/ID/function-source/strictness/template digests:
-  5962852 characters / 1628032 nodes / 30762 source ranges. Retained graph storage
-  measures 40594496 heap bytes beyond preload baseline plus 63626012 numeric-buffer
-  bytes (104220508 combined). The login-only probe measures 24141528 heap plus
-  34747824 buffer bytes versus 159669312 retained tree heap. Its census finds
-  757163 of 889089 nodes inside outer function bodies; the largest holds 7714 nodes.
-  Graph probes select the existing Unicode regex bounds (16384/65536); the initial
-  unprofiled 4096 regex-source bound rejects editor. This is after-parse storage research
-  under 512 MB, not a 128 MB compiler or runtime pass. No SDK/native source change
-  or codec candidate is retained. All probes terminate and the driver is removed.
-  Next: retire completed function-body trees during parsing while preserving fresh
-  IDs, private-name validation, mutation/alias identity, snapshots and source bounds;
-  validators and hashing must avoid expanding the whole packed tree.
+- Canonical modules now compact completed ASTs into source-local numeric rows,
+  materializing ordinary mutable children on demand and retaining decoded identity.
+  Contribution: safejs-compact-module-ast.patch. All seven exact static modules
+  compile together at a 128 MB heap limit: 5962852 chars / 8316720 steps /
+  5963350 current / 5963544 peak units, 53706336 heap bytes total (48786352 beyond
+  preload baseline) plus 63527792 code-buffer bytes. Exact tree/ID/function-source/
+  strictness/template digests match all seven controls: 1628032 nodes / 30762 source
+  ranges. Public parsing defaults stay unchanged; canonical SourceModuleGraph enables
+  the compact path. Selected SDK integration passes 405 checks / one skipped;
+  the known parser nesting failure is excluded and reproduces on saved baseline.
+  Final focused codec/loader checks pass 53 tests; strict test typing and scoped
+  build, new-file format/lint and six-file byte-exact patch application/reversal pass.
+  This clears offline static-graph compilation at 128 MB; decoded runtime growth,
+  default timing, full client initialization and all meeting/media gates stay open.
 
 - Canonical modules now trim completed parser lists into ordinary mutable arrays.
   Contribution: safejs-compact-module-arrays.patch. Exact loginview retained heap
@@ -1279,27 +1279,16 @@
 
 ## Outstanding gates
 
-- The editor alone clears its offline 128 MB compilation gate above. The complete
-  static graph includes loginview (3485587 chars), editor (1095001), emoji (888017),
-  i18n (362461), lodash (126038), rolldown (1365) and the 4383-char entry. The earlier
-  768 MB statement trace prepares all seven but remains pending at the 15 min observation
-  bound, reaching editor statement 1353 after React DOM and DOMPurify complete.
-  Selected borrowed document methods now preserve receivers, and the isolated
-  sanitizer passes four benign output fixtures. Complete initialization performance
-  and broader DOM/library compatibility still require work. Diagnostic
-  heap/time/response allowances do not clear default 128 MB, interactive readiness
-  or meeting gates. Fetch completion and green classic reports prove no readiness.
-  Loginview alone now exhausts 128 MB during parsing; the corrected full-client
-  retry also remains pending at 30 min under its larger diagnostic heap. Eager
-  syntax-tree storage and retained-graph evaluation cost both require further work.
-  Compact tokenization clears the isolated 128 MB lexer probe, but complete
-  loginview parsing still fails that heap cap. This is not a full compiler pass.
-  Compact spans reduce retained tree heap above; the final 128 MB probe still
-  fails. Completed parser-list trimming saves a further ~15 MB above, but complete
-  loginview parsing still exhausts 128 MB. AST nodes, spans and remaining strings/
-  storage require further work; the whole static graph must fit, not just loginview.
-  The indexed-code diagnostic above verifies smaller final storage across all seven
-  modules, but initial parse peak and executable/lazy representation remain open.
+- The complete seven-module static graph now clears offline compilation at a
+  128 MB heap limit above. Runtime materialization retains decoded AST nodes, so
+  full-client runtime heap and initialization performance remain unverified.
+  The earlier 768 MB statement trace prepares all seven but stays pending at 15 min,
+  reaching editor statement 1353 after React DOM and DOMPurify complete; the later
+  full-client run remains pending at 30 min. Selected borrowed document methods
+  preserve receivers and the isolated sanitizer passes four benign output fixtures.
+  Broader DOM/library compatibility and retained-graph evaluation cost still need
+  work. Compilation, fetch completion and green classic reports prove no readiness;
+  diagnostic heap/time/response allowances clear no default runtime or meeting gate.
 
 - Background dynamic imports outlive the classic evaluation's PageScripts timer.
   The realm graph has document cancellation and shared step/data limits, but no
