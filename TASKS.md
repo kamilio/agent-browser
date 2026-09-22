@@ -23,6 +23,24 @@
 
 ## Current verified state
 
+- Editor initialization is narrowed to React DOM's lazy initializer. The earlier
+  live root-statement trace completes statement 0 in 19.5 s / 3594 steps and
+  statement 1 in 0.6 s / nine steps; statement 2 advances 25458 steps before
+  cleanup interrupts it after 124.7 s. Its throw is cancellation, not evidence of
+  an application exception. An offline fixture retains the first three editor
+  declarations and actual rolldown helpers, excluding loginview's preload/cycle
+  and later editor code. Both compiled SDK and native DOM fixtures finish under
+  128 MB. Native declaration tracing isolates `Hs=Y5(sx())`: 19.3 s / 40961 steps;
+  its two preceding wrapper initializers each take about 2 ms / four steps.
+  The native fixture renders `object`, makes zero fetches and closes at SDK data
+  zero. These are diagnostic timings, not a performance comparison or full-graph
+  readiness pass. A finer live attempt instead times out fetching loginview before
+  editor evaluation; its realm closes, socket attempts remain zero and cleanup
+  data is zero. All probe processes terminate, temporary SDK instrumentation is
+  restored and artifacts are removed. Next: reproduce the initializer's larger
+  retained-graph cost offline before changing accounting; full initialization,
+  default 30 s/128 MB and every meeting/media acceptance gate remain open.
+
 - SDK internal-symbol catalogue uses a private versioned Set facade; frozen factory
   closures reuse an all-internal-symbol result at the same revision. Private fields,
   captures/properties/prototypes and visible custom-symbol descendants stay fresh.
@@ -45,8 +63,8 @@
   initialization speedup/readiness/join claimed; default 30 s/128 MB and all meeting/
   media gates remain open. Cleanup data zero and zero socket attempts verified.
   Working SDK source/build retain the candidate; instrumentation restored exactly,
-  processes terminal and artifacts removed. Next: isolate editor statement progress
-  and remaining prototype/capture traversal cost before further caching.
+  processes terminal and artifacts removed. The initializer evidence above narrows
+  the remaining prototype/capture traversal investigation before further caching.
 
 - Earlier SDK source graphs/classic loaders preserve certified immutable empty
   namespace tables; registered/wrapped namespaces retain their mutable fallback.
