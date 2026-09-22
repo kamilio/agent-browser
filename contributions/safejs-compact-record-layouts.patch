@@ -1,0 +1,73 @@
+diff --git a/src/parse/compact-module-ast.ts b/src/parse/compact-module-ast.ts
+--- a/src/parse/compact-module-ast.ts
++++ b/src/parse/compact-module-ast.ts
+@@ -13,7 +13,11 @@
+ const scalarMask = 0x0fffffff;
+ const handles = new WeakMap<object, CodeRecord>();
+ const mutableRecord = Symbol("compiler record writability");
+-type Shape = { keys: string[]; descriptors: PropertyDescriptorMap };
++type Shape = {
++  keys: string[];
++  descriptors: PropertyDescriptorMap;
++  create: () => object;
++};
+ 
+ const recordToken = Symbol("compiler traversal authority");
+ const NativeRowMap = Map;
+@@ -410,8 +414,18 @@
+     const owner = this;
+     for (let i = 0; i < keys.length; i++) {
+       const key = keys[i]!;
+-      if (key.startsWith("@") && key !== "@id") continue;
+-      const name = key === "@id" ? "nodeId" : key;
++      if (key === "@id") {
++        // ID assignment updates a data field instead of replacing an accessor.
++        descriptors.nodeId = {
++          value: undefined,
++          writable: true,
++          enumerable: false,
++          configurable: true,
++        };
++        continue;
++      }
++      if (key.startsWith("@")) continue;
++      const name = key;
+       descriptors[name] = {
+         enumerable: key !== "@id",
+         configurable: true,
+@@ -452,7 +466,16 @@
+       writable: true,
+       configurable: true,
+     };
+-    return { keys, descriptors };
++    // Each accessor layout has its own allocation map, while AST prototypes stay plain.
++    function CompilerRecord(this: object) {
++      Object.defineProperties(this, descriptors);
++    }
++    CompilerRecord.prototype = Object.prototype;
++    return {
++      keys,
++      descriptors,
++      create: () => Reflect.construct(CompilerRecord, []) as object,
++    };
+   }
+ 
+   private attachMetadata(output: object, row: number, shape: Shape): void {
+@@ -527,12 +550,14 @@
+         };
+       else {
+         const shape = this.shapes[kind - 3]!;
+-        output = {};
+         if (this.boundaries.has(index)) {
++          output = shape.create();
+           handles.set(output, new CodeRecord(recordToken, this, index));
+-          Object.defineProperties(output, shape.descriptors);
+           this.attachMetadata(output, index, shape);
+-        } else tasks.push({ row: index, kind, output });
++        } else {
++          output = {};
++          tasks.push({ row: index, kind, output });
++        }
+       }
+       this.cache.set(index, output);
+       if (!this.finished)

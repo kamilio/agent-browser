@@ -23,6 +23,26 @@
 
 ## Current verified state
 
+- Compact AST lazy records now allocate through a constructor per accessor layout,
+  preserving Object.prototype, and keep nodeId as a mutable nonenumerable data
+  field from creation. Contribution: safejs-compact-record-layouts.patch. This
+  avoids dictionary property storage observed on the earlier shared allocation path.
+  Exact seven-module offline linking at 128 MB retains 87978000 heap bytes versus
+  98158576 control (about 10.2 MB / 10.4% saved). All seven packed-code fingerprints
+  match, including IDs/spans, scalar/type tables and import/export metadata; decoded
+  counts, 63562723 code-buffer bytes, 8353220 steps and 5965045 current units match.
+  All 175 selected SDK checks across 12 files, scoped core compilation, changed-source
+  format/lint and byte-exact patch forward/reverse checks pass. Native source/build
+  stays unchanged. The live 192 MB diagnostic passes 13 classics and prepares seven
+  modules, then revokes at the 120 s import deadline without OOM; HTTP 200, zero socket
+  attempts, no readiness/join, cleanup data zero and terminal exit 1 verified.
+  This clears no default 128 MB/30 s initialization or meeting/media gate. Repeated
+  capture/accounting traversal remains the initialization performance target.
+  Identifier-laziness variants increased offline heap by about 24.7 MB with markers
+  and 8.9 MB without markers; both are rejected and reverted. Changing ID descriptors
+  alone produced no useful saving. All owned probes terminate; temporary inputs,
+  candidates, drivers, configs and backups are removed.
+
 - Finished compact AST storage now releases its parser-only persistent-boundary
   bookkeeping set; runtime lazy-boundary and decoded-identity storage stay intact.
   Contribution: safejs-release-parser-boundaries.patch. Exact seven-module offline
@@ -1371,9 +1391,11 @@
   Live preload now measures about 133.2 MB before module compilation; classic-script
   retention and module evaluation/reconciliation cost remain the next memory and
   performance targets. The longer 192 MB run exhausts heap after seven modules prepare.
+  With the later record-layout fix, a 192 MB run prepares seven and revokes at its
+  120 s import deadline without OOM, with no readiness/join and cleanup data zero.
   The instrumented 384 MB census verifies all seven link and remains pending in editor
-  evaluation; the later 384 MB run revokes at its new 120 s import deadline, with no
-  readiness/join and cleanup data zero. These runs clear no default heap/time gate.
+  evaluation; the later 384 MB run also revokes at its 120 s import deadline.
+  These runs clear no default heap/time gate.
   The earlier 768 MB statement trace prepares all seven but stays pending at 15 min,
   reaching editor statement 1353 after React DOM and DOMPurify complete; the later
   full-client run remains pending at 30 min. Selected borrowed document methods
