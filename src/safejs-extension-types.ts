@@ -51,6 +51,7 @@ export interface ReleasedContext {
 	readonly signal: AbortSignal;
 	onCleanup(cleanup: () => void | Promise<void>): void;
 	createHostObject(definition: ReleasedHostDefinition): object;
+	createArrayBufferReference?(buffer: ArrayBuffer): object;
 	setHostObjectPrototype?(
 		value: object,
 		prototype: unknown,

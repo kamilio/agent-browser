@@ -23,6 +23,27 @@
 
 ## Current verified state
 
+- The maintained poe-code SafeJS package now tracks metadata on SDK-created typed
+  arrays without enumerating numeric indices, while retaining primary accounting,
+  backing-buffer charges, symbols, mutations and guest reflection. Live fixed
+  ArrayBuffer references require declared and granted array-buffer:share, enforce
+  array/data/reference quotas and use existing realm ownership/revocation/cleanup.
+  The offline scripts/check-wasm-memory.ts diagnostic passes full Uint8/Int32/Float64
+  aliases over an actual 320-page (20 MiB) WASM memory in an owned 128 MiB process:
+  guest writes reach WASM loads, WASM stores reach guest reads, retained data is
+  20972066 bytes, and close leaves data/depth zero. The one-page regression also
+  passes. All 527 focused SDK checks across 28 files, maintained SDK build with eight
+  built-entry checks, strict new-test typing and changed-file lint pass; the full
+  1471-file SDK suite was stopped and has no full pass. Browser build, 84 checks in
+  two manifest-listed native files and changed-file lint/format pass.
+  Native API consumers must copy sandbox views through deepCopyFromSandbox because
+  internal wrappers do not satisfy host ArrayBuffer.isView; guest isView is preserved.
+  Ordinary host ingress still copies. Untracked host views retain conservative scans,
+  and huge explicit guest key enumeration remains unbounded by this accounting fix.
+  Diagnostic 32 MiB quotas do not clear the default page 16 MiB/262144-element gate.
+  Actual Zoom WASM imports, synchronous callbacks, page/Worker API integration,
+  initialization performance and joining/media acceptance remain open.
+
 - Portable WASM binary instrumentation now inserts reserved step/enter/leave imports.
   Typed outer blocks route returns and function-target branches through depth cleanup;
   direct calls, exports, start, globals and element references retain their targets.
@@ -36,9 +57,10 @@
   deadline (1024 steps) unwind owned depths to zero. Authorized current net.wasm
   instrumentation produces 887959 bytes/205697 checks from 465602 bytes in 54 ms;
   original and output validate, no instantiation performed. Transport closes active
-  requests zero. This is not a page API or Zoom startup pass: memory accounting/view
-  identity, bounded imports, synchronous SafeJS callbacks and page/Worker integration
-  remain open. Current Node v22 has no default Suspending/promising WASM API; its
+  requests zero. This is not a page API or Zoom startup pass: bounded imports,
+  synchronous SafeJS callbacks and page/Worker integration remain open. The offline
+  memory bridge gate above passes separately. Current Node v22 has no default
+  Suspending/promising WASM API; its
   promise-integration flag is experimental and has not been enabled or validated.
 
 - Child Workers now reuse the bounded native performance clock and user timing:
@@ -1698,8 +1720,9 @@
   generic callback script-error and
   an onload non-callable-handler failure. Prior intermittent default 1 s idle
   initialization failures keep timing reliability open despite recent nine-case passes.
-- Full SDK package build: unresolved tiny-mcp-client dependency types through the
-  shared local dependency tree. Scoped core compilation is not a full-package pass.
+- The older scratch SDK full build has unresolved tiny-mcp-client dependency types.
+  The maintained poe-code SDK package build passes; the full package test suite has
+  no completed pass.
 - Older native capability metadata and classic-loader limit expectations; no full
   native-suite pass is claimed. DOM branding lacks full prototype method tables;
   namespaced creation currently supports only unprefixed HTML, SVG and MathML names.
@@ -1713,7 +1736,8 @@
 
 - Native source/build: this repository. Preserve unrelated uncommitted work.
 - Working SDK source/build: /tmp/agent-browser-zoom-sdk/packages/safe-js.
-- Local SDK baseline: /home/kjopek/project/poe-code/packages/safe-js.
+- Maintained SDK source/build: /home/kjopek/project/poe-code/packages/safe-js;
+  direct typed-array accounting and live-buffer fixes are verified there.
 - Focused SDK contribution patches: contributions/. Some recovered accounting
   patches still need reconciliation; a temporary metadata patch header was normalized
   only in the retained scratch SDK.
