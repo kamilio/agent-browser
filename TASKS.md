@@ -23,6 +23,20 @@
 
 ## Current verified state
 
+- A bounded desktop-client capture census passes all 13 classics and links all
+  seven modules, then remains pending in editor-core evaluation at the 120 s import
+  observation bound. Evaluation records 5653 measurements / 121604715 graph visits /
+  28713611 interpreted captures across 241 distinct capture scopes; 29064134 of
+  30138848 scope reads hit snapshots (96.4%). The six distinct declined scopes have
+  private-name metadata; no module/resource/accessor metadata is observed among
+  them. Counts include instrumentation overhead and establish no timing improvement.
+  Next target: cheaper traversal of repeated interpreted captures sharing scopes,
+  preserving fresh metadata/callback effects and primary reconciliation during holds;
+  previously rejected guarded caches are not an established solution. HTTP 200,
+  zero sockets, no readiness/join, cleanup data zero and terminal probe status verified.
+  The 384 MB diagnostic allowance clears no default heap/time gate. All three
+  instrumented SDK build files are restored byte-exact and temporary backups removed.
+
 - Realm classic scripts now opt into compact ASTs and a lazy dynamic-source node
   index. Contribution: safejs-compact-classic-source-index.patch (after compact AST
   and deferred initializer patches). Public parser/factory defaults stay unchanged.
@@ -1319,7 +1333,9 @@
   full-client runtime heap and initialization performance remain unverified.
   Live preload now measures about 133.2 MB before module compilation; classic-script
   retention and module evaluation/reconciliation cost remain the next memory and
-  performance targets. The latest 192 MB bounded run still has one pending import.
+  performance targets. The 192 MB bounded run still has one pending import; the
+  later instrumented 384 MB census verifies all seven link successfully and remains
+  pending during editor-core evaluation at its 120 s import observation bound.
   The earlier 768 MB statement trace prepares all seven but stays pending at 15 min,
   reaching editor statement 1353 after React DOM and DOMPurify complete; the later
   full-client run remains pending at 30 min. Selected borrowed document methods
