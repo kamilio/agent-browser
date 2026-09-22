@@ -116,25 +116,32 @@
   Actual offline PageScripts/DOM/SafeJS at 128 MB/16 s verifies timing, detail
   isolation, clears and termination; cleanup data/page callbacks zero. Full
   Performance prototype tables, resource/navigation timing and observers remain open.
-  Maintained SafeJS now accepts opt-in bounded host-object expandos, preserving
-  guest graph/closure/symbol identity, publisher lifetime checks and full retained
-  accounting. All 232 selected host/reflection/data checks, SDK build/eight entries,
-  strict new-test typing and scoped lint/format pass. Actual native DOM probe passes
-  all 18 checks. Local poe-code commit 3c9d4a6b5; no push.
-  Public net_thread.min.js (390978 units) now clears parent setup and enters its
-  child Worker with bounded WASM enabled. Source completion/readiness still fails:
-  30 s diagnostic reaches 887672 shared steps; 120 s reaches 903467. The longer
-  child evaluation settles after 167166 ms, so the diagnostic timeout is not a
-  strict wall bound. Child failure carries no bounded error identifier after owner
-  close, so these runs identify no specific guest fault. Cleanup tracked data/page
-  callbacks/active requests zero in both runs. Maintained result-discard support now
-  honors the native Worker's existing option without exporting its completion value;
-  effects, full accounting and fatal errors remain active. All 15 new checks and 201
-  selected existing regressions, strict typing/lint/format, SDK build/eight entries
-  and actual offline allowed/denied page/Blob Worker WASM probes pass; cleanup data
-  zero. Local poe-code commit 37e36fc17; public timing results predate this fix.
-  Next: investigate bounded startup/accounting cost and deadline delivery before
-  real WASM imports/initializer and meeting/media gates. These diagnostic allowances
+  Maintained SafeJS accepts bounded host-object expandos with guest graph/closure/
+  symbol identity, publisher lifetime checks and full retained accounting: 232
+  selected checks and the actual 18-check native DOM probe pass. Result-discard
+  support honors the native Worker's option without exporting its completion value;
+  effects, accounting and fatal errors remain active (15 new/201 existing checks).
+  Explicit regex-source/compile allowances now reach 16384/65536, preserving defaults
+  4096/16384, flag/depth limits and fatal work/data checks. All 140 selected regex/
+  ownership/budget checks and actual native page/Blob Worker 12818-character Unicode
+  regex probes pass. Local poe-code commit bd9e4a0bb.
+  Controlled SDK execution now yields between nodes after 16 ms as well as 4096
+  nodes, preserving FIFO guest ownership and full reconciliation. Three new host-
+  turn checks and 199 selected existing scheduling/lifecycle checks pass. Nine nested
+  settlement tests retain their result/join assertions with bounded deadlock checks
+  instead of requiring completion before the first host turn. Typing/lint/new-test
+  formatting, SDK build/eight entries, actual JSPI/WASM reentry/growth/errors and
+  allowed/denied page/Blob Worker installation pass; cleanup data/resources zero.
+  Local poe-code commit ba19c0538; no push. Individual native calls/scans remain
+  nonpreemptible, and host-clock changes retain the node-limit fallback.
+  Public net_thread.min.js (390978 units) clears parent setup and enters its child
+  Worker, but source completion/readiness still fails. Latest 30 s/120 s probes
+  settle at 30624/120781 ms with AgentBrowserError timeout, at 879847/887517 shared
+  steps; neither outer wait expires first. Cleanup tracked data/page callbacks/
+  active requests zero in both. The current source profile identifies full graph
+  reconciliation and GC as dominant costs; its artifact was removed. Next: reduce
+  startup accounting cost without bypassing primary scans, then qualify real WASM
+  imports/initializer and every meeting/media gate. These diagnostic allowances
   clear no default startup or notetaker gate.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
