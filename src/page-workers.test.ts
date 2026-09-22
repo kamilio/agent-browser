@@ -134,7 +134,9 @@ function fixture(
 						return { ok: false, error };
 					}
 				},
-				startCallback: child.context.startCallback,
+				startCallback: (
+					...args: Parameters<ReleasedContext["startCallback"]>
+				) => child.context.startCallback(...args),
 				close() {
 					closing ??= child.close();
 					return closing;
@@ -658,3 +660,35 @@ it.each(["", "text/plain"])(
 		await vi.waitFor(() => expect(test.evaluate("received")).toBe("ready"));
 	},
 );
+
+it("delivers a child's outgoing message while that child's incoming task waits on native I/O", async () => {
+	const test = fixture();
+	test.start("onmessage=e=>postMessage('started');");
+	await vi.waitFor(() => expect(test.children).toHaveLength(1));
+	const child = test.children[0];
+	const original = child.context.startCallback;
+	let finish!: () => void;
+	const held = new Promise<void>((resolve) => {
+		finish = resolve;
+	});
+	child.context.startCallback = (callback, options) => {
+		const invocation = original(callback, options);
+		return {
+			synchronous: invocation.synchronous.then(() => held),
+			result: invocation.result.then(() => held),
+		};
+	};
+	test.evaluate(
+		"var seen=[];worker.onmessage=e=>seen.push(e.data);worker.postMessage(1);worker.postMessage(2);",
+	);
+	try {
+		await vi.waitFor(() => expect(test.evaluate("seen")).toEqual(["started"]));
+		expect(test.workers.metrics().pending).toBe(2);
+	} finally {
+		finish();
+	}
+	await vi.waitFor(() =>
+		expect(test.evaluate("seen")).toEqual(["started", "started"]),
+	);
+	await vi.waitFor(() => expect(test.workers.metrics().pending).toBe(0));
+});

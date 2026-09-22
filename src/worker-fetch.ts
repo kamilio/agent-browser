@@ -1,3 +1,4 @@
+import { ContentSecurityPolicy } from "./content-security-policy.js";
 import { AgentBrowserError } from "./errors.js";
 import { type NetworkResponse, parseNetworkUrl } from "./network.js";
 import { createScriptCspPolicy } from "./script-csp-policy.js";
@@ -25,11 +26,28 @@ const javascriptTypes = new Set([
 	"text/x-javascript",
 ]);
 
+export function isWorkerJavaScriptMimeType(type: string): boolean {
+	return javascriptTypes.has(type.split(";", 1)[0].trim().toLowerCase());
+}
+
 export interface WorkerScriptSource {
 	readonly url: string;
 	readonly source: string;
 	readonly stringCompilation: "allow" | "deny";
+	readonly checkImport?: WorkerImportPolicy;
+	readonly redirectCount?: number;
 }
+export type WorkerImportPolicy = (url: string, redirects: number) => void;
+export interface WorkerImportedSource {
+	readonly url: string;
+	readonly source: string;
+	readonly redirectCount?: number;
+}
+export type WorkerImportFetch = (
+	url: string,
+	signal: AbortSignal,
+	policy: WorkerImportPolicy,
+) => Promise<Readonly<WorkerImportedSource>>;
 export type WorkerScriptFetch = (
 	url: string,
 	signal: AbortSignal,
@@ -69,6 +87,76 @@ export function decodeWorkerScript(
 	response: NetworkResponse,
 	maxBytes = 1_048_576,
 ): Readonly<WorkerScriptSource> {
+	const decoded = decodeWorkerImportedScript(response, maxBytes);
+	const policy = createScriptCspPolicy(response.url, response.headers);
+	if (policy.unsupported)
+		throw new AgentBrowserError(
+			"policy-denied",
+			"Worker response CSP is not supported",
+		);
+	return Object.freeze({
+		...decoded,
+		stringCompilation: policy.stringCompilation,
+		checkImport: workerImportPolicy(response.url, response.headers),
+	});
+}
+
+export function workerImportPolicy(
+	documentUrl: string,
+	headers: NetworkResponse["headers"],
+): WorkerImportPolicy {
+	const values = Object.entries(headers)
+		.filter(([name]) => name.toLowerCase() === "content-security-policy")
+		.flatMap(([, values]) => [...values]);
+	// Worker imports use script-src/default-src, without script-src-elem, worker-src
+	// or child-src. The existing Worker matcher also handles Blob origin matching.
+	const filtered = values.map((value) =>
+		value
+			.split(",")
+			.map((policy) =>
+				policy
+					.split(";")
+					.filter((directive) =>
+						/^[\t ]*(?:script-src|default-src)(?:[\t ]|$)/i.test(directive),
+					)
+					.join(";"),
+			)
+			.join(","),
+	);
+	const matcher = new ContentSecurityPolicy(documentUrl, filtered, "worker");
+	return (url, redirects) => {
+		if (!matcher.allows(url, redirects))
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Worker import blocked by Content Security Policy",
+			);
+	};
+}
+
+export async function fetchWorkerImportedScript(
+	url: string,
+	context: ScriptFetchContext,
+	maxBytes = 1_048_576,
+): Promise<Readonly<WorkerImportedSource>> {
+	if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > 16_777_216)
+		throw new TypeError("Invalid Worker source byte limit");
+	const { response } = await fetchScriptResource(
+		url,
+		{ mode: "no-cors", credentials: "same-origin" },
+		{
+			...context,
+			request: (input) =>
+				context.request({ ...input, maxResponseBytes: maxBytes }),
+		},
+	);
+	context.signal.throwIfAborted();
+	return decodeWorkerImportedScript(response, maxBytes);
+}
+
+export function decodeWorkerImportedScript(
+	response: NetworkResponse,
+	maxBytes = 1_048_576,
+): Readonly<WorkerImportedSource> {
 	if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > 16_777_216)
 		throw new TypeError("Invalid Worker source byte limit");
 	parseNetworkUrl(response.url);
@@ -94,17 +182,9 @@ export function decodeWorkerScript(
 			"policy-denied",
 			"Worker requires a JavaScript MIME type",
 		);
-	// A network worker owns the final response policy. Unsupported directives fail
-	// closed until the corresponding child capabilities have policy owners.
-	const policy = createScriptCspPolicy(response.url, response.headers);
-	if (policy.unsupported)
-		throw new AgentBrowserError(
-			"policy-denied",
-			"Worker response CSP is not supported",
-		);
 	return Object.freeze({
 		url: response.url,
 		source: new TextDecoder().decode(response.body),
-		stringCompilation: policy.stringCompilation,
+		redirectCount: response.redirects.length,
 	});
 }

@@ -110,6 +110,7 @@ async function receive(raw: unknown) {
 			fetch?: PageFetchTransport,
 			networkSourceModules?: PageNetworkModuleOptions,
 			workerFetch?: PageScriptOptions["workerFetch"],
+			workerImportFetch?: PageScriptOptions["workerImportFetch"],
 		) => {
 			let owner = pageOwners.get(document);
 			if (!owner) {
@@ -120,6 +121,7 @@ async function receive(raw: unknown) {
 						...(message.scripts as PageScriptOptions | undefined),
 						fetch,
 						workerFetch,
+						workerImportFetch,
 						networkSourceModules,
 					},
 				);
@@ -213,6 +215,7 @@ async function receive(raw: unknown) {
 													context.fetch,
 													networkSourceModules,
 													context.fetchWorker,
+													context.fetchWorkerImport,
 												),
 										}),
 									}

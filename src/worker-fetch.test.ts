@@ -1,6 +1,12 @@
 import { expect, it, vi } from "vitest";
 import type { NetworkResponse } from "./network.js";
-import { decodeWorkerScript, fetchWorkerScript } from "./worker-fetch.js";
+import {
+	decodeWorkerImportedScript,
+	decodeWorkerScript,
+	fetchWorkerImportedScript,
+	fetchWorkerScript,
+	workerImportPolicy,
+} from "./worker-fetch.js";
 const documentUrl = "https://example.test/page";
 const workerUrl = "https://example.test/worker.js";
 function response(overrides: Partial<NetworkResponse> = {}): NetworkResponse {
@@ -30,7 +36,7 @@ it("fetches same-origin source with document credentials, byte limits and Worker
 		},
 		128,
 	);
-	expect(loaded).toEqual({
+	expect(loaded).toMatchObject({
 		url: workerUrl,
 		source: "postMessage('✓');",
 		stringCompilation: "allow",
@@ -172,3 +178,72 @@ it("rejects cancellation before returning a decoded source", async () => {
 		}),
 	).rejects.toThrow();
 });
+
+it("imports cross-origin JavaScript without CORS while omitting cross-origin document credentials", async () => {
+	const url = "https://cdn.test/import.js";
+	const request = vi.fn(async () =>
+		response({
+			url,
+			headers: {
+				"content-type": ["application/javascript"],
+				"content-security-policy": ["sandbox"],
+			},
+		}),
+	);
+	const checkContentSecurityPolicy = vi.fn();
+	const loaded = await fetchWorkerImportedScript(url, {
+		documentUrl,
+		signal: new AbortController().signal,
+		maxRedirects: 2,
+		request,
+		checkContentSecurityPolicy,
+	});
+	expect(loaded).toEqual({
+		url,
+		source: "postMessage('✓');",
+		redirectCount: 0,
+	});
+	expect(request.mock.calls[0]).toMatchObject([
+		{ cookieContext: { credentials: "omit" }, headers: { accept: "*/*" } },
+	]);
+	expect(checkContentSecurityPolicy.mock.calls).toEqual([
+		[url, 0],
+		[url, 0],
+	]);
+});
+it("keeps an imported response's CSP from replacing the worker execution policy", () => {
+	const input = response({
+		headers: {
+			"content-type": ["text/javascript"],
+			"content-security-policy": ["sandbox"],
+		},
+	});
+	expect(() => decodeWorkerScript(input)).toThrow();
+	expect(decodeWorkerImportedScript(input)).toEqual({
+		url: workerUrl,
+		source: "postMessage('✓');",
+		redirectCount: 0,
+	});
+});
+it.each([
+	["worker-src 'none'; script-src 'self' blob:", workerUrl, true],
+	["worker-src https:; script-src 'none'", workerUrl, false],
+	[
+		"script-src-elem 'none'; script-src https://cdn.test",
+		"https://cdn.test/import.js",
+		true,
+	],
+	["script-src 'none'; default-src https:", workerUrl, false],
+	["default-src 'self'", "blob:https://example.test/import", true],
+	["script-src *", "blob:https://example.test/import", false],
+	["script-src 'self'", "blob:https://other.test/import", false],
+] as const)(
+	"matches worker-import policy %s for %s",
+	(policy, url, allowed) => {
+		const check = workerImportPolicy(documentUrl, {
+			"content-security-policy": [policy],
+		});
+		if (allowed) expect(() => check(url, 0)).not.toThrow();
+		else expect(() => check(url, 0)).toThrow();
+	},
+);

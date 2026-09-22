@@ -23,27 +23,27 @@
 
 ## Current verified state
 
-- Classic Worker entry scripts now load through a document-owned native fetch
-  path with same-origin checks at every redirect, worker-src rather than page
-  script-src admission, document cookies/cancellation, UTF-8 decoding and bounded
-  JavaScript HTTP MIME checks. Pending loads obey the Worker initialization
-  deadline; termination/page close abort loading and discard late adapter results.
-  Final URL and response eval policy reach the child; unsupported response CSP
-  fails closed and network workers cannot relax the parent string-compilation ban.
-  All 210 selected native checks across seven manifest-listed files, native build,
-  strict new-test typing and new Worker/fetch lint/format pass. Child wiring has
-  26 passes/one classic-loader {} versus undefined failure that reproduces with
-  the original child source. Classic Blob Workers are exempt from HTTP MIME checks,
-  matching the standard and Zoom's observed no-type Blob calls. Current Zoom media
-  bundle uses
-  Blob Workers and importScripts; native transport loads/decodes the 390978-unit
-  net_thread.min.js in one request with active zero, without executing it.
-  Offline real SafeJS at 128 MB/16 s passes redirected execution/queued messages,
-  response CSP, pending-fetch page close and no-type Blob Worker; cleanup data zero.
-  Actual native PageScripts/DOM/CSP fixture executes queued network Worker code
-  at 53398 shared steps and releases data/page callbacks to zero on close.
-  Module workers, importScripts, transfers, child navigator/Blob/URL, WebAssembly,
-  media and all default/live Zoom initialization/join/notetaker gates remain open.
+- Classic Workers now support synchronous sequential importScripts through SafeJS
+  nested evaluation, HTTP(S) imports with child script-src/default-src admission,
+  redirect checks and same-origin credentials, plus owned JavaScript Blob imports.
+  Imported response CSP does not replace the Worker policy. Child Blob/URL reuse
+  the bounded native primitives; imports enforce argument/lifetime/depth/source
+  limits, retained-source credits, cancellation and deadlines. Per-realm message
+  delivery lets the parent terminate a child waiting for an import while preserving
+  task order within each realm. Real offline SafeJS at 128 MB/16 s verifies nested
+  imports, child Blob execution, errors, timeout/budget failure, parent termination
+  during pending imports and actual PageScripts/DOM allowed/denied inherited CSP;
+  cleanup tracked data/page callbacks return to zero. All 358 selected native checks
+  across eight manifest-listed files and native build pass; strict new-test typing
+  and new Worker/import/fetch lint/format pass.
+  Blob storage has separate bounded native limits; it is not fully credited to the
+  shared SafeJS budget. Nonce/strict-dynamic import policies use conservative URL
+  matching; sharing Blob URLs between sibling Workers is unsupported. Classic
+  same-origin entry loading, worker-src, cookies/lifetime and response CSP remain
+  verified. Current Zoom media assets use Blob Workers/importScripts; native fetch
+  decoded net_thread.min.js without executing it. Module workers, transfers, child
+  navigator, WebAssembly, media and every default/live Zoom initialization/join/
+  notetaker gate remain open. Automations is untouched; no meeting has been joined.
 
 - Blob classic Workers now use isolated, cooperative SafeJS realms with a shared
   budget, copied bounded messages, timers, CSP fallback, self-close/termination and
@@ -58,8 +58,9 @@
   callback termination/page cleanup; tracked data/callbacks return to zero. Source,
   message-callback and timer step-budget exhaustion close the whole page and release
   tracked data to zero. These diagnostic allowances clear no default timing gate.
-  Module workers, importScripts, transfers, full EventTarget/MessageEvent
-  branding, child navigator/Blob/URL, WebAssembly and media remain unsupported.
+  Module workers, transfers, full EventTarget/MessageEvent branding, child
+  navigator, WebAssembly and media remain unsupported; importScripts and child
+  Blob/URL are verified above.
   Default timing, live initialization/readiness/join and every notetaker gate remain
   open. Working Automations is untouched; no meeting has been joined.
 
@@ -72,8 +73,8 @@
   Compiled 128 MB/16 s offline fixture executes Blob-generated child code beside
   the native page, isolates globals, copies bytes, shares limits and cleans data/
   callbacks to zero. SDK source/build/tests retained; temporary probes removed.
-  Page classic Blob/network Worker APIs are verified above; module loading, transfers,
-  importScripts, WebAssembly, media and every Zoom/notetaker gate remain open.
+  Page classic Blob/network Worker and import APIs are verified above; module
+  Worker loading, transfers, WebAssembly, media and every Zoom/notetaker gate remain open.
 
 - Page-owned Blob/object URL primitives now provide immutable UTF-8/buffer-view/blob
   parts, bounded storage/work, slice/text/arrayBuffer/bytes, trusted origin URLs,
@@ -85,7 +86,7 @@
   The diagnostic uses 16 s: its first default 1 s initialization attempt times out,
   so default timing reliability remains open. Blob records have a page-lifetime
   count limit; SafeJS array/data limits also bound binary conversion. Blob.stream,
-  blob fetch/image consumers, module Worker/importScripts and every Zoom/media
+  blob fetch/image consumers, module Worker and every Zoom/media
   gate remain open. These primitives establish no initialization/readiness/join capability.
 
 - Nine-classification shared metadata records are rejected and reverted: revised

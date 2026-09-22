@@ -1,3 +1,6 @@
+import { pageBlobBootstrapSource } from "./page-blob-bootstrap.js";
+import { pageUrlBootstrapSource } from "./page-url-bootstrap.js";
+
 // Shared guest event/message machinery runs inside each owning SafeJS realm.
 export const pageWorkerSupportSource = `
 const apply = Reflect.apply, push = Array.prototype.push, slice = Array.prototype.slice;
@@ -156,10 +159,13 @@ export const workerGlobalBootstrapSource = `(() => {
  const location = api.location;
  define(location,'toString',{value:()=>location.href});
  define(globalThis,'location',{value:Object.freeze(location),configurable:true});
+ define(globalThis,'importScripts',{value:function importScripts(...urls) {if(urls.length>32) throw new RangeError('Worker import argument limit exceeded'); const converted=[]; for(const url of urls) apply(push,converted,[text(url)]); return api.importScripts(converted);},writable:true,configurable:true});
  define(globalThis,'postMessage',{value:function postMessage(data,options=undefined) {if(arguments.length===0) throw new TypeError('Missing Worker message'); if(api.accepting) api.post(copied(data,options));},writable:true,configurable:true});
  define(globalThis,'close',{value:()=>api.close(),writable:true,configurable:true});
  define(globalThis,'addEventListener',{value:target.add,writable:true,configurable:true});
  define(globalThis,'removeEventListener',{value:target.remove,writable:true,configurable:true});
  for (const name of ['setTimeout','setInterval']) define(globalThis,name,{value:function(callback,delay=0,...args) {if(typeof callback!=='function') throw new TypeError('Worker timers require functions'); return api[name](callback,+delay,...args);},writable:true,configurable:true});
  for (const name of ['clearTimeout','clearInterval']) define(globalThis,name,{value:(id)=>api[name](id === undefined ? undefined : +id),writable:true,configurable:true});
-})();`;
+})();
+${pageUrlBootstrapSource.replace("__agentBrowserWindowGlobal.urls", "__agentBrowserWorker.urls")}
+${pageBlobBootstrapSource.replace("__agentBrowserWindowGlobal.blobs", "__agentBrowserWorker.blobs")}`;

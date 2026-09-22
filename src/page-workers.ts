@@ -1,15 +1,23 @@
 import { types } from "node:util";
 import { AgentBrowserError } from "./errors.js";
 import type { PageBlobs } from "./page-blobs.js";
+import { PageBlobs as WorkerBlobs } from "./page-blobs.js";
 import { PageTimers } from "./page-timers.js";
+import { PageUrls } from "./page-urls.js";
 import { workerGlobalBootstrapSource } from "./page-worker-bootstrap.js";
+import { PageWorkerImports } from "./page-worker-imports.js";
 import type {
 	ReleasedContext,
 	ReleasedCore,
 	ReleasedRealm,
 } from "./safejs-extension-types.js";
 import type { SafeJsBudget, ScriptLimits } from "./safejs.js";
-import type { WorkerScriptFetch, WorkerScriptSource } from "./worker-fetch.js";
+import type {
+	WorkerImportFetch,
+	WorkerImportPolicy,
+	WorkerScriptFetch,
+	WorkerScriptSource,
+} from "./worker-fetch.js";
 
 export interface WorkerBudget extends SafeJsBudget {
 	forkRealm(): WorkerBudget;
@@ -21,8 +29,10 @@ export interface PageWorkerOptions {
 	budget: WorkerBudget;
 	limits: Readonly<ScriptLimits>;
 	documentUrl: string;
-	policy(url: string): void;
+	policy(url: string, redirects?: number): void;
 	fetch?: WorkerScriptFetch;
+	importFetch?: WorkerImportFetch;
+	importPolicy?: WorkerImportPolicy;
 	stringCompilation?: "allow" | "deny";
 	report(message: string): void;
 	fail(error: unknown): void;
@@ -73,6 +83,8 @@ interface WorkerRecord {
 	outgoing: number;
 	disposed: boolean;
 	stringCompilation?: "allow" | "deny";
+	importPolicy?: WorkerImportPolicy;
+	imports?: PageWorkerImports;
 }
 interface Packet {
 	record: WorkerRecord;
@@ -183,7 +195,7 @@ export class PageWorkers {
 	private readonly packets = new Set<Packet>();
 	private readonly results = new Set<Promise<unknown>>();
 	private tick?: ReturnType<typeof setTimeout>;
-	private running = false;
+	private readonly running = new Set<object>();
 	private closed = false;
 	private created = 0;
 	private messages = 0;
@@ -314,6 +326,7 @@ export class PageWorkers {
 			outgoing: 0,
 			disposed: false,
 			stringCompilation: this.options.stringCompilation,
+			importPolicy: this.options.importPolicy,
 		};
 		const port = this.owner.createHostObject({
 			properties: {
@@ -378,7 +391,10 @@ export class PageWorkers {
 						"policy-denied",
 						"Worker loader returned a foreign source",
 					);
-				this.options.policy(final.href);
+				const redirects = loaded.redirectCount ?? 0;
+				if (!Number.isSafeInteger(redirects) || redirects < 0 || redirects > 20)
+					throw new TypeError("Invalid Worker redirect count");
+				this.options.policy(final.href, redirects);
 				if (
 					typeof loaded.source !== "string" ||
 					loaded.source.length + workerGlobalBootstrapSource.length >
@@ -391,6 +407,12 @@ export class PageWorkers {
 				)
 					throw new TypeError("Invalid Worker source policy");
 				record.url = final.href;
+				if (
+					loaded.checkImport !== undefined &&
+					typeof loaded.checkImport !== "function"
+				)
+					throw new TypeError("Invalid Worker import policy");
+				record.importPolicy = loaded.checkImport;
 				record.stringCompilation =
 					record.stringCompilation === "deny"
 						? "deny"
@@ -410,10 +432,38 @@ export class PageWorkers {
 				version: 1,
 				name: "agent-browser-worker",
 				globals: ["__agentBrowserWorker"],
-				capabilities: ["guest:retain"],
+				capabilities: ["guest:retain", "source:nested"],
 			},
 			setup: (context) => {
 				record.context = context;
+				const urls = new PageUrls(context);
+				const blobs = new WorkerBlobs(
+					context,
+					() => new URL(record.url).origin,
+				);
+				const imports = new PageWorkerImports(context, [blobs, this.blobs], {
+					url: record.url,
+					documentUrl: this.options.documentUrl,
+					budget: this.options.budget,
+					limits: this.options.limits,
+					fetch: this.options.importFetch,
+					isClosed: () =>
+						record.state !== "loading" && record.state !== "ready",
+					policy: (url, redirects) => {
+						if (!record.importPolicy)
+							throw new AgentBrowserError(
+								"policy-denied",
+								"Worker import CSP is unavailable",
+							);
+						record.importPolicy(url, redirects);
+					},
+				});
+				record.imports = imports;
+				context.onCleanup(() => {
+					imports.close();
+					urls.close();
+					blobs.close();
+				});
 				const aborted = () => this.failure(record, context.signal.reason);
 				context.signal.addEventListener("abort", aborted, { once: true });
 				context.onCleanup(() =>
@@ -446,6 +496,8 @@ export class PageWorkers {
 					globals: {
 						__agentBrowserWorker: context.createHostObject({
 							properties: {
+								urls: { get: () => urls.port },
+								blobs: { get: () => blobs.port },
 								name: { get: () => record.name },
 								location: {
 									get: () => ({
@@ -466,6 +518,7 @@ export class PageWorkers {
 								},
 							},
 							methods: {
+								importScripts: imports.operation,
 								bind: (callback) => {
 									if (
 										record.receive !== undefined ||
@@ -505,7 +558,7 @@ export class PageWorkers {
 			callbackScheduling: "after-prefix",
 			stringCompilation: record.stringCompilation,
 			extensions: [extension],
-			grants: ["guest:retain"],
+			grants: ["guest:retain", "source:nested"],
 			budget: this.options.budget.forkRealm(),
 			signal: record.controller.signal,
 			limits: {
@@ -514,6 +567,7 @@ export class PageWorkers {
 				callbacks: 1024,
 				guestReferences: 128,
 				cleanups: 8,
+				nestedEvaluations: 8,
 			},
 			sink: {
 				log: () => undefined,
@@ -580,31 +634,36 @@ export class PageWorkers {
 		if (
 			this.closed ||
 			this.owner.signal.aborted ||
-			this.running ||
 			this.tick !== undefined ||
 			!this.queue.length
 		)
 			return;
-		if (
-			!this.queue.some(
-				(packet) => packet.outgoing || packet.record.state !== "loading",
-			)
-		)
-			return;
+		if (!this.queue.some((packet) => this.deliverable(packet))) return;
 		this.tick = setTimeout(() => {
 			this.tick = undefined;
 			void this.pump();
 		}, 0);
 	}
+	private deliveryOwner(packet: Packet): object {
+		return packet.outgoing ? this.owner : packet.record;
+	}
+	private deliverable(packet: Packet): boolean {
+		return (
+			(packet.outgoing || packet.record.state !== "loading") &&
+			!this.running.has(this.deliveryOwner(packet))
+		);
+	}
 	private async pump() {
 		if (this.closed || this.owner.signal.aborted) return;
-		this.running = true;
-		const index = this.queue.findIndex(
-			(packet) => packet.outgoing || packet.record.state !== "loading",
-		);
+		const index = this.queue.findIndex((packet) => this.deliverable(packet));
 		const packet = index < 0 ? undefined : this.queue.splice(index, 1)[0];
+		if (!packet) return;
+		const owner = this.deliveryOwner(packet);
+		this.running.add(owner);
+		// Each realm preserves its own task order. Another realm may still deliver
+		// messages while this realm's synchronous prefix waits on native I/O.
+		this.wake();
 		try {
-			if (!packet) return;
 			const record = packet.record;
 			if (
 				record.state === "terminated" ||
@@ -638,7 +697,7 @@ export class PageWorkers {
 				this.failure(packet.record, error);
 			}
 		} finally {
-			this.running = false;
+			this.running.delete(owner);
 			this.wake();
 		}
 	}
@@ -679,6 +738,7 @@ export class PageWorkers {
 		)
 			return;
 		if (record.state === "closing" && !fatal(error)) return;
+		record.imports?.close();
 		if (fatal(error)) this.options.fail(error);
 		else {
 			try {
@@ -692,6 +752,8 @@ export class PageWorkers {
 		}
 		if (!record.realm) record.controller.abort(error);
 		this.closeSelf(record);
+		if (error instanceof AgentBrowserError && error.code === "timeout")
+			record.controller.abort(error);
 	}
 	private closeSelf(record: WorkerRecord) {
 		if (
@@ -720,6 +782,7 @@ export class PageWorkers {
 	}
 	private async terminate(record: WorkerRecord) {
 		record.state = "terminated";
+		record.imports?.close();
 		record.controller.abort();
 		record.timers?.close();
 		for (let index = this.queue.length - 1; index >= 0; index--)

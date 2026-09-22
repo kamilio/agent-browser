@@ -11,6 +11,7 @@ import {
 	scriptCspPolicyLimits,
 } from "./script-csp-policy.js";
 import { scriptElementState } from "./script-element-state.js";
+import { workerImportPolicy } from "./worker-fetch.js";
 
 export interface DocumentScriptCspLimits {
 	readonly maxScanWork: number;
@@ -32,6 +33,7 @@ export interface DocumentScriptCsp {
 		redirectCount: number,
 	): boolean;
 	allowsBase(url: string): boolean;
+	allowsWorkerImport(url: string, redirectCount: number): boolean;
 	onInvalidated(listener: () => void): () => void;
 	close(): void;
 }
@@ -433,6 +435,15 @@ function bindPolicy(
 			return undefined;
 		}
 	};
+	let checkImports: ReturnType<typeof workerImportPolicy> | undefined;
+	try {
+		checkImports = workerImportPolicy(
+			tree.url,
+			Object.fromEntries(JSON.parse(headers) ?? []),
+		);
+	} catch {
+		/* Parsed policy already records invalid/unsupported inputs. */
+	}
 	const owner: DocumentScriptCsp = Object.freeze({
 		enforced,
 		stringCompilation: enforced ? parsed.stringCompilation : undefined,
@@ -461,6 +472,15 @@ function bindPolicy(
 		allowsBase: Object.freeze(
 			(url: string) => current() && parsed.allowsBase(url),
 		),
+		allowsWorkerImport: Object.freeze((url: string, redirects: number) => {
+			if (!current() || !checkImports) return false;
+			try {
+				checkImports(url, redirects);
+				return true;
+			} catch {
+				return false;
+			}
+		}),
 		onInvalidated: Object.freeze((listener: () => void) => {
 			if (typeof listener !== "function")
 				throw new AgentBrowserError("invalid-input", "Invalid CSP listener");

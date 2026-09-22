@@ -116,10 +116,17 @@ import {
 } from "./stylesheet-fetch.js";
 import type { UploadActionRunner } from "./upload-transfers.js";
 import type { WebSocketTransport } from "./websocket-transport.js";
-import { decodeWorkerScript, type WorkerScriptFetch } from "./worker-fetch.js";
+import {
+	type WorkerImportFetch,
+	type WorkerImportPolicy,
+	type WorkerScriptFetch,
+	decodeWorkerImportedScript,
+	decodeWorkerScript,
+} from "./worker-fetch.js";
 
 export interface DocumentLoaderContext {
 	readonly fetchWorker?: WorkerScriptFetch;
+	readonly fetchWorkerImport?: WorkerImportFetch;
 	readonly topLevelDocument?: true;
 	readonly initializeDocument?: (
 		tree: DocumentTree,
@@ -2331,7 +2338,8 @@ export class BrowserSession {
 			scriptSignal: AbortSignal,
 			admission?: DocumentScriptAdmission,
 			documentScoped = false,
-			destination: "script" | "worker" = "script",
+			destination: "script" | "worker" | "worker-import" = "script",
+			importPolicy?: WorkerImportPolicy,
 		) => {
 			const moduleController = documentScoped ? new AbortController() : undefined;
 			const abortNavigation = () => {
@@ -2372,7 +2380,20 @@ export class BrowserSession {
 								signal: policySignal,
 								maxRedirects: this.transport.limits?.maxRedirects ?? 10,
 								checkContentSecurityPolicy: (url, redirectCount) => {
-									resourcePolicy?.check(destination, url, redirectCount);
+									resourcePolicy?.check(
+										destination === "worker-import" ? "script" : destination,
+										url,
+										redirectCount,
+									);
+									if (destination === "worker-import") {
+										if (!importPolicy)
+											throw new AgentBrowserError(
+												"policy-denied",
+												"Worker import policy is unavailable",
+											);
+										importPolicy(url, redirectCount);
+										return;
+									}
 									const owner = candidate
 										? documentScriptCsp(candidate)
 										: undefined;
@@ -2503,6 +2524,22 @@ export class BrowserSession {
 							"worker",
 						);
 						return decodeWorkerScript(result.response, 4_194_304);
+					},
+					fetchWorkerImport: async (
+						resourceUrl: string,
+						workerSignal: AbortSignal,
+						policy: WorkerImportPolicy,
+					) => {
+						const result = await fetchPolicyScript(
+							resourceUrl,
+							{ mode: "no-cors", credentials: "same-origin" },
+							workerSignal,
+							undefined,
+							true,
+							"worker-import",
+							policy,
+						);
+						return decodeWorkerImportedScript(result.response, 4_194_304);
 					},
 					fetchScript: (resourceUrl: string) =>
 						journal.run("script", resourceUrl, "GET", async () => {

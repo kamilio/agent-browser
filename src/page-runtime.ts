@@ -8,7 +8,11 @@ import type { PageBindingContext } from "./page-bindings.js";
 import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 import type { SafeJsBudget, ScriptLimits } from "./safejs.js";
 import type { ScriptCallbackRuntime } from "./script-events.js";
-import type { WorkerScriptFetch } from "./worker-fetch.js";
+import type {
+	WorkerImportFetch,
+	WorkerImportPolicy,
+	WorkerScriptFetch,
+} from "./worker-fetch.js";
 
 export interface PageRealm {
 	readonly closed: boolean;
@@ -93,7 +97,9 @@ export interface PageRuntime {
 
 export interface PageRuntimeOptions {
 	workerFetch?: WorkerScriptFetch;
-	workerPolicy?: (url: string) => void;
+	workerImportFetch?: WorkerImportFetch;
+	workerImportPolicy?: WorkerImportPolicy;
+	workerPolicy?: (url: string, redirects?: number) => void;
 	workerDocumentUrl?: string;
 	stringCompilation?: "allow" | "deny";
 	regexSourceLength?: number;

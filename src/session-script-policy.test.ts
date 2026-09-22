@@ -1254,3 +1254,59 @@ it("blocks Worker loading before a network request when worker-src denies it", a
 	).rejects.toMatchObject({ code: "policy-denied" });
 	expect(requests.map((input) => input.url)).toEqual([initialUrl]);
 });
+
+it("uses the child's script policy for cross-origin Worker imports and discards imported response CSP", async () => {
+	let fetch!: NonNullable<DocumentLoaderContext["fetchWorkerImport"]>;
+	const calls: { url: string; redirects: number }[] = [];
+	const { session, requests } = fixture(
+		{
+			loadDocument: async (input, context) => {
+				if (!context.fetchWorkerImport)
+					throw Error("Missing Worker import provider");
+				fetch = context.fetchWorkerImport;
+				return loadBrowserDocument(input, context);
+			},
+		},
+		async (input) =>
+			response(
+				input.url,
+				input.url === initialUrl ? "<html></html>" : "var imported=true;",
+				{
+					headers:
+						input.url === initialUrl
+							? {
+									"content-type": ["text/html"],
+									"content-security-policy": [
+										"worker-src 'self'; script-src 'none'",
+									],
+								}
+							: {
+									"content-type": ["text/javascript"],
+									"content-security-policy": ["sandbox"],
+								},
+				},
+			),
+	);
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	await expect(
+		fetch(crossOriginUrl, new AbortController().signal, (url, redirects) => {
+			calls.push({ url, redirects });
+		}),
+	).resolves.toEqual({
+		url: crossOriginUrl,
+		source: "var imported=true;",
+		redirectCount: 0,
+	});
+	expect(calls).toEqual([
+		{ url: crossOriginUrl, redirects: 0 },
+		{ url: crossOriginUrl, redirects: 0 },
+	]);
+	expect(requests[1].cookieContext?.credentials).toBe("omit");
+	await expect(
+		fetch(crossOriginUrl, new AbortController().signal, () => {
+			throw Error("child policy denied");
+		}),
+	).rejects.toThrow("child policy denied");
+	expect(requests).toHaveLength(2);
+});

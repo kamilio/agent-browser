@@ -39,7 +39,7 @@ import {
 } from "./safejs.js";
 import type { ScriptCallbackRuntime } from "./script-events.js";
 import type { SessionPage } from "./session.js";
-import type { WorkerScriptFetch } from "./worker-fetch.js";
+import type { WorkerImportFetch, WorkerScriptFetch } from "./worker-fetch.js";
 
 export type {
 	PageRealm,
@@ -49,6 +49,7 @@ export type {
 
 export interface PageScriptOptions extends PageBindingOptions {
 	workerFetch?: WorkerScriptFetch;
+	workerImportFetch?: WorkerImportFetch;
 	budgetProfile?: ScriptBudgetProfile;
 	networkSourceModules?: PageNetworkModuleOptions;
 	limits?: Partial<ScriptLimits>;
@@ -118,6 +119,19 @@ export class PageScripts {
 				"Invalid Worker fetch configuration",
 			);
 		const budgetProfile = options.budgetProfile;
+		const workerImportFetch = moduleInputData(
+			options,
+			"workerImportFetch",
+			true,
+		) as WorkerImportFetch | undefined;
+		if (
+			workerImportFetch !== undefined &&
+			typeof workerImportFetch !== "function"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid Worker import fetch configuration",
+			);
 		this.limits = scriptLimits(options.limits, budgetProfile);
 		if (networkSourceModules !== undefined) {
 			const documentUrl = moduleInputData(networkSourceModules, "documentUrl");
@@ -169,11 +183,25 @@ export class PageScripts {
 			};
 			this.runtime = factory.createPageRuntime({
 				workerFetch,
-				workerDocumentUrl: page.document.url,
-				workerPolicy: (url) => {
+				workerImportFetch,
+				workerImportPolicy: (url, redirects) => {
 					this.ensureOpen();
 					const resource = documentResourceCsp(page.document);
-					if (resource) resource.check("worker", url);
+					if (resource) resource.check("script", url, redirects);
+					if (
+						this.scriptPolicy &&
+						!this.scriptPolicy.allowsWorkerImport(url, redirects)
+					)
+						throw new AgentBrowserError(
+							"policy-denied",
+							"Worker import blocked by inherited CSP",
+						);
+				},
+				workerDocumentUrl: page.document.url,
+				workerPolicy: (url, redirects) => {
+					this.ensureOpen();
+					const resource = documentResourceCsp(page.document);
+					if (resource) resource.check("worker", url, redirects);
 					else if (this.scriptPolicy?.enforced)
 						throw new AgentBrowserError("policy-denied", "Worker CSP is unavailable");
 				},

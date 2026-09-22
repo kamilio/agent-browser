@@ -105,3 +105,27 @@ it("permits secure owned Blob workers under upgrade-insecure-requests and blocks
 		tree.close();
 	}
 });
+
+it("inherits script-src rather than worker-src for classic Blob Worker imports and revokes that permission", () => {
+	const tree = parseHtmlDocument("<html></html>", documentUrl);
+	try {
+		const headers = {
+			"content-security-policy": [
+				"worker-src 'self'; script-src blob: https://cdn.test 'unsafe-inline'",
+			],
+		};
+		const resource = bindDocumentResourceCsp(tree, headers);
+		const scripts = initializeDocumentScriptCsp(tree, headers, true);
+		if (!resource || !scripts) throw Error("Missing inherited policy");
+		resource.attach(scripts);
+		expect(scripts.allowsWorkerImport(ownedBlob, 0)).toBe(true);
+		expect(scripts.allowsWorkerImport("https://cdn.test/import.js", 0)).toBe(
+			true,
+		);
+		expect(scripts.allowsWorkerImport(documentUrl, 0)).toBe(false);
+		tree.close();
+		expect(scripts.allowsWorkerImport(ownedBlob, 0)).toBe(false);
+	} finally {
+		tree.close();
+	}
+});
