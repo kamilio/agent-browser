@@ -61,6 +61,19 @@
   Compile/import/memory admission, default page quotas, actual Zoom instantiation,
   initialization and every joining/media gate remain open.
 
+- Bounded native WASM memory ownership and a reusable guest Memory wrapper now
+  pass 22 manifest-listed native checks, build, strict test typing and changed-file
+  lint/format. Creation/growth preflight SDK array/data quotas, enforce eight-memory,
+  2048-page aggregate and 4096-growth limits, retain one live reference per memory
+  and revoke ownership on failed admission after irreversible growth. Actual offline
+  SafeJS at 128 MiB passes one-page and 320-page fixtures: full aliases, guest/WASM
+  writes, growth preserving bytes and detaching old views, guest constructor/grow(0),
+  WASM reads after growth and cleanup memory/data/depth zero. The grown large fixture
+  retains 21168891 bytes under explicit 32 MiB quotas. This reusable bridge is not
+  installed into page/Worker globals yet. Module admission must intercept/reject
+  native memory.grow instructions, validate imports and prevent unowned memory
+  exports before integration; default quotas and all Zoom acceptance gates remain open.
+
 - Portable WASM binary instrumentation now inserts reserved step/enter/leave imports.
   Typed outer blocks route returns and function-target branches through depth cleanup;
   direct calls, exports, start, globals and element references retain their targets.

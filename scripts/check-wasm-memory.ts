@@ -1,6 +1,8 @@
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { loadPageRuntime } from "../src/node-page-core.js";
+import { NodeWasmMemories } from "../src/node-wasm-memories.js";
+import { pageWasmMemoryBootstrapSource } from "../src/page-wasm-memory-bootstrap.js";
 import type {
 	ReleasedCore,
 	ReleasedRealm,
@@ -129,9 +131,12 @@ if (!process.argv.includes("--isolated-probe")) {
 		visitNode(): void;
 		enterCall(): () => void;
 		readonly currentDataSize: number;
+		allocateArrayLength(bytes: number): void;
+		provisionDataUsage(bytes: number): () => void;
 	};
 	const depth = new WasmCallDepth(budget);
-	const memory = new WebAssembly.Memory({ initial: pages, maximum: 2048 });
+	let memories: NodeWasmMemories | undefined;
+	let wasm: WebAssembly.Instance;
 	const section = (id: number, bytes: number[]): number[] => [
 		id,
 		bytes.length,
@@ -158,20 +163,6 @@ if (!process.argv.includes("--isolated-probe")) {
 	const metered = meterWasmModule(input);
 	if (!WebAssembly.validate(metered.originalBytes as BufferSource))
 		throw new Error("Invalid original fixture");
-	const wasm = depth.run(
-		() =>
-			new WebAssembly.Instance(
-				new WebAssembly.Module(metered.bytes as BufferSource),
-				{
-					env: { m: memory },
-					[metered.importModule]: {
-						[metered.importName]: () => budget.visitNode(),
-						[metered.enterImportName]: () => depth.enter(),
-						[metered.leaveImportName]: () => depth.leave(),
-					},
-				},
-			),
-	);
 	let realm: ReleasedRealm | undefined;
 	let stage = "setup";
 	let exposed = false;
@@ -185,20 +176,32 @@ if (!process.argv.includes("--isolated-probe")) {
 		manifest: {
 			version: 1,
 			name: "wasm-memory-fixture",
-			globals: ["memory"],
+			globals: ["memory", "__agentBrowserWasmMemories"],
 			capabilities: ["array-buffer:share"],
 		},
 		setup(context) {
-			if (!context.createArrayBufferReference)
-				throw new Error("Selected SDK lacks live ArrayBuffer references");
-			const reference = context.createArrayBufferReference(memory.buffer);
+			memories = new NodeWasmMemories(context, budget);
+			context.onCleanup(() => memories?.close());
+			const handle = memories.createMemory(pages, 2048);
+			const memory = memories.nativeMemory(handle);
+			if (!memory) throw new Error("Missing owned native memory");
+			wasm = depth.run(
+				() =>
+					new WebAssembly.Instance(
+						new WebAssembly.Module(metered.bytes as BufferSource),
+						{
+							env: { m: memory },
+							[metered.importModule]: {
+								[metered.importName]: () => budget.visitNode(),
+								[metered.enterImportName]: () => depth.enter(),
+								[metered.leaveImportName]: () => depth.leave(),
+							},
+						},
+					),
+			);
 			exposed = true;
 			return {
-				globals: {
-					memory: context.createHostObject({
-						properties: { buffer: { get: () => reference } },
-					}),
-				},
+				globals: { memory: handle, __agentBrowserWasmMemories: memories.port },
 			};
 		},
 	});
@@ -209,6 +212,8 @@ if (!process.argv.includes("--isolated-probe")) {
 			budget,
 			signal: AbortSignal.timeout(16000),
 		});
+		const installed = await realm.evaluate(pageWasmMemoryBootstrapSource);
+		if (!installed.ok) throw new Error("Memory bootstrap failed");
 		stage = "full-views";
 		const views = await realm.evaluate(
 			"const u8=new Uint8Array(memory.buffer);const i32=new Int32Array(memory.buffer);const f64=new Float64Array(memory.buffer);u8[0]=42;return [u8.length,i32.length,f64.length,u8.buffer===i32.buffer,i32.buffer===f64.buffer];",
@@ -232,19 +237,54 @@ if (!process.argv.includes("--isolated-probe")) {
 		wasmToGuest = reads.ok && reads.returnValue === 99;
 		if (!wasmToGuest)
 			throw new Error("WASM writes are not visible to guest views");
+		stage = "growth";
+		const grown = await realm.evaluate(
+			"const old=memory.buffer;const previous=memory.grow(1);const next=memory.buffer;return [previous,old.byteLength,u8.length,next.byteLength,new Uint8Array(next)[0],old===next];",
+		);
+		const expectedGrowth = [pages, 0, 0, (pages + 1) * 65536, 99, false];
+		if (
+			!grown.ok ||
+			JSON.stringify(grown.returnValue) !== JSON.stringify(expectedGrowth)
+		)
+			throw new Error("Owned memory growth failed");
+		if (depth.run(() => (wasm.exports.load as () => number)()) !== 99)
+			throw new Error("WASM lost memory after growth");
+		const wrapped = await realm.evaluate(
+			"return (()=>{const m=new WebAssembly.Memory({initial:1,maximum:2});const b=m.buffer;new Uint8Array(b)[0]=42;const p=m.grow(1);const next=m.buffer;const bytes=new Uint8Array(next);const zero=m.grow(0);return [p,b.byteLength,bytes.length,zero,next.byteLength,m.buffer.byteLength,new Uint8Array(m.buffer)[0],m instanceof WebAssembly.Memory];})();",
+		);
+		if (
+			!wrapped.ok ||
+			JSON.stringify(wrapped.returnValue) !==
+				JSON.stringify([1, 0, 0, 2, 0, 131072, 42, true])
+		)
+			throw new Error("Actual SafeJS Memory wrapper growth failed");
+		retainedDataSize = budget.currentDataSize;
 		stage = "complete";
 	} catch (error) {
 		// Fixed fixture contains no credentials/page data. Bound its error text.
 		failure =
 			error instanceof Error
 				? { name: error.name, message: error.message.slice(0, 256) }
-				: { name: "UnknownError" };
+				: error && typeof error === "object"
+					? Object.fromEntries(
+							["name", "message", "code", "budget", "current", "limit"]
+								.map((key) => [
+									key,
+									Object.getOwnPropertyDescriptor(error, key)?.value,
+								])
+								.filter(
+									([, value]) =>
+										typeof value === "string" || typeof value === "number",
+								),
+						)
+					: { name: "UnknownError" };
 	} finally {
 		const closes = await Promise.allSettled(realm ? [realm.close()] : []);
 		cleanupVerified =
 			closes.every((result) => result.status === "fulfilled") &&
 			budget.currentDataSize === 0 &&
-			depth.depth === 0;
+			depth.depth === 0 &&
+			memories?.metrics().memories === 0;
 		const passed =
 			stage === "complete" &&
 			exposed &&
@@ -263,6 +303,7 @@ if (!process.argv.includes("--isolated-probe")) {
 				retainedDataSize,
 				guestToWasm,
 				wasmToGuest,
+				ownedMemories: memories?.metrics(),
 				failure,
 				passed,
 				cleanup: {
