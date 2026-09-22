@@ -23,6 +23,20 @@
 
 ## Current verified state
 
+- Canonical modules now trim completed parser lists into ordinary mutable arrays.
+  Contribution: safejs-compact-module-arrays.patch. Exact loginview retained heap
+  beyond baseline falls from 174708960 to 159669144 bytes (~8.6% less); tree, IDs,
+  aliases, function/template metadata and accounting match control (889089 nodes /
+  22269 functions, 4165502 steps / 3485657 current / 3506328 peak units). Streaming
+  tree digest matches: b699b1ac7e7355914c870157b6f797c8a90fc24d49f40ebba4776a5b5d99f737.
+  Selected SDK validation passes 370 checks, including 19 new contracts; one known
+  parser nesting failure reproduces on saved source. Scoped strict typing/build,
+  new-test format/lint and byte-exact patch application/reversal pass. Complete
+  128 MB parsing
+  still exhausts the heap before returning (exit 134); diagnostic timings establish
+  no full-client speedup. No compiler, initialization, meeting or media gate clears.
+  Processes terminate; temporary validation artifacts are removed; SDK retains fix.
+
 - Canonical modules now compact source spans into two offsets with bounded
   coordinate reconstruction; public parsing stays unchanged. Contribution:
   safejs-compact-module-spans.patch. Exact loginview tree/IDs/source metadata and
@@ -1266,7 +1280,9 @@
   Compact tokenization clears the isolated 128 MB lexer probe, but complete
   loginview parsing still fails that heap cap. This is not a full compiler pass.
   Compact spans reduce retained tree heap above; the final 128 MB probe still
-  fails. AST nodes, arrays and remaining strings/storage require further work.
+  fails. Completed parser-list trimming saves a further ~15 MB above, but complete
+  loginview parsing still exhausts 128 MB. AST nodes, spans and remaining strings/
+  storage require further work; the whole static graph must fit, not just loginview.
 
 - Background dynamic imports outlive the classic evaluation's PageScripts timer.
   The realm graph has document cancellation and shared step/data limits, but no

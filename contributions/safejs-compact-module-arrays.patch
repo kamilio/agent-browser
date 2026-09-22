@@ -1,0 +1,471 @@
+diff --git a/src/parse/parser.ts b/src/parse/parser.ts
+--- a/src/parse/parser.ts
++++ b/src/parse/parser.ts
+@@ -706,7 +706,17 @@
+   }
+ }
+
+-export function parseSourceModule(source: string, filename = "<input>", owner?: CompileOwner, options: {sharedPositions?: boolean; compactTokens?: boolean; compactSpans?: boolean} = {}): ParsedSourceModule {
++export function parseSourceModule(
++  source: string,
++  filename = "<input>",
++  owner?: CompileOwner,
++  options: {
++    sharedPositions?: boolean;
++    compactTokens?: boolean;
++    compactSpans?: boolean;
++    compactArrays?: boolean;
++  } = {},
++): ParsedSourceModule {
+   const compilation = new CompileScope(owner);
+   const syntax: SourceModuleSyntax = {imports: [], exports: [], moduleRequests: []};
+   let parser: Parser | undefined;
+@@ -719,7 +729,8 @@
+       (options.compactTokens || options.compactSpans ? tokenizeModule : tokenize)(source, {allowRegexLiterals: true, statementList: true, compilation, sharedPositions: options.sharedPositions}, options.compactSpans ? new CompactSourcePositions(source) : undefined),
+       source, compilation, "top-level",
+       {...ordinaryFunctionContext, newTarget: false, return: false, requireAsyncAwait: true,
+-        grammar: {await: true, yield: false, strict: true}}, true, syntax, options.sharedPositions === true || options.compactTokens === true || options.compactSpans === true
++        grammar: {await: true, yield: false, strict: true}}, true, syntax, options.sharedPositions === true || options.compactTokens === true || options.compactSpans === true,
++      options.compactArrays === true
+     );
+     const module = (options.sharedPositions ? assignFreshIds : assignIds)(parser.parseModule());
+     if (source.includes("#")) validatePrivateNames(module);
+@@ -900,9 +911,15 @@
+     private lexicalContext: LexicalParseContext = { ...ordinaryFunctionContext, newTarget: false },
+     private readonly allowImportMeta = true,
+     private readonly moduleSyntax?: SourceModuleSyntax,
+-    private readonly releaseModuleTokens = false
++    private readonly releaseModuleTokens = false,
++    private readonly compactArrays = false
+   ) {
+     this.functionScopes.add(this.scopes[0]!);
++  }
++
++  /** Copy finished scratch lists so small arrays do not retain growth capacity. */
++  private finishList<T>(list: T[]): T[] {
++    return this.compactArrays && list.length > 0 ? list.slice() : list;
+   }
+
+   get position(): Position { return (this.tokens[this.index] ?? this.tokens[this.tokens.length - 1]!).start; }
+@@ -998,7 +1015,7 @@
+     const end = this.currentToken().end;
+     return {
+       type: "Module",
+-      body,
++      body: this.finishList(body),
+       span: createSpan(body[0]?.span.start ?? end, body[body.length - 1]?.span.end ?? end),
+       nodeId: undefined
+     };
+@@ -1080,7 +1097,7 @@
+       return {
+         node: {
+           type: "SequenceExpression",
+-          expressions,
++          expressions: this.finishList(expressions),
+           span: createSpan(expressions[0]!.span.start, expressions[expressions.length - 1]!.span.end),
+           nodeId: undefined
+         },
+@@ -1367,7 +1384,7 @@
+       }
+     }
+
+-    return body;
++    return this.finishList(body);
+   }
+
+   private parseStatement(allowDeclarations = true): Statement {
+@@ -1714,7 +1731,7 @@
+           cases.push({
+             type: "SwitchCase",
+             test,
+-            consequent,
++            consequent: this.finishList(consequent),
+             span: createSpan(clauseToken.start, consequent.at(-1)?.span.end ?? colon.end),
+             nodeId: undefined
+           });
+@@ -1723,7 +1740,7 @@
+         return {
+           type: "SwitchStatement",
+           discriminant,
+-          cases,
++          cases: this.finishList(cases),
+           span: createSpan(switchToken.start, this.previousToken().end),
+           nodeId: undefined
+         };
+@@ -2350,7 +2367,7 @@
+
+     return {
+       type: "VariableDeclaration",
+-      declarations,
++      declarations: this.finishList(declarations),
+       kind: kindToken.value,
+       span: createSpan(kindToken.start, declarations[declarations.length - 1]!.span.end),
+       nodeId: undefined
+@@ -2387,7 +2404,14 @@
+       const init = iteration ? undefined : (this.expectPunctuator("="), this.parseExpression({ allowIn }).node);
+       declarations.push({type: "VariableDeclarator", id, ...(init === undefined ? {} : {init}), span: createSpan(id.span.start, init?.span.end ?? id.span.end), nodeId: undefined});
+     } while (!iteration && this.consumePunctuator(",") !== undefined);
+-    return {type: "VariableDeclaration", kind: "const", disposal, declarations, span: createSpan(start.start, declarations.at(-1)!.span.end), nodeId: undefined};
++    return {
++      type: "VariableDeclaration",
++      kind: "const",
++      disposal,
++      declarations: this.finishList(declarations),
++      span: createSpan(start.start, declarations.at(-1)!.span.end),
++      nodeId: undefined,
++    };
+   }
+
+   private parseFunctionDeclaration(defaultExport = false): FunctionDeclaration {
+@@ -2447,7 +2471,7 @@
+         elements.push(element);
+       }
+       const body: ClassBody = {
+-        type: "ClassBody", body: elements,
++        type: "ClassBody", body: this.finishList(elements),
+         span: createSpan(open.start, this.previousToken().end),
+         nodeId: undefined
+       };
+@@ -2612,7 +2636,7 @@
+       const params: ArrowFunctionExpression["params"] = [];
+
+       if (this.consumePunctuator(")") !== undefined) {
+-        return params;
++        return this.finishList(params);
+       }
+
+       while (true) {
+@@ -2639,7 +2663,7 @@
+       }
+
+       this.expectPunctuator(")");
+-      return params;
++      return this.finishList(params);
+     });
+   }
+
+@@ -2720,7 +2744,7 @@
+     if (this.consumePunctuator("]") !== undefined) {
+       return {
+         type: "ArrayPattern",
+-        elements,
++        elements: this.finishList(elements),
+         span: createSpan(start.start, this.previousToken().end),
+         nodeId: undefined
+       };
+@@ -2761,7 +2785,7 @@
+     const end = this.expectPunctuator("]");
+     return {
+       type: "ArrayPattern",
+-      elements,
++      elements: this.finishList(elements),
+       span: createSpan(start.start, end.end),
+       nodeId: undefined
+     };
+@@ -2774,7 +2798,7 @@
+     if (this.consumePunctuator("}") !== undefined) {
+       return {
+         type: "ObjectPattern",
+-        properties,
++        properties: this.finishList(properties),
+         span: createSpan(start.start, this.previousToken().end),
+         nodeId: undefined
+       };
+@@ -2811,7 +2835,7 @@
+     const end = this.expectPunctuator("}");
+     return {
+       type: "ObjectPattern",
+-      properties,
++      properties: this.finishList(properties),
+       span: createSpan(start.start, end.end),
+       nodeId: undefined
+     };
+@@ -3019,7 +3043,7 @@
+     if (this.consumePunctuator("]") !== undefined) {
+       return {
+         type: "ArrayPattern",
+-        elements,
++        elements: this.finishList(elements),
+         span: createSpan(start.start, this.previousToken().end),
+         nodeId: undefined
+       };
+@@ -3060,7 +3084,7 @@
+     const end = this.expectPunctuator("]");
+     return {
+       type: "ArrayPattern",
+-      elements,
++      elements: this.finishList(elements),
+       span: createSpan(start.start, end.end),
+       nodeId: undefined
+     };
+@@ -3073,7 +3097,7 @@
+     if (this.consumePunctuator("}") !== undefined) {
+       return {
+         type: "ObjectPattern",
+-        properties,
++        properties: this.finishList(properties),
+         span: createSpan(start.start, this.previousToken().end),
+         nodeId: undefined
+       };
+@@ -3110,7 +3134,7 @@
+     const end = this.expectPunctuator("}");
+     return {
+       type: "ObjectPattern",
+-      properties,
++      properties: this.finishList(properties),
+       span: createSpan(start.start, end.end),
+       nodeId: undefined
+     };
+@@ -3849,7 +3873,7 @@
+     if (emptyEnd !== undefined) {
+       return {
+         type: "ArrayExpression",
+-        elements,
++        elements: this.finishList(elements),
+         span: createSpan(start.start, emptyEnd.end),
+         nodeId: undefined
+       };
+@@ -3898,7 +3922,7 @@
+     const end = this.expectPunctuator("]");
+     return {
+       type: "ArrayExpression",
+-      elements,
++      elements: this.finishList(elements),
+       span: createSpan(start.start, end.end),
+       nodeId: undefined
+     };
+@@ -3913,7 +3937,7 @@
+     if (emptyEnd !== undefined) {
+       return {
+         type: "ObjectExpression",
+-        properties,
++        properties: this.finishList(properties),
+         span: createSpan(start.start, emptyEnd.end),
+         nodeId: undefined
+       };
+@@ -3956,7 +3980,7 @@
+     const end = this.expectPunctuator("}");
+     return {
+       type: "ObjectExpression",
+-      properties,
++      properties: this.finishList(properties),
+       span: createSpan(start.start, end.end),
+       nodeId: undefined
+     };
+@@ -4197,7 +4221,7 @@
+
+     const emptyEnd = this.consumePunctuator(")");
+     if (emptyEnd !== undefined) {
+-      return args;
++      return this.finishList(args);
+     }
+
+     while (true) {
+@@ -4229,7 +4253,7 @@
+     }
+
+     this.expectPunctuator(")");
+-    return args;
++    return this.finishList(args);
+   }
+
+   private createCallExpression(callee: Expression, optional: boolean, continuesOptionalChain = false): CallExpression {
+@@ -4374,7 +4398,7 @@
+
+     return {
+       type: "ArrayPattern",
+-      elements,
++      elements: this.finishList(elements),
+       span: node.span,
+       nodeId: undefined
+     };
+@@ -4435,7 +4459,7 @@
+
+     return {
+       type: "ObjectPattern",
+-      properties,
++      properties: this.finishList(properties),
+       span: node.span,
+       nodeId: undefined
+     };
+diff --git a/src/modules/source-graph.ts b/src/modules/source-graph.ts
+--- a/src/modules/source-graph.ts
++++ b/src/modules/source-graph.ts
+@@ -144,7 +144,17 @@
+         return known;
+       }
+       this.options.budget?.chargeDataUsage(source.source.length + source.id.length + 1);
+-      const parsed = parseSourceModule(source.source, source.id, this.options.compilation?.owner ?? this.options.compileOwner, {sharedPositions:true, compactTokens:true, compactSpans:true});
++      const parsed = parseSourceModule(
++        source.source,
++        source.id,
++        this.options.compilation?.owner ?? this.options.compileOwner,
++        {
++          sharedPositions: true,
++          compactTokens: true,
++          compactSpans: true,
++          compactArrays: true,
++        },
++      );
+       const importMeta = Object.create(null) as SandboxObject;
+       setSandboxPrototype(importMeta,null);
+       const record: RecordEntry = {id:source.id, source:source.source, parsed,
+diff --git a/src/parse/compact-arrays.test.ts b/src/parse/compact-arrays.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/parse/compact-arrays.test.ts
+@@ -0,0 +1,154 @@
++import { expect, it } from "vitest";
++import { Budget } from "../interp/budget.js";
++import {
++  functionSources,
++  functionStrictness,
++  templateSources,
++} from "./function-source.js";
++import { parseSourceModule } from "./source-module.js";
++
++const fixtures = [
++  "",
++  "import {value} from './dep.js';export const result=await Promise.resolve(value);",
++  "export const value=f(1,...items,);export const other=new Constructor(1,2);",
++  "export function f(a=1,{b},...rest){if(a){return b;}else{return rest;}}",
++  "export const f=(a,b)=>{const x=1,y=2;return (a,x,b,y)};",
++  "export const a=[,,1,...items];export const b={x,...other,method(a){return a}};",
++  "export const [a,,...rest]=items;export const {b,c:d=1,...other}=record;",
++  "let a,b,rest;[a,,b,...rest]=items;({a,b,...rest}=record);export {a};",
++  "export const f=()=>({});export const g=()=>[];export function empty(){};f();",
++  "export class A {#x=1;static {this.x=1;}method(a){return a;}get x(){return this.#x}};",
++  "export function f(x){switch(x){case 1:x++;break;case 2:default:return x}};",
++  "export const x=`outer${f(1,...items)}${`inner${2}`}`;",
++  "export function f(){using x=resource,y=other;return x};",
++  `export const x=[${Array.from({ length: 3000 }, (_, i) => i).join(",")}];`,
++  `export function f(${Array.from({ length: 400 }, (_, i) => `a${i}`).join(",")}){return a0;}`,
++];
++
++// Capture metadata and repeated references that structural equality cannot detect.
++function identities(root: unknown) {
++  const pending: Array<[unknown, string]> = [[root, "root"]];
++  const seen = new WeakMap<object, string>();
++  const aliases: Array<[string, string]> = [];
++  const metadata: unknown[] = [];
++  while (pending.length) {
++    const [value, path] = pending.pop()!;
++    if (!value || typeof value !== "object") continue;
++    // Compact coordinates are reconstructible records; compare their data below.
++    if (path.endsWith(".span")) continue;
++    const first = seen.get(value);
++    if (first !== undefined) {
++      aliases.push([path, first]);
++      continue;
++    }
++    seen.set(value, path);
++    if ("nodeId" in value) {
++      metadata.push([
++        value.nodeId,
++        functionSources.get(value as Parameters<typeof functionSources.get>[0]),
++        functionStrictness.get(
++          value as Parameters<typeof functionStrictness.get>[0],
++        ),
++        templateSources.get(value as Parameters<typeof templateSources.get>[0]),
++      ]);
++    }
++    for (const key of Object.keys(value))
++      pending.push([(value as Record<string, unknown>)[key], `${path}.${key}`]);
++  }
++  return { aliases, metadata };
++}
++
++function compile(source: string, compactArrays: boolean, limits = {}) {
++  const budget = new Budget({
++    maxSteps: 1000000,
++    stringLength: 100000,
++    dataSize: 1000000,
++    ...limits,
++  });
++  const lease = budget.acquireCompileOwner();
++  try {
++    budget.chargeDataUsage(source.length + "fixture.js".length + 1);
++    const parsed = parseSourceModule(source, "fixture.js", lease.owner, {
++      sharedPositions: true,
++      compactTokens: true,
++      compactSpans: true,
++      compactArrays,
++    });
++    return {
++      parsed,
++      json: JSON.stringify(parsed),
++      identities: identities(parsed),
++      steps: budget.stepsUsed,
++      data: budget.currentDataSize,
++      peak: budget.peakDataSize,
++    };
++  } finally {
++    lease.release();
++  }
++}
++
++it.each(fixtures)(
++  "preserves trees, source metadata, aliases and accounting for %j",
++  (source) => {
++    expect(compile(source, true)).toEqual(compile(source, false));
++  },
++);
++
++it("keeps child identity and independent mutable list behavior", () => {
++  const parsed = compile(
++    "export const x={x};export const y=f(x);export const z=f(x);",
++    true,
++  ).parsed;
++  const pending: unknown[] = [parsed.module];
++  const calls: Array<{ arguments: unknown[] }> = [];
++  while (pending.length) {
++    const value = pending.pop();
++    if (!value || typeof value !== "object") continue;
++    if ("type" in value && value.type === "CallExpression")
++      calls.push(value as unknown as { arguments: unknown[] });
++    if ("type" in value && value.type === "Property") {
++      const property = value as unknown as { key: unknown; value: unknown };
++      // Shorthand keys and values are separate parser nodes in the public tree.
++      expect(property.key).not.toBe(property.value);
++    }
++    for (const key of Object.keys(value))
++      if (key !== "span") pending.push((value as Record<string, unknown>)[key]);
++  }
++  expect(calls).toHaveLength(2);
++  const saved = calls[0]!.arguments[0];
++  expect(calls[0]!.arguments).not.toBe(calls[1]!.arguments);
++  expect(Object.getPrototypeOf(calls[0]!.arguments)).toBe(Array.prototype);
++  expect(Object.getOwnPropertyDescriptor(calls[0]!.arguments, "0")).toEqual({
++    value: saved,
++    writable: true,
++    configurable: true,
++    enumerable: true,
++  });
++  calls[0]!.arguments.push(saved);
++  expect(calls[1]!.arguments).toHaveLength(1);
++  calls[0]!.arguments.splice(0, 1);
++  expect(calls[0]!.arguments[0]).toBe(saved);
++  delete calls[0]!.arguments[0];
++  expect(0 in calls[0]!.arguments).toBe(false);
++  calls[0]!.arguments.length = 0;
++  expect(calls[1]!.arguments).toHaveLength(1);
++});
++
++it.each([{ maxSteps: 1 }, { stringLength: 5 }, { dataSize: 5 }])(
++  "preserves compile failures for %j",
++  (limits) => {
++    function outcome(compact: boolean) {
++      try {
++        compile("export const x=f(1,2,3);", compact, limits);
++        return "success";
++      } catch (error) {
++        return {
++          name: (error as Error).name,
++          message: (error as Error).message,
++        };
++      }
++    }
++    expect(outcome(true)).toEqual(outcome(false));
++    expect(outcome(true)).not.toBe("success");
++  },
++);
