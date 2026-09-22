@@ -39,17 +39,34 @@
   128 MB renders `object`, fetches nothing and closes at data zero; its diagnostic
   allowance is 120 s, not a full default timing or application-readiness pass.
   Working SDK source/build retain the candidate; processes terminate and temporary
-  fixtures/logs/profiles are removed. Next: trace the remaining full-graph initializer
-  stages before more caching; this candidate has no complete live Zoom speedup proof.
+  fixtures/logs/profiles are removed. The full-graph trace below identifies later
+  initialization costs; this candidate has no complete live Zoom speedup proof.
 
-- The longer pre-candidate live diagnostic reaches its 15 min import-observation
-  bound without initialization: 13 classic scripts pass, seven modules prepare,
-  import counts stay 1/7/0/0 while 234176 steps advance across 895 s of progress
-  reports. Zero socket attempts and cleanup data zero verified; no meeting joined.
-  The driver permits a bounded 0–30 min import wait (default 30 s), reports counts/
-  steps/data every 10 s and accepts an explicit 1–120 s network deadline (default
-  15 s). Build, Biome and five invalid-setting rejection probes pass. Extended
-  768 MB/120 s-script/120 s-network allowances clear no default or meeting/media gate.
+- Latest candidate full-graph trace reaches the 15 min import-observation bound:
+  13 classics pass, seven modules prepare, counts remain 1/7/0/0, and 248561 steps
+  advance across 895 s of progress reports. Editor statements 0–1352 complete
+  normally; cleanup interrupts statement 1353 of 2101, not a proven application
+  exception. React DOM initialization (statement 2) completes in 162.9 s / 40979
+  steps. DOMPurify 3.0.9 initialization (statement 1237, `var xle=tI()`) completes
+  in 460.0 s / 41304 steps. Other locale/UI initializers also add seconds.
+  Zero socket attempts and cleanup data zero verified; no readiness or join.
+  Temporary SDK instrumentation is restored, probe processes terminate and
+  temporary fixtures/logs are removed.
+  Extended 768 MB/120 s script/network allowances clear no default acceptance gate.
+  The driver retains bounded 0–30 min import observation, 10 s progress reports and
+  explicit 1–120 s network deadlines; prior build/format/invalid-setting checks pass.
+
+- An isolated 21008-character slice of Zoom's bundled DOMPurify initializes under
+  128 MB in 17.7–18.6 s, reports `3.0.9:true:function`, then throws TypeError on
+  benign `<b>hello</b>` sanitization. Guest exception capture narrows the failure to
+  `La`: DOMParser is absent, so its fallback calls missing DOMImplementation.createDocument.
+  Actual SDK/native probes also confirm absent document.createNodeIterator,
+  NodeFilter, HTMLFormElement and NamedNodeMap. The bundled library's `isSupported`
+  flag is therefore insufficient evidence of compatibility. No security bypass or
+  successful sanitization is claimed. No live fetches are made by the offline fixture;
+  its runtime closes with data zero. Next: implement and validate the required DOM
+  parsing/traversal/interface behavior, while preserving accounting and ownership;
+  complete application initialization and all meeting/media gates remain open.
 
 - Editor initialization is narrowed to React DOM's lazy initializer. The earlier
   live root-statement trace completes statement 0 in 19.5 s / 3594 steps and
@@ -963,17 +980,14 @@
 
 - The editor alone clears its offline 128 MB compilation gate above. The complete
   static graph includes loginview (3485587 chars), editor (1095001), emoji (888017),
-  i18n (362461), lodash (126038), rolldown (1365) and the 4383-char entry. The final
-  768 MB live diagnostic admits/prepares all seven but its root import remains
-  pending after 60 s extra observation, without fulfillment/rejection; cleanup zero.
-  The earlier real-entry offline 768 MB fixture also remained pending after about
-  36 s (8398782 steps, about 530 MB heap used before close), with verified cleanup.
-  Profile module linking/evaluation and cumulative compiler/runtime memory. Diagnostic
-  heap/time/response allowances do not clear production/default 128 MB, interactive
-  readiness or meeting gates. The former entry-only driver prematurely closed with
-  an emoji fetch pending; the status-aware driver now records a nonzero timeout.
-  Module labels remain bounded without credentials/query/fragment/source text;
-  fetch completion and green classic reports prove no readiness.
+  i18n (362461), lodash (126038), rolldown (1365) and the 4383-char entry. The latest
+  768 MB live trace prepares all seven but remains pending at the 15 min observation
+  bound, reaching editor statement 1353 after React DOM and DOMPurify complete.
+  The isolated sanitizer's benign-markup failure exposes missing native DOM APIs;
+  initialization performance and library compatibility both require work. Diagnostic
+  heap/time/response allowances do not clear default 128 MB, interactive readiness
+  or meeting gates. Fetch completion and green classic reports prove no readiness.
+
 - Background dynamic imports outlive the classic evaluation's PageScripts timer.
   The realm graph has document cancellation and shared step/data limits, but no
   demonstrated per-import evaluation deadline/TLA timeout. Do not clear the default
