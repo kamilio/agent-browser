@@ -23,6 +23,21 @@
 
 ## Current verified state
 
+- Deep SDK-owned property-table metadata now uses suspended DFS continuations:
+  tracked symbol/private-field and prototype chains measure through depth 1024 and
+  reject depth 1025 with dataDepth on the default stack. Fresh callbacks, descriptor
+  capture order, live private-slot iteration and primary held limits stay active.
+  Contribution: safejs-tracked-metadata-data-walk.patch. All 169 selected SDK checks
+  across 22 files pass; scoped core build and compiled default-stack/128 MB probes
+  pass (2054 symbol / 1042 private / 1025 prototype units, excessive-depth and held
+  quota rejection). Live 384 MB: HTTP 200, 13 classics pass, seven modules prepared,
+  deadline revocation, zero sockets, no readiness/join, cleanup data zero, exit 1.
+  Strict core/new-test typing and byte-exact patch forward/reverse pass; new-test
+  format/lint passes, with only three reproduced baseline source lint warnings.
+  Owned probes terminate and temporary validation inputs/logs are removed.
+  This is a correctness fix; no speedup or default Zoom gate is established.
+  Untracked/foreign deep symbol graphs and other graph edges remain open.
+
 - Shallow recursive child traversal is rejected and reverted: avoiding continuation
   allocation below depth 16 passed 125 selected SDK preservation checks across 18
   files and scoped compilation, but supplied no useful live initialization gain.
@@ -1454,7 +1469,7 @@
   Media transport/rendering APIs need implementation,
   separately from initialization performance and later live acceptance.
 - Baseline parser else-if nesting raises RangeError before its intended syntax
-  limit diagnostic. Default-stack dataDepth for direct symbol descendants, closure property
+  limit diagnostic. Default-stack dataDepth for untracked/foreign symbol descendants, closure property
   paths and other untested graph edges; deep-copy host ingress/result export and
   deep plain-object copying also overflow the native stack on baseline. Older
   scope-root shape expectations and a

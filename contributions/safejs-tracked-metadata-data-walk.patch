@@ -1,0 +1,303 @@
+diff --git a/src/interp/values.ts b/src/interp/values.ts
+--- a/src/interp/values.ts
++++ b/src/interp/values.ts
+@@ -829,7 +829,9 @@
+     // continuations off the native stack, without postponing any callbacks.
+     type Frame = { values: readonly unknown[]; index: number; depth: number } |
+       { iterator: Generator<unknown, void>; depth: number } |
+-      { afterClosurePrototype: SandboxClosure; depth: number };
++      { afterClosurePrototype: SandboxClosure; depth: number } |
++      { afterTrackedMetadata: object; depth: number } |
++      { afterTrackedPrototype: object; depth: number };
+     let pending: Frame[] | undefined;
+     try {
+     walk: while (true) {
+@@ -926,6 +928,13 @@
+         // Exotic instances have separate identities; untracked/restored/outer-proxy
+         // values keep the conservative classification path below.
+         if (isTrackedPropertyTable(value) && !hostFunctionMetadata.has(value)) {
++          if (depth >= 128) {
++            // Resume mutable prototype/string data only after metadata descendants.
++            // Private slot iteration and symbol snapshots retain their DFS timing.
++            (pending ??= []).push({ afterTrackedMetadata: value, depth });
++            pending.push({ iterator: trackedMetadataValues(value), depth: depth + 1 });
++            break entry;
++          }
+           visitPrivateAndSymbols(value, depth);
+           const prototype = getSandboxPrototype(value);
+           if (prototype !== null) visit(prototype, depth + 1);
+@@ -1389,6 +1398,23 @@
+             depth = frame.depth;
+             continue walk;
+           }
++        } else if ("afterTrackedMetadata" in frame) {
++          pending.pop();
++          const prototype = getSandboxPrototype(frame.afterTrackedMetadata);
++          pending.push({ afterTrackedPrototype: frame.afterTrackedMetadata, depth: frame.depth });
++          if (prototype !== null) {
++            value = prototype;
++            depth = frame.depth + 1;
++            continue walk;
++          }
++        } else if ("afterTrackedPrototype" in frame) {
++          pending.pop();
++          const projection = trackedObjectStringData(
++            frame.afterTrackedPrototype, hasManagedDescriptors(frame.afterTrackedPrototype)
++          )!;
++          usage += projection.units;
++          if (projection.references.length > 0)
++            pending.push({ values: projection.references, index: 0, depth: frame.depth + 1 });
+         } else if ("afterClosurePrototype" in frame) {
+           pending.pop();
+           const capture = visitClosureAfterPrototype(frame.afterClosurePrototype, frame.depth);
+@@ -1510,6 +1536,32 @@
+         if ("value" in descriptor) visit(descriptor.value, depth + 1);
+         else for (const closure of retainedAccessorClosures(descriptor)) visit(closure, depth + 1);
+       }
++    }
++  }
++
++  // Only deep SDK-owned tables take this path. Leave shallow/foreign hot paths
++  // unchanged, and suspend live private iterators rather than snapshotting them.
++  function* trackedMetadataValues(value: object): Generator<unknown, void> {
++    const privateSlots = privateElements.get(value);
++    if (privateSlots !== undefined) {
++      for (const [name, element] of privateSlots) {
++        yield name;
++        if (element.kind === "accessor") {
++          yield element.get;
++          yield element.set;
++        } else yield element.value;
++      }
++    }
++    if (isGuestHostObject(value)) return;
++    const descriptors = trackedObjectSymbolDescriptors(value)!;
++    for (let index = 0; index < descriptors.length; index++) {
++      const entry = descriptors[index]!;
++      const key = entry[0], descriptor = entry[1];
++      if (internalSymbols.has(key)) continue;
++      usage += 1;
++      yield key;
++      if ("value" in descriptor) yield descriptor.value;
++      else for (const closure of retainedAccessorClosures(descriptor)) yield closure;
+     }
+   }
+ 
+diff --git a/src/interp/tracked-metadata-data-walk.test.ts b/src/interp/tracked-metadata-data-walk.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/interp/tracked-metadata-data-walk.test.ts
+@@ -0,0 +1,213 @@
++import { expect, it } from "vitest";
++import { MAX_DATA_DEPTH } from "../graph-depth.js";
++import { Budget } from "./budget.js";
++import { internalSymbols } from "./internal-symbols.js";
++import { createIntrinsicObject, setSandboxPrototype } from "./object-model.js";
++import { addPrivateElement } from "./private-state.js";
++import {
++  createSandboxClosure,
++  measureSandboxData,
++  reconcileCompiledValues,
++  type SandboxValue,
++} from "./values.js";
++
++function chain(depth: number, privateField: boolean): object {
++  let root = createIntrinsicObject();
++  const key = Symbol("next");
++  const name = { description: "next" };
++  for (let index = 0; index < depth; index++) {
++    const parent = createIntrinsicObject();
++    if (privateField)
++      addPrivateElement(parent, name, { kind: "field", value: root });
++    else Object.defineProperty(parent, key, { value: root, enumerable: true });
++    root = parent;
++  }
++  return root;
++}
++
++it.each([false, true])(
++  "measures deep tracked metadata on the default stack (private=%s)",
++  (privateField) => {
++    expect(measureSandboxData([chain(MAX_DATA_DEPTH, privateField)])).toBe(
++      privateField ? MAX_DATA_DEPTH + 18 : MAX_DATA_DEPTH * 2 + 6,
++    );
++  },
++);
++it.each([false, true])(
++  "rejects excessive tracked metadata with dataDepth (private=%s)",
++  (privateField) => {
++    expect(() =>
++      measureSandboxData([chain(MAX_DATA_DEPTH + 1, privateField)]),
++    ).toThrow(
++      expect.objectContaining({
++        code: "budgetExceeded",
++        budget: "dataDepth",
++        current: MAX_DATA_DEPTH + 1,
++      }),
++    );
++  },
++);
++
++function wrap(root: SandboxValue): SandboxValue {
++  for (let index = 0; index < 140; index++)
++    root = createIntrinsicObject({ next: root });
++  return root;
++}
++
++it("keeps primary limits active during held deep metadata reconciliation", () => {
++  const budget = new Budget({ dataSize: 1000 });
++  const release = budget.deferReconciliation();
++  try {
++    expect(() =>
++      reconcileCompiledValues(budget, [chain(MAX_DATA_DEPTH, false)]),
++    ).toThrow(expect.objectContaining({ budget: "dataSize" }));
++  } finally {
++    release();
++  }
++});
++
++it("resumes prototype and string inspection after metadata callbacks", () => {
++  const events: string[] = [];
++  const first = Symbol("first"),
++    later = Symbol("later");
++  const table = createIntrinsicObject({ text: "a" });
++  table[first] = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => {
++      events.push("symbol");
++      table[later] = "longer";
++      table.text = "changed";
++      return [];
++    },
++  });
++  table[later] = "a";
++  const prototype = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => {
++      events.push("prototype");
++      table.text = "from prototype";
++      return [];
++    },
++  });
++  setSandboxPrototype(table, prototype);
++  const root = wrap(table);
++  const initial = measureSandboxData([root]);
++  expect(events).toEqual(["symbol", "prototype"]);
++  expect(table.text).toBe("from prototype");
++  expect(measureSandboxData([root])).toBe(initial + 5);
++  expect(events).toEqual(["symbol", "prototype", "symbol", "prototype"]);
++});
++
++it("observes live private iterator insertion before capturing symbols", () => {
++  const table = createIntrinsicObject();
++  const symbol = Symbol("after");
++  let added = false;
++  const events: string[] = [];
++  const inserted = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => {
++      events.push("inserted");
++      return [];
++    },
++  });
++  const first = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => {
++      events.push("first");
++      if (!added) {
++        addPrivateElement(
++          table,
++          { description: "inserted" },
++          { kind: "field", value: inserted },
++        );
++        added = true;
++      }
++      table[symbol] = "changed";
++      return [];
++    },
++  });
++  addPrivateElement(
++    table,
++    { description: "first" },
++    { kind: "field", value: first },
++  );
++  table[symbol] = "a";
++  const root = wrap(table);
++  const usage = measureSandboxData([root]);
++  expect(events).toEqual(["first", "inserted"]);
++  expect(measureSandboxData([root])).toBe(usage);
++});
++
++it("checks symbol catalogue changes between suspended descendants", () => {
++  const table = createIntrinsicObject();
++  const first = Symbol("first"),
++    later = Symbol("later");
++  table[first] = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => {
++      internalSymbols.add(later);
++      return [];
++    },
++  });
++  table[later] = "x".repeat(1000);
++  const root = wrap(table);
++  try {
++    const usage = measureSandboxData([root]);
++    delete table[later];
++    expect(measureSandboxData([root])).toBe(usage);
++  } finally {
++    internalSymbols.delete(later);
++  }
++});
++
++it("closes suspended captures when deep metadata fails", () => {
++  const failure = new Error("metadata failure");
++  const events: string[] = [];
++  const table = createIntrinsicObject();
++  table[Symbol("leaf")] = createSandboxClosure({
++    call: () => undefined,
++    retainedValues: () => {
++      throw failure;
++    },
++  });
++  let root: SandboxValue = table;
++  for (const name of ["inner", "outer"]) {
++    const next = root;
++    root = createSandboxClosure({
++      call: () => undefined,
++      retainedValues: function* () {
++        events.push("open-" + name);
++        try {
++          yield next;
++        } finally {
++          events.push("close-" + name);
++        }
++      },
++    });
++  }
++  expect(() => measureSandboxData([wrap(root)])).toThrow(failure);
++  expect(events).toEqual([
++    "open-outer",
++    "open-inner",
++    "close-inner",
++    "close-outer",
++  ]);
++});
++
++it("continues tracked prototypes off the stack at the depth boundary", () => {
++  let root = createIntrinsicObject();
++  for (let index = 0; index < MAX_DATA_DEPTH; index++) {
++    const parent = createIntrinsicObject();
++    setSandboxPrototype(parent, root);
++    root = parent;
++  }
++  expect(measureSandboxData([root])).toBe(MAX_DATA_DEPTH + 1);
++  const parent = createIntrinsicObject();
++  setSandboxPrototype(parent, root);
++  expect(() => measureSandboxData([parent])).toThrow(
++    expect.objectContaining({
++      budget: "dataDepth",
++      current: MAX_DATA_DEPTH + 1,
++    }),
++  );
++});
