@@ -100,19 +100,20 @@ function schemeMatches(source: string, target: string): boolean {
 
 export class ContentSecurityPolicy {
 	readonly policyCount: number;
-	readonly #destination: "image" | "style" | "connect";
+	readonly #destination: "image" | "style" | "connect" | "worker";
 	readonly #origin: Origin | undefined;
 	readonly #policies: readonly (readonly Source[])[];
 
 	constructor(
 		documentUrl: string,
 		headerValues: readonly string[],
-		destination: "image" | "style" | "connect",
+		destination: "image" | "style" | "connect" | "worker",
 	) {
 		if (
 			destination !== "image" &&
 			destination !== "style" &&
-			destination !== "connect"
+			destination !== "connect" &&
+			destination !== "worker"
 		)
 			throw new AgentBrowserError("invalid-input", "Invalid CSP destination");
 		this.#destination = destination;
@@ -152,6 +153,7 @@ export class ContentSecurityPolicy {
 				let primary: readonly Source[] | undefined;
 				let secondary: readonly Source[] | undefined;
 				let fallback: readonly Source[] | undefined;
+				let script: readonly Source[] | undefined;
 				for (const token of serialized.split(";")) {
 					if (++directives > maxDirectives) limit("Too many CSP directives");
 					const directive = token.replace(asciiEdges, "");
@@ -168,10 +170,16 @@ export class ContentSecurityPolicy {
 							? "img-src"
 							: destination === "style"
 								? "style-src-elem"
-								: "connect-src";
+								: destination === "worker"
+									? "worker-src"
+									: "connect-src";
 					if (
 						name !== primaryName &&
 						!(destination === "style" && name === "style-src") &&
+						!(
+							destination === "worker" &&
+							(name === "child-src" || name === "script-src")
+						) &&
 						name !== "default-src"
 					)
 						continue;
@@ -181,11 +189,13 @@ export class ContentSecurityPolicy {
 						if (source) compiled.push(source);
 					}
 					if (name === primaryName) primary = Object.freeze(compiled);
-					else if (name === "style-src") secondary = Object.freeze(compiled);
+					else if (name === "script-src") script = Object.freeze(compiled);
+					else if (name === "style-src" || name === "child-src")
+						secondary = Object.freeze(compiled);
 					else fallback = Object.freeze(compiled);
 				}
 				if (names.size) policyCount++;
-				const effective = primary ?? secondary ?? fallback;
+				const effective = primary ?? secondary ?? script ?? fallback;
 				if (effective) policies.push(effective);
 			}
 		}
@@ -205,6 +215,7 @@ export class ContentSecurityPolicy {
 		if (
 			scheme !== "http" &&
 			scheme !== "https" &&
+			!(this.#destination === "worker" && scheme === "blob") &&
 			!(
 				this.#destination === "connect" &&
 				(scheme === "ws" || scheme === "wss")
@@ -225,7 +236,7 @@ export class ContentSecurityPolicy {
 						? source.cost + target.hostname.length + target.pathname.length
 						: target.hostname.length + 1;
 				if (work > maxMatchWork) limit("CSP matching work limit exceeded");
-				if (source.kind === "wildcard") return true;
+				if (source.kind === "wildcard") return scheme !== "blob";
 				if (source.kind === "self")
 					return (
 						origin !== undefined &&

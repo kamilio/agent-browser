@@ -1104,5 +1104,7 @@
   "src/research-streamed-content.test.ts",
   "src/page-dom-parser.test.ts",
   "src/script-node-iterators.test.ts",
-  "src/page-blobs.test.ts"
+  "src/page-blobs.test.ts",
+  "src/page-workers.test.ts",
+  "src/worker-csp.test.ts"
 ]

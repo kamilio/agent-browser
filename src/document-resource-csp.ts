@@ -5,6 +5,8 @@ import { AgentBrowserError } from "./errors.js";
 
 const resourceDirectives = new Set([
 	"default-src",
+	"worker-src",
+	"child-src",
 	"img-src",
 	"style-src",
 	"style-src-elem",
@@ -93,7 +95,7 @@ export class DocumentResourceCsp {
 	private readonly controller = new AbortController();
 	private readonly values: readonly string[];
 	private readonly matchers: Record<
-		"image" | "style" | "connect",
+		"image" | "style" | "connect" | "worker",
 		ContentSecurityPolicy
 	>;
 	private policy?: DocumentScriptCsp;
@@ -133,6 +135,7 @@ export class DocumentResourceCsp {
 					const name = raw.toLowerCase();
 					if (names.has(name)) continue;
 					names.set(name, expressions);
+					if (name === "script-src") present = true;
 					if (!resourceDirectives.has(name)) continue;
 					present = true;
 					if (name === "upgrade-insecure-requests") {
@@ -185,6 +188,7 @@ export class DocumentResourceCsp {
 			image: new ContentSecurityPolicy(tree.url, this.values, "image"),
 			style: new ContentSecurityPolicy(tree.url, this.values, "style"),
 			connect: new ContentSecurityPolicy(tree.url, this.values, "connect"),
+			worker: new ContentSecurityPolicy(tree.url, this.values, "worker"),
 		};
 		tree.onClose(() => this.close());
 	}
@@ -233,7 +237,8 @@ export class DocumentResourceCsp {
 		if (
 			this.secureOnly &&
 			target.protocol !== "https:" &&
-			target.protocol !== "wss:"
+			target.protocol !== "wss:" &&
+			!(target.protocol === "blob:" && target.origin.startsWith("https://"))
 		)
 			throw new AgentBrowserError(
 				"policy-denied",
@@ -242,7 +247,7 @@ export class DocumentResourceCsp {
 	}
 
 	check(
-		destination: "image" | "style" | "connect" | "script",
+		destination: "image" | "style" | "connect" | "worker" | "script",
 		url: string,
 		redirects = 0,
 	): void {

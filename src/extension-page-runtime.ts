@@ -18,6 +18,7 @@ import {
 	type PageSourceModuleOptions,
 	PageSourceModuleRegistry,
 } from "./page-source-modules.js";
+import type { WorkerBudget } from "./page-workers.js";
 import { PageWindowGlobal } from "./page-window-global.js";
 import type {
 	ReleasedContext,
@@ -306,6 +307,30 @@ export function extensionPageRuntime(
 			const abort = () => {
 				void close().catch(() => undefined);
 			};
+			const workerBudget = budget as WorkerBudget;
+			if (
+				windowGlobal &&
+				callbackScheduling === "after-prefix" &&
+				options.workerPolicy &&
+				options.workerDocumentUrl &&
+				[
+					workerBudget.forkRealm,
+					workerBudget.acquireRealmOwner,
+					workerBudget.setRetainedDataUsage,
+				].every((operation) => typeof operation === "function")
+			)
+				windowGlobal.configureWorkers({
+					core,
+					budget: workerBudget,
+					limits: options.limits,
+					documentUrl: options.workerDocumentUrl,
+					policy: options.workerPolicy,
+					stringCompilation: effectiveStringCompilation,
+					report: (message) => options.sink.error(message),
+					fail: () => {
+						void close().catch(() => undefined);
+					},
+				});
 			const extension = core.defineExtension({
 				manifest: {
 					version: 1,

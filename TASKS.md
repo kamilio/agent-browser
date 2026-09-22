@@ -23,6 +23,24 @@
 
 ## Current verified state
 
+- Blob classic Workers now use isolated, cooperative SafeJS realms with a shared
+  budget, copied bounded messages, timers, CSP fallback, self-close/termination and
+  page cleanup. Compatible sibling-realm SDK leases and after-prefix scheduling
+  are required; these are not OS threads. Queues retain memory credits until
+  callback completion, charge complete backing buffers/RegExp source and enforce
+  active/lifetime quotas. Native tests reject hostile native accessors/proxies.
+  All 475 selected native checks across nine manifest-listed files and native build
+  pass; strict new-test typing, Worker/CSP lint and format pass. Offline real SafeJS
+  at 128 MB/16 s verifies isolation/global-scope branding, copied bytes, timer
+  receivers, allowed/denied Worker CSP, bounds and suspended
+  callback termination/page cleanup; tracked data/callbacks return to zero. Source,
+  message-callback and timer step-budget exhaustion close the whole page and release
+  tracked data to zero. These diagnostic allowances clear no default timing gate.
+  Network/module workers, importScripts, transfers, full EventTarget/MessageEvent
+  branding, child navigator/Blob/URL, WebAssembly and media remain unsupported.
+  Default timing, live initialization/readiness/join and every notetaker gate remain
+  open. Working Automations is untouched; no meeting has been joined.
+
 - Explicit SafeJS budget views now lease sibling realms without resetting quotas
   or sharing globals/prototype caches; ordinary reentry/reset and duplicate-view
   guards remain active. Contribution: safejs-shared-realm-compile-lease.patch.
@@ -32,8 +50,8 @@
   Compiled 128 MB/16 s offline fixture executes Blob-generated child code beside
   the native page, isolates globals, copies bytes, shares limits and cleans data/
   callbacks to zero. SDK source/build/tests retained; temporary probes removed.
-  Page Worker API/loading/CSP, message/transfer queues, timers/importScripts,
-  termination, WebAssembly, media and every Zoom/notetaker acceptance gate remain open.
+  Page Blob classic Worker API is verified above; network/module loading, transfers,
+  importScripts, WebAssembly, media and every Zoom/notetaker gate remain open.
 
 - Page-owned Blob/object URL primitives now provide immutable UTF-8/buffer-view/blob
   parts, bounded storage/work, slice/text/arrayBuffer/bytes, trusted origin URLs,
@@ -45,8 +63,8 @@
   The diagnostic uses 16 s: its first default 1 s initialization attempt times out,
   so default timing reliability remains open. Blob records have a page-lifetime
   count limit; SafeJS array/data limits also bound binary conversion. Blob.stream,
-  blob fetch/image consumers, Worker/importScripts and every Zoom/media gate remain
-  open. These primitives establish no initialization/readiness/join capability.
+  blob fetch/image consumers, network/module Worker/importScripts and every Zoom/media
+  gate remain open. These primitives establish no initialization/readiness/join capability.
 
 - Nine-classification shared metadata records are rejected and reverted: revised
   candidate passes 327 SDK checks across 35 files, strict typing and scoped build.

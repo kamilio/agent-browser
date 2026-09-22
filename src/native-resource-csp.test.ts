@@ -250,7 +250,7 @@ it.each(
 );
 
 it.each([
-	"worker-src 'self'",
+	"worker-src 'nonce-native'",
 	"form-action 'self'",
 	"unknown-directive 'none'",
 ])(

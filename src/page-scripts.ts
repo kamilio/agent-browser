@@ -1,3 +1,4 @@
+import { documentResourceCsp } from "./document-resource-csp.js";
 import {
 	type DocumentScriptCsp,
 	documentScriptCsp,
@@ -157,6 +158,14 @@ export class PageScripts {
 				this.bindings?.console.buffer.write(level, values);
 			};
 			this.runtime = factory.createPageRuntime({
+				workerDocumentUrl: page.document.url,
+				workerPolicy: (url) => {
+					this.ensureOpen();
+					const resource = documentResourceCsp(page.document);
+					if (resource) resource.check("worker", url);
+					else if (this.scriptPolicy?.enforced)
+						throw new AgentBrowserError("policy-denied", "Worker CSP is unavailable");
+				},
 				...(this.scriptPolicy?.stringCompilation === undefined
 					? {}
 					: { stringCompilation: this.scriptPolicy.stringCompilation }),

@@ -91,6 +91,8 @@ export interface PageRuntime {
 }
 
 export interface PageRuntimeOptions {
+	workerPolicy?: (url: string) => void;
+	workerDocumentUrl?: string;
 	stringCompilation?: "allow" | "deny";
 	regexSourceLength?: number;
 	regexCompileAllocations?: number;

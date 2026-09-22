@@ -1,5 +1,7 @@
 import { pageBlobBootstrapSource } from "./page-blob-bootstrap.js";
 import { PageBlobs } from "./page-blobs.js";
+import { pageWorkerBootstrapSource } from "./page-worker-bootstrap.js";
+import { PageWorkers, type PageWorkerOptions } from "./page-workers.js";
 import { AgentBrowserError } from "./errors.js";
 import { pageIdleCallbackBootstrapSource } from "./page-idle-callback-bootstrap.js";
 import { pageUrlBootstrapSource } from "./page-url-bootstrap.js";
@@ -54,12 +56,20 @@ export class PageWindowGlobal {
 		${pageIdleCallbackBootstrapSource}
 		${pageUrlBootstrapSource}
 		${pageBlobBootstrapSource}
+		${pageWorkerBootstrapSource}
 	})();`;
 	private readonly definitions = new WeakMap<object, ReleasedHostDefinition>();
 	private window?: object;
 	private reference?: unknown;
 	private bound = false;
 	private installed = false;
+	private workerOptions?: PageWorkerOptions;
+
+	configureWorkers(options: PageWorkerOptions) {
+		if (this.installed)
+			throw new AgentBrowserError("invalid-input", "Window already installed");
+		this.workerOptions = options;
+	}
 
 	get initialized() {
 		return this.bound;
@@ -155,7 +165,11 @@ export class PageWindowGlobal {
 			const value = origin?.();
 			return typeof value === "string" ? value : "null";
 		});
-		owner.onCleanup(() => {
+		const workers = this.workerOptions
+			? new PageWorkers(owner, blobs, this.workerOptions)
+			: undefined;
+		owner.onCleanup(async () => {
+			await workers?.close();
 			urls.close();
 			blobs.close();
 			this.bound = false;
@@ -172,6 +186,7 @@ export class PageWindowGlobal {
 				properties: {
 					urls: { get: () => urls.port },
 					blobs: { get: () => blobs.port },
+					workers: { get: () => workers?.port },
 					hasNativeDocument: { get: () => createElement !== undefined },
 					window: { get: () => window },
 					names: { get: () => names },
