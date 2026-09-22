@@ -23,6 +23,32 @@
 
 ## Current verified state
 
+- Desktop late-graph census keeps all reconciliation/callback checks active:
+  final two 30 s measurement windows have 47.79% / 45.82% repeated object entries,
+  69.65% / 66.57% closures among fresh objects, and 95.40% / 95.25% already-seen
+  object roots returned by captures. Capture-check output averages about 1.3 roots
+  per closure visit (including empty output when no provider exists); this bounds
+  the aggregate entry reduction available from grouping that output.
+  Max measurement reaches 22614 entries / 8536 fresh objects. Instrumented 384 MB
+  live run passes 13 classics, prepares seven modules and revokes at the 120 s
+  deadline: HTTP 200, zero sockets, no readiness/join, cleanup data zero, exit 1.
+  Counts identify structure, not cache safety or a speedup. Fresh descriptor/provider
+  and held-quota sanity pass; compiled visitor is restored byte-for-byte.
+
+- Independent allocation maps for frozen closure records are rejected and reverted.
+  Factory closures have dictionary storage after the first instance; a fresh
+  constructor per instance retains fast storage without changing plain prototypes,
+  unique borrowed getters or own frozen descriptors. Twenty candidate checks across
+  three files pass, including inherited-setter isolation; scoped compilation passes.
+  But 10000 closures retain 18514520 heap bytes candidate versus 10273752 / 10274104
+  serial controls (about 80% more); accounted units match at 20015. Warmed measurement
+  is 5.20 ms versus 3.92 / 3.50 ms controls. No live candidate run is warranted by
+  these regressions. Thirty-five baseline checks pass with the same two existing
+  deep-copy failures reproduced. Original source and scoped rebuilt visitor match
+  saved bytes; owned probes terminate and all temporary tests/configs/logs are removed.
+  No new initialization, heap/time, join or media gate is cleared. Continue toward
+  reducing full-graph cost with explicit mutation provenance and fresh volatile effects.
+
 - Deep SDK-owned property-table metadata now uses suspended DFS continuations:
   tracked symbol/private-field and prototype chains measure through depth 1024 and
   reject depth 1025 with dataDepth on the default stack. Fresh callbacks, descriptor
