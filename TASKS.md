@@ -23,6 +23,22 @@
 
 ## Current verified state
 
+- Host-result allocation now excludes prototype graphs already owned by the
+  realm; primary reconciliation still traverses those mutable retained roots.
+  This fixes a regression exposed by the first full-client retry after linking:
+  repeated DOM-node returns during FingerprintJS collection charged the connected
+  prototype graph again under callback holds and exhausted the 16 Mi-unit quota.
+  Live comparison with linking disabled passes fingerprint/config; linked source
+  fails at that stage, while isolated config passes both paths. The contribution
+  safejs-host-prototype-ingress-charges.patch preserves incoming container/payload
+  and own-expando charges. Seven contracts pass; three fail on saved source.
+  All 193 selected SDK checks, strict scoped typing/build, new-test format/lint and
+  exact patch application/reversal pass. The corrected live retry clears fingerprint/
+  config: 190783 current / 1022045 peak units after config, versus the linked
+  regression above 16 Mi units. Later client initialization remains active under
+  768 MB/120 s diagnostic allowances. No default, full initialization, meeting or
+  media gate is cleared; retain the prototype fix and investigate the live outcome.
+
 - Owned guest prototype links on SafeJS live host objects now fix the exact Zoom
   editor focus wrapper: ordinary HTML input.focus invokes the current prototype
   method; a method captured before replacement preserves its original identity and
