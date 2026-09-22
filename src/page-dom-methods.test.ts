@@ -157,7 +157,7 @@ it("revokes saved methods and releases each retained function once", () => {
 	tree.close();
 	bridge.close();
 	expect(() => method.call(receiver)).toThrow("closed");
-	expect(release).toHaveBeenCalledTimes(3);
+	expect(release).toHaveBeenCalledTimes(7);
 });
 
 it("retains publication readiness through reentrant host-object creation", () => {
@@ -239,4 +239,84 @@ it("rejects document tag methods on elements and element tag methods on document
 	expect(() =>
 		evaluate('Element.prototype.getElementsByTagName.call(document,"b")'),
 	).toThrow("registered receiver");
+});
+
+it("clones a borrowed node into its own parsed document", () => {
+	const { evaluate } = fixture();
+	expect(
+		evaluate(
+			'var other=new DOMParser().parseFromString("<b>hello<i>world</i></b>","text/html");var b=other.body.firstChild;var clone=document.body.cloneNode.call(b,true);clone.outerHTML',
+		),
+	).toBe("<b>hello<i>world</i></b>");
+	expect(
+		evaluate("clone.ownerDocument===other && clone.parentNode===null"),
+	).toBe(true);
+	expect(evaluate("Node.prototype.cloneNode===b.cloneNode")).toBe(true);
+	expect(evaluate("Node.prototype.cloneNode.call(b,false).outerHTML")).toBe(
+		"<b></b>",
+	);
+});
+
+it("exposes captured prototype getters with live receiver relations", () => {
+	const { evaluate } = fixture();
+	expect(
+		evaluate(
+			'var other=new DOMParser().parseFromString("<b>hello</b><i>world</i>","text/html");var b=other.body.firstChild;var getParent=Object.getOwnPropertyDescriptor(Node.prototype,"parentNode").get;getParent.call(b)===other.body',
+		),
+	).toBe(true);
+	expect(
+		evaluate(
+			'var getNext=Object.getOwnPropertyDescriptor(Node.prototype,"nextSibling").get;getNext.call(b).nodeName',
+		),
+	).toBe("I");
+	expect(
+		evaluate(
+			'var getChildren=Object.getOwnPropertyDescriptor(Node.prototype,"childNodes").get;getChildren.call(b)[0].nodeValue',
+		),
+	).toBe("hello");
+	expect(
+		evaluate("b.remove();getParent.call(b)===null && getNext.call(b)===null"),
+	).toBe(true);
+});
+
+it("supports prototype traversal of text, comments, fragments and attribute nodes", () => {
+	const { evaluate } = fixture();
+	expect(
+		evaluate(
+			'var fragment=document.createDocumentFragment();var text=document.createTextNode("hello");var comment=document.createComment("world");fragment.appendChild(text);fragment.appendChild(comment);var parent=Object.getOwnPropertyDescriptor(Node.prototype,"parentNode").get;parent.call(text)===fragment && parent.call(comment)===fragment',
+		),
+	).toBe(true);
+	expect(
+		evaluate("Node.prototype.cloneNode.call(fragment,true).textContent"),
+	).toBe("hello");
+	expect(
+		evaluate(
+			'var attr=document.createAttribute("title");attr.value="hello";parent.call(attr)===null && Node.prototype.cloneNode.call(attr).value==="hello"',
+		),
+	).toBe(true);
+});
+
+it("rejects forged and foreign owners for prototype node operations", () => {
+	const a = fixture();
+	const b = fixture();
+	const getter = a.evaluate(
+		'Object.getOwnPropertyDescriptor(Node.prototype,"childNodes").get',
+	) as () => unknown;
+	expect(() => getter.call({})).toThrow("registered receiver");
+	expect(() => getter.call(b.dom.document)).toThrow("registered receiver");
+	expect(() =>
+		a.evaluate(
+			"Node.prototype.cloneNode.call(Object.create(Node.prototype),true)",
+		),
+	).toThrow("registered receiver");
+});
+
+it("revokes captured prototype getters after close", () => {
+	const { tree, evaluate } = fixture();
+	const getParent = evaluate(
+		'Object.getOwnPropertyDescriptor(Node.prototype,"parentNode").get',
+	) as () => unknown;
+	const root = evaluate("document.body.firstChild");
+	tree.close();
+	expect(() => getParent.call(root)).toThrow("closed");
 });

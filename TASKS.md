@@ -80,18 +80,30 @@
   selected methods; other DOM methods and prototype tables remain incomplete.
 
 - Page initialization now publishes retained guest methods for Document/Element
-  getElementsByTagName and Document.createNodeIterator. Borrowed calls dispatch to
+  getElementsByTagName, Document.createNodeIterator and Node.cloneNode; Node
+  parentNode/childNodes/nextSibling prototype getters share the same guarded port.
+  Borrowed calls dispatch to
   registered receiver operations, including parsed/auxiliary/template documents,
   with interface/owner checks, publication readiness and lifecycle revocation.
-  Three retained functions are shared per page and released on close; recycled node/
+  Seven retained functions are shared per page and released on close; recycled node/
   port identities and invalid publications reject. Other methods remain bound to
-  their original native node; callback filters and foreign iterator roots remain
-  unsupported. Thirteen new contracts plus existing parser/iterator/publication/
-  extension-bootstrap/window-global cases pass (147 focused native checks).
+  their original native node; full prototype tables remain incomplete. Callback
+  filters and foreign iterator roots remain
+  unsupported. Eighteen contracts plus existing parser/iterator/publication/
+  extension-bootstrap/
+  window-global cases pass (152 focused native checks). Five added contracts cover
+  parsed/attribute/fragment cloning, live prototype relations, foreign/forged owners
+  and captured-getter teardown.
   Working build and new-source/test/bootstrap format/lint checks pass. Actual
   SDK/native 128 MB probe verifies borrowed parsed-body queries, BODY/B iterator
-  traversal and prototype identity. Isolated bundled DOMPurify 3.0.9 initializes
-  in 21.1 s under the explicit 120 s diagnostic allowance. Four benign fixtures now
+  traversal and prototype identity. Actual SDK/native 128 MB prototype-capture
+  probe clones `<b>hello</b>`, returns the parsed body, text child and following
+  SPAN, with SDK data and transport requests zero on close. The earlier isolated
+  bundled DOMPurify 3.0.9 probe initializes in 21.1 s under the explicit 120 s
+  diagnostic allowance. Current baseline and prototype-enabled node-input attempts
+  both hit the 120 s initializer deadline before their input checks in this loaded
+  environment; both close at data zero. Node-input sanitizer behavior and current
+  initializer timing remain unverified. The earlier four benign fixtures
   preserve bold text, span attributes and form/input content, and remove a comment;
   form attribute order changes. Cleanup releases all SDK data; asset transport closes
   with active requests zero. These fixtures clear the empty-output regression,
@@ -125,6 +137,17 @@
   restored and artifacts are removed. Next: reproduce the initializer's larger
   retained-graph cost offline before changing accounting; full initialization,
   default 30 s/128 MB and every meeting/media acceptance gate remain open.
+
+- SDK single-read function-properties candidate is rejected and reverted. Its
+  factory accessor certificate preserves derived/proxy/native-hook reads, live
+  descendants and held quotas; 49 focused SDK checks and scoped core/test typing
+  pass. Exact baseline passes 24 preservation checks and fails the new single-read
+  contract as expected. Compiled closure fixtures charge 78890 units on both;
+  noisy timings and CPU medians establish no useful gain. Two native 128 MB seeds
+  with 1000 retained functions hit their 120 s deadlines before library initialization;
+  callback-construction and literal-array seeds differ, so they are not a candidate/
+  baseline timing comparison. Both close at data zero. Exact SDK source/build restored,
+  candidate test removed; no candidate patch or relaxed production limit retained.
 
 - SDK internal-symbol catalogue uses a private versioned Set facade; frozen factory
   closures reuse an all-internal-symbol result at the same revision. Private fields,

@@ -8,6 +8,12 @@ const methodNames = new Set([
 	"Document.getElementsByTagName",
 	"Element.getElementsByTagName",
 	"Document.createNodeIterator",
+	"Node.cloneNode",
+]);
+const nodeGetterNames = ["parentNode", "childNodes", "nextSibling"] as const;
+const operationNames = new Set([
+	...methodNames,
+	...nodeGetterNames.map((name) => `Node.${name}`),
 ]);
 const ownedFunctions = new WeakSet<object>();
 const claimedNodes = new WeakSet<object>();
@@ -40,7 +46,7 @@ export class PageDomMethods {
 							args.length !== 2 ||
 							!this.bootstrapped ||
 							typeof name !== "string" ||
-							!methodNames.has(name) ||
+							!operationNames.has(name) ||
 							this.functions.has(name) ||
 							!value ||
 							(typeof value !== "object" && typeof value !== "function") ||
@@ -81,7 +87,7 @@ export class PageDomMethods {
 									? this.nodes.get(receiver)
 									: undefined;
 							const method =
-								typeof name === "string" && methodNames.has(name)
+								typeof name === "string" && operationNames.has(name)
 									? methods?.[name]
 									: undefined;
 							if (!method)
@@ -126,7 +132,8 @@ export class PageDomMethods {
 					const kind = methods.createNodeIterator ? "Document" : "Element";
 					for (const key of methodNames) {
 						const [iface, name] = key.split(".") as [string, string];
-						if (iface !== kind || !methods[name]) continue;
+						if ((iface !== "Node" && iface !== kind) || !methods[name])
+							continue;
 						registered[key] = methods[name];
 						delete methods[name];
 						properties[name] = {
@@ -140,6 +147,11 @@ export class PageDomMethods {
 							},
 						};
 					}
+					for (const name of nodeGetterNames) {
+						const property = definition.properties[name];
+						if (property) registered[`Node.${name}`] = property.get;
+					}
+
 					const node = context.createHostObject({
 						...definition,
 						methods,

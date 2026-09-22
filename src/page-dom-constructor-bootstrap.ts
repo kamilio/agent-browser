@@ -46,11 +46,17 @@ if (typeof __agentBrowserDomHasInstance === "function") {
 	if (typeof __agentBrowserDomMethods === "function") {
 		const port = __agentBrowserDomMethods();
 		const invoke = port.invoke;
-		for (const [Interface, name] of [[Document, "getElementsByTagName"], [Element, "getElementsByTagName"], [Document, "createNodeIterator"]]) {
+		for (const [Interface, name] of [[Document, "getElementsByTagName"], [Element, "getElementsByTagName"], [Document, "createNodeIterator"], [Node, "cloneNode"]]) {
 			const key = Interface.name + "." + name;
 			const method = function(...args) { return invoke(this, key, ...args); };
 			port.publish(key, method);
 			Object.defineProperty(Interface.prototype, name, {value: method, writable:true, configurable:true});
+		}
+		for (const name of ["parentNode", "childNodes", "nextSibling"]) {
+			const key = "Node." + name;
+			const getter = function() { return invoke(this, key); };
+			port.publish(key, getter);
+			Object.defineProperty(Node.prototype, name, {get: getter, enumerable:true, configurable:true});
 		}
 	}
 	for (const [name, value] of [["ELEMENT_NODE", 1], ["TEXT_NODE", 3], ["COMMENT_NODE", 8], ["DOCUMENT_NODE", 9], ["DOCUMENT_TYPE_NODE", 10], ["DOCUMENT_FRAGMENT_NODE", 11]]) {
