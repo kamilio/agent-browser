@@ -170,9 +170,13 @@
   194881 script steps / 40.4 s process CPU: nine classics pass, one fails, zero
   sockets and cleanup data zero. Interpreter restored exactly; profile samples
   concentrate in retained-graph reconciliation, not a CPU-total attribution.
-  A bounded 5 min component diagnostic now uses the exact cached editor/client
-  graph on an empty native document, scope.lookupModuleId, module-entry markers,
-  editor CPU/data readings and Node profiling. The module-entry marker fires.
+  A bounded 5 min component diagnostic now uses the real client entry and exact
+  cached graph on an empty native document, scope.lookupModuleId, module/statement
+  markers, CPU/data readings and Node profiling. Resolved cache responses retain
+  the import in the initial evaluation; event-loop yielding restores the background
+  handoff. Seven modules prepare, editor statements 0/1 complete normally, and
+  React DOM statement 2 advances. Earlier direct component evaluations hit their
+  120 s deadline in statement 2; cancellation is not an application exception.
   SDK/native builds must stay unchanged while this process is live; restore
   instrumentation and remove artifacts after validation. Extended heap/time
   allowances and component results remain diagnostic.
