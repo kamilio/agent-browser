@@ -97,13 +97,15 @@
   retained syntax trees remain the memory target. No full-client gain or gate pass.
   Probe processes terminate, temporary artifacts are removed, SDK retains candidate.
 
-- The latest full-client diagnostic, before compact module tokens, reaches its
-  30 min import observation bound: HTTP 200, all 13 classic scripts pass, seven
-  modules prepared, one import
-  pending and none fulfilled or rejected. Last progress: 9257860 steps / 13156669
-  current data units. No application exception, readiness or join is established.
-  Zero socket attempts; cleanup closes the realm with accounted data zero. The
-  768 MB/120 s diagnostic allowances clear no default timing or heap gate.
+- The latest full-client diagnostic with compact ASTs and deferred initializers
+  returns HTTP 200, passes all 13 classic scripts and prepares all seven modules
+  under a 384 MB diagnostic heap. The source import remains pending at its 60 s
+  observation bound (one pending / zero fulfilled / zero rejected); last observed
+  progress is 9013413 steps / 12925704 current data units. No readiness or join is
+  established. Zero socket attempts; cleanup closes the realm with accounted data
+  zero. This replaces the earlier 30 min observation as the current bounded status,
+  not as a speedup or default 128 MB/30 s runtime acceptance claim. All owned probe
+  processes terminate; temporary drivers/configs/backups and instrumentation are removed.
 
 - Earlier eager-token parsing verifies a separate default-heap blocker. Under
   128 MB, editor-core parses in 1.8 s and retains 71393848 heap bytes beyond its
@@ -1300,6 +1302,9 @@
 - The complete seven-module static graph now clears offline compilation and linking
   at a 128 MB heap limit above. Runtime materialization retains decoded AST nodes, so
   full-client runtime heap and initialization performance remain unverified.
+  Live preload retains about 142.5 MB before module compilation; classic-script
+  retention and module evaluation/reconciliation cost remain the next memory and
+  performance targets. The latest 384 MB bounded run still has one pending import.
   The earlier 768 MB statement trace prepares all seven but stays pending at 15 min,
   reaching editor statement 1353 after React DOM and DOMPurify complete; the later
   full-client run remains pending at 30 min. Selected borrowed document methods
