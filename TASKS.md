@@ -272,6 +272,17 @@
   Next: private interpreter capture ownership with conservative foreign-frame
   fallback, rather than further table/dispatcher tweaks. Use isolated output for
   runtime probes during concurrent builds. Every startup/join/media gate stays open.
+  Maintained SafeJS binding cells now use private storage with pinned native
+  operations/iterator advancement; private entry tuples use indexed reads,
+  hydration avoids caller Array.map callbacks, and cells have null prototypes.
+  Nine reproduced host-hook escapes let a 3-unit cached binding retain 1003 units.
+  Thirteen ownership checks plus 89 existing scope/accounting checks, strict test
+  typing, scoped lint/format, isolated SDK compilation and eight import checks pass.
+  Actual five-case JSPI/WASM and real public imports/initializer pass, cleanup zero;
+  initializer remains 39087 steps / 22395140 units. Full Worker still times out at
+  30048 ms / 879429 steps with no completion/status, cleanup zero. Local poe-code
+  commit 98864fd9e; no push or startup gain claimed. Private accounting root vectors
+  and carrier/ancestor/provider provenance remain open before capture-list reuse.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
