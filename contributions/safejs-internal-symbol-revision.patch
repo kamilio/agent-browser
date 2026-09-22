@@ -1,0 +1,245 @@
+--- a/src/interp/internal-symbols.ts
++++ b/src/interp/internal-symbols.ts
+@@ -1 +1,83 @@
+-export const internalSymbols = new Set<symbol>();
++// Keep the mutable Set private: every supported mutation changes the revision.
++// The facade deliberately cannot be a receiver for borrowed native Set methods.
++const catalogue = new Set<symbol>();
++const nativeHas = Set.prototype.has.bind(catalogue);
++const nativeAdd = Set.prototype.add.bind(catalogue);
++const nativeDelete = Set.prototype.delete.bind(catalogue);
++const nativeClear = Set.prototype.clear.bind(catalogue);
++const nativeValues = Set.prototype.values.bind(catalogue);
++const nativeEntries = Set.prototype.entries.bind(catalogue);
++const nativeForEach = Set.prototype.forEach.bind(catalogue);
++const nativeSize = Object.getOwnPropertyDescriptor(
++  Set.prototype,
++  "size",
++)!.get!.bind(catalogue);
++const nativeFreeze = Object.freeze;
++let revision = nativeFreeze({});
++
++export function internalSymbolRevision(): object {
++  return revision;
++}
++
++interface InternalSymbolCatalogue extends Iterable<symbol> {
++  readonly size: number;
++  has(symbol: symbol): boolean;
++  add(symbol: symbol): InternalSymbolCatalogue;
++  delete(symbol: symbol): boolean;
++  clear(): void;
++  keys(): SetIterator<symbol>;
++  values(): SetIterator<symbol>;
++  entries(): SetIterator<[symbol, symbol]>;
++  forEach(
++    callback: (
++      value: symbol,
++      key: symbol,
++      catalogue: InternalSymbolCatalogue,
++    ) => void,
++    thisArg?: unknown,
++  ): void;
++  readonly [Symbol.toStringTag]: string;
++}
++
++export const internalSymbols: InternalSymbolCatalogue = nativeFreeze({
++  get size(): number {
++    return nativeSize();
++  },
++  has: nativeHas,
++  add(symbol: symbol): InternalSymbolCatalogue {
++    if (!nativeHas(symbol)) {
++      nativeAdd(symbol);
++      revision = nativeFreeze({});
++    }
++    return internalSymbols;
++  },
++  delete(symbol: symbol): boolean {
++    if (!nativeDelete(symbol)) return false;
++    revision = nativeFreeze({});
++    return true;
++  },
++  clear(): void {
++    if (nativeSize() === 0) return;
++    nativeClear();
++    revision = nativeFreeze({});
++  },
++  keys: nativeValues,
++  values: nativeValues,
++  entries: nativeEntries,
++  forEach(
++    callback: (
++      value: symbol,
++      key: symbol,
++      catalogue: InternalSymbolCatalogue,
++    ) => void,
++    thisArg?: unknown,
++  ): void {
++    if (typeof callback !== "function")
++      throw new TypeError("Catalogue forEach callback must be callable.");
++    nativeForEach((value) =>
++      Reflect.apply(callback, thisArg, [value, value, internalSymbols]),
++    );
++  },
++  [Symbol.iterator]: nativeValues,
++  [Symbol.toStringTag]: "Set",
++});
+--- a/src/interp/values.ts
++++ b/src/interp/values.ts
+@@ -16,7 +16,7 @@
+ import { arrayBufferDataProperties, arrayBufferLength, arrayBufferOptions, copyArrayBufferStorage, isSandboxArrayBuffer } from "./array-buffer.js";
+ import { isSandboxSharedArrayBuffer, sharedArrayBufferStorage } from "./shared-array-buffer.js";
+ import { copyDataViewStorage, dataViewBuffer, dataViewDataProperties, dataViewGetters, isSandboxDataView } from "./data-view.js";
+-import { internalSymbols } from "./internal-symbols.js";
++import { internalSymbols, internalSymbolRevision } from "./internal-symbols.js";
+ import { getIntrinsicIdentity } from "./intrinsics.js";
+ import { getGeneratorProperties } from "./generator-properties.js";
+ import { getRegexProperties, regexGuestProperties } from "./regexp-properties.js";
+@@ -116,6 +116,8 @@
+ const nativeSymbolDefine = Reflect.defineProperty;
+ type FrozenClosureSymbolData = {
+   descriptors?: readonly (readonly [symbol, PropertyDescriptor])[];
++  internalRevision?: object;
++  onlyInternal?: boolean;
+ };
+ const frozenClosureSymbolData = new WeakMap<object, FrozenClosureSymbolData>();
+ const frozenSymbolDataGet: (value: object) => FrozenClosureSymbolData | undefined = WeakMap.prototype.get.bind(frozenClosureSymbolData);
+@@ -1473,6 +1475,22 @@
+           descriptors = captured;
+         }
+       }
++      if (frozen !== undefined && descriptors !== undefined) {
++        const revision = internalSymbolRevision();
++        if (frozen.internalRevision !== revision) {
++          frozen.onlyInternal = true;
++          for (let index = 0; index < descriptors.length; index++) {
++            if (!internalSymbols.has(descriptors[index]![0])) {
++              frozen.onlyInternal = false;
++              break;
++            }
++          }
++          frozen.internalRevision = revision;
++        }
++        // No symbol child can change the catalogue when every own symbol is
++        // internal. Visible children keep the fresh per-descriptor path below.
++        if (frozen.onlyInternal) return;
++      }
+       if (descriptors !== undefined) for (let index = 0; index < descriptors.length; index++) {
+         const entry = descriptors[index]!;
+         const key = entry[0], descriptor = entry[1];
+--- /dev/null
++++ b/src/interp/internal-symbols.test.ts
+@@ -0,0 +1,112 @@
++import { expect, it } from "vitest";
++import { internalSymbols, internalSymbolRevision } from "./internal-symbols.js";
++
++it("changes revision only when catalogue membership changes", () => {
++  const key = Symbol("revision");
++  const before = internalSymbolRevision();
++  expect(internalSymbols.delete(key)).toBe(false);
++  expect(internalSymbolRevision()).toBe(before);
++  expect(internalSymbols.add(key)).toBe(internalSymbols);
++  const added = internalSymbolRevision();
++  expect(added).not.toBe(before);
++  try {
++    internalSymbols.add(key);
++    expect(internalSymbolRevision()).toBe(added);
++    expect(internalSymbols.delete(key)).toBe(true);
++    expect(internalSymbolRevision()).not.toBe(added);
++  } finally {
++    internalSymbols.delete(key);
++  }
++});
++
++it("preserves catalogue order, iteration and forEach receiver semantics", () => {
++  const first = Symbol("first"),
++    later = Symbol("later");
++  const size = internalSymbols.size;
++  internalSymbols.add(first).add(later);
++  try {
++    expect(internalSymbols.size).toBe(size + 2);
++    expect([...internalSymbols].slice(-2)).toEqual([first, later]);
++    expect([...internalSymbols.keys()]).toEqual([...internalSymbols.values()]);
++    expect([...internalSymbols.entries()].slice(-2)).toEqual([
++      [first, first],
++      [later, later],
++    ]);
++    const receiver = {};
++    const visited: symbol[] = [];
++    internalSymbols.forEach(function (this: unknown, value, key, catalogue) {
++      expect(this).toBe(receiver);
++      expect(value).toBe(key);
++      expect(catalogue).toBe(internalSymbols);
++      if (value === first || value === later) visited.push(value);
++    }, receiver);
++    expect(visited).toEqual([first, later]);
++    expect(Object.prototype.toString.call(internalSymbols)).toBe(
++      "[object Set]",
++    );
++  } finally {
++    internalSymbols.delete(first);
++    internalSymbols.delete(later);
++  }
++});
++
++it("supports live iteration when a forEach callback adds a later marker", () => {
++  const first = Symbol("first"),
++    later = Symbol("later");
++  internalSymbols.add(first);
++  const visited: symbol[] = [];
++  try {
++    internalSymbols.forEach((value) => {
++      if (value === first) {
++        visited.push(value);
++        internalSymbols.add(later);
++      } else if (value === later) visited.push(value);
++    });
++    expect(visited).toEqual([first, later]);
++  } finally {
++    internalSymbols.delete(first);
++    internalSymbols.delete(later);
++  }
++});
++
++it("revises clear and leaves an empty catalogue unchanged on a second clear", () => {
++  const all = [...internalSymbols];
++  internalSymbols.add(Symbol("clear-seed"));
++  const before = internalSymbolRevision();
++  try {
++    internalSymbols.clear();
++    const cleared = internalSymbolRevision();
++    expect(cleared).not.toBe(before);
++    expect(internalSymbols.size).toBe(0);
++    internalSymbols.clear();
++    expect(internalSymbolRevision()).toBe(cleared);
++  } finally {
++    for (const key of all) internalSymbols.add(key);
++  }
++});
++
++it("rejects borrowed native mutations so membership cannot bypass its revision", () => {
++  const key = Symbol("borrowed");
++  const before = internalSymbolRevision();
++  expect(() => Set.prototype.add.call(internalSymbols, key)).toThrow(TypeError);
++  expect(() => Set.prototype.delete.call(internalSymbols, key)).toThrow(
++    TypeError,
++  );
++  expect(() => Set.prototype.clear.call(internalSymbols)).toThrow(TypeError);
++  expect(internalSymbols.has(key)).toBe(false);
++  expect(internalSymbolRevision()).toBe(before);
++  expect(Object.isFrozen(internalSymbols)).toBe(true);
++});
++
++it("rejects a noncallable forEach callback even when the catalogue is empty", () => {
++  const all = [...internalSymbols];
++  try {
++    internalSymbols.clear();
++    expect(() => internalSymbols.forEach(null as never)).toThrow(TypeError);
++    internalSymbols.add(Symbol("nonempty"));
++    expect(() => internalSymbols.forEach(null as never)).toThrow(TypeError);
++  } finally {
++    internalSymbols.clear();
++    for (const key of all) internalSymbols.add(key);
++  }
++});
