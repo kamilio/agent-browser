@@ -24,21 +24,22 @@
 ## Current verified state
 
 - SDK source-module status exposes immutable pending/prepared/fulfilled/rejected
-  counts to the native runtime. The diagnostic observes pending imports outside
-  classic tasks and requires settled successful imports separately from entry-fetch
-  success; older SDKs without the method remain explicitly unverified. Actual
-  compiled SDK/native 128 MB success, caught-denial and pending-TLA fixtures report
-  the expected distinct counts; all close with retained data/requests/sockets zero.
-  180 manifest-listed native checks and 60 relevant SDK checks pass, including four
-  new SDK status cases and three native bridge contracts. Native build, scoped SDK
-  core/new-test compilation/declarations, new-test formatting/lint and exact status
-  contribution forward/reverse application pass. The diagnostic selects/reports a
-  bounded 4 MiB transport response cap: the previous 2 MiB default rejects loginview.
-  The 768 MB/120 s/30 s observation live run admits loginview and lodash, then host
-  cleanup aborts a pending emoji request because the old driver watched only entry
-  fetching. This is a driver-observation limit; no complete initialization claimed.
-  Cleanup verifies data zero and zero sockets. The revised settlement driver still
-  needs its live check; production/default 128 MB and 30 s gates remain open.
+  counts to the native runtime. The diagnostic observes imports outside classic
+  tasks and requires settled successful imports separately from entry-fetch success;
+  older SDKs without the method remain unverified. Actual compiled SDK/native 128 MB
+  success, caught-denial and pending-TLA fixtures report distinct correct counts;
+  all close with retained data/requests/sockets zero. 180 manifest-listed native
+  checks and 60 relevant SDK checks pass, including four new SDK status cases and
+  three native bridge contracts. Native build, scoped SDK core/new-test compilation/
+  declarations, new-test formatting/lint and exact contribution forward/reverse
+  application pass. The diagnostic selects/reports a bounded 4 MiB response cap
+  that admits loginview; the transport's 2 MiB default rejects it. Final authorized
+  768 MB/120 s/30 s-window/60 s-import-observation live check prepares all seven
+  static modules but still has one pending import, zero fulfilled and zero rejected.
+  It exits nonzero, verifies retained data zero and zero sockets; no interactive
+  readiness/meeting join. All live/fixture processes terminated; working source/build
+  remain reusable and validation artifacts are removed. Next: isolate cumulative
+  module linking/evaluation cost and memory; default 30 s/128 MB remain open.
 
 - SafeJS canonical modules share frozen token positions, retire completed token
   prefixes and assign fresh AST IDs without a large temporary visited Set. Parser
@@ -863,21 +864,19 @@
 
 ## Outstanding gates
 
-- The last live 192 MB diagnostic, before the node-ID storage change, aborted after
-  editor resolution without a final report/cleanup certification. The editor alone
-  now clears its offline 128 MB compilation gate above. The complete static graph
-  includes loginview (3485587 chars), editor (1095001), emoji (888017), i18n (362461),
-  lodash (126038) and rolldown (1365), plus the 4383-char entry. These public sources
-  were downloaded through native transport; transport closes with zero active requests.
-  The real webclient entry's actual native/SDK offline fixture at a 768 MB diagnostic
-  heap fetches all static sources but remains pending after its bounded observation
-  (about 36 s total, 8398782 steps, about 530 MB heap used before close). Cleanup
-  verifies retained data zero, requests zero and sockets zero. A component-root cycle
-  error does not establish a failure of Zoom's real entry order. Reduce cumulative
-  runtime/compiler memory and complete graph evaluation; diagnostic heap allowances
-  do not clear production/default 128 MB, interactive readiness or meeting gates.
-  Module labels stay bounded without credentials/query/fragment/source text; fetch
-  completion and green classic reports prove no readiness.
+- The editor alone clears its offline 128 MB compilation gate above. The complete
+  static graph includes loginview (3485587 chars), editor (1095001), emoji (888017),
+  i18n (362461), lodash (126038), rolldown (1365) and the 4383-char entry. The final
+  768 MB live diagnostic admits/prepares all seven but its root import remains
+  pending after 60 s extra observation, without fulfillment/rejection; cleanup zero.
+  The earlier real-entry offline 768 MB fixture also remained pending after about
+  36 s (8398782 steps, about 530 MB heap used before close), with verified cleanup.
+  Profile module linking/evaluation and cumulative compiler/runtime memory. Diagnostic
+  heap/time/response allowances do not clear production/default 128 MB, interactive
+  readiness or meeting gates. The former entry-only driver prematurely closed with
+  an emoji fetch pending; the status-aware driver now records a nonzero timeout.
+  Module labels remain bounded without credentials/query/fragment/source text;
+  fetch completion and green classic reports prove no readiness.
 - Background dynamic imports outlive the classic evaluation's PageScripts timer.
   The realm graph has document cancellation and shared step/data limits, but no
   demonstrated per-import evaluation deadline/TLA timeout. Do not clear the default
