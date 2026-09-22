@@ -43,7 +43,7 @@
   offline Node24 JSPI guest WASM passes five cases in both scheduling modes,
   including string compilation denied and recovery after a Script throw in a
   classic child realm. Cleanup resources/data/depth/pending return to zero.
-  Page/Worker WASM installation remains open, as do
+  Public Zoom WASM initialization remains open, as do
   classic dynamic imports and other required scratch SDK compatibility/performance
   fixes. These checks do not establish public Zoom or meeting/media readiness.
 - WASM compilation CSP is now distinct from string eval: script-src/default-src
@@ -51,7 +51,17 @@
   Policies intersect and unsupported inputs deny. Document owners and network
   Worker decoding retain the policy. All 223 checks across three manifest-listed
   policy/Worker-fetch files, browser build, strict test typing and lint/format pass.
-  The policy is not yet connected to page/Worker WASM installation.
+  Opt-in runtimeOptions.webAssembly: bounded-v1 now installs the guest bridge in
+  pages and classic Workers, adds only the required live-buffer grant, inherits
+  Blob policy and intersects network response policy. Compilation denial applies
+  before native attempts; validation/memory remain available. Worker source limits
+  include its WASM bootstrap, and enabled network loaders must supply explicit
+  compilation policy. All 277 installer/Worker/runtime checks across four manifest
+  files, browser build, strict test typing and changed-file lint/format pass.
+  Actual offline PageScripts/DOM/SafeJS/Node24 JSPI verifies allowed/denied WASM in
+  pages and Blob Workers with string eval denied and cleanup data/callbacks zero.
+  Installation is disabled by default; modern JSPI is required. This does not clear
+  Zoom's real imports/initializer, default memory/startup limits or media gates.
 - Native WASM owners now provide original validation, stable bounded binary
   instrumentation, declared allocation/import/export admission, compilation leases,
   ordered imports through null-prototype maps, realm invokeCallback dispatch, owned
@@ -90,11 +100,11 @@
   JSPI at 128 MiB verifies synchronous guest results, callback reentry, 320-page
   memory growth/detachment/identity, async overloads and compile/link/runtime-trap
   error brands; 1717 steps/depth eight and cleanup resources/data/depth/pending zero.
-  Table/Global wrappers, streaming/custom sections and page/Worker installers remain
-  absent. Shared-realm ownership is now fixed in the maintained SDK; reconcile its
+  Table/Global wrappers and streaming/custom sections remain absent; page/Worker
+  installation is now opt-in. Shared-realm ownership is now fixed in the maintained SDK; reconcile its
   remaining guest compilation/error policies before installation.
   Diagnostic 32 MiB quotas
-  do not clear default page 16 MiB/262144-element limits. Next: page/Worker installers,
+  do not clear default page 16 MiB/262144-element limits. Next:
   actual Zoom instantiation with its real imports, initialization performance and
   every joining/admission/presence/roster/chat/audio/transcription/playback/microphone/
   avatar/leaving/cleanup gate. Automations is untouched; no meeting has been joined.

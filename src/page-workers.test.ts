@@ -8,7 +8,10 @@ import { pageBlobBootstrapSource } from "./page-blob-bootstrap.js";
 import { PageBlobs } from "./page-blobs.js";
 import { pageUrlBootstrapSource } from "./page-url-bootstrap.js";
 import { PageUrls } from "./page-urls.js";
-import { pageWorkerBootstrapSource } from "./page-worker-bootstrap.js";
+import {
+	pageWorkerBootstrapSource,
+	workerGlobalBootstrapSource,
+} from "./page-worker-bootstrap.js";
 import {
 	type PageWorkerOptions,
 	PageWorkers,
@@ -896,4 +899,30 @@ it("keeps bounded Worker marks/measures isolated and releases timing entries on 
 		expect.objectContaining({ code: "closed" }),
 	);
 	expect(test.units.size).toBe(0);
+});
+
+it("counts the opted-in WASM bootstrap before creating a child", () => {
+	const test = fixture(true, {
+		webAssembly: "bounded-v1",
+		limits: {
+			...scriptLimits(),
+			maxSourceCodeUnits: workerGlobalBootstrapSource.length + 1,
+		},
+	});
+	expect(() => test.start("")).toThrow(/limit/i);
+	expect(test.children).toHaveLength(0);
+});
+
+it("rejects enabled network Worker loaders without explicit WASM compilation policy", async () => {
+	const test = fixture(true, {
+		webAssembly: "bounded-v1",
+		fetch: async () => ({
+			url: "https://example.test/worker.js",
+			source: "",
+			stringCompilation: "allow",
+		}),
+	});
+	test.evaluate("var worker=new Worker('/worker.js');");
+	await vi.waitFor(() => expect(test.workers.metrics().active).toBe(0));
+	expect(test.children).toHaveLength(0);
 });

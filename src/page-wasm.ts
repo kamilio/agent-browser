@@ -38,6 +38,7 @@ export class PageWasm {
 		>,
 		private readonly budget: PageWasmBudget,
 		api?: Partial<WasmPromiseApi>,
+		private readonly compilation: "allow" | "deny" = "allow",
 	) {
 		this.calls = new NodeWasmCalls(budget, context.signal, api);
 		this.memories = new NodeWasmMemories(context, budget);
@@ -63,11 +64,18 @@ export class PageWasm {
 					this.assertActive();
 					return valid;
 				},
-				compileSync: (input) =>
-					this.publishModule(this.modules.compileSync(this.bytes(input))),
-				compile: context.nestedOperation(async (input) =>
-					this.publishModule(await this.modules.compile(this.bytes(input))),
-				),
+				compileSync: (input) => {
+					this.assertCompilation();
+					return this.publishModule(
+						this.modules.compileSync(this.bytes(input)),
+					);
+				},
+				compile: context.nestedOperation(async (input) => {
+					this.assertCompilation();
+					return this.publishModule(
+						await this.modules.compile(this.bytes(input)),
+					);
+				}),
 				instantiate: (module, values) => this.instantiate(module, values),
 				call: context.nestedOperation((port, name, values) => {
 					this.assertActive();
@@ -77,6 +85,13 @@ export class PageWasm {
 				}),
 			},
 		});
+	}
+	private assertCompilation() {
+		this.assertActive();
+		if (this.compilation !== "allow")
+			throw new WebAssembly.CompileError(
+				"WASM compilation blocked by Content Security Policy",
+			);
 	}
 	private assertActive() {
 		if (this.closed || this.context.signal.aborted)

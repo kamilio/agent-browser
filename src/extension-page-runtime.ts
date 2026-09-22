@@ -13,13 +13,16 @@ import {
 	type PageRuntimeFactory,
 	type PageRuntimeResult,
 	readPageStringCompilation,
+	readPageWasmCompilation,
 } from "./page-runtime.js";
 import {
 	type PageSourceModuleOptions,
 	PageSourceModuleRegistry,
 } from "./page-source-modules.js";
-import type { WorkerBudget } from "./page-workers.js";
+import { pageWasmBootstrapSource } from "./page-wasm-bootstrap.js";
+import { PageWasm, type PageWasmBudget } from "./page-wasm.js";
 import { PageWindowGlobal } from "./page-window-global.js";
+import type { WorkerBudget } from "./page-workers.js";
 import type {
 	ReleasedContext,
 	ReleasedCore,
@@ -37,6 +40,7 @@ export const extensionPageRuntimeLimits = Object.freeze({
 const extensionName = "agent-browser-page";
 
 export interface ExtensionPageRuntimeOptions {
+	webAssembly?: "bounded-v1";
 	classicScripts?: boolean;
 	classicScriptErrors?: "fatal" | "report";
 	callbackScheduling?: "after-prefix";
@@ -92,6 +96,19 @@ export function extensionPageRuntime(
 			"invalid-input",
 			"Invalid extension page runtime options",
 		);
+	const wasmDescriptor = Object.getOwnPropertyDescriptor(
+		configuration,
+		"webAssembly",
+	);
+	if (
+		wasmDescriptor
+			? !Object.hasOwn(wasmDescriptor, "value") ||
+				!wasmDescriptor.enumerable ||
+				wasmDescriptor.value !== "bounded-v1"
+			: "webAssembly" in configuration
+	)
+		throw new AgentBrowserError("invalid-input", "Invalid WASM runtime policy");
+	const webAssembly = wasmDescriptor ? "bounded-v1" : undefined;
 	const expandoDescriptor = Object.getOwnPropertyDescriptor(
 		configuration,
 		"domExpandos",
@@ -185,6 +202,9 @@ export function extensionPageRuntime(
 	return {
 		supportsPageInitialization: true,
 		createPageRuntime(options) {
+			const wasmCompilation = readPageWasmCompilation(options) ?? "allow";
+			if (webAssembly && options.globals.includes("__agentBrowserWasm"))
+				throw new AgentBrowserError("invalid-input", "Reserved WASM global");
 			const pageStringCompilation = readPageStringCompilation(options);
 			const effectiveStringCompilation =
 				stringCompilation === "deny" || pageStringCompilation === "deny"
@@ -211,7 +231,9 @@ export function extensionPageRuntime(
 					"Page initialization source is too large",
 				);
 			const bootstrapSource =
-				(windowGlobal?.source ?? "") + (initializationSource ?? "");
+				(windowGlobal?.source ?? "") +
+				(webAssembly ? pageWasmBootstrapSource : "") +
+				(initializationSource ?? "");
 			if (bootstrapSource.length > options.limits.maxSourceCodeUnits)
 				throw new AgentBrowserError(
 					"resource-limit",
@@ -275,6 +297,27 @@ export function extensionPageRuntime(
 					"unsupported",
 					"SafeJS budget metrics are unavailable",
 				);
+			const wasmBudget = budget as typeof budget & PageWasmBudget;
+			if (
+				webAssembly &&
+				![
+					wasmBudget.visitNode,
+					wasmBudget.setRetainedDataUsage,
+					wasmBudget.allocateArrayLength,
+					wasmBudget.provisionDataUsage,
+					wasmBudget.enterCall,
+				].every((operation) => typeof operation === "function")
+			)
+				throw new AgentBrowserError(
+					"unsupported",
+					"SafeJS WASM budget operations unavailable",
+				);
+			const wasmGlobals = webAssembly ? ["__agentBrowserWasm"] : [];
+			const capabilities = [
+				"guest:retain",
+				"source:nested",
+				...(webAssembly ? ["array-buffer:share"] : []),
+			];
 			const ensureOpen = () => {
 				if (closed || controller.signal.aborted)
 					throw new AgentBrowserError(
@@ -330,6 +373,8 @@ export function extensionPageRuntime(
 					importFetch: options.workerImportFetch,
 					importPolicy: options.workerImportPolicy,
 					stringCompilation: effectiveStringCompilation,
+					webAssembly,
+					wasmCompilation,
 					report: (message) => options.sink.error(message),
 					fail: () => {
 						void close().catch(() => undefined);
@@ -339,8 +384,11 @@ export function extensionPageRuntime(
 				manifest: {
 					version: 1,
 					name: extensionName,
-					globals: windowGlobal?.names ?? options.globals,
-					capabilities: ["guest:retain", "source:nested"],
+					globals: [
+						...(windowGlobal?.names ?? options.globals),
+						...wasmGlobals,
+					],
+					capabilities,
 				},
 				setup(owner) {
 					ensureOpen();
@@ -410,8 +458,23 @@ export function extensionPageRuntime(
 							enumerable: true,
 						});
 					const globals = options.setup(pageContext);
+					const installed: Record<string, unknown> =
+						windowGlobal?.install(owner, globals) ?? globals;
+					if (webAssembly) {
+						if (Object.hasOwn(installed, "__agentBrowserWasm"))
+							throw new AgentBrowserError(
+								"invalid-input",
+								"Reserved WASM global",
+							);
+						installed.__agentBrowserWasm = new PageWasm(
+							owner,
+							wasmBudget,
+							undefined,
+							wasmCompilation,
+						).port;
+					}
 					setupComplete = true;
-					return { globals: windowGlobal?.install(owner, globals) ?? globals };
+					return { globals: installed };
 				},
 			});
 			try {
@@ -433,7 +496,7 @@ export function extensionPageRuntime(
 						: {}),
 					extensions: [extension],
 					builtinOverrides: { console: extensionName },
-					grants: ["guest:retain", "source:nested"],
+					grants: capabilities,
 					budget,
 					signal: controller.signal,
 					sink: options.sink,
@@ -537,7 +600,9 @@ export function extensionPageRuntime(
 					(sourceType !== "module" &&
 					selectedModules instanceof PageNetworkModuleRegistry &&
 					filename !== undefined &&
-					/^(?:https?:|urn:agent-browser:html-(?:classic|module):)/.test(filename)
+					/^(?:https?:|urn:agent-browser:html-(?:classic|module):)/.test(
+						filename,
+					)
 						? "agent-browser:unadmitted-classic"
 						: filename);
 				if (!realm)
@@ -643,9 +708,12 @@ export function extensionPageRuntime(
 				moduleScope &&
 				"prepareHtmlClassicScript" in moduleScope
 					? {
-							prepareClassicScript: async (request: HtmlClassicScriptRequest) => {
+							prepareClassicScript: async (
+								request: HtmlClassicScriptRequest,
+							) => {
 								ensureOpen();
-								const source = await moduleScope.prepareHtmlClassicScript(request);
+								const source =
+									await moduleScope.prepareHtmlClassicScript(request);
 								ensureOpen();
 								return source;
 							},

@@ -104,6 +104,7 @@ export interface PageRuntimeOptions {
 	workerDocumentUrl?: string;
 	workerIdentity?: Readonly<BrowserIdentity>;
 	stringCompilation?: "allow" | "deny";
+	wasmCompilation?: "allow" | "deny";
 	regexSourceLength?: number;
 	regexCompileAllocations?: number;
 	initializationSource?: string;
@@ -142,6 +143,27 @@ export function readPageStringCompilation(
 	return descriptor?.value;
 }
 
+export function readPageWasmCompilation(
+	options: PageRuntimeOptions,
+): "allow" | "deny" | undefined {
+	const descriptor = Object.getOwnPropertyDescriptor(
+		options,
+		"wasmCompilation",
+	);
+	if (
+		descriptor
+			? !Object.hasOwn(descriptor, "value") ||
+				!descriptor.enumerable ||
+				(descriptor.value !== "allow" && descriptor.value !== "deny")
+			: "wasmCompilation" in options
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid per-page WASM compilation policy",
+		);
+	return descriptor?.value;
+}
+
 export function legacyPageRuntime(core: PageScriptCore): PageRuntimeFactory {
 	if (
 		!core ||
@@ -162,6 +184,11 @@ export function legacyPageRuntime(core: PageScriptCore): PageRuntimeFactory {
 		);
 	return {
 		createPageRuntime(options) {
+			if (readPageWasmCompilation(options) !== undefined)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Per-page WASM compilation policy requires the extension runtime",
+				);
 			if (readPageStringCompilation(options) !== undefined)
 				throw new AgentBrowserError(
 					"unsupported",

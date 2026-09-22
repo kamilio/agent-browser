@@ -10,6 +10,8 @@ import { PageBlobs as WorkerBlobs } from "./page-blobs.js";
 import { PageClock, createPagePerformance } from "./page-performance.js";
 import { PageTimers } from "./page-timers.js";
 import { PageUrls } from "./page-urls.js";
+import { pageWasmBootstrapSource } from "./page-wasm-bootstrap.js";
+import { PageWasm, type PageWasmBudget } from "./page-wasm.js";
 import { workerGlobalBootstrapSource } from "./page-worker-bootstrap.js";
 import { PageWorkerImports } from "./page-worker-imports.js";
 import type {
@@ -41,6 +43,8 @@ export interface PageWorkerOptions {
 	importFetch?: WorkerImportFetch;
 	importPolicy?: WorkerImportPolicy;
 	stringCompilation?: "allow" | "deny";
+	wasmCompilation?: "allow" | "deny";
+	webAssembly?: "bounded-v1";
 	report(message: string): void;
 	fail(error: unknown): void;
 }
@@ -91,6 +95,7 @@ interface WorkerRecord {
 	outgoing: number;
 	disposed: boolean;
 	stringCompilation?: "allow" | "deny";
+	wasmCompilation: "allow" | "deny";
 	importPolicy?: WorkerImportPolicy;
 	imports?: PageWorkerImports;
 }
@@ -206,6 +211,8 @@ export class PageWorkers {
 	private readonly running = new Set<object>();
 	private closed = false;
 	private readonly identity: Readonly<BrowserIdentity>;
+	private readonly webAssembly: boolean;
+	private readonly bootstrapSource: string;
 	private created = 0;
 	private messages = 0;
 	private retainedUnits = 0;
@@ -215,6 +222,27 @@ export class PageWorkers {
 		private readonly options: PageWorkerOptions,
 	) {
 		this.ensureOpen();
+		if (
+			options.webAssembly !== undefined &&
+			options.webAssembly !== "bounded-v1"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid Worker WASM installation policy",
+			);
+		if (
+			options.wasmCompilation !== undefined &&
+			options.wasmCompilation !== "allow" &&
+			options.wasmCompilation !== "deny"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid Worker WASM compilation policy",
+			);
+		this.webAssembly = options.webAssembly === "bounded-v1";
+		this.bootstrapSource =
+			workerGlobalBootstrapSource +
+			(this.webAssembly ? pageWasmBootstrapSource : "");
 		this.identity = options.identity ?? defaultBrowserIdentity;
 		browserIdentityHeaders(this.identity);
 		this.port = owner.createHostObject({
@@ -323,7 +351,7 @@ export class PageWorkers {
 		}
 		if (
 			source !== undefined &&
-			source.length + workerGlobalBootstrapSource.length >
+			source.length + this.bootstrapSource.length >
 				this.options.limits.maxSourceCodeUnits
 		)
 			limited();
@@ -337,6 +365,7 @@ export class PageWorkers {
 			outgoing: 0,
 			disposed: false,
 			stringCompilation: this.options.stringCompilation,
+			wasmCompilation: this.options.wasmCompilation ?? "allow",
 			importPolicy: this.options.importPolicy,
 		};
 		const port = this.owner.createHostObject({
@@ -408,7 +437,7 @@ export class PageWorkers {
 				this.options.policy(final.href, redirects);
 				if (
 					typeof loaded.source !== "string" ||
-					loaded.source.length + workerGlobalBootstrapSource.length >
+					loaded.source.length + this.bootstrapSource.length >
 						this.options.limits.maxSourceCodeUnits
 				)
 					limited();
@@ -417,6 +446,16 @@ export class PageWorkers {
 					loaded.stringCompilation !== "deny"
 				)
 					throw new TypeError("Invalid Worker source policy");
+				if (
+					this.webAssembly &&
+					loaded.wasmCompilation !== "allow" &&
+					loaded.wasmCompilation !== "deny"
+				)
+					throw new TypeError("Invalid Worker WASM source policy");
+				record.wasmCompilation =
+					record.wasmCompilation === "deny" || loaded.wasmCompilation === "deny"
+						? "deny"
+						: "allow";
 				record.url = final.href;
 				if (
 					loaded.checkImport !== undefined &&
@@ -438,15 +477,33 @@ export class PageWorkers {
 	private async initialize(record: WorkerRecord, source: string) {
 		if (this.closed || this.owner.signal.aborted || record.state !== "loading")
 			return;
+		const budget = this.options.budget.forkRealm();
+		const webAssembly = this.webAssembly;
+		const capabilities = [
+			"guest:retain",
+			"source:nested",
+			...(webAssembly ? ["array-buffer:share"] : []),
+		];
 		const extension = this.options.core.defineExtension({
 			manifest: {
 				version: 1,
 				name: "agent-browser-worker",
-				globals: ["__agentBrowserWorker"],
-				capabilities: ["guest:retain", "source:nested"],
+				globals: [
+					"__agentBrowserWorker",
+					...(webAssembly ? ["__agentBrowserWasm"] : []),
+				],
+				capabilities,
 			},
 			setup: (context) => {
 				record.context = context;
+				const wasm = webAssembly
+					? new PageWasm(
+							context,
+							budget as typeof budget & PageWasmBudget,
+							undefined,
+							record.wasmCompilation,
+						)
+					: undefined;
 				const identity = this.identity;
 				const clock = new PageClock();
 				context.onCleanup(() => clock.close());
@@ -509,6 +566,7 @@ export class PageWorkers {
 				const location = new URL(record.url);
 				return {
 					globals: {
+						...(wasm ? { __agentBrowserWasm: wasm.port } : {}),
 						__agentBrowserWorker: context.createHostObject({
 							properties: {
 								urls: { get: () => urls.port },
@@ -581,8 +639,8 @@ export class PageWorkers {
 			callbackScheduling: "after-prefix",
 			stringCompilation: record.stringCompilation,
 			extensions: [extension],
-			grants: ["guest:retain", "source:nested"],
-			budget: this.options.budget.forkRealm(),
+			grants: capabilities,
+			budget,
 			signal: record.controller.signal,
 			limits: {
 				extensions: 1,
@@ -597,10 +655,10 @@ export class PageWorkers {
 				error: () => this.report("Worker console error"),
 			},
 		});
-		const result = await record.realm.evaluate(
-			workerGlobalBootstrapSource + source,
-			{ filename: record.url, discardResult: true },
-		);
+		const result = await record.realm.evaluate(this.bootstrapSource + source, {
+			filename: record.url,
+			discardResult: true,
+		});
 		if (!result.ok)
 			throw new AgentBrowserError(
 				"invalid-input",

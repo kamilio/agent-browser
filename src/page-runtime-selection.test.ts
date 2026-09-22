@@ -594,3 +594,22 @@ it("does not create an extension realm when the owner is already aborted", () =>
 	).toThrow("aborted");
 	expect(test.core.createRealm).not.toHaveBeenCalled();
 });
+
+it("snapshots explicit WASM installation selection for the extension adapter", () => {
+	const input = { webAssembly: "bounded-v1" as const };
+	const selected = pageRuntimeConfiguration(input, "extension");
+	expect(selected).toEqual(input);
+	expect(Object.isFrozen(selected)).toBe(true);
+	expect(() => pageRuntimeConfiguration(input, "legacy")).toThrow(
+		/extension adapter/,
+	);
+});
+
+it.each([null, true, "allow", {}, []])(
+	"rejects malformed WASM runtime selection: %j",
+	(webAssembly) => {
+		expect(() =>
+			pageRuntimeConfiguration({ webAssembly }, "extension"),
+		).toThrow();
+	},
+);

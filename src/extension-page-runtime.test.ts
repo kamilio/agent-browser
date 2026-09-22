@@ -10,7 +10,9 @@ import { pageBindingGlobalNames } from "./page-bindings.js";
 import {
 	pageDomConstructorBootstrapGlobal,
 	pageDomConstructorBootstrapSource,
+	pageDomParserBootstrapGlobal,
 } from "./page-dom-constructor-bootstrap.js";
+import { pageDomMethodsBootstrapGlobal } from "./page-dom-methods.js";
 import {
 	pageEventBootstrapGlobal,
 	pageEventBootstrapSource,
@@ -809,6 +811,8 @@ it("declares owned console, retention, and focus await-result grants before lazy
 		globals: [
 			pageEventBootstrapGlobal,
 			pageDomConstructorBootstrapGlobal,
+			pageDomParserBootstrapGlobal,
+			pageDomMethodsBootstrapGlobal,
 			...pageBindingGlobalNames(test.tree),
 		],
 		capabilities: ["guest:retain", "source:nested"],
@@ -845,7 +849,7 @@ it("bootstraps once, shares owned aliases and forwards only supported public eva
 	);
 	expect(test.state.globals?.self).toBe(test.state.globals?.window);
 	expect(test.state.globals?.document).toBe(test.scripts.dom.document);
-	const retainedArgumentStarts = [4, 0, 0, 0, 2, 2];
+	const retainedArgumentStarts = [4, 0, 0, 0, 1, 2, 2];
 	expect(test.state.context.retainGuestArguments).toHaveBeenCalledTimes(
 		retainedArgumentStarts.length,
 	);
@@ -904,7 +908,9 @@ it("reports an ordinary classic exception without closing an opted-in runtime", 
 		error: { code: "UNCAUGHT_EXCEPTION", message: "private detail" },
 	};
 	state.evaluate.mockResolvedValue(state.response);
-	expect(await runtime.evaluate("throw 1")).toEqual({
+	expect(
+		await runtime.evaluate("throw 1", { signal: new AbortController().signal }),
+	).toEqual({
 		ok: false,
 		error: { code: "UNCAUGHT_EXCEPTION" },
 	});
@@ -912,7 +918,9 @@ it("reports an ordinary classic exception without closing an opted-in runtime", 
 	expect(state.close).not.toHaveBeenCalled();
 	state.response = { ok: true, returnValue: 42 };
 	state.evaluate.mockResolvedValue(state.response);
-	expect(await runtime.evaluate("later")).toMatchObject({ ok: true });
+	expect(
+		await runtime.evaluate("later", { signal: new AbortController().signal }),
+	).toMatchObject({ ok: true });
 	expect(state.options.classicScriptErrors).toBe("report");
 });
 
@@ -943,18 +951,25 @@ it.each([
 		recoverable: true,
 		error: { code: "UNCAUGHT_EXCEPTION", budget: "steps" },
 	},
-])("does not recover unqualified or budget failures %#", async (response) => {
-	const shared = fakeCore(undefined, { value: "report" });
-	const runtime = extensionPageRuntime(shared.core, {
-		classicScripts: true,
-		classicScriptErrors: "report",
-	}).createPageRuntime(policyPageOptions());
-	pageRuntimes.push(runtime);
-	shared.realms[0].response = response;
-	shared.realms[0].evaluate.mockResolvedValue(response);
-	expect(await runtime.evaluate("failure")).toMatchObject({ ok: false });
-	expect(runtime.closed).toBe(true);
-});
+] as const)(
+	"does not recover unqualified or budget failures %#",
+	async (response) => {
+		const shared = fakeCore(undefined, { value: "report" });
+		const runtime = extensionPageRuntime(shared.core, {
+			classicScripts: true,
+			classicScriptErrors: "report",
+		}).createPageRuntime(policyPageOptions());
+		pageRuntimes.push(runtime);
+		shared.realms[0].response = response;
+		shared.realms[0].evaluate.mockResolvedValue(response);
+		expect(
+			await runtime.evaluate("failure", {
+				signal: new AbortController().signal,
+			}),
+		).toMatchObject({ ok: false });
+		expect(runtime.closed).toBe(true);
+	},
+);
 
 it("does not opt into recovery merely because the SDK labels a result recoverable", async () => {
 	const shared = fakeCore();
@@ -967,7 +982,7 @@ it("does not opt into recovery merely because the SDK labels a result recoverabl
 		recoverable: true,
 		error: { code: "UNCAUGHT_EXCEPTION" },
 	};
-	await runtime.evaluate("failure");
+	await runtime.evaluate("failure", { signal: new AbortController().signal });
 	expect(runtime.closed).toBe(true);
 });
 
@@ -986,7 +1001,7 @@ it.each(["inherited", "accessor"])(
 			Object.setPrototypeOf(response, { recoverable: true });
 		else Object.defineProperty(response, "recoverable", { get: getter });
 		shared.realms[0].evaluate.mockResolvedValue(response);
-		await runtime.evaluate("throw 1");
+		await runtime.evaluate("throw 1", { signal: new AbortController().signal });
 		expect(runtime.closed).toBe(true);
 		expect(getter).not.toHaveBeenCalled();
 	},
@@ -1006,6 +1021,7 @@ it("does not recover a module failure under the classic error policy", async () 
 		error: { code: "UNCAUGHT_EXCEPTION" },
 	});
 	await runtime.evaluate("throw 1", {
+		signal: new AbortController().signal,
 		sourceType: "module",
 		filename: "fixture",
 	});
@@ -1429,4 +1445,54 @@ it("rejects invalid status facts without running field accessors", async () => {
 		"SafeJS source-module status is unavailable",
 	);
 	expect(getter).not.toHaveBeenCalled();
+});
+
+it.each([null, true, "allow", {}, []])(
+	"rejects invalid WASM installation selection: %j",
+	(webAssembly) => {
+		expect(() =>
+			extensionPageRuntime(fakeCore().core, { webAssembly } as never),
+		).toThrow(/WASM runtime policy/);
+	},
+);
+
+it("does not invoke a WASM installation accessor", () => {
+	const getter = vi.fn(() => "bounded-v1");
+	expect(() =>
+		extensionPageRuntime(
+			fakeCore().core,
+			Object.defineProperty({}, "webAssembly", {
+				get: getter,
+				enumerable: true,
+			}),
+		),
+	).toThrow();
+	expect(getter).not.toHaveBeenCalled();
+});
+
+it("rejects malformed per-page WASM policy even when installation is omitted", () => {
+	const factory = extensionPageRuntime(fakeCore().core);
+	const options = policyPageOptions();
+	const getter = vi.fn(() => "allow");
+	Object.defineProperty(options, "wasmCompilation", {
+		get: getter,
+		enumerable: true,
+	});
+	expect(() => factory.createPageRuntime(options)).toThrow(
+		/per-page WASM compilation policy/,
+	);
+	expect(getter).not.toHaveBeenCalled();
+});
+
+it("rejects the reserved WASM global before admitting the page realm", () => {
+	const test = fakeCore();
+	const factory = extensionPageRuntime(test.core, {
+		webAssembly: "bounded-v1",
+	});
+	const options = policyPageOptions();
+	options.globals = ["console", "__agentBrowserWasm"];
+	expect(() => factory.createPageRuntime(options)).toThrow(
+		/Reserved WASM global/,
+	);
+	expect(test.createRealm).not.toHaveBeenCalled();
 });

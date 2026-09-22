@@ -10,6 +10,7 @@ import type { ReleasedCore } from "./safejs-extension-types.js";
 export type PageRuntimeAdapter = "legacy" | "extension";
 
 export interface PageRuntimeConfiguration {
+	webAssembly?: "bounded-v1";
 	classicScripts?: boolean;
 	classicScriptErrors?: "fatal" | "report";
 	callbackScheduling?: "after-prefix";
@@ -66,6 +67,7 @@ export function pageRuntimeConfiguration(
 	const descriptors = Object.getOwnPropertyDescriptors(value);
 	for (const key of Reflect.ownKeys(descriptors)) {
 		if (
+			key !== "webAssembly" &&
 			key !== "classicScripts" &&
 			key !== "classicScriptErrors" &&
 			key !== "callbackScheduling" &&
@@ -77,6 +79,7 @@ export function pageRuntimeConfiguration(
 		if (!Object.hasOwn(descriptor, "value") || !descriptor.enumerable)
 			throw invalid();
 		if (
+			(key === "webAssembly" && descriptor.value !== "bounded-v1") ||
 			(key === "classicScripts" && typeof descriptor.value !== "boolean") ||
 			(key === "classicScriptErrors" &&
 				descriptor.value !== "fatal" &&
@@ -90,6 +93,9 @@ export function pageRuntimeConfiguration(
 			throw invalid();
 	}
 	const runtimeOptions: PageRuntimeConfiguration = {
+		...(descriptors.webAssembly
+			? { webAssembly: descriptors.webAssembly.value as "bounded-v1" }
+			: {}),
 		...(descriptors.classicScriptErrors
 			? {
 					classicScriptErrors: descriptors.classicScriptErrors.value as

@@ -9,6 +9,13 @@ extraction, forms and shared sessions. Browser compatibility and scripting remai
 partial. Zoom initialization currently times out; joining, audio and notetaking
 are not yet working.
 
+The extension page runtime can opt into bounded WebAssembly with
+`runtimeOptions.webAssembly: "bounded-v1"`. Pages and classic Workers share
+metered execution and memory limits, and enforce WASM compilation CSP separately
+from string eval. This currently requires Node24 with modern JSPI explicitly
+enabled; the default Node22 runtime reports unsupported. Streaming, Table/Global
+wrappers and full Zoom/media compatibility remain incomplete.
+
 ## Development
 
 ```bash

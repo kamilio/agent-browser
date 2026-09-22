@@ -24,7 +24,7 @@ const api: WasmPromiseApi = {
 		(...args) =>
 			Promise.resolve(operation(...args)),
 };
-function fixture() {
+function fixture(compilation: "allow" | "deny" = "allow") {
 	const controller = new AbortController();
 	const credits = new Map<object, number>();
 	const budget = {
@@ -53,7 +53,7 @@ function fixture() {
 		invokeCallback: async () => 0,
 		nestedOperation: <T>(value: T) => value,
 	};
-	const owner = new PageWasm(context, budget, api);
+	const owner = new PageWasm(context, budget, api, compilation);
 	const vm = createContext({
 		__agentBrowserWasm: owner.port,
 		bytes,
@@ -147,4 +147,32 @@ it("bounds sources and revokes retained API methods at close", async () => {
 	).toThrow(/limit/);
 	await f.owner.close();
 	expect(() => f.evaluate("new WebAssembly.Module(bytes)")).toThrow(/closed/);
+});
+
+it("denies sync and async WASM compilation while retaining validation and memory APIs", async () => {
+	const f = fixture("deny");
+	expect(f.evaluate("WebAssembly.validate(bytes)")).toBe(true);
+	expect(
+		f.evaluate(
+			"new WebAssembly.Memory({initial:1,maximum:2}).buffer.byteLength",
+		),
+	).toBe(65536);
+	expect(
+		f.evaluate(
+			"var denied=false;try{new WebAssembly.Module(bytes)}catch(e){denied=e instanceof WebAssembly.CompileError}denied",
+		),
+	).toBe(true);
+	expect(
+		await f.evaluate(
+			"WebAssembly.compile(bytes).then(()=>false,e=>e instanceof WebAssembly.CompileError)",
+		),
+	).toBe(true);
+	expect(
+		await f.evaluate(
+			"WebAssembly.instantiate(bytes).then(()=>false,e=>e instanceof WebAssembly.CompileError)",
+		),
+	).toBe(true);
+	expect(f.owner.metrics().modules.compileCalls).toBe(0);
+	await f.owner.close();
+	expect(f.credits.size).toBe(0);
 });

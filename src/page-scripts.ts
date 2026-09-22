@@ -207,6 +207,9 @@ export class PageScripts {
 					else if (this.scriptPolicy?.enforced)
 						throw new AgentBrowserError("policy-denied", "Worker CSP is unavailable");
 				},
+				...(this.scriptPolicy?.wasmCompilation === undefined
+					? {}
+					: { wasmCompilation: this.scriptPolicy.wasmCompilation }),
 				...(this.scriptPolicy?.stringCompilation === undefined
 					? {}
 					: { stringCompilation: this.scriptPolicy.stringCompilation }),
