@@ -166,11 +166,16 @@
   0 fulfilled / 0 rejected, after 6.73 million additional budgeted steps. No module
   rejection is proven. Zero socket attempts and cleanup data zero verified; process
   terminates. Incorrect sourceReference-based instrumentation is restored exactly.
-  A bounded 5 min import diagnostic now uses scope.lookupModuleId, module-entry
-  markers, editor statement CPU/data readings and Node CPU profiling. SDK/native
-  builds must stay unchanged while this process is live; restore instrumentation
-  and remove ephemeral artifacts after validation. Extended heap/time allowances
-  remain diagnostic.
+  Corrected live trace/profile retry instead hits externals' 120 s deadline at
+  194881 script steps / 40.4 s process CPU: nine classics pass, one fails, zero
+  sockets and cleanup data zero. Interpreter restored exactly; profile samples
+  concentrate in retained-graph reconciliation, not a CPU-total attribution.
+  A bounded 5 min component diagnostic now uses the exact cached editor/client
+  graph on an empty native document, scope.lookupModuleId, module-entry markers,
+  editor CPU/data readings and Node profiling. The module-entry marker fires.
+  SDK/native builds must stay unchanged while this process is live; restore
+  instrumentation and remove artifacts after validation. Extended heap/time
+  allowances and component results remain diagnostic.
   Default performance and every readiness/meeting/media gate remain open.
 
 - SDK intrinsic root caches now ignore writes to unrelated guest function tables.
