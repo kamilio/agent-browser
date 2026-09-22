@@ -1,6 +1,8 @@
+import { documentMode } from "./document-mode.js";
 import { DocumentResources } from "./document-resources.js";
 import { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
+import { parseHtmlDocument } from "./html-parser.js";
 
 export interface DocumentOrigin {
 	readonly serialized: string;
@@ -16,7 +18,7 @@ const contexts = new WeakMap<
 		origin: DocumentOrigin;
 		contentType: "text/html";
 		encoding: "UTF-8";
-		compatMode: "CSS1Compat";
+		compatMode: "CSS1Compat" | "BackCompat";
 	}>
 >();
 
@@ -159,6 +161,73 @@ export class HtmlDocumentFamily {
 				throw new AggregateError(
 					[error, cleanup],
 					"HTML document creation cleanup failed",
+				);
+			}
+			throw error;
+		}
+	}
+
+	parseHtml(
+		source: string,
+		publish: (tree: DocumentTree) => object,
+		creator = this.creator,
+	): object {
+		this.ensureCaller(creator);
+		if (typeof source !== "string" || typeof publish !== "function")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid HTML parsing arguments",
+			);
+		if (this.attempts >= 16)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"HTML document creation limit exceeded",
+			);
+		this.attempts++;
+		const context = Object.freeze({
+			family: this,
+			origin: documentOrigin(creator),
+			contentType: "text/html",
+			encoding: "UTF-8",
+			compatMode: "CSS1Compat",
+		});
+		const tree = parseHtmlDocument(source, creator.url, {
+			limits: this.creator.limits,
+			resources: this.resources,
+			initializeDocument: (candidate) => {
+				origins.set(candidate, context.origin);
+				contexts.set(candidate, context);
+				candidate.onClose(() => {
+					contexts.delete(candidate);
+					origins.delete(candidate);
+				});
+			},
+		});
+		try {
+			contexts.set(
+				tree,
+				Object.freeze({
+					...context,
+					compatMode:
+						documentMode(tree) === "quirks" ? "BackCompat" : "CSS1Compat",
+				}),
+			);
+			const capability = publish(tree);
+			this.ensureCaller(creator);
+			tree.get(tree.root);
+			if (capability === null || typeof capability !== "object")
+				throw new AgentBrowserError(
+					"unsupported",
+					"HTML document publication requires an object",
+				);
+			return capability;
+		} catch (error) {
+			try {
+				tree.close();
+			} catch (cleanup) {
+				throw new AggregateError(
+					[error, cleanup],
+					"HTML document parsing cleanup failed",
 				);
 			}
 			throw error;

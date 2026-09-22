@@ -1,4 +1,5 @@
 export const pageDomConstructorBootstrapGlobal = "__agentBrowserDomHasInstance";
+export const pageDomParserBootstrapGlobal = "__agentBrowserParseHtmlDocument";
 
 // Host-backed nodes retain their capability identity. These constructors provide
 // interface branding; their prototypes do not yet supply the DOM method tables.
@@ -38,6 +39,29 @@ if (typeof __agentBrowserDomHasInstance === "function") {
 		Object.defineProperty(Node, name, {value, enumerable: true});
 		Object.defineProperty(Node.prototype, name, {value, enumerable: true});
 	}
+}
+if (typeof __agentBrowserParseHtmlDocument === "function") {
+	const parse = __agentBrowserParseHtmlDocument;
+	const parsers = new WeakSet();
+	const addParser = parsers.add.bind(parsers);
+	const hasParser = parsers.has.bind(parsers);
+	const domString = String;
+	class DOMParser {
+		constructor() { addParser(this); }
+		parseFromString(input, type) {
+			if (!hasParser(this)) throw new TypeError("parseFromString requires a DOMParser");
+			if (arguments.length < 2) throw new TypeError("parseFromString requires two arguments");
+			if (typeof input === "symbol") throw new TypeError("Invalid DOMParser input");
+			const source = domString(input);
+			if (typeof type === "symbol") throw new TypeError("Invalid DOMParser MIME type");
+			const mime = domString(type);
+			if (mime !== "text/html" && mime !== "text/xml" && mime !== "application/xml" && mime !== "application/xhtml+xml" && mime !== "image/svg+xml")
+				throw new TypeError("Invalid DOMParser MIME type");
+			return parse(source, mime);
+		}
+	}
+	Object.defineProperty(DOMParser.prototype, Symbol.toStringTag, {value: "DOMParser", configurable: true});
+	Object.defineProperty(globalThis, "DOMParser", {value: DOMParser, writable: true, configurable: true});
 }
 void 0;
 `;

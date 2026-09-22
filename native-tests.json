@@ -1100,5 +1100,6 @@
   "src/event-initialization.test.ts",
   "src/react-streaming.test.ts",
   "src/streamed-content-loader.test.ts",
-  "src/research-streamed-content.test.ts"
+  "src/research-streamed-content.test.ts",
+  "src/page-dom-parser.test.ts"
 ]

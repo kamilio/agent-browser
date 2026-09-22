@@ -56,17 +56,23 @@
   The driver retains bounded 0–30 min import observation, 10 s progress reports and
   explicit 1–120 s network deadlines; prior build/format/invalid-setting checks pass.
 
-- An isolated 21008-character slice of Zoom's bundled DOMPurify initializes under
-  128 MB in 17.7–18.6 s, reports `3.0.9:true:function`, then throws TypeError on
-  benign `<b>hello</b>` sanitization. Guest exception capture narrows the failure to
-  `La`: DOMParser is absent, so its fallback calls missing DOMImplementation.createDocument.
-  Actual SDK/native probes also confirm absent document.createNodeIterator,
-  NodeFilter, HTMLFormElement and NamedNodeMap. The bundled library's `isSupported`
-  flag is therefore insufficient evidence of compatibility. No security bypass or
-  successful sanitization is claimed. No live fetches are made by the offline fixture;
-  its runtime closes with data zero. Next: implement and validate the required DOM
-  parsing/traversal/interface behavior, while preserving accounting and ownership;
-  complete application initialization and all meeting/media gates remain open.
+- Native DOMParser now parses `text/html` through the existing inert HTML parser.
+  Parsed documents inherit the creator URL/origin, have null window/location and
+  no creator credentials, retain parser-selected quirks mode, and share auxiliary
+  document creation/node/text limits and cleanup. XML MIME types reject explicitly;
+  DOMImplementation.createDocument remains absent. Twelve new contracts plus existing
+  HTML/template/window/parser-limit/namespace checks pass (132 native checks from
+  native-tests.json). Working build and new-test/bootstrap Biome checks pass.
+  Actual SDK/native 128 MB probe verifies parsed HTML, detached window, URL/mode,
+  Document/Node branding and Window alias; cleanup releases all SDK data.
+  This addresses Zoom DOMPurify's initial parsing failure: its isolated 21008-char
+  initializer still completes (~18.8 s), while benign `<b>hello</b>` now reaches `yo`
+  and fails reading missing NodeFilter, before document.createNodeIterator can run.
+  No successful sanitization or full application initialization is claimed.
+  Next: implement native NodeFilter/NodeIterator traversal and required interface
+  brands/method tables; HTMLFormElement and NamedNodeMap remain absent. Performance,
+  complete application initialization and every meeting/media gate remain open.
+  Probe processes terminate; temporary fixtures/logs are removed.
 
 - Editor initialization is narrowed to React DOM's lazy initializer. The earlier
   live root-statement trace completes statement 0 in 19.5 s / 3594 steps and
@@ -983,7 +989,7 @@
   i18n (362461), lodash (126038), rolldown (1365) and the 4383-char entry. The latest
   768 MB live trace prepares all seven but remains pending at the 15 min observation
   bound, reaching editor statement 1353 after React DOM and DOMPurify complete.
-  The isolated sanitizer's benign-markup failure exposes missing native DOM APIs;
+  The isolated sanitizer's benign-markup failure now reaches missing traversal APIs;
   initialization performance and library compatibility both require work. Diagnostic
   heap/time/response allowances do not clear default 128 MB, interactive readiness
   or meeting gates. Fetch completion and green classic reports prove no readiness.

@@ -4,6 +4,7 @@ import {
 	documentMode,
 	setDocumentMode,
 } from "./document-mode.js";
+import type { DocumentResources } from "./document-resources.js";
 import { type DocumentLimits, DocumentTree } from "./document.js";
 import {
 	elementNamespace,
@@ -141,6 +142,7 @@ type TemplateMode = "template" | "table" | "colgroup" | "tbody" | "tr" | "body";
 
 export interface HtmlParseOptions {
 	limits?: Partial<DocumentLimits>;
+	resources?: DocumentResources;
 	signal?: AbortSignal;
 	initializeDocument?: (tree: DocumentTree) => void;
 }
@@ -413,7 +415,7 @@ function* parseHtmlSteps(
 		throw new AgentBrowserError("invalid-input", "Expected HTML text");
 	if (options.signal?.aborted)
 		throw new AgentBrowserError("aborted", "HTML parsing aborted");
-	const tree = new DocumentTree(url, options.limits);
+	const tree = new DocumentTree(url, options.limits, options.resources);
 	const issues: Record<string, number> = Object.create(null);
 	const issue = (code: string) => {
 		issues[code] = (issues[code] ?? 0) + 1;

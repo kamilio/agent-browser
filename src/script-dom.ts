@@ -788,7 +788,6 @@ export class ScriptDom {
 					characterSet: "UTF-8",
 					charset: "UTF-8",
 					inputEncoding: "UTF-8",
-					compatMode: "CSS1Compat",
 				}))
 					definition.properties[name] = {
 						get: () => {
@@ -1298,6 +1297,32 @@ export class ScriptDom {
 	hasInstance(value: unknown, name: unknown): boolean {
 		this.ensureOpen();
 		return scriptNodeHasInstance(value, this.factory, name);
+	}
+
+	parseFromString(source: unknown, type: unknown): object {
+		this.ensureOpen();
+		if (typeof source !== "string" || typeof type !== "string")
+			throw new TypeError("DOMParser requires string arguments");
+		if (type !== "text/html")
+			throw new AgentBrowserError(
+				"unsupported",
+				"DOMParser XML parsing is unsupported",
+			);
+		return this.documentFamily().parseHtml(
+			source,
+			(tree) => {
+				const child = new ScriptDom(
+					tree,
+					this.factory,
+					this.callbacks
+						? { events: new DocumentEvents(tree), callbacks: this.callbacks }
+						: undefined,
+				);
+				this.ensureOpen();
+				return child.document;
+			},
+			this.tree,
+		);
 	}
 
 	metrics() {
