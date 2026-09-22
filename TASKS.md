@@ -294,37 +294,28 @@
   out at 120658 ms / 881068 steps without completion/status, cleanup zero. No useful
   startup gain established. Carrier/ancestor/provider ownership remains open
   before whole-frame capture reuse; retain fresh foreign-frame reads.
-  Actual Worker CPU profiles put graph visits and GC first; symbol enumeration is
-  a prominent allocation site. Maintained SafeJS now pins closure finalization and
-  captures frozen SDK closure keys once in a protected weak registry. Indexed reads
-  protect the cached lists from late iterator hooks; descriptors, classification,
-  descendants and foreign objects/property tables stay fresh. Reproduced enumeration
-  hook erases 1017 units to 2; unindexed candidate iterator hook erases 1011 to 2.
-  Six new and 102 selected existing checks, strict new-test typing, scoped lint/
-  format, isolated SDK compilation/eight imports pass (poe-code b2c09d20f; no push).
-  Final alternating 400-closure warm scans retain 1400 units: control CPU 0.153/0.146
-  ms versus candidate 0.097/0.082 ms (36–44% improvement in that fixture). Actual
-  five-case JSPI/WASM and public initializer pass at unchanged accounting totals,
-  cleanup zero. Final full Worker still times out at 30398 ms / 882055 steps with
-  parent success, no completion/status and cleanup zero; no useful startup gain
-  established. Concurrent dependency/type rebuilds caused temporary compile failures;
-  restored dependencies and the final compile pass. All owned builds/profiles/probes
-  removed. Maintained SafeJS now reuses private weak visit markers with a fresh
-  generation for every complete graph walk; reentrant walks use separate registries.
-  Pinned operations/private fields protect bookkeeping from late host hooks. Baseline
-  visited-set poisoning drops 1013 units to 7; the regression now keeps the full charge.
-  All 215 selected checks (six new), strict test typing, scoped lint/format, isolated
-  compilation/eight imports pass (poe-code 9e95e10dc; no push). Alternating 2000-object
-  scans keep 77218 units: CPU 2.272/2.264 ms control versus 2.062/2.108 ms candidate
-  (7–9% reduction); garbage collections 42/42 versus 40/39. Closure scans keep 727
-  units with smaller CPU gains and 13/13 versus 10/10 collections. Actual five-case
-  JSPI/WASM and public initializer pass at unchanged totals, cleanup zero. Loaded
-  initializer takes 32.6 s; full Worker still times out at 30065 ms / 879132 steps,
-  parent success, no completion/status and cleanup zero. No useful actual startup
-  gain established. Owned validation artifacts removed. Next: reduce remaining
-  graph-walk allocations/visits without skipping primary scans or trusting foreign
-  carriers/providers. Full startup/default limits and all joining/meeting/media
-  gates remain open.
+  Maintained SafeJS protects frozen SDK closure symbol keys and private weak visit
+  generations (poe-code b2c09d20f / 9e95e10dc, no push). Descendants/classification,
+  foreign frames and full primary limits stay fresh; nested walks remain isolated.
+  Latest instrumented Worker diagnostic performs 9226 graph walks / 42.8 M visits,
+  with 28.2 s in measurement; GC takes 25.8% of CPU samples. Separate type counts put
+  closures at 62% of newly visited objects. Function and generator captures now use
+  one fresh collector across native ancestors; overridden collectors are copied.
+  Short vectors start with own slots; overflow/extra captures use pinned definitions.
+  Ancestors, context carriers and metadata stay live; no whole-frame capture reuse.
+  Baseline iterator hook drops 1002 units to 1; child capture also mutates a foreign
+  parent's reused vector. Ten guards include same-walk changes, iterator errors and
+  the rejected candidate's setter/getter charge loss (4 to 1). All 389 selected
+  checks, strict test typing, scoped lint/new-test format, isolated compilation/eight
+  imports pass (poe-code 6576531f9, no push). Final 400-function scans keep 2460 units:
+  CPU 0.285/0.292 ms control versus 0.240/0.231 ms candidate (16–21% reduction), GC
+  collections 39/39 versus 16/16. Actual five-case JSPI/WASM and public initializer
+  pass at unchanged totals, cleanup zero; initializer takes 14.1 s on this loaded run.
+  Full Worker still times out at 30279 ms / 881108 steps, parent success, no completion/
+  status and cleanup zero. No useful actual startup gain established. Owned builds,
+  profiles and probes removed. Next: reduce visited-bookkeeping call allocations and
+  remaining graph-walk work while preserving primary scans and fresh foreign reads.
+  Full startup/default limits and all joining/meeting/media gates remain open.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
