@@ -335,6 +335,21 @@
   without cross-walk caching of mutable/foreign objects or weakening full primary scans.
   Full startup/default limits and all joining/meeting/media gates remain open.
 
+- Maintained SafeJS now releases the creating invocation's unused callee from
+  closure contexts (poe-code 35db94b46, no push). Five baseline explicit-GC failures
+  become collections in the compiled SDK; retained closures still return 7 at
+  unchanged 26 units, while intentional self capture retains/accounts for 60081 units.
+  Twelve new regressions, strict typing, lint/format, isolated build/eight imports
+  pass. Broader validation passes 179/180 checks: the Promise-subclass constructor
+  case also times out without this change. Compiled plain/subclass aggregate probes
+  target a finished run queue and stall before snapshot creation; lifecycle repair
+  remains required. Offline five-case JSPI/WASM and public initializer pass with
+  unchanged totals/zero cleanup; loaded initializer 16.8 s. Full Worker still times
+  out at 30317 ms / 880694 steps, parent success, no completion/status, cleanup zero.
+  No startup/join gain claimed; owned validation artifacts removed. Next: repair
+  retained Promise reaction ownership for explicit invocation while preserving
+  closed-realm revocation, then continue reducing full graph-accounting cost.
+
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
   sender detachment. Up to 64 entries/65536 initial buffer bytes are admitted;
@@ -1964,6 +1979,11 @@
   restored; no candidate code, caches or diagnostic artifacts remain.
 
 ## Outstanding gates
+
+- Retained pending Promise reactions can target the finished run queue when a
+  returned closure is explicitly invoked; the Promise-subclass constructor check
+  still stalls before snapshot creation. Repair authorized invocation ownership
+  while preserving cancellation and closed-realm revocation.
 
 - The complete seven-module static graph now clears offline compilation and linking
   at a 128 MB heap limit above. Runtime materialization retains decoded AST nodes, so
