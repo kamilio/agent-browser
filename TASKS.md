@@ -104,9 +104,9 @@
   glue tail with all 21 real function imports and its 320-page memory; export w's
   initializer completes. Maintained check-zoom-wasm-initialization at Node24 JSPI/
   128 MB, explicit 32 MiB quotas/120 s deadline passes: 39087 steps, 22395140 retained
-  units, 13.3 s including two public downloads, cleanup owned resources/data/requests
-  zero. This isolates the glue tail; complete Worker/page startup, parent download
-  protocol and later media callbacks remain unverified. No source is rewritten and
+  units, latest 8.4 s including two public downloads, cleanup owned resources/data/
+  requests zero. This isolates the glue tail; complete Worker/page startup, guest fetch and
+  later media callbacks remain unverified. No source is rewritten and
   no function imports are stubbed. Native build/script lint/format pass.
   Table/Global wrappers and streaming/custom sections remain absent; page/Worker
   installation is now opt-in. Shared-realm ownership is now fixed in the maintained SDK; reconcile its
@@ -173,7 +173,7 @@
   21cb74d71; no push. No public startup speedup is established.
   Public net_thread.min.js (390978 units) clears parent setup and enters its child,
   but source completion/readiness still fails. Latest exact-build 30 s run settles at
-  30502 ms / 883096 shared steps with AgentBrowserError timeout; outer wait does not
+  30374 ms / 886585 shared steps with AgentBrowserError timeout; outer wait does not
   expire first. A subsequent exact-build 120 s diagnostic still fails source
   completion at 120457 ms / 900405 shared steps with no status messages; cleanup
   data/page callbacks/active requests zero on both. Earlier instrumented
@@ -217,9 +217,29 @@
   detachment and cleanup data/pending callbacks zero. Explicit 1048577-element
   allowance and 120 s deadline are diagnostic: enabled round trips take 48.0/61.2 s;
   the initial 16 s attempt times out. Default elements/startup and full Zoom
-  parent-download/Worker initialization gates remain open. Guest-bound typed-array
-  snapshots still use conservative element-key enumeration; reproduce/profile
-  their accounting cost before changing SDK snapshot ownership.
+  parent-download/Worker initialization gates remain open. Sandbox-bound typed-array
+  snapshots now use maintained SafeJS metadata tracking, preserving aliases, mutable
+  property/symbol charges, resizable layouts, quotas and native outbound BufferSources.
+  Four new baseline failures reproduce; all 407 selected SDK checks across 22 files,
+  strict new-test typing, scoped lint/format and SDK build/eight entries pass. Serial
+  exact-build binary round trips improve from control copy/transfer 56.8/42.9 s to
+  candidate 7.4/8.0 s with identical steps/data/results and cleanup zero. Actual
+  JSPI/WASM boundary and compilation-policy probes pass; public isolated imports/
+  initializer passes, but full public Worker still times out before source completion
+  or status 30 (30374 ms / 886585 shared steps). This establishes local binary-delivery
+  improvement, not full Zoom startup readiness. Local poe-code commit 9b92df736;
+  no push. A separate isolated actual Blob Worker runs the unchanged 1725-unit
+  Zoom download handler and 18774-unit glue including createWasm/run: status 30,
+  parent host download/transfer of 465602 bytes, donor detachment and real 20 MiB
+  WASM initialization pass in 46.8 s / 606982 steps / 22980579 retained units.
+  Actual diagnostics DS/DE and cleanup data/callbacks/active requests zero. Explicit
+  32 MiB quotas/120 s deadline remain diagnostic; the rest of the full Worker is
+  omitted, and only its diagnostic logger is supplied by the fixture. Parent bytes
+  come from restricted host transport, not guest fetch: PageFetch rejects a
+  maxResponseBytes override above its fixed 262144-byte default. Guest fetch needs
+  an explicit bounded opt-in policy before it can carry this binary. Next: that
+  policy and primary retained-root/capture allocation cost, preserving full
+  accounting and defaults.
   Public current net_thread.min.js fetch succeeds (390978 units); instrumented actual
   source runs in a native Worker at 128 MB with the application profile, then hits its
   30 s initialization deadline at 493789 shared steps before the diagnostic marker.
