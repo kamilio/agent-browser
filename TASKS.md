@@ -170,16 +170,18 @@
   194881 script steps / 40.4 s process CPU: nine classics pass, one fails, zero
   sockets and cleanup data zero. Interpreter restored exactly; profile samples
   concentrate in retained-graph reconciliation, not a CPU-total attribution.
-  A bounded 5 min component diagnostic now uses the real client entry and exact
-  cached graph on an empty native document, scope.lookupModuleId, module/statement
-  markers, CPU/data readings and Node profiling. Resolved cache responses retain
-  the import in the initial evaluation; event-loop yielding restores the background
-  handoff. Seven modules prepare, editor statements 0/1 complete normally, and
-  React DOM statement 2 advances. Earlier direct component evaluations hit their
-  120 s deadline in statement 2; cancellation is not an application exception.
-  SDK/native builds must stay unchanged while this process is live; restore
-  instrumentation and remove artifacts after validation. Extended heap/time
-  allowances and component results remain diagnostic.
+  Corrected 5 min component diagnostic uses the real entry and exact cached graph
+  on an empty native document. Event-loop yielding restores background import
+  handoff; seven modules prepare. Editor statements 0–78 complete; the trace reaches
+  79 before cleanup. React DOM statement 2 completes normally in 242.8 s / 153.6 s process CPU /
+  40979 steps. Import counts remain 1/7/0/0; cleanup data zero verified. Profile
+  samples concentrate in reconciliation (267.7 of 305.1 sampled wall seconds),
+  including function-property/capture reads, not a process CPU attribution.
+  Reusing the symbol witness for single property reads is rejected: a frozen getter
+  still observes stateful host-map reads. The candidate fails the benign successive-
+  read contract (12 versus 18 units); exact saved source passes it. SDK source/build
+  and interpreter are restored exactly, processes terminate and artifacts are removed.
+  Extended allowances and component results remain diagnostic.
   Default performance and every readiness/meeting/media gate remain open.
 
 - SDK intrinsic root caches now ignore writes to unrelated guest function tables.
