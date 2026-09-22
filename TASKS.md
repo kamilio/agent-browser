@@ -369,6 +369,21 @@
   are refreshed; owned temporary probes/builds removed. Next: reduce repeated
   graph-wide accounting work without weakening mutable/foreign scans or held quotas.
 
+- Maintained SafeJS now omits already visited native capture roots using only the
+  current walk's protected visited set (poe-code 1e5539b49, no push). Every scope,
+  provider and metadata read remains live; unseen captures are collected before
+  descendants, public snapshots remain independent and held primary scans remain
+  active. All 235 selected checks across 23 files pass with explicit GC, strict test
+  typing, scoped lint/format, isolated SDK build/eight imports and actual offline
+  JSPI/WASM/public initializer; totals unchanged and cleanup zero. Allocation sampling
+  on a 286-function fixture falls from about 148 MB to 88 MB over 2000 walks at
+  unchanged 1321 units; scope-vector samples fall to zero. This is fixture evidence,
+  not a startup acceptance pass. Serial Worker baseline/candidate still time out at
+  30013/30203 ms and 879843/880714 steps, no completion/status, cleanup zero. Working
+  compiled modules refreshed; owned probes/builds removed. Next: independently prove
+  scope/provider ownership before reducing repeated metadata reads, and reduce
+  ordinary-record descriptor churn without losing mutation or foreign observations.
+
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
   sender detachment. Up to 64 entries/65536 initial buffer bytes are admitted;
