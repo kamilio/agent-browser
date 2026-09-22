@@ -1,0 +1,731 @@
+diff --git a/src/extensions.ts b/src/extensions.ts
+--- a/src/extensions.ts
++++ b/src/extensions.ts
+@@ -25,6 +25,7 @@
+   onCleanup(cleanup: () => void | Promise<void>): void;
+   chargeWork(units?: number): void;
+   createHostObject(definition: HostObjectDefinition): HostObject;
++  setHostObjectPrototype(value: HostObject, prototype: unknown, assertActive?: () => void): void;
+   startCallback(callback: unknown, options?: CallbackOptions): CallbackInvocation;
+   invokeCallback(callback: unknown, options?: CallbackOptions): Promise<unknown>;
+   releaseCallback(callback: unknown): void;
+diff --git a/src/realm.ts b/src/realm.ts
+--- a/src/realm.ts
++++ b/src/realm.ts
+@@ -30,6 +30,7 @@
+ } from "./interp/host-bridge.js";
+ import {
+   createLiveHostObject,
++  setHostObjectPrototype,
+   hostObjectGuestRoots,
+   createGuestReference,
+   exportHostCapability,
+@@ -561,6 +562,19 @@
+     return object;
+   };
+
++  setHostObjectPrototype = (value: HostObject, prototype: unknown, assertActive?: () => void): void => {
++    this.assertOpen();
++    setHostObjectPrototype(value, prototype, this, assertActive);
++    try {
++      reconcileCompiledValues(this.budget,
++        [...(this.scope?.retainedDataRoots() ?? []), ...this.retainedRoots(), ...this.budget.retainedValues()],
++        this.compilation);
++    } catch (error) {
++      if (error instanceof SandboxError) this.poison(error);
++      throw error;
++    }
++  };
++
+   wrapCallback = (closure: SandboxClosure): Callback => {
+     this.assertOpen();
+     const existing = this.callbackCache.get(closure);
+@@ -725,6 +739,7 @@
+         onCleanup: cleanup => { this.onCleanup(cleanup); },
+         chargeWork: this.chargeWork,
+         createHostObject: this.createHostObject,
++        setHostObjectPrototype: this.setHostObjectPrototype,
+         startCallback: this.startCallback,
+         invokeCallback: this.invokeCallback,
+         releaseCallback: this.releaseCallback,
+diff --git a/src/interp/host-capabilities.ts b/src/interp/host-capabilities.ts
+--- a/src/interp/host-capabilities.ts
++++ b/src/interp/host-capabilities.ts
+@@ -46,6 +46,8 @@
+   method(operation: HostOperation): SandboxClosure;
+ };
+ type HostObjectState = {
++  prototype?: object | null;
++  prototypeGuard?: () => void;
+   controller: HostObjectController;
+   memberDataUnits: number;
+   host: HostObject;
+@@ -302,15 +304,61 @@
+   state.named = undefined;
+   state.expandos = undefined;
+   state.memberDataUnits = 0;
+-}
++  state.prototype = undefined;
++  state.prototypeGuard = undefined;
++}
++
++export function setHostObjectPrototype(value: HostObject, reference: unknown, owner: object, guard?: () => void): void {
++  const state = hostObjects.get(value);
++  if (state === undefined || state.controller.owner !== owner)
++    throw new TypeError("Foreign or invalid host object.");
++  state.controller.assertActive();
++  assertExpandoActive(state);
++  if (guard !== undefined && (typeof guard !== "function" || types.isProxy(guard) || types.isAsyncFunction(guard) || types.isGeneratorFunction(guard)))
++    throw new TypeError("Host prototype guard must be a synchronous native function.");
++  assertPrototypeGuard(guard);
++  const prototype = reference === null ? null : readGuestReference(reference, owner);
++  if (prototype !== null && (typeof prototype !== "object" || isLiveCapability(prototype)))
++    throw new TypeError("Host prototype requires a retained guest object or null.");
++  state.prototype = prototype;
++  state.prototypeGuard = guard;
++}
++
++export function getHostObjectPrototype(value: SandboxObject): object | null {
++  const state = guestObjects.get(value)!;
++  state.controller.assertActive();
++  state.controller.chargeWork();
++  assertExpandoActive(state);
++  assertPrototypeGuard(state.prototypeGuard);
++  return state.prototype ?? null;
++}
++
++export function hostObjectPrototypeRoot(value: HostObject | SandboxObject): object | undefined {
++  return (hostObjects.get(value) ?? guestObjects.get(value)!).prototype ?? undefined;
++}
++
++function assertPrototypeGuard(guard?: () => void): void {
++  const result = guard?.();
++  if (types.isPromise(result)) {
++    void Promise.resolve(result).catch(() => undefined);
++    throw new TypeError("Host prototype guard must be synchronous.");
++  }
++}
++
++export const noHostObjectMember = Symbol("missing host member");
+
+ export function getHostObjectMember(value: SandboxObject, key: string | symbol): SandboxValue {
++  const result = getHostObjectOwnMember(value, key);
++  return result === noHostObjectMember ? undefined : result;
++}
++
++export function getHostObjectOwnMember(value: SandboxObject, key: string | symbol): SandboxValue {
+   const state = guestObjects.get(value)!;
+   state.controller.assertActive();
+   state.controller.chargeWork();
+   assertExpandoActive(state);
+   if (state.expandos && Object.hasOwn(state.expandos.values, key)) return Reflect.get(state.expandos.values, key);
+-  if (typeof key === "symbol") return undefined;
++  if (typeof key === "symbol") return noHostObjectMember;
+   if (state.indexed !== undefined) {
+     if (key === "length") return indexedLength(state);
+     const index = canonicalIndex(key);
+@@ -326,7 +374,7 @@
+   if (method !== undefined) return method;
+   if (state.named !== undefined && namedKeys(state).includes(key))
+     return state.controller.read(() => state.named!.get(key));
+-  return undefined;
++  return noHostObjectMember;
+ }
+
+ export function setHostObjectMember(value: SandboxObject, key: string | symbol, entry: SandboxValue): void {
+@@ -586,5 +634,7 @@
+
+ export function hostObjectGuestRoots(value: HostObject | SandboxObject): SandboxValue[] {
+   const root = hostObjectGuestRoot(value);
+-  return root === undefined ? [] : [root];
+-}
++  const prototype = hostObjectPrototypeRoot(value) as SandboxValue;
++  return root === undefined ? prototype === undefined ? [] : [prototype]
++    : prototype === undefined ? [root] : [root, prototype];
++}
+diff --git a/src/interp/object-model.ts b/src/interp/object-model.ts
+--- a/src/interp/object-model.ts
++++ b/src/interp/object-model.ts
+@@ -19,7 +19,7 @@
+ import { retainedAccessorClosures } from "./accessors.js";
+ import { internalSymbols } from "./internal-symbols.js";
+ import { intrinsicDataRoots } from "./intrinsic-data-roots.js";
+-import { getHostObjectMember, isGuestHostObject, isLiveCapability } from "./host-capabilities.js";
++import { getHostObjectOwnMember, noHostObjectMember, getHostObjectPrototype, isGuestHostObject, isLiveCapability } from "./host-capabilities.js";
+ import type { Budget } from "./budget.js";
+ import { errorPrototypes } from "./error-prototypes.js";
+ import { typedArrayProperties, typedArrayStorage, isNumericTypedArray, isTypedArrayIndex } from "./typed-array.js";
+@@ -576,6 +576,7 @@
+ }
+
+ export function getSandboxPrototype(value: object, budget?: Budget): object | null {
++  if (isGuestHostObject(value)) return getHostObjectPrototype(value);
+   const explicit = prototypes.get(value);
+   if (explicit !== undefined) return explicit;
+   if (budget === undefined) return null;
+@@ -679,7 +680,10 @@
+   while (typeof current === "object" && current !== null) {
+     if (isNumericTypedArray(current) && typeof key !== "symbol" && isTypedArrayIndex(String(key)))
+       return Object.getOwnPropertyDescriptor(current, key)?.value;
+-    if (isGuestHostObject(current)) return getHostObjectMember(current, typeof key === "symbol" ? key : String(key));
++    if (isGuestHostObject(current)) {
++      const own = getHostObjectOwnMember(current, typeof key === "symbol" ? key : String(key));
++      if (own !== noHostObjectMember) return own;
++    }
+     if (isSandboxRegex(current)) return Object.getOwnPropertyDescriptor(getRegexProperties(current), key)?.value;
+     if (isSandboxPromise(current)) return Object.getOwnPropertyDescriptor(getPromiseProperties(current), key)?.value;
+     if (isSandboxGenerator(current)) {
+diff --git a/src/interp/interpreter.ts b/src/interp/interpreter.ts
+--- a/src/interp/interpreter.ts
++++ b/src/interp/interpreter.ts
+@@ -14,7 +14,7 @@
+ import { isSandboxModuleNamespace } from "./module-namespace.js";
+ import { bigIntOperation, type BigIntOperator } from "./bigint-operators.js";
+ import { accessorAdapter, readPropertyDescriptor, writePropertyDescriptor } from "./accessors.js";
+-import { getHostObjectSymbolKeys, deleteHostObjectMember, getHostObjectKeys, getHostObjectMember, hasHostObjectMember, isGuestHostObject, setHostObjectMember } from "./host-capabilities.js";
++import { hostObjectPrototypeRoot, getHostObjectOwnMember, noHostObjectMember, getHostObjectSymbolKeys, deleteHostObjectMember, getHostObjectKeys, getHostObjectMember, hasHostObjectMember, isGuestHostObject, setHostObjectMember } from "./host-capabilities.js";
+ import { propertyFunctionName, toPropertyKey } from "./property-key.js";
+ import { assertPromiseExecutionAllowed } from "./promise-tracker.js";
+ import { SandboxJobQueue, runAsyncPrefix, suspendJob } from "./jobs.js";
+@@ -2408,7 +2408,7 @@
+ }
+
+ async function forInKeys(object: object, budget: Budget, context: SandboxCallContext): Promise<string[]> {
+-  if (isGuestHostObject(object)) return getHostObjectKeys(object);
++  if (isGuestHostObject(object) && hostObjectPrototypeRoot(object) === undefined) return getHostObjectKeys(object);
+   const keys: string[] = [];
+   const seen = new Set<string>();
+   let depth = 0;
+@@ -2418,6 +2418,12 @@
+   for (; current !== null; current = await sandboxGetPrototypeOf(current as SandboxValue, budget, context) as object | null) {
+     if (depth > 0) budget.visitNode();
+     assertSandboxDataDepth(depth++);
++    if (isGuestHostObject(current)) {
++      for (const key of getHostObjectKeys(current)) {
++        if (!seen.has(key)) { seen.add(key); keys.push(key); }
++      }
++      continue;
++    }
+     if (guestProxyStates.has(current)) {
+       for (const key of await sandboxOwnKeys(current as SandboxValue, budget, context)) {
+         if (typeof key !== "string" || seen.has(key)) continue;
+@@ -2440,7 +2446,7 @@
+ }
+
+ async function hasForInProperty(object: object, key: string, budget: Budget, context: SandboxCallContext): Promise<boolean> {
+-  if (isGuestHostObject(object)) return hasHostObjectMember(object, key, true);
++  if (isGuestHostObject(object) && hostObjectPrototypeRoot(object) === undefined) return hasHostObjectMember(object, key, true);
+   let depth = 0;
+   let current: object | null = object;
+   const release = retainValues(budget, () => [object as SandboxValue, current as SandboxValue, key]);
+@@ -2448,6 +2454,10 @@
+   for (; current !== null; current = await sandboxGetPrototypeOf(current as SandboxValue, budget, context) as object | null) {
+     if (depth > 0) budget.visitNode();
+     assertSandboxDataDepth(depth++);
++    if (isGuestHostObject(current)) {
++      if (hasHostObjectMember(current, key)) return hasHostObjectMember(current, key, true);
++      continue;
++    }
+     if (guestProxyStates.has(current)) {
+       const descriptor = await sandboxGetOwnPropertyDescriptor(current as SandboxValue, key, budget, context);
+       if (descriptor !== undefined) return descriptor.enumerable === true;
+@@ -3289,7 +3299,14 @@
+   context: EvaluationContext,
+   receiver: SandboxValue = target
+ ): SandboxValue | Promise<SandboxValue> {
+-  if (isGuestHostObject(target)) return getHostObjectMember(target, typeof property === "symbol" ? property : String(property));
++  if (isGuestHostObject(target)) {
++    const key = typeof property === "symbol" ? property : String(property);
++    const own = getHostObjectOwnMember(target, key);
++    if (own !== noHostObjectMember) return own;
++    if (hostObjectPrototypeRoot(target) === undefined) return undefined;
++    const prototype = getSandboxPrototype(target, context.budget);
++    return prototype === null ? undefined : getPropertyValue(prototype as SandboxValue, property, context, receiver);
++  }
+   let proxyBoundary: object | undefined;
+   const descriptor = getSandboxPropertyDescriptor(target, property, context.budget, proxy => { proxyBoundary = proxy; });
+   if (proxyBoundary !== undefined)
+@@ -4149,7 +4166,14 @@
+   let current = value;
+   let depth = 0;
+   while (typeof current === "object" && current !== null) {
+-    if (isGuestHostObject(current)) return hasHostObjectMember(current, typeof key === "symbol" ? key : String(key));
++    if (isGuestHostObject(current)) {
++      if (hasHostObjectMember(current, typeof key === "symbol" ? key : String(key))) return true;
++      if (hostObjectPrototypeRoot(current) === undefined) return false;
++      current = getSandboxPrototype(current, context.budget) as SandboxValue;
++      context.budget.visitNode();
++      assertSandboxDataDepth(++depth);
++      continue;
++    }
+     if (hasOwnSandboxProperty(current, key, false)) return true;
+     if (!isSandboxDate(current) && !isSandboxRegex(current) && !isSandboxMap(current) && !isSandboxSet(current) && !((isGuestClosure(current) || isSandboxGenerator(current) || Array.isArray(current)) && hasExplicitSandboxPrototype(current)) &&
+         (Array.isArray(current) || !isPlainSandboxObject(current) ||
+@@ -4438,7 +4462,7 @@
+   property: string | number,
+   context: EvaluationContext
+ ): SandboxValue | Promise<SandboxValue> {
+-  if (isGuestHostObject(target)) return getHostObjectMember(target, String(property));
++  if (isGuestHostObject(target)) return getPropertyValue(target, String(property), context);
+   let current: SandboxValue = target;
+   let depth = 0;
+   while (typeof current === "object" && current !== null) {
+@@ -4482,6 +4506,26 @@
+   throwOnFailure = true
+ ): void | Promise<void> {
+   if (isGuestHostObject(target)) {
++    const key = typeof property === "symbol" ? property : String(property);
++    if (checkInherited && hostObjectPrototypeRoot(target) !== undefined && !hasHostObjectMember(target, key)) {
++      const prototype = getSandboxPrototype(target, budget);
++      if (prototype !== null) {
++        let proxyBoundary: object | undefined;
++        const descriptor = getSandboxPropertyDescriptor(prototype as SandboxValue, property, budget, proxy => { proxyBoundary = proxy; });
++        if (proxyBoundary !== undefined) {
++          return sandboxSetProperty(proxyBoundary as SandboxValue, property, value, target, budget, context).then(success => {
++            if (!success && throwOnFailure) throw new TypeError("Proxy refused property assignment.");
++          });
++        }
++        if (descriptor !== undefined) {
++          if (!("value" in descriptor)) return writePropertyDescriptor(descriptor, target, value, context);
++          if (descriptor.writable === false) {
++            if (throwOnFailure) throw new TypeError("Inherited property is not writable.");
++            return;
++          }
++        }
++      }
++    }
+     setHostObjectMember(target, typeof property === "symbol" ? property : String(property), value);
+     return;
+   }
+diff --git a/src/interp/values.ts b/src/interp/values.ts
+--- a/src/interp/values.ts
++++ b/src/interp/values.ts
+@@ -57,7 +57,7 @@
+ import { isSandboxDurationFormat, durationFormatState } from "./intl-durationformat.js";
+ import { createRawJson, isRawJson } from "./raw-json.js";
+ import { boxedDataProperties, boxedValue, createSandboxBox, isSandboxBox, nativeBoxedValue } from "./boxed.js";
+-import { hostObjectGuestRoot, getHostObjectSymbolKeys, getHostObjectKeys, getHostObjectMember, hasHostObjectMember, measureHostObjectData, isGuestHostObject, isLiveCapability } from "./host-capabilities.js";
++import { hostObjectPrototypeRoot, hostObjectGuestRoot, getHostObjectSymbolKeys, getHostObjectKeys, getHostObjectMember, hasHostObjectMember, measureHostObjectData, isGuestHostObject, isLiveCapability } from "./host-capabilities.js";
+ import type { Budget, CompileOwner, CompileTicket } from "./budget.js";
+ import { types as nodeTypes } from "node:util";
+ import { nativePromiseDataProperties } from "./native-promise-properties.js";
+@@ -1127,6 +1127,12 @@
+           usage += measureHostObjectData(value);
+           const root = hostObjectGuestRoot(value);
+           if (root !== undefined) visit(root, depth + 1);
++          const prototype = hostObjectPrototypeRoot(value);
++          if (prototype !== undefined) {
++            value = prototype;
++            depth++;
++            continue walk;
++          }
+           break entry;
+         }
+         const prototype = getSandboxPrototype(value);
+diff --git a/src/interp/globals/object-array.ts b/src/interp/globals/object-array.ts
+--- a/src/interp/globals/object-array.ts
++++ b/src/interp/globals/object-array.ts
+@@ -244,6 +244,7 @@
+         getPrototypeOf: createSandboxClosure({
+           sandbox: true,
+           call: ([value], context) => {
++            if (isGuestHostObject(value)) return getSandboxPrototype(value, options.budget) as SandboxValue;
+             if (typeof value === "object" && value !== null && guestProxyStates.has(value))
+               return sandboxGetPrototypeOf(value, options.budget, context);
+             if (isSandboxMap(value) || isSandboxSet(value))
+diff --git a/src/interp/guest-proxy-get.ts b/src/interp/guest-proxy-get.ts
+--- a/src/interp/guest-proxy-get.ts
++++ b/src/interp/guest-proxy-get.ts
+@@ -9,12 +9,13 @@
+ import { retainValues } from "./resources.js";
+ import { isNumericTypedArray, isTypedArrayIndex } from "./typed-array.js";
+ import { assertSandboxDataDepth } from "../graph-depth.js";
++import { isGuestHostObject, getHostObjectOwnMember, noHostObjectMember } from "./host-capabilities.js";
+
+ export function sandboxGetProperty(
+   value: SandboxValue, key: PropertyKey, receiver: SandboxValue, budget: Budget, context?: SandboxCallContext
+ ): SandboxValue | Promise<SandboxValue> {
+   if (typeof key === "number") key = String(key);
+-  objectProperties(value);
++  if (!isGuestHostObject(value)) objectProperties(value);
+   let current = value as object, depth = 0;
+   for (;;) {
+     if (guestProxyStates.has(current)) {
+@@ -34,6 +35,16 @@
+         return result;
+       }).finally(release);
+     }
++    if (isGuestHostObject(current)) {
++      const own = getHostObjectOwnMember(current, typeof key === "symbol" ? key : String(key));
++      if (own !== noHostObjectMember) return own;
++      const prototype = getSandboxPrototype(current, budget);
++      if (prototype === null) return undefined;
++      budget.visitNode();
++      assertSandboxDataDepth(++depth);
++      current = prototype;
++      continue;
++    }
+     const descriptor = Object.getOwnPropertyDescriptor(objectProperties(current as SandboxValue), key);
+     if (descriptor !== undefined) return readPropertyDescriptor(descriptor, receiver, context);
+     if (isNumericTypedArray(current) && typeof key !== "symbol" && isTypedArrayIndex(String(key))) return undefined;
+diff --git a/src/interp/guest-proxy-has.ts b/src/interp/guest-proxy-has.ts
+--- a/src/interp/guest-proxy-has.ts
++++ b/src/interp/guest-proxy-has.ts
+@@ -9,11 +9,12 @@
+ import { getSandboxPrototype } from "./object-model.js";
+ import { isNumericTypedArray, isTypedArrayIndex } from "./typed-array.js";
+ import { assertSandboxDataDepth } from "../graph-depth.js";
++import { isGuestHostObject, hasHostObjectMember } from "./host-capabilities.js";
+
+ export function sandboxHasProperty(
+   value: SandboxValue, key: PropertyKey, budget: Budget, context?: SandboxCallContext
+ ): boolean | Promise<boolean> {
+-  objectProperties(value);
++  if (!isGuestHostObject(value)) objectProperties(value);
+   let current = value as object, depth = 0;
+   for (;;) {
+     if (guestProxyStates.has(current)) {
+@@ -29,7 +30,9 @@
+       });
+     }
+     if (isSandboxModuleNamespace(current)) return Reflect.has(current,key);
+-    if (Object.getOwnPropertyDescriptor(objectProperties(current as SandboxValue), key) !== undefined) return true;
++    if (isGuestHostObject(current)) {
++      if (hasHostObjectMember(current, typeof key === "symbol" ? key : String(key))) return true;
++    } else if (Object.getOwnPropertyDescriptor(objectProperties(current as SandboxValue), key) !== undefined) return true;
+     // Integer-indexed objects do not consult prototypes for canonical numeric keys.
+     if (isNumericTypedArray(current) && typeof key !== "symbol" && isTypedArrayIndex(String(key))) return false;
+     const prototype = getSandboxPrototype(current, budget);
+diff --git a/src/interp/guest-proxy-prototype.ts b/src/interp/guest-proxy-prototype.ts
+--- a/src/interp/guest-proxy-prototype.ts
++++ b/src/interp/guest-proxy-prototype.ts
+@@ -6,9 +6,10 @@
+ import { objectProperties } from "./globals/object-array.js";
+ import { getSandboxPrototype, setSandboxPrototype } from "./object-model.js";
+ import { retainValues } from "./resources.js";
++import { isGuestHostObject } from "./host-capabilities.js";
+
+ export function sandboxGetPrototypeOf(value: SandboxValue, budget: Budget, context?: SandboxCallContext): SandboxValue | Promise<SandboxValue> {
+-  objectProperties(value);
++  if (!isGuestHostObject(value)) objectProperties(value);
+   if (!guestProxyStates.has(value as object)) return getSandboxPrototype(value as object, budget) as SandboxValue;
+   budget.visitNode();
+   return withGuestProxyTrap(value as object, "getPrototypeOf", budget, context, async ({ target, handler, trap }) => {
+diff --git a/src/interp/globals/reflect.ts b/src/interp/globals/reflect.ts
+--- a/src/interp/globals/reflect.ts
++++ b/src/interp/globals/reflect.ts
+@@ -1,4 +1,5 @@
+ import type { Budget } from "../budget.js";
++import { isGuestHostObject } from "../host-capabilities.js";
+ import { sandboxIsExtensible, sandboxPreventExtensions } from "../guest-proxy-extensibility.js";
+ import { sandboxGetPrototypeOf, sandboxSetPrototypeOf } from "../guest-proxy-prototype.js";
+ import { sandboxGetOwnPropertyDescriptor } from "../guest-proxy-descriptor.js";
+@@ -31,7 +32,7 @@
+     } },
+     getPrototypeOf: { length: 1, call: ([target], context) => sandboxGetPrototypeOf(target, budget, context) },
+     has: { length: 2, call: async ([target, key], context) => {
+-      objectProperties(target);
++      if (!isGuestHostObject(target)) objectProperties(target);
+       return sandboxHasProperty(target, await toPropertyKey(key, budget, context), budget, context);
+     } },
+     isExtensible: { length: 1, call: ([target], context) => sandboxIsExtensible(target, budget, context) },
+@@ -43,7 +44,7 @@
+     } },
+     get: { length: 2, call: async (args, context) => {
+       const [target, key] = args;
+-      objectProperties(target);
++      if (!isGuestHostObject(target)) objectProperties(target);
+       const property = await toPropertyKey(key, budget, context);
+       return sandboxGetProperty(target, property, args.length > 2 ? args[2] : target, budget, context);
+     } },
+diff --git a/src/host-object-prototypes.test.ts b/src/host-object-prototypes.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/host-object-prototypes.test.ts
+@@ -0,0 +1,286 @@
++import { afterEach, expect, it, vi } from "vitest";
++import {
++  Budget,
++  createRealm,
++  defineExtension,
++  type ExtensionContext,
++  type HostObject,
++  type HostObjectDefinition,
++} from "./core.js";
++
++const realms: ReturnType<typeof createRealm>[] = [];
++afterEach(async () => {
++  for (const realm of realms.splice(0)) await realm.close();
++});
++
++function fixture(
++  options: {
++    definition?: HostObjectDefinition;
++    budget?: Budget;
++    guard?: () => void;
++    keepReference?: boolean;
++  } = {},
++) {
++  let context!: ExtensionContext;
++  let host!: HostObject;
++  let reference: unknown;
++  const read = vi.fn(() => undefined);
++  const realm = createRealm({
++    budget: options.budget,
++    grants: ["guest:retain"],
++    extensions: [
++      defineExtension({
++        manifest: {
++          version: 1,
++          name: "prototype",
++          globals: ["lookup", "install", "clear"],
++          capabilities: ["guest:retain"],
++        },
++        setup(owner) {
++          context = owner;
++          host = owner.createHostObject({
++            expandos: { maxKeys: 8, maxKeyCodeUnits: 128 },
++            properties: { native: { get: () => 21 }, shadow: { get: read } },
++            ...options.definition,
++          });
++          const install = owner.retainGuestArguments((value: unknown) => {
++            reference = value;
++            try {
++              owner.setHostObjectPrototype(host, value, options.guard);
++            } finally {
++              if (!options.keepReference) owner.releaseGuestReference(value);
++            }
++          }, 0);
++          return {
++            globals: {
++              lookup: () => host,
++              install,
++              clear: () => owner.setHostObjectPrototype(host, null),
++            },
++          };
++        },
++      }),
++    ],
++  });
++  realms.push(realm);
++  return {
++    realm,
++    read,
++    get context() {
++      return context;
++    },
++    get reference() {
++      return reference;
++    },
++    get host() {
++      return host;
++    },
++  };
++}
++
++it("preserves ordinary method lookup, capture identity, overrides and restoration", async () => {
++  const { realm } = fixture();
++  expect(
++    await realm.evaluate(`
++    const node=lookup(); const prototype={focus(){return this.native*2}}; install(prototype);
++    const captured=node.focus; const before=node.focus===prototype.focus;
++    let calls=0; prototype.focus=function(){calls++;return captured.call(this)+1};
++    const current=node.focus(); const saved=captured.call(node); prototype.focus=captured;
++    return [before,current,saved,calls,node.focus===captured,node.focus()];
++  `),
++  ).toMatchObject({ ok: true, returnValue: [true, 43, 42, 1, true, 42] });
++});
++
++it("preserves native shadowing, undefined values, symbol identity and receiver getters", async () => {
++  const { realm, read } = fixture();
++  expect(
++    await realm.evaluate(`
++    const node=lookup();const symbol=Symbol("method");
++    const prototype={native:99,shadow:99,[symbol](){return this.native},get doubled(){return this.native*2}};
++    install(prototype);
++    return [node.native,node.shadow===undefined,node[symbol](),node.doubled,
++      Object.getPrototypeOf(node)===prototype,Reflect.getPrototypeOf(node)===prototype,
++      Reflect.get(node,"doubled"),Reflect.has(node,"doubled"),"doubled" in node,
++      Object.hasOwn(node,"doubled"),Object.keys(node).includes("doubled")];
++  `),
++  ).toMatchObject({
++    ok: true,
++    returnValue: [21, true, 21, 42, true, true, 42, true, true, false, false],
++  });
++  expect(read).toHaveBeenCalledTimes(1);
++});
++
++it("keeps guest writes distinct from inherited setters and readonly properties", async () => {
++  const { realm } = fixture();
++  expect(
++    await realm.evaluate(`
++    const node=lookup();const prototype={set chosen(value){this.saved=value},method(){return 1}};
++    Object.defineProperty(prototype,"locked",{value:7,writable:false});install(prototype);
++    node.chosen=42;node.method=()=>2;let denied=false;
++    try{node.locked=8}catch(error){denied=error instanceof TypeError}
++    return [node.saved,Object.hasOwn(node,"chosen"),node.method(),prototype.method(),denied,node.locked];
++  `),
++  ).toMatchObject({ ok: true, returnValue: [42, false, 2, 1, true, 7] });
++});
++
++it("enumerates inherited fields without treating them as own properties", async () => {
++  const { realm } = fixture();
++  expect(
++    await realm.evaluate(`
++    const node=lookup();install({inherited:1,native:99});const keys=[];for(const key in node)keys.push(key);
++    return [keys.includes("inherited"),keys.filter(key=>key==="native").length,Object.keys(node).includes("inherited")];
++  `),
++  ).toMatchObject({ ok: true, returnValue: [true, 1, false] });
++});
++
++it("retains mutable prototype graphs after the installation reference is released", async () => {
++  const budget = new Budget({ dataSize: 30000 });
++  const { realm } = fixture({ budget });
++  expect(
++    await realm.evaluate('install({payload:"x".repeat(4096)});return 1'),
++  ).toMatchObject({ ok: true });
++  const retained = budget.currentDataSize;
++  expect(retained).toBeGreaterThanOrEqual(4096);
++  expect(
++    await realm.evaluate(
++      'Object.getPrototypeOf(lookup()).payload="y".repeat(8192);return lookup().payload.length',
++    ),
++  ).toMatchObject({ ok: true, returnValue: 8192 });
++  expect(budget.currentDataSize).toBeGreaterThan(retained + 3500);
++  expect(
++    await realm.evaluate("clear();return lookup().payload===undefined"),
++  ).toMatchObject({ ok: true, returnValue: true });
++  expect(budget.currentDataSize).toBeLessThan(retained - 3500);
++  await realm.close();
++  expect(budget.currentDataSize).toBe(0);
++});
++
++it("enforces fatal quotas for linked descendant mutation", async () => {
++  const { realm } = fixture({ budget: new Budget({ dataSize: 10000 }) });
++  expect(
++    await realm
++      .evaluate(
++        'install({});try{Object.getPrototypeOf(lookup()).payload="x".repeat(20000)}catch(error){}return 1',
++      )
++      .catch((error) => ({ ok: false, error })),
++  ).toMatchObject({
++    ok: false,
++    error: { code: "budgetExceeded", budget: "dataSize" },
++  });
++});
++
++it("rejects primitives and live capabilities as prototypes without changing a valid link", async () => {
++  const { realm } = fixture();
++  expect(
++    await realm.evaluate(`
++    const node=lookup();const prototype={good:42};install(prototype);let denied=0;
++    for(const value of [undefined,7,"bad",node]){try{install(value)}catch(error){if(error instanceof TypeError)denied++}}
++    return [denied,node.good,Object.getPrototypeOf(node)===prototype];
++  `),
++  ).toMatchObject({ ok: true, returnValue: [4, 42, true] });
++});
++
++it("rejects foreign host objects and retained references", async () => {
++  const first = fixture();
++  const second = fixture({ keepReference: true });
++  await first.realm.evaluate("return 1");
++  await second.realm.evaluate("install({value:42});return 1");
++  expect(() => first.context.setHostObjectPrototype(second.host, null)).toThrow(
++    "Foreign",
++  );
++  expect(() => first.context.setHostObjectPrototype(first.host, {})).toThrow(
++    "reference",
++  );
++  expect(() =>
++    first.context.setHostObjectPrototype(first.host, second.reference),
++  ).toThrow("Foreign");
++});
++
++it("guards prototype reads without enabling guest expandos", async () => {
++  let closed = false;
++  const test = fixture({
++    definition: { expandos: undefined },
++    guard() {
++      if (closed) throw new Error("publisher closed");
++    },
++  });
++  expect(
++    await test.realm.evaluate("install({value:42});return lookup().value"),
++  ).toMatchObject({ ok: true, returnValue: 42 });
++  closed = true;
++  expect(
++    await test.realm.evaluate(
++      'let denied=0;for(const operation of [()=>lookup().value,()=>Object.getPrototypeOf(lookup()),()=>Reflect.getPrototypeOf(lookup()),()=>"value" in lookup(),()=>Reflect.has(lookup(),"value")]){try{operation()}catch(error){if(error.message==="publisher closed")denied++}}return denied',
++    ),
++  ).toMatchObject({ ok: true, returnValue: 5 });
++});
++
++it("preserves primary prototype accounting during reconciliation holds", async () => {
++  const budget = new Budget({ dataSize: 18000 });
++  const test = fixture({ budget });
++  expect(
++    await test.realm.evaluate('install({payload:"x".repeat(4096)});return 1'),
++  ).toMatchObject({ ok: true });
++  const release = budget.deferReconciliation();
++  try {
++    const result = await test.realm
++      .evaluate(
++          'try{Object.getPrototypeOf(lookup()).payload="x".repeat(14000)}catch(error){}return 1',
++      )
++      .catch((error) => ({ ok: false, error }));
++    expect(result).toMatchObject({
++      ok: false,
++      error: { code: "budgetExceeded", budget: "dataSize" },
++    });
++  } finally {
++    release();
++  }
++});
++
++it("rejects asynchronous prototype guards before committing a link", async () => {
++  const test = fixture({ guard: async () => {} });
++  expect(
++    await test.realm.evaluate(
++      "let denied=false;try{install({value:42})}catch(error){denied=error instanceof TypeError}return [denied,lookup().value===undefined]",
++    ),
++  ).toMatchObject({ ok: true, returnValue: [true, true] });
++});
++
++it("revokes native prototype access on publisher and realm close", async () => {
++  let closed = false;
++  const test = fixture({
++    definition: {
++      expandos: {
++        maxKeys: 8,
++        maxKeyCodeUnits: 128,
++        assertActive() {
++          if (closed) throw new Error("publisher closed");
++        },
++      },
++    },
++  });
++  expect(
++    await test.realm.evaluate("install({value:42});return lookup().value"),
++  ).toMatchObject({ ok: true, returnValue: 42 });
++  closed = true;
++  expect(
++    await test.realm.evaluate(
++      'let denied=0;for(const operation of [()=>lookup().value,()=>Object.getPrototypeOf(lookup()),()=>Reflect.getPrototypeOf(lookup()),()=>"value" in lookup(),()=>Reflect.has(lookup(),"value")]){try{operation()}catch(error){if(error.message==="publisher closed")denied++}}return denied',
++    ),
++  ).toMatchObject({ ok: true, returnValue: 5 });
++  await test.realm.close();
++  expect(() => test.context.setHostObjectPrototype(test.host, null)).toThrow(
++    /closed|revoked/,
++  );
++});
++
++it("follows guest proxy prototypes with the original live receiver", async () => {
++  const { realm } = fixture();
++  expect(
++    await realm.evaluate(`
++    const node=lookup();const seen=[];const prototype=new Proxy({method(){return this.native}},
++      {get(target,key,receiver){seen.push(receiver===node);return Reflect.get(target,key,receiver)}});
++    install(prototype);return [node.method(),seen.every(value=>value)];
++  `),
++  ).toMatchObject({ ok: true, returnValue: [21, true] });
++});

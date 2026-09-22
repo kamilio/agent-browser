@@ -108,6 +108,9 @@ export class ScriptNodePublications {
 			};
 		try {
 			const guarded: ScriptHostObjectDefinition = {
+				...(this.factory.nodePublished && definition.nodeInterface
+					? { nodeInterface: definition.nodeInterface }
+					: {}),
 				...(this.domExpandos && kind === "node"
 					? {
 							expandos: {

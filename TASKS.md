@@ -23,17 +23,26 @@
 
 ## Current verified state
 
-- Exact current editor focus-wrapper pattern is reproduced in actual SDK/native
-  128 MB/30 s execution: ordinary input.focus changes focus but bypasses the
-  prototype wrapper (zero calls, listener modality flag false); explicit prototype
-  invocation runs it and restoration succeeds (5156 steps / 10418 peak units).
-  Cleanup closes with data zero; process terminates, no artifacts. A shared dynamic
-  forwarding candidate breaks methods captured before prototype replacement;
-  the new preservation contract detects that regression and passes restored source
-  with all 27 DOM-method checks. Bridge/bootstrap restored exactly; SDK unchanged.
-  Next: support prototype lookup on live host objects, preserving captured-method
-  semantics, accounting and revocation; SafeJS currently rejects their prototype
-  links. No full initialization, meeting or media gate is cleared.
+- Owned guest prototype links on SafeJS live host objects now fix the exact Zoom
+  editor focus wrapper: ordinary HTML input.focus invokes the current prototype
+  method; a method captured before replacement preserves its original identity and
+  behavior, and restoration works. Native nodes publish guarded interface links;
+  older SDK/providers keep the legacy bound-method fallback. The contribution
+  safejs-owned-host-prototypes.patch covers lookup, getter receivers, inherited
+  writes/enumeration, retained mutable graphs, quotas/holds, ownership and revocation.
+  Thirteen new SDK contracts pass; twelve fail on saved source. All 182 selected
+  SDK checks now pass, including the two older suites that previously import-failed.
+  Strict scoped SDK compilation/build and exact patch application/reversal pass.
+  Both new native contracts fail on saved source and pass the candidate. Native
+  validation passes 327 checks with one known baseline lifecycle fixture excluded;
+  working build and changed-block formatting pass. Actual SDK/native
+  128 MB/30 s probes reproduce Zoom's wrapper without a return: direct/captured
+  calls, modality flag, blur, restoration and prototype identity pass (5480 steps /
+  16021 peak units). With expandos disabled, nested captured focus preserves event
+  order and rejects four invalid receivers (5626 steps / 20085 peak units).
+  Both probes terminate and clean up to data zero. General guest setPrototypeOf
+  on live host objects, broader prototype tables, SVG/inert focus, full client
+  initialization, default performance and meeting/media readiness remain open.
 
 - Captured HTMLElement.prototype.focus/blur now dispatch to registered receiver
   operations through setup-time nested registration, preserving controlled-listener
@@ -45,8 +54,9 @@
   from that passing count. Actual SDK/native 128 MB/30 s probe verifies nested
   captured focus, event order, four invalid receivers and blur (5592 steps / 13372
   peak units); cleanup closes with data zero. Processes terminate; no artifacts.
-  Existing node-own focus methods remain bound; prototype overrides, inert-document
-  focus and broader DOM prototype behavior remain incomplete. This clears no full
+  Legacy providers retain bound node-own focus methods; modern linked HTML nodes
+  now use the prototype lookup above. Inert-document focus and broader DOM prototype
+  behavior remain incomplete. This clears no full
   client initialization, default performance, meeting or media gate.
 
 - Cached full-client diagnostic after the document-method fix reaches its 30 min

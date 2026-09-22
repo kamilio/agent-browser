@@ -46,6 +46,9 @@ if (typeof __agentBrowserDomHasInstance === "function") {
 	if (typeof __agentBrowserDomMethods === "function") {
 		const port = __agentBrowserDomMethods();
 		const invoke = port.invoke;
+		if (typeof port.publishPrototype === "function") {
+			for (const name of ["Node", "Element", "HTMLElement", "HTMLFormElement", "SVGElement", "Document", "DocumentFragment", "DocumentType", "CharacterData", "Text", "Comment"]) port.publishPrototype(name, globalThis[name].prototype);
+		}
 		if (typeof port.invokeFocus === "function") {
 			const invokeFocus = port.invokeFocus;
 			for (const name of ["focus", "blur"]) {

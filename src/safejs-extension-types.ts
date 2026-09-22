@@ -51,6 +51,11 @@ export interface ReleasedContext {
 	readonly signal: AbortSignal;
 	onCleanup(cleanup: () => void | Promise<void>): void;
 	createHostObject(definition: ReleasedHostDefinition): object;
+	setHostObjectPrototype?(
+		value: object,
+		prototype: unknown,
+		assertActive?: () => void,
+	): void;
 	startCallback(
 		callback: unknown,
 		options?: { thisValue?: unknown; args?: readonly unknown[] },

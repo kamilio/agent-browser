@@ -331,6 +331,23 @@ export function extensionPageRuntime(
 						ensureOpen();
 					}
 					const pageContext: Parameters<typeof options.setup>[0] = {
+						...(typeof owner.setHostObjectPrototype === "function"
+							? {
+									setHostObjectPrototype: (
+										value: object,
+										prototype: unknown,
+										assertActive?: () => void,
+									) => {
+										ensureOpen();
+										owner.setHostObjectPrototype?.(
+											value,
+											prototype,
+											assertActive,
+										);
+										ensureOpen();
+									},
+								}
+							: {}),
 						eventTargetValue: (target) => {
 							ensureOpen();
 							return windowGlobal ? windowGlobal.map(target) : target;

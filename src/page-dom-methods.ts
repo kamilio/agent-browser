@@ -23,11 +23,26 @@ const operationNames = new Set([
 const ownedFunctions = new WeakSet<object>();
 const claimedNodes = new WeakSet<object>();
 const claimedPorts = new WeakSet<object>();
+const prototypeNames = new Set([
+	"Node",
+	"Element",
+	"HTMLElement",
+	"HTMLFormElement",
+	"SVGElement",
+	"Document",
+	"DocumentFragment",
+	"DocumentType",
+	"CharacterData",
+	"Text",
+	"Comment",
+]);
 
 export class PageDomMethods {
 	readonly factory: ScriptHostObjectFactory;
 	readonly bootstrap: () => object;
 	private readonly functions = new Map<string, object>();
+	private readonly prototypes = new Map<string, object>();
+	private readonly pendingPrototypes = new Map<string, WeakRef<object>[]>();
 	private nodes = new WeakMap<
 		object,
 		Record<string, (...args: readonly unknown[]) => unknown>
@@ -69,6 +84,42 @@ export class PageDomMethods {
 				throw new TypeError(
 					"DOM focus registration must preserve operation identity",
 				);
+			const publishPrototype = context.setHostObjectPrototype
+				? context.retainGuestArguments((...args: readonly unknown[]) => {
+						const [name, prototype] = args;
+						try {
+							this.ensureOpen();
+							if (
+								args.length !== 2 ||
+								!this.bootstrapped ||
+								typeof name !== "string" ||
+								!prototypeNames.has(name) ||
+								this.prototypes.has(name) ||
+								!prototype ||
+								typeof prototype !== "object" ||
+								ownedFunctions.has(prototype)
+							)
+								throw new TypeError("Invalid DOM prototype publication");
+							ownedFunctions.add(prototype);
+							this.prototypes.set(name, prototype);
+							for (const reference of this.pendingPrototypes.get(name) ?? []) {
+								const node = reference.deref();
+								if (node) this.linkPrototype(node, prototype);
+							}
+							this.pendingPrototypes.delete(name);
+						} catch (error) {
+							for (const value of new Set(args.slice(1))) {
+								if (
+									value &&
+									typeof value === "object" &&
+									!ownedFunctions.has(value)
+								)
+									context.releaseGuestReference(value);
+							}
+							throw error;
+						}
+					}, 1)
+				: undefined;
 			const publish = context.retainGuestArguments(
 				(...args: readonly unknown[]) => {
 					const [name, value] = args;
@@ -112,6 +163,7 @@ export class PageDomMethods {
 				const port = context.createHostObject({
 					methods: {
 						publish,
+						...(publishPrototype ? { publishPrototype } : {}),
 						...(invokeFocus ? { invokeFocus } : {}),
 						invoke: (receiver, name, ...args) => {
 							this.ensureOpen();
@@ -147,6 +199,22 @@ export class PageDomMethods {
 				return port;
 			};
 			this.factory = {
+				...(context.setHostObjectPrototype
+					? {
+							nodePublished: (node: object, name: string) => {
+								this.ensureOpen();
+								if (!this.nodes.has(node) || !prototypeNames.has(name))
+									throw new TypeError("Invalid DOM prototype receiver");
+								const prototype = this.prototypes.get(name);
+								if (prototype) this.linkPrototype(node, prototype);
+								else {
+									const pending = this.pendingPrototypes.get(name) ?? [];
+									pending.push(new WeakRef(node));
+									this.pendingPrototypes.set(name, pending);
+								}
+							},
+						}
+					: {}),
 				...(context.domExpandos ? { domExpandos: context.domExpandos } : {}),
 				...(context.eventTargetValue
 					? {
@@ -158,6 +226,7 @@ export class PageDomMethods {
 					this.ensureOpen();
 					if (!definition.properties?.nodeType)
 						return context.createHostObject(definition);
+					const { nodeInterface, ...hostDefinition } = definition;
 					const methods = { ...definition.methods };
 					const properties = { ...definition.properties };
 					const registered: Record<
@@ -165,6 +234,7 @@ export class PageDomMethods {
 						(...args: readonly unknown[]) => unknown
 					> = {};
 					const kind = methods.createNodeIterator ? "Document" : "Element";
+					registered.readNode = definition.properties.nodeType.get;
 					if (invokeFocus && definition.properties.namespaceURI) {
 						for (const name of ["focus", "blur"]) {
 							const method = methods[name];
@@ -178,6 +248,12 @@ export class PageDomMethods {
 										);
 									return method(...args);
 								};
+							if (
+								context.setHostObjectPrototype &&
+								(nodeInterface === "HTMLElement" ||
+									nodeInterface === "HTMLFormElement")
+							)
+								delete methods[name];
 						}
 					}
 					for (const key of methodNames) {
@@ -203,7 +279,7 @@ export class PageDomMethods {
 					}
 
 					const node = context.createHostObject({
-						...definition,
+						...hostDefinition,
 						methods,
 						properties,
 					});
@@ -231,8 +307,10 @@ export class PageDomMethods {
 		this.closed = true;
 		this.unregisterClose();
 		this.nodes = new WeakMap();
-		const values = [...this.functions.values()];
+		const values = [...this.functions.values(), ...this.prototypes.values()];
 		this.functions.clear();
+		this.prototypes.clear();
+		this.pendingPrototypes.clear();
 		for (const value of values) {
 			try {
 				this.context.releaseGuestReference(value);
@@ -246,5 +324,14 @@ export class PageDomMethods {
 		if (this.closed)
 			throw new AgentBrowserError("closed", "DOM methods are closed");
 		this.tree.get(this.tree.root);
+	}
+
+	private linkPrototype(node: object, prototype: object) {
+		this.context.setHostObjectPrototype?.(node, prototype, () => {
+			this.ensureOpen();
+			const read = this.nodes.get(node)?.readNode;
+			if (!read) throw new TypeError("Invalid DOM prototype receiver");
+			read();
+		});
 	}
 }

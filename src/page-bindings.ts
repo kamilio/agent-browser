@@ -56,6 +56,11 @@ import {
 } from "./page-idle-callbacks.js";
 
 export interface PageBindingContext extends ScriptHostObjectFactory {
+	setHostObjectPrototype?(
+		value: object,
+		prototype: unknown,
+		assertActive?: () => void,
+	): void;
 	nestedOperation?: PageFocusRegistration;
 	retainGuestArguments<
 		Operation extends (...args: readonly unknown[]) => unknown,

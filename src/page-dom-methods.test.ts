@@ -34,7 +34,11 @@ function hostObject(definition: ScriptHostObjectDefinition): object {
 		},
 	});
 }
-function fixture(createHostObject = hostObject, enableFocus = false) {
+function fixture(
+	createHostObject = hostObject,
+	enableFocus = false,
+	enablePrototypes = false,
+) {
 	const tree = parseHtmlDocument(
 		"<main><b>original</b></main>",
 		"https://example.com/",
@@ -44,6 +48,20 @@ function fixture(createHostObject = hostObject, enableFocus = false) {
 	const nested = new Set<(...args: readonly unknown[]) => unknown>();
 	const context: PageBindingContext = {
 		createHostObject,
+		...(enablePrototypes
+			? {
+					setHostObjectPrototype(
+						value: object,
+						prototype: unknown,
+						assertActive?: () => void,
+					) {
+						assertActive?.();
+						if (!prototype || typeof prototype !== "object")
+							throw new TypeError("Invalid prototype");
+						Object.setPrototypeOf(value, prototype);
+					},
+				}
+			: {}),
 		...(enableFocus
 			? {
 					nestedOperation<
@@ -137,6 +155,46 @@ it("preserves a node focus method captured before its prototype is replaced", as
 	await evaluate("savedOwn.call(input)");
 	expect(evaluate("calls")).toBe(0);
 	expect(evaluate("document.activeElement===input")).toBe(true);
+});
+
+it("routes ordinary HTML focus through prototype overrides while preserving captured methods", async () => {
+	const { evaluate } = fixture(hostObject, true, true);
+	evaluate(
+		'var input=document.createElement("input");document.body.appendChild(input);var savedOwn=input.focus;var original=HTMLElement.prototype.focus;var calls=0;var flag=false;HTMLElement.prototype.focus=function(){flag=true;calls++;return original.apply(this,arguments)}',
+	);
+	expect(
+		evaluate(
+			"savedOwn===original && input.focus===HTMLElement.prototype.focus && !Object.hasOwn(input,'focus')",
+		),
+	).toBe(true);
+	await evaluate("savedOwn.call(input)");
+	expect(evaluate("calls")).toBe(0);
+	await evaluate("input.focus()");
+	expect(evaluate("calls===1 && flag && document.activeElement===input")).toBe(
+		true,
+	);
+	evaluate("HTMLElement.prototype.focus=original");
+	expect(evaluate("input.focus===savedOwn")).toBe(true);
+});
+
+it("links existing and lazy node interfaces and keeps non-HTML focus guarded", async () => {
+	const { evaluate, tree, release } = fixture(hostObject, true, true);
+	expect(
+		evaluate(
+			'Object.getPrototypeOf(document)===Document.prototype && Object.getPrototypeOf(document.body)===HTMLElement.prototype && Object.getPrototypeOf(document.createElement("form"))===HTMLFormElement.prototype && Object.getPrototypeOf(document.createTextNode("x"))===Text.prototype',
+		),
+	).toBe(true);
+	const method = evaluate("document.body.focus") as (
+		...args: unknown[]
+	) => Promise<void>;
+	const other = evaluate('document.createElement("input")');
+	const svg = evaluate(
+		'document.createElementNS("http://www.w3.org/2000/svg","svg")',
+	);
+	await expect(method.call(svg)).rejects.toThrow("HTMLElement");
+	tree.close();
+	await expect(method.call(other)).rejects.toThrow("closed");
+	expect(release).toHaveBeenCalledTimes(22);
 });
 
 it("rejects forged, foreign and non-HTML captured focus receivers and revokes saved methods", async () => {

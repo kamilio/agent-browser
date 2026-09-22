@@ -108,6 +108,7 @@ function reflectedTagName(node: Readonly<DocumentNode>): string {
 }
 
 export interface ScriptHostObjectDefinition {
+	nodeInterface?: string;
 	expandos?: {
 		maxKeys: number;
 		maxKeyCodeUnits: number;
@@ -135,6 +136,7 @@ export interface ScriptHostObjectDefinition {
 }
 
 export interface ScriptHostObjectFactory {
+	nodePublished?(value: object, interfaceName: string): void;
 	readonly domExpandos?: "bounded-v1";
 	eventTargetValue?(target: object): unknown;
 	createHostObject(definition: ScriptHostObjectDefinition): object;
@@ -250,9 +252,8 @@ export class ScriptDom {
 		const eventConstructors = this.eventConstructors;
 		const existing = this.capabilities.get(id);
 		if (existing) return existing;
-		const definition: Required<
-			Pick<ScriptHostObjectDefinition, "properties" | "methods">
-		> = {
+		const definition: ScriptHostObjectDefinition &
+			Required<Pick<ScriptHostObjectDefinition, "properties" | "methods">> = {
 			properties: {
 				baseURI: {
 					get: () => {
@@ -1228,7 +1229,25 @@ export class ScriptDom {
 				};
 			}
 		}
-		return this.publications.publish(
+		definition.nodeInterface =
+			initial.kind === "document"
+				? "Document"
+				: initial.kind === "fragment"
+					? "DocumentFragment"
+					: initial.kind === "doctype"
+						? "DocumentType"
+						: initial.kind === "text"
+							? "Text"
+							: initial.kind === "comment"
+								? "Comment"
+								: isHtmlElement(initial)
+									? isHtmlElement(initial, "form")
+										? "HTMLFormElement"
+										: "HTMLElement"
+									: elementNamespace(initial) === "http://www.w3.org/2000/svg"
+										? "SVGElement"
+										: "Element";
+		const value = this.publications.publish(
 			"node",
 			id,
 			definition,
@@ -1246,6 +1265,8 @@ export class ScriptDom {
 						eventConstructors.registerTarget(id, capability, assertActive)
 				: undefined,
 		);
+		this.factory.nodePublished?.(value, definition.nodeInterface);
+		return value;
 	}
 
 	close() {
