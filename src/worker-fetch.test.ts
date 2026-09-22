@@ -247,3 +247,25 @@ it.each([
 		else expect(() => check(url, 0)).toThrow();
 	},
 );
+
+it("decodes Worker WASM policy without granting string eval", () => {
+	const loaded = decodeWorkerScript(
+		response({
+			headers: {
+				"content-type": ["text/javascript"],
+				"content-security-policy": ["script-src 'wasm-unsafe-eval'"],
+			},
+		}),
+	);
+	expect(loaded.wasmCompilation).toBe("allow");
+	expect(loaded.stringCompilation).toBe("deny");
+	const denied = decodeWorkerScript(
+		response({
+			headers: {
+				"content-type": ["text/javascript"],
+				"content-security-policy": ["script-src 'none'"],
+			},
+		}),
+	);
+	expect(denied.wasmCompilation).toBe("deny");
+});

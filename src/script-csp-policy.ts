@@ -57,6 +57,7 @@ export interface ScriptCspPolicy {
 	readonly issues: readonly ScriptCspIssue[];
 	readonly policyCount: number;
 	readonly stringCompilation: "allow" | "deny";
+	readonly wasmCompilation: "allow" | "deny";
 	allowsScript(request: ScriptCspRequest): boolean;
 	allowsBase(absoluteUrl: string): boolean;
 }
@@ -66,6 +67,7 @@ interface ScriptSources {
 	readonly unsafeInline: boolean;
 	readonly strictDynamic: boolean;
 	readonly unsafeEval: boolean;
+	readonly wasmUnsafeEval: boolean;
 	readonly urls?: ContentSecurityPolicy;
 	readonly urlCount: number;
 	readonly urlCost: number;
@@ -75,6 +77,7 @@ interface Policy {
 	readonly script?: ScriptSources;
 	readonly base?: "none" | "self";
 	readonly stringCompilation: "allow" | "deny";
+	readonly wasmCompilation: "allow" | "deny";
 }
 
 interface ScriptRequestData extends ScriptCspRequest {
@@ -354,13 +357,14 @@ function compileScriptCspPolicy(
 					let unsafeInline = false;
 					let strictDynamic = false;
 					let unsafeEval = false;
+					let wasmUnsafeEval = false;
 					for (const expression of expressions) {
 						const folded = expression.toLowerCase();
-						if (folded === "'none'" || folded === "'wasm-unsafe-eval'")
-							continue;
+						if (folded === "'none'") continue;
 						if (folded === "'unsafe-inline'") unsafeInline = true;
 						else if (folded === "'strict-dynamic'") strictDynamic = true;
 						else if (folded === "'unsafe-eval'") unsafeEval = true;
+						else if (folded === "'wasm-unsafe-eval'") wasmUnsafeEval = true;
 						else if (
 							folded.startsWith("'nonce-") &&
 							expression.endsWith("'") &&
@@ -384,6 +388,7 @@ function compileScriptCspPolicy(
 							unsafeInline: unsafeInline && !nonces.length && !strictDynamic,
 							strictDynamic,
 							unsafeEval,
+							wasmUnsafeEval,
 							urls: urls.length
 								? new ContentSecurityPolicy(
 										document.href,
@@ -396,6 +401,8 @@ function compileScriptCspPolicy(
 						}),
 					);
 				}
+				const compilationSources =
+					scripts.get("script-src") ?? scripts.get("default-src");
 				policies.push(
 					Object.freeze({
 						script:
@@ -403,6 +410,12 @@ function compileScriptCspPolicy(
 							scripts.get("script-src") ??
 							scripts.get("default-src"),
 						base,
+						wasmCompilation:
+							compilationSources === undefined ||
+							compilationSources.unsafeEval ||
+							compilationSources.wasmUnsafeEval
+								? "allow"
+								: "deny",
 						stringCompilation:
 							(scripts.get("script-src") ?? scripts.get("default-src"))
 								?.unsafeEval === false
@@ -422,6 +435,11 @@ function compileScriptCspPolicy(
 		unsupported,
 		issues: Object.freeze(issues),
 		policyCount: policies.length,
+		wasmCompilation:
+			!unsupported &&
+			policies.every((policy) => policy.wasmCompilation === "allow")
+				? "allow"
+				: "deny",
 		stringCompilation:
 			!unsupported &&
 			policies.every((policy) => policy.stringCompilation === "allow")

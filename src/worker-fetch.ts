@@ -34,6 +34,7 @@ export interface WorkerScriptSource {
 	readonly url: string;
 	readonly source: string;
 	readonly stringCompilation: "allow" | "deny";
+	readonly wasmCompilation?: "allow" | "deny";
 	readonly checkImport?: WorkerImportPolicy;
 	readonly redirectCount?: number;
 }
@@ -97,6 +98,7 @@ export function decodeWorkerScript(
 	return Object.freeze({
 		...decoded,
 		stringCompilation: policy.stringCompilation,
+		wasmCompilation: policy.wasmCompilation,
 		checkImport: workerImportPolicy(response.url, response.headers),
 	});
 }

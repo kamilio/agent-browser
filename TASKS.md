@@ -43,9 +43,15 @@
   offline Node24 JSPI guest WASM passes five cases in both scheduling modes,
   including string compilation denied and recovery after a Script throw in a
   classic child realm. Cleanup resources/data/depth/pending return to zero.
-  Page/Worker WASM installation and its separate CSP policy remain open, as do
+  Page/Worker WASM installation remains open, as do
   classic dynamic imports and other required scratch SDK compatibility/performance
   fixes. These checks do not establish public Zoom or meeting/media readiness.
+- WASM compilation CSP is now distinct from string eval: script-src/default-src
+  'wasm-unsafe-eval' or 'unsafe-eval' admits WASM; script-src-elem does not grant it.
+  Policies intersect and unsupported inputs deny. Document owners and network
+  Worker decoding retain the policy. All 223 checks across three manifest-listed
+  policy/Worker-fetch files, browser build, strict test typing and lint/format pass.
+  The policy is not yet connected to page/Worker WASM installation.
 - Native WASM owners now provide original validation, stable bounded binary
   instrumentation, declared allocation/import/export admission, compilation leases,
   ordered imports through null-prototype maps, realm invokeCallback dispatch, owned

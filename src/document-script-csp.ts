@@ -22,6 +22,7 @@ export interface DocumentScriptCspLimits {
 export interface DocumentScriptCsp {
 	readonly enforced: boolean;
 	readonly stringCompilation: "allow" | "deny" | undefined;
+	readonly wasmCompilation: "allow" | "deny" | undefined;
 	readonly unsupported: boolean;
 	readonly version: number;
 	readonly reason: string | undefined;
@@ -447,6 +448,7 @@ function bindPolicy(
 	const owner: DocumentScriptCsp = Object.freeze({
 		enforced,
 		stringCompilation: enforced ? parsed.stringCompilation : undefined,
+		wasmCompilation: enforced ? parsed.wasmCompilation : undefined,
 		get unsupported() {
 			return !current();
 		},

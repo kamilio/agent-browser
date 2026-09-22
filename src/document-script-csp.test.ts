@@ -498,3 +498,14 @@ it("preserves host restrictions for classic imports admitted by unsafe-inline", 
 		owner.allowsRequest(imports, "https://other.example/child.js", 0),
 	).toBe(false);
 });
+
+it("retains separate WASM and string compilation policies on the document owner", () => {
+	const tree = fixture();
+	const owner = bindDocumentScriptCsp(
+		tree,
+		headers("script-src 'wasm-unsafe-eval'"),
+	);
+	expect(owner.wasmCompilation).toBe("allow");
+	expect(owner.stringCompilation).toBe("deny");
+	expect(Reflect.set(owner, "wasmCompilation", "deny")).toBe(false);
+});

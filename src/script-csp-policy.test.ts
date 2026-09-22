@@ -1280,3 +1280,38 @@ it("recognizes the supplied script-policy shape while keeping eval, elements, ba
 		expect(unsupported.allowsScript(request({ nonce }))).toBe(false);
 	}
 });
+
+it.each([
+	["", "allow", "allow"],
+	["base-uri 'none'", "allow", "allow"],
+	["script-src 'none'", "deny", "deny"],
+	["script-src 'wasm-unsafe-eval'", "allow", "deny"],
+	["script-src 'unsafe-eval'", "allow", "allow"],
+	["default-src 'wasm-unsafe-eval'", "allow", "deny"],
+	["default-src 'wasm-unsafe-eval'; script-src 'self'", "deny", "deny"],
+	["default-src 'none'; script-src 'wasm-unsafe-eval'", "allow", "deny"],
+	["script-src-elem 'wasm-unsafe-eval'", "allow", "allow"],
+	["script-src-elem 'wasm-unsafe-eval'; script-src 'none'", "deny", "deny"],
+	["script-src 'wasm-unsafe-eval'; script-src-elem 'none'", "allow", "deny"],
+	["script-src 'wasm-unsafe-eval'; SCRIPT-SRC 'none'", "allow", "deny"],
+	["script-src 'wasm-unsafe-eval', script-src 'unsafe-eval'", "allow", "deny"],
+	["script-src 'wasm-unsafe-eval', script-src 'self'", "deny", "deny"],
+	["script-src 'WASM-UNSAFE-EVAL'", "allow", "deny"],
+	["script-src 'wasm-unsafe-eval' 'unknown'", "deny", "deny"],
+] as const)(
+	"admits WASM separately from string compilation: %s",
+	(serialized, wasm, string) => {
+		const result = policy(serialized);
+		expect(result.wasmCompilation).toBe(wasm);
+		expect(result.stringCompilation).toBe(string);
+		expect(Reflect.set(result, "wasmCompilation", "other")).toBe(false);
+	},
+);
+
+it("denies WASM compilation for malformed policy inputs", () => {
+	expect(createScriptCspPolicy(documentUrl, null).wasmCompilation).toBe("deny");
+	expect(
+		createScriptCspPolicy("invalid", headers("script-src 'wasm-unsafe-eval'"))
+			.wasmCompilation,
+	).toBe("deny");
+});
