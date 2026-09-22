@@ -605,6 +605,27 @@ it("snapshots explicit WASM installation selection for the extension adapter", (
 	);
 });
 
+it("snapshots binary Worker message selection for the extension adapter", () => {
+	const input = { workerBinaryMessages: "bounded-v1" };
+	const selected = pageRuntimeConfiguration(input, "extension");
+	expect(selected).toEqual(input);
+	expect(Object.isFrozen(selected)).toBe(true);
+	input.workerBinaryMessages = "changed";
+	expect(selected).toEqual({ workerBinaryMessages: "bounded-v1" });
+	expect(() =>
+		pageRuntimeConfiguration({ workerBinaryMessages: "bounded-v1" }, "legacy"),
+	).toThrow(/extension adapter/);
+});
+
+it.each([null, true, "allow", {}, [], undefined])(
+	"rejects malformed binary Worker selection: %j",
+	(workerBinaryMessages) => {
+		expect(() =>
+			pageRuntimeConfiguration({ workerBinaryMessages }, "extension"),
+		).toThrow();
+	},
+);
+
 it.each([null, true, "allow", {}, []])(
 	"rejects malformed WASM runtime selection: %j",
 	(webAssembly) => {

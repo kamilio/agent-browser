@@ -41,6 +41,7 @@ const extensionName = "agent-browser-page";
 
 export interface ExtensionPageRuntimeOptions {
 	webAssembly?: "bounded-v1";
+	workerBinaryMessages?: "bounded-v1";
 	classicScripts?: boolean;
 	classicScriptErrors?: "fatal" | "report";
 	callbackScheduling?: "after-prefix";
@@ -96,6 +97,22 @@ export function extensionPageRuntime(
 			"invalid-input",
 			"Invalid extension page runtime options",
 		);
+	const binaryDescriptor = Object.getOwnPropertyDescriptor(
+		configuration,
+		"workerBinaryMessages",
+	);
+	if (
+		binaryDescriptor
+			? !Object.hasOwn(binaryDescriptor, "value") ||
+				!binaryDescriptor.enumerable ||
+				binaryDescriptor.value !== "bounded-v1"
+			: "workerBinaryMessages" in configuration
+	)
+		throw new AgentBrowserError(
+			"invalid-input",
+			"Invalid Worker binary message policy",
+		);
+	const binaryMessages = binaryDescriptor ? "bounded-v1" : undefined;
 	const wasmDescriptor = Object.getOwnPropertyDescriptor(
 		configuration,
 		"webAssembly",
@@ -374,6 +391,7 @@ export function extensionPageRuntime(
 					importPolicy: options.workerImportPolicy,
 					stringCompilation: effectiveStringCompilation,
 					webAssembly,
+					binaryMessages,
 					wasmCompilation,
 					report: (message) => options.sink.error(message),
 					fail: () => {

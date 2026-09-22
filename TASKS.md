@@ -185,11 +185,11 @@
   Scope-root instrumentation counted 22.7 million calls but only two distinct name
   arrays (168 slots); name-array caching alone is unlikely to resolve startup cost.
   Zoom's wrapper overrides the glue's fetch path and asks its parent to download
-  WASM with status 30 / DOWNLOAD_WASM_FROM_MAIN_THREAD_OK. The current 65536-byte
-  Worker message/transfer cap cannot carry net.wasm's 465602 bytes; the aggregate
-  queue also caps at 262144 units. All manifest-listed page-workers checks pass,
-  including oversize backing-buffer/transfer rejection. Next: bounded binary Worker
-  delivery plus repeated primary root collection/capture allocation reduction
+  WASM with status 30 / DOWNLOAD_WASM_FROM_MAIN_THREAD_OK. The default 65536-byte
+  Worker message/transfer cap cannot carry net.wasm's 465602 bytes; its default
+  aggregate queue also caps at 262144 units. The opt-in binary policy below now
+  admits that payload. Next: connect the parent download protocol and reduce
+  binary snapshot/primary root collection/capture allocation cost
   without caching mutable descendants, then integrated initialization and every
   meeting/media gate. Diagnostic allowances clear no default startup or notetaker gate.
 
@@ -204,6 +204,22 @@
   zero. MessagePort, streams and media-object transfers remain unsupported. The
   native realm bridge still copies bytes; this is ownership semantics, not zero-copy.
   Custom graph/queue limits can reject after successful serialization/detachment.
+  Opt-in runtimeOptions.workerBinaryMessages: "bounded-v1" now admits up to 1 MiB
+  of distinct backing buffers per message and 4 MiB of aggregate queue units in
+  both directions. Graph units still cap at 65536 per message; depth, transfer count,
+  shared-budget admission, packet lifetime and defaults remain active. Three new
+  delivery/queue cases fail on baseline. All 473 selected native checks across nine
+  manifest-listed files, native build, strict changed-test typing and lint/format
+  pass, covering oversize buffers/graphs, native getter spoofing, shared-budget
+  rejection, malformed policies and termination credits. Actual offline native
+  PageScripts/Blob Worker/SafeJS at 128 MB verifies default donor preservation,
+  ordinary copying and transfers of 465602 bytes, bidirectional byte/view aliases,
+  detachment and cleanup data/pending callbacks zero. Explicit 1048577-element
+  allowance and 120 s deadline are diagnostic: enabled round trips take 48.0/61.2 s;
+  the initial 16 s attempt times out. Default elements/startup and full Zoom
+  parent-download/Worker initialization gates remain open. Guest-bound typed-array
+  snapshots still use conservative element-key enumeration; reproduce/profile
+  their accounting cost before changing SDK snapshot ownership.
   Public current net_thread.min.js fetch succeeds (390978 units); instrumented actual
   source runs in a native Worker at 128 MB with the application profile, then hits its
   30 s initialization deadline at 493789 shared steps before the diagnostic marker.

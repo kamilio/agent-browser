@@ -1470,6 +1470,31 @@ it("does not invoke a WASM installation accessor", () => {
 	expect(getter).not.toHaveBeenCalled();
 });
 
+it.each([null, true, "allow", {}, [], undefined])(
+	"rejects invalid binary Worker policy: %j",
+	(workerBinaryMessages) => {
+		expect(() =>
+			extensionPageRuntime(fakeCore().core, { workerBinaryMessages } as never),
+		).toThrow(/binary message policy/);
+	},
+);
+
+it("rejects inherited, hidden and accessor binary Worker policies without invoking accessors", () => {
+	const getter = vi.fn(() => "bounded-v1");
+	for (const configuration of [
+		Object.create({ workerBinaryMessages: "bounded-v1" }),
+		Object.defineProperty({}, "workerBinaryMessages", { value: "bounded-v1" }),
+		Object.defineProperty({}, "workerBinaryMessages", {
+			get: getter,
+			enumerable: true,
+		}),
+	])
+		expect(() => extensionPageRuntime(fakeCore().core, configuration)).toThrow(
+			/binary message policy/,
+		);
+	expect(getter).not.toHaveBeenCalled();
+});
+
 it("rejects malformed per-page WASM policy even when installation is omitted", () => {
 	const factory = extensionPageRuntime(fakeCore().core);
 	const options = policyPageOptions();

@@ -17,6 +17,8 @@ const isView = ArrayBuffer.isView;
 const mapEntries = Map.prototype.entries, setValues = Set.prototype.values;
 const mapSize = Object.getOwnPropertyDescriptor(Map.prototype, 'size').get;
 const setSize = Object.getOwnPropertyDescriptor(Set.prototype, 'size').get;
+const binaryMessages = api.binaryMessages === true;
+const binaryLimit = binaryMessages ? 1048576 : 65536;
 function text(value) {
  if (typeof value === 'symbol') throw new TypeError('Invalid Worker string');
  const result = NativeString(value);
@@ -34,7 +36,7 @@ function copied(value, options) {
    for (const entry of transfer) {
     if (transfers.length >= 64) throw new RangeError('Worker transfer list limit exceeded');
     let length; try {length=apply(bufferLength,entry,[]);} catch {}
-    if (length !== undefined) {bytes+=length; if(bytes>65536) throw new RangeError('Worker transfer byte limit exceeded');}
+    if (length !== undefined) {bytes+=length; if(bytes>binaryLimit) throw new RangeError('Worker transfer byte limit exceeded');}
     apply(push,transfers,[entry]);
    }
   }
@@ -42,7 +44,7 @@ function copied(value, options) {
  const result = transfers === undefined ? clone(value) : clone(value,{transfer:transfers});
  // Bound the first traversal before exporting a native graph. No guest getter
  // runs here: structuredClone already converted own enumerable accessors.
- const pending = [[result, 0]], seen = new NativeWeakSet(); let units = 0;
+ const pending = [[result, 0]], seen = new NativeWeakSet(); let units = 0, binaryBytes = 0;
  while (pending.length) {
   const item = apply(pop,pending,[]), data = item[0], depth = item[1];
   if (depth > 128) throw new RangeError('Worker message depth limit exceeded');
@@ -51,7 +53,7 @@ function copied(value, options) {
    apply(add,seen,[data]); units++;
    let length;
    try { length = apply(bufferLength, data, []); } catch {}
-   if (length !== undefined) units += length;
+   if (length !== undefined) {if(binaryMessages) binaryBytes += length; else units += length;}
    else if (isView(data)) {
     let buffer; try {buffer=apply(typedBuffer,data,[]);} catch {buffer=apply(viewBuffer,data,[]);}
     apply(push,pending,[[buffer,depth+1]]);
@@ -69,7 +71,7 @@ function copied(value, options) {
     }
    }
   } else units++;
-  if (units > 65536) throw new RangeError('Worker message limit exceeded');
+  if (units > 65536 || binaryBytes > binaryLimit) throw new RangeError('Worker message limit exceeded');
  }
  return result;
 }

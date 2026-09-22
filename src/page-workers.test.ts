@@ -205,6 +205,7 @@ function fixture(
 		report,
 		fail,
 		units,
+		budget,
 		parent,
 		children,
 	};
@@ -778,6 +779,104 @@ it("transfers ArrayBuffer ownership in both directions while preserving view ali
 			["detached", 0],
 		]),
 	);
+	await vi.waitFor(() => expect(test.workers.metrics().pending).toBe(0));
+	expect(test.units.size).toBe(0);
+});
+
+it.each([false, true])(
+	"delivers a bounded WASM-sized binary in both directions (transfer=%s)",
+	async (transfer) => {
+		const test = fixture(true, {
+			binaryMessages: "bounded-v1",
+		});
+		test.start(
+			"onmessage=e=>{const buffer=e.data.buffer;const bytes=new Uint8Array(buffer);bytes[0]=9;postMessage({buffer,alias:e.data.view.buffer===buffer},[buffer]);};",
+		);
+		test.evaluate(
+			"var received;worker.onmessage=e=>received=[e.data.buffer.byteLength,new Uint8Array(e.data.buffer)[0],new Uint8Array(e.data.buffer)[465601],e.data.alias];var buffer=new ArrayBuffer(465602);var view=new Uint8Array(buffer);view[0]=1;view[465601]=7;",
+		);
+		test.evaluate(
+			`worker.postMessage({buffer,view}${transfer ? ",[buffer]" : ""});`,
+		);
+		expect(test.evaluate("buffer.byteLength")).toBe(transfer ? 0 : 465602);
+		expect(test.workers.metrics().retainedUnits).toBeGreaterThanOrEqual(465602);
+		await vi.waitFor(() =>
+			expect(test.evaluate("received")).toEqual([465602, 9, 7, true]),
+		);
+		await vi.waitFor(() => expect(test.workers.metrics().pending).toBe(0));
+		expect(test.units.size).toBe(0);
+	},
+);
+
+it("keeps binary admission separate from graph limits and checks whole backing buffers", () => {
+	const test = fixture(true, {
+		binaryMessages: "bounded-v1",
+	});
+	test.start("");
+	test.evaluate(
+		"var buffer=new ArrayBuffer(1048577);var view=new Uint8Array(buffer,0,1);",
+	);
+	for (const source of [
+		"worker.postMessage(buffer,[buffer])",
+		"worker.postMessage(view)",
+		"worker.postMessage('x'.repeat(65537))",
+		"worker.postMessage([new ArrayBuffer(600000),new ArrayBuffer(500000)])",
+	])
+		expect(() => test.evaluate(source)).toThrow(/limit/i);
+	expect(test.evaluate("buffer.byteLength")).toBe(1048577);
+	expect(test.workers.metrics().pending).toBe(0);
+});
+
+it("checks native binary arguments against pinned backing-buffer getters", () => {
+	const test = fixture(false, { binaryMessages: "bounded-v1" });
+	test.start("");
+	const port = (
+		test.workers.port as {
+			create(
+				url: string,
+				name: string,
+				dispatch: (packet: unknown) => void,
+			): { post(data: unknown): void };
+		}
+	).create(test.evaluate("sourceUrl"), "", () => {});
+	const getter = vi.fn(() => 0);
+	const buffer = new ArrayBuffer(1048577);
+	Object.defineProperty(buffer, "byteLength", { get: getter });
+	const view = new Uint8Array(buffer, 0, 1);
+	Object.defineProperty(view, "buffer", { get: getter });
+	expect(() => port.post(view)).toThrow(/limit/i);
+	expect(getter).not.toHaveBeenCalled();
+	expect(test.units.size).toBe(0);
+});
+
+it("requires shared-budget admission before queuing a binary packet", () => {
+	const test = fixture(true, { binaryMessages: "bounded-v1" });
+	test.start("");
+	test.budget.setRetainedDataUsage = (_owner, units) => {
+		if (units > 400000) throw new Error("shared quota");
+	};
+	test.evaluate("var buffer=new ArrayBuffer(465602);");
+	expect(() => test.evaluate("worker.postMessage(buffer);")).toThrow(
+		/shared quota/,
+	);
+	expect(test.workers.metrics().pending).toBe(0);
+	expect(test.workers.metrics().retainedUnits).toBe(0);
+	expect(test.evaluate("buffer.byteLength")).toBe(465602);
+});
+
+it("bounds aggregate binary queue storage and releases its credits on termination", async () => {
+	const test = fixture(true, {
+		binaryMessages: "bounded-v1",
+	});
+	test.start("");
+	for (let index = 0; index < 3; index++)
+		test.evaluate("worker.postMessage(new ArrayBuffer(1048576));");
+	const before = test.workers.metrics();
+	expect(() =>
+		test.evaluate("worker.postMessage(new ArrayBuffer(1048576));"),
+	).toThrow(/limit/i);
+	expect(test.workers.metrics()).toEqual(before);
+	test.evaluate("worker.terminate();");
 	await vi.waitFor(() => expect(test.workers.metrics().pending).toBe(0));
 	expect(test.units.size).toBe(0);
 });

@@ -45,6 +45,7 @@ export interface PageWorkerOptions {
 	stringCompilation?: "allow" | "deny";
 	wasmCompilation?: "allow" | "deny";
 	webAssembly?: "bounded-v1";
+	binaryMessages?: "bounded-v1";
 	report(message: string): void;
 	fail(error: unknown): void;
 }
@@ -57,6 +58,10 @@ export const pageWorkerLimits = Object.freeze({
 	messageUnits: 65536,
 	queuedUnits: 262144,
 	depth: 128,
+});
+export const pageWorkerBinaryLimits = Object.freeze({
+	messageBytes: 1048576,
+	queuedUnits: 4194304,
 });
 const nativeClone = structuredClone;
 function intrinsicGetter<Value>(
@@ -115,10 +120,11 @@ function limited(): never {
 function cloneError(): never {
 	throw new TypeError("Worker message is not cloneable");
 }
-function messageUnits(value: unknown): number {
+function messageUnits(value: unknown, binaryMessages: boolean): number {
 	const pending: [unknown, number][] = [[value, 0]];
 	const seen = new WeakSet<object>();
 	let units = 0;
+	let binaryBytes = 0;
 	while (pending.length) {
 		const item = pending.pop();
 		if (!item) break;
@@ -131,8 +137,11 @@ function messageUnits(value: unknown): number {
 			if (seen.has(data)) continue;
 			seen.add(data);
 			units++;
-			if (types.isArrayBuffer(data)) units += bufferLength.call(data);
-			else if (ArrayBuffer.isView(data)) {
+			if (types.isArrayBuffer(data)) {
+				const length = bufferLength.call(data);
+				if (binaryMessages) binaryBytes += length;
+				else units += length;
+			} else if (ArrayBuffer.isView(data)) {
 				const buffer = (types.isDataView(data) ? viewBuffer : typedBuffer).call(
 					data,
 				);
@@ -171,9 +180,13 @@ function messageUnits(value: unknown): number {
 				}
 			}
 		} else units++;
-		if (units > pageWorkerLimits.messageUnits) limited();
+		if (
+			units > pageWorkerLimits.messageUnits ||
+			binaryBytes > pageWorkerBinaryLimits.messageBytes
+		)
+			limited();
 	}
-	return units;
+	return units + binaryBytes;
 }
 function fatal(error: unknown): boolean {
 	if (!error || typeof error !== "object" || types.isProxy(error)) return false;
@@ -212,6 +225,7 @@ export class PageWorkers {
 	private closed = false;
 	private readonly identity: Readonly<BrowserIdentity>;
 	private readonly webAssembly: boolean;
+	private readonly binaryMessages: boolean;
 	private readonly bootstrapSource: string;
 	private created = 0;
 	private messages = 0;
@@ -222,6 +236,15 @@ export class PageWorkers {
 		private readonly options: PageWorkerOptions,
 	) {
 		this.ensureOpen();
+		if (
+			options.binaryMessages !== undefined &&
+			options.binaryMessages !== "bounded-v1"
+		)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid Worker binary message policy",
+			);
+		this.binaryMessages = options.binaryMessages === "bounded-v1";
 		if (
 			options.webAssembly !== undefined &&
 			options.webAssembly !== "bounded-v1"
@@ -247,6 +270,7 @@ export class PageWorkers {
 		browserIdentityHeaders(this.identity);
 		this.port = owner.createHostObject({
 			properties: {
+				binaryMessages: { get: () => this.binaryMessages },
 				baseUrl: {
 					get: () => {
 						this.ensureOpen();
@@ -569,6 +593,7 @@ export class PageWorkers {
 						...(wasm ? { __agentBrowserWasm: wasm.port } : {}),
 						__agentBrowserWorker: context.createHostObject({
 							properties: {
+								binaryMessages: { get: () => this.binaryMessages },
 								urls: { get: () => urls.port },
 								blobs: { get: () => blobs.port },
 								name: { get: () => record.name },
@@ -685,8 +710,11 @@ export class PageWorkers {
 			this.packets.size >= pageWorkerLimits.pending
 		)
 			limited();
-		const units = messageUnits(data);
-		if (units > pageWorkerLimits.queuedUnits - this.retainedUnits) limited();
+		const units = messageUnits(data, this.binaryMessages);
+		const queuedUnits = this.binaryMessages
+			? pageWorkerBinaryLimits.queuedUnits
+			: pageWorkerLimits.queuedUnits;
+		if (units > queuedUnits - this.retainedUnits) limited();
 		const packet: Packet = {
 			record,
 			outgoing,

@@ -11,6 +11,7 @@ export type PageRuntimeAdapter = "legacy" | "extension";
 
 export interface PageRuntimeConfiguration {
 	webAssembly?: "bounded-v1";
+	workerBinaryMessages?: "bounded-v1";
 	classicScripts?: boolean;
 	classicScriptErrors?: "fatal" | "report";
 	callbackScheduling?: "after-prefix";
@@ -68,6 +69,7 @@ export function pageRuntimeConfiguration(
 	for (const key of Reflect.ownKeys(descriptors)) {
 		if (
 			key !== "webAssembly" &&
+			key !== "workerBinaryMessages" &&
 			key !== "classicScripts" &&
 			key !== "classicScriptErrors" &&
 			key !== "callbackScheduling" &&
@@ -80,6 +82,7 @@ export function pageRuntimeConfiguration(
 			throw invalid();
 		if (
 			(key === "webAssembly" && descriptor.value !== "bounded-v1") ||
+			(key === "workerBinaryMessages" && descriptor.value !== "bounded-v1") ||
 			(key === "classicScripts" && typeof descriptor.value !== "boolean") ||
 			(key === "classicScriptErrors" &&
 				descriptor.value !== "fatal" &&
@@ -93,6 +96,9 @@ export function pageRuntimeConfiguration(
 			throw invalid();
 	}
 	const runtimeOptions: PageRuntimeConfiguration = {
+		...(descriptors.workerBinaryMessages
+			? { workerBinaryMessages: "bounded-v1" as const }
+			: {}),
 		...(descriptors.webAssembly
 			? { webAssembly: descriptors.webAssembly.value as "bounded-v1" }
 			: {}),
