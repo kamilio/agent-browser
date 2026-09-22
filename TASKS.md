@@ -154,17 +154,28 @@
   zero. Local poe-code commit 7b3e2d0fe; no push. Metadata providers must not depend on
   optional ownership scans for side effects. This establishes less duplicate capture
   work, not a public startup speedup.
+  Intrinsic retention caches now ignore unrelated function-table writes. A weak
+  membership set identifies captured tables; their writes, registered prototype
+  changes and baseline completion still invalidate caches. Other table revisions,
+  live descendant accounting and conservative restored-table scans stay active.
+  Baseline fails the new cache-reuse contract; all four new and 116 selected existing
+  checks pass, with strict test typing, scoped lint/format and SDK build/eight entries.
+  Actual five-case JSPI/WASM and allowed/denied page/Blob Worker installation pass
+  at diagnostic allowances; cleanup data/resources zero. Local poe-code commit
+  21cb74d71; no push. No public startup speedup is established.
   Public net_thread.min.js (390978 units) clears parent setup and enters its child,
   but source completion/readiness still fails. Latest exact-build 30 s run settles at
-  30266 ms / 885931 shared steps with AgentBrowserError timeout; outer wait does not
+  30502 ms / 883096 shared steps with AgentBrowserError timeout; outer wait does not
   expire first, cleanup data/page callbacks/active requests zero. Earlier instrumented
   baseline controls varied from 2696 to 7081 child graph passes; no startup speedup is
   established. String-field/frozen-symbol cache candidates remain discarded. A coarse
   8 MiB allocation sample including collected objects estimates 28.8 GB total churn:
   visitor 12.6 GB, scope-root vectors 3.3 GB and closure-root vectors 1.6 GB. The finer
   profile exhausted the heap during export after Worker cleanup; no profile retained.
-  Next: measure primary primitive/name-root bookkeeping allocations and reduce them
-  without caching mutable descendants, then real WASM imports/initializer and every
+  Scope-root instrumentation counted 22.7 million calls but only two distinct name
+  arrays (168 slots); name-array caching alone is unlikely to resolve startup cost.
+  Next: reduce repeated primary root collection/capture allocations without caching
+  mutable descendants, then real WASM imports/initializer and every
   meeting/media gate. Diagnostic allowances clear no default startup or notetaker gate.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
