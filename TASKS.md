@@ -42,22 +42,24 @@
   default 30 s/128 MB and meeting/media gates remain open. Cleanup data zero and
   zero socket attempts verified. Working SDK source/build retain the candidate;
   temporary instrumentation restored, all processes terminal and artifacts removed.
-  Next: reduce remaining per-node retained-graph traversal/private-symbol cost with
-  controlled mutation/reentry fixtures; preserve full reconciliation and quotas.
+  Next: optimize repeated frozen factory-closure processing identified by the
+  census below; preserve full reconciliation, mutation/reentry behavior and quotas.
 
-- Authorized phase/CPU trace narrows the pending Zoom import to editor evaluation.
-  All seven module-instantiation phases finish in 0–15 ms each; rolldown evaluation
-  finishes in 360 ms. Editor evaluation remains active for 83 s until host cleanup
-  interrupts it. In the final 83 s profile window, about 79 s of sampled CPU time is
-  under retained-graph accounting (nested frames counted once). Heap snapshots around
-  linking/evaluation are 575–629 million bytes; these are live diagnostic heap usage,
-  not retained-after-GC measurements or a default 128 MB pass. The 768 MB/120 s
-  diagnostic again executes 13 classics with zero failures but exits nonzero with
-  pending/prepared/fulfilled/rejected imports 1/7/0/0. No readiness or meeting join;
-  zero socket attempts and cleanup data zero. Temporary dist instrumentation restored
-  exactly; process terminated and trace/profile artifacts removed. Next: isolate
-  retained-graph traversal cost with a controlled compatibility fixture; preserve
-  full primary reconciliation, depth/data limits, callback ownership and reentry.
+- Authorized visitor census isolates the active editor-evaluation window, excluding
+  classic startup/parsing: 11348 accounting passes, 245410200 visitor entries and
+  62881400 frozen factory-closure inspections in 86 s / 23113 budgeted steps.
+  Each pass averages 21626 entries and 5541 frozen closures; closures are 78% of
+  classified ordinary objects. About 127 million internal-symbol checks repeat,
+  whereas only 11345 inspected objects have private fields (90760 field visits).
+  Target frozen factory-closure processing, preserving fresh captures/properties/
+  prototype links, internal-symbol filtering, private-field changes and reentry;
+  existing SDK contracts prohibit simply caching symbol membership across changes.
+  Counters add overhead, so this is a work census, not a speed comparison. The
+  diagnostic exits nonzero with import counts 1/7/0/0 and editor evaluation
+  interrupted by cleanup; no readiness/join. Zero socket attempts and cleanup data
+  zero verified. SDK dist restored exactly, helper removed, process terminal and
+  all census artifacts removed. Earlier phase trace links all seven modules in
+  0–15 ms each; full-graph default 30 s/128 MB gates remain open.
 
 - SDK source-module status exposes immutable pending/prepared/fulfilled/rejected
   counts to the native runtime. The diagnostic observes imports outside classic
