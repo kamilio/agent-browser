@@ -23,15 +23,23 @@
 
 ## Current verified state
 
-- Active cached full-client diagnostic after the document-method fix: seven modules
-  prepared, import pending without rejection; trace reaches editor statement 1084.
+- Cached full-client diagnostic after the document-method fix reaches its 30 min
+  observation bound: seven modules prepared, one import pending, none fulfilled
+  or rejected, 8624169 total steps. Cleanup interrupts editor statement 1237
+  (DOMPurify initialization) after 928.2 s / 526.3 s process CPU / 38699 steps;
+  its cancellation throw is not a proven application exception.
   React DOM completes normally in 236.6 s / 151.2 s process CPU / 40979 steps.
   Host has four CPUs, load about 41 and CPU pressure about 98%, with no cgroup CPU
   throttling; wall-time comparisons under this contention are not reliable.
-  Observation is bounded to 30 min under diagnostic 768 MB/120 s allowances.
-  Session 49153 / PID 540608 uses temporary SDK interpreter tracing; wait for its
-  termination before exact restoration from /tmp/agent-browser-zoom-full-arg98mhs
-  or any SDK/native build. This clears no initialization, meeting or media gate.
+  Diagnostic 768 MB/120 s allowances clear no default performance, initialization,
+  meeting or media gate. Realm closes with accounted data zero, process terminates,
+  SDK interpreter tracing is restored byte-for-byte and temporary artifacts removed.
+
+- Controlled editor syntax-tree identifier sharing saves 1626736 retained heap
+  bytes after a separate no-assignment control walk (509808 bytes reclaimed).
+  Both walks observe 136673 identifiers / 7967 unique names; parsing preserves
+  1396344 steps and 2101 statements. No SDK change is retained: this saving does
+  not establish a solution for the complete graph's default 128 MB gate.
 
 - SDK numeric-only/otherwise empty child frames share their parent's accounting
   projection instead of adding zero-unit wrapper groups. Full ancestry validation,
