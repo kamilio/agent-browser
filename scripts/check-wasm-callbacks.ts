@@ -1,5 +1,6 @@
 import { loadPageRuntime } from "../src/node-page-core.js";
 import { NodeWasmCalls } from "../src/node-wasm-calls.js";
+import { NodeWasmInstances } from "../src/node-wasm-instances.js";
 import {
 	NodeWasmMemories,
 	type WasmMemoryBudget,
@@ -103,7 +104,8 @@ for (const cancel of [false, true]) {
 		() => owner.abort(new Error("WASM callback diagnostic timed out")),
 		16000,
 	);
-	let instance: WebAssembly.Instance | undefined;
+	let instance: object | undefined;
+	let instances: NodeWasmInstances | undefined;
 	let memory: WebAssembly.Memory | undefined;
 	let memories: NodeWasmMemories | undefined;
 	let callback: unknown;
@@ -127,14 +129,21 @@ for (const cancel of [false, true]) {
 			context.onCleanup(() => calls.close());
 			const modules = new NodeWasmModules(quota, context.signal);
 			context.onCleanup(() => modules.close());
-			const module = modules.record(modules.compileSync(original)).module;
+			const moduleToken = modules.compileSync(original);
 			memories = new NodeWasmMemories(context, quota);
 			context.onCleanup(() => memories?.close());
 			const handle = memories.createMemory(320, 512);
 			memory = memories.nativeMemory(handle);
 			ensure(memory, "Missing owned fixture memory");
-			const nativeMemory = memory;
-			const memoryOwner = memories;
+			instances = new NodeWasmInstances({
+				context,
+				budget: quota,
+				modules,
+				memories,
+				calls,
+			});
+			const instanceOwner = instances;
+			context.onCleanup(() => instanceOwner.close());
 			return {
 				globals: {
 					port: context.createHostObject({
@@ -146,42 +155,28 @@ for (const cancel of [false, true]) {
 									"Invalid callback fixture installation",
 								);
 								callback = value;
-								instance = calls.instantiate(
-									() =>
-										new WebAssembly.Instance(module, {
-											...calls.meterImports(metered, (delta) =>
-												memoryOwner.wasmGrow(handle, delta),
-											),
-											env: {
-												m: nativeMemory,
-												cb: calls.suspending(() =>
-													invoke(callback),
-												) as WebAssembly.ImportValue,
-											},
-										}),
-								);
+								instance = instanceOwner.instantiate(moduleToken, [
+									callback,
+									handle,
+								]);
 							},
 							run: context.nestedOperation(() => {
 								ensure(instance, "Callback fixture is not installed");
-								return calls.invoke(instance.exports.run as WasmFunction);
+								return instanceOwner.invoke(instance, "run", []);
 							}),
 							grow: context.nestedOperation((value) => {
 								ensure(
 									instance && typeof value === "number",
 									"Invalid growth argument",
 								);
-								return calls.invoke(instance.exports.grow as WasmFunction, [
-									value,
-								]);
+								return instanceOwner.invoke(instance, "grow", [value]);
 							}),
 							helper: context.nestedOperation((value) => {
 								ensure(
 									instance && typeof value === "number",
 									"Invalid callback helper argument",
 								);
-								return calls.invoke(instance.exports.helper as WasmFunction, [
-									value,
-								]);
+								return instanceOwner.invoke(instance, "helper", [value]);
 							}),
 							park: context.nestedOperation(() => {
 								entered();
@@ -266,6 +261,7 @@ for (const cancel of [false, true]) {
 			quota.currentDataSize === 0 &&
 				calls.pendingCalls === 0 &&
 				calls.callDepth === 0 &&
+				instances?.metrics().instances === 0 &&
 				memories?.metrics().memories === 0,
 			"Callback fixture cleanup leaked",
 		);

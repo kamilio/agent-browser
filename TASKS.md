@@ -84,7 +84,7 @@
   elements, indirect calls, starts, exits and multi-value wrappers. Offline actual
   SDK/WASM fixtures pass one/320 pages, native growth preserving bytes and refreshing
   views, maximum failure and cleanup zero. Actual Node24 JSPI passes growth during
-  guest-callback reentry with owned compilation (99 steps, depth five, 21039104 retained bytes), cancellation
+  guest-callback reentry with owned compilation (99 steps, depth five, 21039185 retained bytes), cancellation
   and prior step/depth/deadline cases; cleanup data/depth/pending/memory zero. Current
   public net.wasm (465602 bytes) has zero native growth instructions; guarded output
   888011 bytes/205697 checks validates in 35 ms, no instantiation and zero active
@@ -108,8 +108,27 @@
   Actual SDK/JSPI fixture also passes owned synchronous compilation, callback/reentry,
   native memory growth, cancellation and prior CPU limits with cleanup zero. Native
   compilation is not preemptible; credits do not measure V8 generated machine code.
-  Next: realm-owned import binding/instantiation, per-instance table/global quotas,
-  page/Worker WebAssembly APIs, actual Zoom initialization and all joining/media gates.
+  Owned instantiation/import binding now passes below; page/Worker WebAssembly APIs,
+  actual Zoom initialization and all joining/media gates remain open.
+
+- Owned WASM instantiation now resolves ordered imports through null-prototype maps,
+  invokes borrowed callbacks only through the realm's full invokeCallback API, binds
+  owned memory handles and returns the original handle for memory exports. All
+  exported numeric calls use NodeWasmCalls; native function/Table/Global objects are
+  not exposed. Dense data arguments reject native accessors/proxies. Per-instance
+  table/global/import/export slot charges precede allocation; module leases retain
+  source credits until instances settle and release them. Close cancels/waits calls
+  before releasing instances/leases. Eight retained instances and sixteen attempts
+  bound admission. Borrowed callbacks remain SDK-owned until realm cleanup; async
+  start imports remain unsupported and reject before guest invocation. All 104
+  focused checks across five manifest-listed files, build, strict new/changed-test
+  typing and changed-file lint/format pass. Actual Node24 JSPI/SafeJS at 128 MiB
+  now exercises this owner with 20 MiB memory, callback reentry, native growth and
+  cancellation: 99 steps, depth five, 21039185 retained bytes; cleanup instance,
+  module/lease, memory, data, depth and pending calls zero. Slot charges are bounded
+  accounting estimates, not measured V8 object/native-code allocation. Table/Global
+  export wrappers, page/Worker WebAssembly APIs and actual public Zoom instantiation,
+  initialization, joining and every notetaker/media gate remain open.
 
 - Portable WASM binary instrumentation now inserts reserved step/enter/leave imports.
   Typed outer blocks route returns and function-target branches through depth cleanup;
