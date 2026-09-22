@@ -40,6 +40,20 @@
   sourceImportTimeoutMs loader failure. Vue still exceeds the 30 s script gate
   (30093 ms, 603265 steps, peak 807885 units); cleanup data zero, socket attempts zero,
   no interactive readiness or meeting join. Default heap/time and media gates remain.
+- Maintained SafeJS now certifies permanently empty frozen module environments and
+  avoids repeated namespace enumeration for them (poe-code ede5f1656; no push).
+  Source loaders preserve certification only explicitly; reattachment revokes it.
+  Private pinned ownership operations preserve foreign getter/growth observations.
+  A reproduced proxy concealment requires checking emptiness after freezing.
+  All 392 selected checks across 22 files pass, including actual GC suites, strict
+  new-test typing, scoped lint/format, SDK compilation/eight entry checks and offline
+  five-case JSPI/WASM; cleanup zero. Fresh serial baseline/candidate page probes both
+  hit the 30 s gate in the first Script, before Vue (139718/135143 step deltas include
+  compilation); cleanup zero, sockets zero, no readiness/join or useful startup gain
+  established. Bounded profile still puts most cost in graph visitation. Working
+  compiled SDK refreshed; owned validation artifacts removed. Next: prove native
+  Scope metadata ownership before sharing repeated capture reads; preserve foreign
+  effects, mutable descendants and full primary scans during callback holds.
 - Opt-in callbackScheduling: "after-prefix" admits later source only after all
   callback prefixes finish; tails preserve data/compilation charges and their own
   rejection ownership. Source stays exclusive. Close/cancellation waits for queued
@@ -2055,6 +2069,8 @@
   the default 30 s initialization gate or settle all imports inside their originating
   classic task; the full client still exceeds memory/time acceptance.
 - Interactive Zoom initialization/join and every notetaker capability listed above.
+  Fresh maintained baseline/candidate runs can exceed 30 s in the first Script
+  before Vue; initialization timing reliability remains open.
   Iframe navigation, srcdoc/policy contexts and child script realms remain unsupported.
   Diagnostics block optional file-paa.zoom.us and cdn.cookielaw.org origins;
   production actor/default 128 MB heap, meeting sockets, media and transcription
