@@ -23,6 +23,23 @@
 
 ## Current verified state
 
+- Nine-classification shared metadata records are rejected and reverted: revised
+  candidate passes 327 SDK checks across 35 files, strict typing and scoped build.
+  Four prototype/classifier freshness cases fail the initial candidate and pass
+  the revision/original; four earlier mutation/reentry checks also pass original.
+  Compiled default-stack/128 MB scope/record fixtures preserve 2030 / 12932 units,
+  all 364000 provider calls, held quotas and weak/deletion GC. Warmed medians:
+  0.411 / 0.418 ms candidate versus 0.448 / 0.560 ms control. Serial live 384 MB
+  both pass 13 classics, prepare seven modules, revoke at the 120 s import deadline,
+  attempt zero sockets and clean up at data zero (exit 1), without readiness/join.
+  Last progress 9021958 / 9021875 steps at different observation times establishes
+  no useful initialization gain. Original nine source files/rebuilt emission match
+  exactly; candidate helpers/tests/patch/configs/probes/logs are removed.
+  Separate private-field root layout is rejected before SDK edits: root-only median
+  11.15 versus 9.75 ms and mixed 42.15 versus 28.49 ms (10000 roots, 100 scans).
+  Opaque fields/prototypes and proxy isolation survive, but lookup cost regresses;
+  probe removed. Full graph cost and every default/join/media gate remain open.
+
 - Deep untracked symbol/private metadata and foreign proxy symbol chains now
   suspend traversal at depth 128: depth 1024 measures correctly, depth 1025 rejects
   with dataDepth, and held primary quotas remain active. Fresh providers, live
