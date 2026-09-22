@@ -173,7 +173,7 @@
   21cb74d71; no push. No public startup speedup is established.
   Public net_thread.min.js (390978 units) clears parent setup and enters its child,
   but source completion/readiness still fails. Latest exact-build 30 s run settles at
-  30466 ms / 883026 shared steps with AgentBrowserError timeout; outer wait does not
+  30206 ms / 887566 shared steps with AgentBrowserError timeout; outer wait does not
   expire first. A subsequent exact-build 120 s diagnostic still fails source
   completion at 120457 ms / 900405 shared steps with no status messages; cleanup
   data/page callbacks/active requests zero on both. Earlier instrumented
@@ -236,6 +236,24 @@
   Next: reduce repeated capture/graph traversal across checkpoints while preserving
   fresh observations and complete primary limits. Full startup/defaults and every
   meeting/media acceptance gate remain open.
+
+- Current full-Worker capture census counts 4.42 million interpreted scope reads;
+  3.83 million (86.6%) repeat a scope within one measurement. Across 11064 scans,
+  captures yield 20.87 million objects and 8.75 million primitives; 1.52 million
+  of 2.87 million generic records use owned property snapshots. The instrumented
+  run times out with no statuses; cleanup zero, exact compiled restoration verified
+  and probe removed. Counts establish availability, not safe capture reuse.
+  Maintained SafeJS scope accounting now uses a frozen facade over a private map
+  with pinned methods; registration discards the raw-map return. Both baseline
+  hook-exposure cases erase a 1000-unit charge to zero. Four new and 101 selected
+  existing checks, strict new-test typing, scoped lint/format and SDK build/eight
+  entries pass. Same-walk replacement, historical roots, descendants, snapshots
+  and held quotas remain live. Actual five-case after-prefix JSPI/WASM passes with
+  cleanup zero. Local poe-code commit b0896b207; no push. Final exact-build Worker
+  still times out at 30206 ms / 887566 steps with no completion/status and cleanup
+  zero; no useful startup gain established. Registry escape is closed, but carrier/
+  ancestor/provider provenance remains necessary before sharing capture lists.
+  Full startup/default limits and every meeting/media acceptance gate remain open.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
