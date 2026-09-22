@@ -92,7 +92,7 @@
   a fixed 1026-element table, one mutable i32 global and 41 function exports.
   Guarded output (888011 bytes/205697 checks) validates; native memory.grow and
   table.grow counts are zero. Source/metadata charge 1366307 bytes releases on close,
-  as do active requests. No public binary instantiation performed. Current admission
+  as do active requests. Current admission
   rejects reference boundaries, table/global imports, defined memories and native
   table.grow; async start imports reject before guest invocation. The guest bridge
   now provides branded Memory/Module/Instance, original imports/exports reflection,
@@ -100,12 +100,20 @@
   JSPI at 128 MiB verifies synchronous guest results, callback reentry, 320-page
   memory growth/detachment/identity, async overloads and compile/link/runtime-trap
   error brands; 1717 steps/depth eight and cleanup resources/data/depth/pending zero.
+  Public net.wasm now also instantiates through the unmodified 18755-unit Emscripten
+  glue tail with all 21 real function imports and its 320-page memory; export w's
+  initializer completes. Maintained check-zoom-wasm-initialization at Node24 JSPI/
+  128 MB, explicit 32 MiB quotas/120 s deadline passes: 39087 steps, 22395140 retained
+  units, 13.3 s including two public downloads, cleanup owned resources/data/requests
+  zero. This isolates the glue tail; complete Worker/page startup, parent download
+  protocol and later media callbacks remain unverified. No source is rewritten and
+  no function imports are stubbed. Native build/script lint/format pass.
   Table/Global wrappers and streaming/custom sections remain absent; page/Worker
   installation is now opt-in. Shared-realm ownership is now fixed in the maintained SDK; reconcile its
   remaining guest compilation/error policies before installation.
   Diagnostic 32 MiB quotas
   do not clear default page 16 MiB/262144-element limits. Next:
-  actual Zoom instantiation with its real imports, initialization performance and
+  integrated Zoom Worker/page instantiation, initialization performance and
   every joining/admission/presence/roster/chat/audio/transcription/playback/microphone/
   avatar/leaving/cleanup gate. Automations is untouched; no meeting has been joined.
 
@@ -166,7 +174,9 @@
   Public net_thread.min.js (390978 units) clears parent setup and enters its child,
   but source completion/readiness still fails. Latest exact-build 30 s run settles at
   30502 ms / 883096 shared steps with AgentBrowserError timeout; outer wait does not
-  expire first, cleanup data/page callbacks/active requests zero. Earlier instrumented
+  expire first. A subsequent exact-build 120 s diagnostic still fails source
+  completion at 120457 ms / 900405 shared steps with no status messages; cleanup
+  data/page callbacks/active requests zero on both. Earlier instrumented
   baseline controls varied from 2696 to 7081 child graph passes; no startup speedup is
   established. String-field/frozen-symbol cache candidates remain discarded. A coarse
   8 MiB allocation sample including collected objects estimates 28.8 GB total churn:
@@ -174,8 +184,13 @@
   profile exhausted the heap during export after Worker cleanup; no profile retained.
   Scope-root instrumentation counted 22.7 million calls but only two distinct name
   arrays (168 slots); name-array caching alone is unlikely to resolve startup cost.
-  Next: reduce repeated primary root collection/capture allocations without caching
-  mutable descendants, then real WASM imports/initializer and every
+  Zoom's wrapper overrides the glue's fetch path and asks its parent to download
+  WASM with status 30 / DOWNLOAD_WASM_FROM_MAIN_THREAD_OK. The current 65536-byte
+  Worker message/transfer cap cannot carry net.wasm's 465602 bytes; the aggregate
+  queue also caps at 262144 units. All manifest-listed page-workers checks pass,
+  including oversize backing-buffer/transfer rejection. Next: bounded binary Worker
+  delivery plus repeated primary root collection/capture allocation reduction
+  without caching mutable descendants, then integrated initialization and every
   meeting/media gate. Diagnostic allowances clear no default startup or notetaker gate.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
