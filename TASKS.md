@@ -23,6 +23,18 @@
 
 ## Current verified state
 
+- Exact current editor focus-wrapper pattern is reproduced in actual SDK/native
+  128 MB/30 s execution: ordinary input.focus changes focus but bypasses the
+  prototype wrapper (zero calls, listener modality flag false); explicit prototype
+  invocation runs it and restoration succeeds (5156 steps / 10418 peak units).
+  Cleanup closes with data zero; process terminates, no artifacts. A shared dynamic
+  forwarding candidate breaks methods captured before prototype replacement;
+  the new preservation contract detects that regression and passes restored source
+  with all 27 DOM-method checks. Bridge/bootstrap restored exactly; SDK unchanged.
+  Next: support prototype lookup on live host objects, preserving captured-method
+  semantics, accounting and revocation; SafeJS currently rejects their prototype
+  links. No full initialization, meeting or media gate is cleared.
+
 - Captured HTMLElement.prototype.focus/blur now dispatch to registered receiver
   operations through setup-time nested registration, preserving controlled-listener
   scheduling, original node publication guards and close revocation. Foreign,

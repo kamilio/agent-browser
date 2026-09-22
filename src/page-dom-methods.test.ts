@@ -129,6 +129,16 @@ it("forwards captured HTMLElement focus and blur to the borrowed receiver", asyn
 	expect(release).toHaveBeenCalledTimes(11);
 });
 
+it("preserves a node focus method captured before its prototype is replaced", async () => {
+	const { evaluate } = fixture(hostObject, true);
+	evaluate(
+		'var input=document.createElement("input");document.body.appendChild(input);var savedOwn=input.focus;var original=HTMLElement.prototype.focus;var calls=0;HTMLElement.prototype.focus=function(){calls++;return original.apply(this,arguments)}',
+	);
+	await evaluate("savedOwn.call(input)");
+	expect(evaluate("calls")).toBe(0);
+	expect(evaluate("document.activeElement===input")).toBe(true);
+});
+
 it("rejects forged, foreign and non-HTML captured focus receivers and revokes saved methods", async () => {
 	const a = fixture(hostObject, true);
 	const b = fixture(hostObject, true);
