@@ -1,0 +1,259 @@
+diff --git a/src/interp/host-capabilities.ts b/src/interp/host-capabilities.ts
+--- a/src/interp/host-capabilities.ts
++++ b/src/interp/host-capabilities.ts
+@@ -1,5 +1,6 @@
+ import { readDataRecord, type HostOperation } from "../extensions.js";
+ import { types } from "node:util";
++import { createIntrinsicObject } from "./object-model.js";
+ import type { SandboxClosure, SandboxObject, SandboxValue } from "./values.js";
+ import type { SandboxIterator } from "./iteration.js";
+ 
+@@ -46,6 +47,7 @@
+ };
+ type HostObjectState = {
+   controller: HostObjectController;
++  memberDataUnits: number;
+   host: HostObject;
+   guest: SandboxObject;
+   properties: Map<string, { get?: () => unknown; set?: (value: unknown) => void }>;
+@@ -115,7 +117,8 @@
+     if (data.assertActive !== undefined && (typeof data.assertActive !== "function" || types.isProxy(data.assertActive) ||
+         types.isAsyncFunction(data.assertActive) || types.isGeneratorFunction(data.assertActive)))
+       throw new TypeError("Guest expando assertActive must be a synchronous function, not a proxy.");
+-    expandos = { values: Object.create(null), maxKeys: data.maxKeys as number,
++    // SDK-owned tables reuse descriptor projections, never descendant sizes.
++    expandos = { values: createIntrinsicObject(), maxKeys: data.maxKeys as number,
+       maxKeyCodeUnits: data.maxKeyCodeUnits as number, assertActive: data.assertActive as (() => void) | undefined };
+   }
+   let indexed: HostObjectIndexedDefinition | undefined;
+@@ -220,7 +223,11 @@
+       controller.method(operation as HostOperation)
+     ])
+   );
+-  const state = { host, guest, controller, properties, methods, indexed, named, expandos };
++  // Definitions are copied into private maps; only revocation changes their keys.
++  let memberDataUnits = (indexed === undefined ? 0 : 16) + (named === undefined ? 0 : 24);
++  for (const key of properties.keys()) memberDataUnits += key.length + 1;
++  for (const key of methods.keys()) memberDataUnits += key.length + 1;
++  const state = { host, guest, controller, properties, methods, indexed, named, expandos, memberDataUnits };
+   hostObjects.set(host, state);
+   guestObjects.set(guest, state);
+   return host;
+@@ -294,6 +301,7 @@
+   state.indexed = undefined;
+   state.named = undefined;
+   state.expandos = undefined;
++  state.memberDataUnits = 0;
+ }
+ 
+ export function getHostObjectMember(value: SandboxObject, key: string | symbol): SandboxValue {
+@@ -424,12 +432,7 @@
+ }
+ 
+ export function measureHostObjectData(value: SandboxObject): number {
+-  const state = guestObjects.get(value)!;
+-  let size = state.indexed === undefined ? 0 : 16;
+-  if (state.named !== undefined) size += 24;
+-  for (const key of state.properties.keys()) size += key.length + 1;
+-  for (const key of state.methods.keys()) size += key.length + 1;
+-  return size;
++  return guestObjects.get(value)!.memberDataUnits;
+ }
+ 
+ export function getHostObjectIterator(value: SandboxObject): SandboxIterator | undefined {
+@@ -575,7 +578,13 @@
+   return state.expandos ? Object.getOwnPropertySymbols(state.expandos.values) : [];
+ }
+ 
++// Read the current root without allocating a temporary singleton per traversal.
++// The mutable expando table itself must still be measured on every pass.
++export function hostObjectGuestRoot(value: HostObject | SandboxObject): SandboxObject | undefined {
++  return (hostObjects.get(value) ?? guestObjects.get(value)!).expandos?.values;
++}
++
+ export function hostObjectGuestRoots(value: HostObject | SandboxObject): SandboxValue[] {
+-  const state = hostObjects.get(value) ?? guestObjects.get(value)!;
+-  return state.expandos ? [state.expandos.values] : [];
+-}
++  const root = hostObjectGuestRoot(value);
++  return root === undefined ? [] : [root];
++}
+diff --git a/src/interp/values.ts b/src/interp/values.ts
+--- a/src/interp/values.ts
++++ b/src/interp/values.ts
+@@ -57,7 +57,7 @@
+ import { isSandboxDurationFormat, durationFormatState } from "./intl-durationformat.js";
+ import { createRawJson, isRawJson } from "./raw-json.js";
+ import { boxedDataProperties, boxedValue, createSandboxBox, isSandboxBox, nativeBoxedValue } from "./boxed.js";
+-import { hostObjectGuestRoots, getHostObjectSymbolKeys, getHostObjectKeys, getHostObjectMember, hasHostObjectMember, measureHostObjectData, isGuestHostObject, isLiveCapability } from "./host-capabilities.js";
++import { hostObjectGuestRoot, getHostObjectSymbolKeys, getHostObjectKeys, getHostObjectMember, hasHostObjectMember, measureHostObjectData, isGuestHostObject, isLiveCapability } from "./host-capabilities.js";
+ import type { Budget, CompileOwner, CompileTicket } from "./budget.js";
+ import { types as nodeTypes } from "node:util";
+ import { nativePromiseDataProperties } from "./native-promise-properties.js";
+@@ -1125,7 +1125,8 @@
+         }
+         if (isGuestHostObject(value)) {
+           usage += measureHostObjectData(value);
+-          for (const root of hostObjectGuestRoots(value)) visit(root, depth + 1);
++          const root = hostObjectGuestRoot(value);
++          if (root !== undefined) visit(root, depth + 1);
+           break entry;
+         }
+         const prototype = getSandboxPrototype(value);
+diff --git a/src/interp/host-object-accounting-projection.test.ts b/src/interp/host-object-accounting-projection.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/interp/host-object-accounting-projection.test.ts
+@@ -0,0 +1,152 @@
++import { expect, it, vi } from "vitest";
++import { Budget, SandboxError } from "./budget.js";
++import { isTrackedPropertyTable } from "./object-model.js";
++import {
++  createLiveHostObject,
++  hostObjectGuestRoot,
++  hostObjectGuestRoots,
++  importHostCapability,
++  isGuestHostObject,
++  measureHostObjectData,
++  revokeHostObject,
++  type HostObjectController,
++  type HostObjectDefinition,
++} from "./host-capabilities.js";
++import {
++  createSandboxClosure,
++  measureSandboxData,
++  reconcileCompiledValues,
++  type SandboxValue,
++  type SandboxObject,
++} from "./values.js";
++
++function fixture(definition: HostObjectDefinition = {}) {
++  const owner = {};
++  const controller: HostObjectController = {
++    owner,
++    assertActive: vi.fn(),
++    chargeWork: vi.fn(),
++    chargeGuestData: vi.fn(),
++    checkLength: vi.fn(),
++    checkString: vi.fn(),
++    checkTemporaryDataSize: vi.fn(),
++    read: (operation) => operation() as SandboxValue,
++    write: (operation, value) => operation(value),
++    method: (operation) =>
++      createSandboxClosure({
++        call: (args) => operation(...args) as SandboxValue,
++      }),
++  };
++  const host = createLiveHostObject(definition, controller);
++  const guest = importHostCapability(host, owner);
++  if (!isGuestHostObject(guest)) throw new Error("Missing guest host object");
++  return { host, guest, owner, controller };
++}
++
++it("reuses copied member charges without enumerating maps on each pass", () => {
++  const { guest } = fixture({
++    properties: { value: { get: () => 1 } },
++    methods: { operate: () => undefined },
++  });
++  const keys = vi.spyOn(Map.prototype, "keys");
++  try {
++    expect(measureHostObjectData(guest)).toBe(14);
++    expect(measureHostObjectData(guest)).toBe(14);
++    expect(keys).not.toHaveBeenCalled();
++  } finally {
++    keys.mockRestore();
++  }
++});
++
++it("keeps charges independent of definition edits and native value reads", () => {
++  const read = vi.fn(() => 1);
++  const definition: HostObjectDefinition = {
++    properties: { value: { get: read } },
++    methods: { operate: () => undefined },
++    indexed: { length: read, get: read, maxLength: 2 },
++    named: { keys: () => [], get: read, maxKeys: 2, maxKeyCodeUnits: 16 },
++  };
++  const { guest } = fixture(definition);
++  definition.properties!.added = { get: read };
++  delete definition.methods!.operate;
++  expect(measureHostObjectData(guest)).toBe(54);
++  expect(measureSandboxData([guest])).toBe(55);
++  expect(read).not.toHaveBeenCalled();
++});
++
++it("reads the same live expando root without sharing mutable result arrays", () => {
++  const { host, guest } = fixture({
++    expandos: { maxKeys: 4, maxKeyCodeUnits: 32 },
++  });
++  const first = hostObjectGuestRoots(host);
++  const root = hostObjectGuestRoot(host);
++  expect(root).toBe(first[0]);
++  expect(hostObjectGuestRoot(guest)).toBe(root);
++  expect(hostObjectGuestRoots(host)).not.toBe(first);
++  first.length = 0;
++  expect(hostObjectGuestRoots(host)).toEqual([root]);
++  root!.payload = { text: "short" };
++  const before = measureSandboxData([guest]);
++  (root!.payload as { text: string }).text = "longer";
++  expect(measureSandboxData([guest])).toBe(before + 1);
++});
++
++it("tracks expando descriptors while remeasuring their mutable descendants", () => {
++  const { guest } = fixture({
++    expandos: { maxKeys: 4, maxKeyCodeUnits: 32 },
++  });
++  const root = hostObjectGuestRoots(guest)[0] as SandboxObject;
++  expect(isTrackedPropertyTable(root)).toBe(true);
++  const payload = { text: "short" };
++  root.payload = payload;
++  const before = measureSandboxData([guest]);
++  payload.text = "longer";
++  expect(measureSandboxData([guest])).toBe(before + 1);
++  root.payload = "replacement";
++  expect(measureSandboxData([guest])).toBe(21);
++  delete root.payload;
++  expect(measureSandboxData([guest])).toBe(2);
++});
++
++it("keeps fresh expando descendants and symbol payloads subject to quotas", () => {
++  const { guest } = fixture({
++    expandos: { maxKeys: 4, maxKeyCodeUnits: 32 },
++  });
++  const root = hostObjectGuestRoots(guest)[0] as Record<symbol, SandboxValue>;
++  const key = Symbol("payload");
++  const payload = { text: "short" };
++  root[key] = payload;
++  const budget = new Budget({ dataSize: 100 });
++  reconcileCompiledValues(budget, [guest]);
++  payload.text = "x".repeat(200);
++  expect(() => reconcileCompiledValues(budget, [guest])).toThrow(SandboxError);
++  delete root[key];
++  expect(() => reconcileCompiledValues(budget, [guest])).not.toThrow();
++});
++
++it("drops cached member charges and expando roots on revocation", () => {
++  const { host, guest, owner } = fixture({
++    properties: { value: { get: () => 1 } },
++    methods: { operate: () => undefined },
++    indexed: { length: () => 0, get: () => undefined, maxLength: 2 },
++    expandos: { maxKeys: 4, maxKeyCodeUnits: 32 },
++  });
++  (hostObjectGuestRoots(guest)[0] as SandboxObject).payload = "retained";
++  expect(measureHostObjectData(guest)).toBe(30);
++  revokeHostObject(host, owner);
++  expect(measureHostObjectData(guest)).toBe(0);
++  expect(hostObjectGuestRoots(host)).toEqual([]);
++  expect(measureSandboxData([guest])).toBe(1);
++});
++
++it("rejects foreign revocation without discarding accounting roots", () => {
++  const { host, guest } = fixture({
++    properties: { value: { get: () => 1 } },
++    expandos: { maxKeys: 4, maxKeyCodeUnits: 32 },
++  });
++  const root = hostObjectGuestRoots(guest)[0] as SandboxObject;
++  root.payload = "retained";
++  expect(() => revokeHostObject(host, {})).toThrow(TypeError);
++  expect(measureHostObjectData(guest)).toBe(6);
++  expect(hostObjectGuestRoots(guest)).toEqual([root]);
++});

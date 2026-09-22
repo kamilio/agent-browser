@@ -142,6 +142,34 @@
   retained-graph cost offline before changing accounting; full initialization,
   default 30 s/128 MB and every meeting/media acceptance gate remain open.
 
+- SDK live-host accounting reuses copied member-name charges and the existing
+  tracked property-table projections for private expando storage. Root collection
+  avoids temporary singleton arrays during measurement; mutable descendants,
+  symbol catalogue changes, private fields, depth limits and held primary graphs
+  remain fresh. Revocation clears charges and roots. Contribution:
+  safejs-host-object-accounting-projections.patch. Seven new contracts plus existing
+  expando/ownership/symbol/held-quota cases pass (84 focused SDK checks); four new
+  preservation contracts pass the exact saved source. Scoped core/test typing,
+  new-test format/lint and exact patch application/reversal pass. Compiled 128 MB
+  host-graph fixture warm CPU median improves 271.9 to 99.3 ms (~63%), charge 318464
+  unchanged. Compiled 512-host realm fixture improves 1056 to 419 ms (~60%), with
+  identical 2450 warm steps / 1010 current / 1763 peak and cleanup data zero.
+  The manual realm-root builder is rejected (about 32% CPU regression) and that
+  source/build are restored exactly. Actual native/SDK 128 MB fixture verifies
+  expando aliases/callbacks, parsed-node cloning and captured-parent getters;
+  cleanup data zero. Earlier local fingerprint profiles identify measurement/GC
+  cost; the intermediate candidate clears its classic call but collection still
+  times out, so no complete local fingerprint conformance/performance claim.
+  Latest live retry clears the earlier FingerprintJS 120 s timeout: its call
+  completes in 53.5 s / 89652 steps. All initial document scripts and externals
+  pass; seven modules prepare and the live import continues advancing, with counts
+  1 pending / 7 prepared / 0 fulfilled / 0 rejected after 204 s of import observation.
+  SDK/native builds must stay unchanged while this process is live. Temporary editor
+  tracing checks sourceReference, but module execution identifies its source through
+  scope.lookupModuleId; correct the trace only after the current probe terminates.
+  The 30 min observation bound and extended heap/time allowances remain diagnostic.
+  Default performance and every readiness/meeting/media gate remain open.
+
 - SDK intrinsic root caches now ignore writes to unrelated guest function tables.
   A weak membership set tracks tables captured by intrinsic retention groups;
   registered-table writes, prototype changes and baseline completion still invalidate
