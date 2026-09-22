@@ -116,17 +116,26 @@
   Actual offline PageScripts/DOM/SafeJS at 128 MB/16 s verifies timing, detail
   isolation, clears and termination; cleanup data/page callbacks zero. Full
   Performance prototype tables, resource/navigation timing and observers remain open.
-  The current authorized public net_thread.min.js diagnostic now enables bounded
-  WASM and uses Node24 JSPI against the maintained SDK. Asset fetch succeeds
-  (390978 units), but parent setup fails after 43698 shared steps with the SDK's
-  unknownHostObjectDefinitionField diagnostic; no child Worker/source completion
-  or binary instantiation occurs. Current host-capabilities.ts accepts only
-  properties/methods/indexed/named, while the enabled browser DOM expando policy
-  adds expandos. Next: reconcile bounded host-object expandos directly in SafeJS,
-  then rerun the public Worker with real WASM imports/initializer. Cleanup tracked
-  data/page callbacks/active requests zero. The earlier scratch SDK reached missing
-  WASM after 103.5 s/943701 steps; that is not maintained-SDK initialization or a
-  default startup pass. Joining, media and notetaker acceptance remain open.
+  Maintained SafeJS now accepts opt-in bounded host-object expandos, preserving
+  guest graph/closure/symbol identity, publisher lifetime checks and full retained
+  accounting. All 232 selected host/reflection/data checks, SDK build/eight entries,
+  strict new-test typing and scoped lint/format pass. Actual native DOM probe passes
+  all 18 checks. Local poe-code commit 3c9d4a6b5; no push.
+  Public net_thread.min.js (390978 units) now clears parent setup and enters its
+  child Worker with bounded WASM enabled. Source completion/readiness still fails:
+  30 s diagnostic reaches 887672 shared steps; 120 s reaches 903467. The longer
+  child evaluation settles after 167166 ms, so the diagnostic timeout is not a
+  strict wall bound. Child failure carries no bounded error identifier after owner
+  close, so these runs identify no specific guest fault. Cleanup tracked data/page
+  callbacks/active requests zero in both runs. Maintained result-discard support now
+  honors the native Worker's existing option without exporting its completion value;
+  effects, full accounting and fatal errors remain active. All 15 new checks and 201
+  selected existing regressions, strict typing/lint/format, SDK build/eight entries
+  and actual offline allowed/denied page/Blob Worker WASM probes pass; cleanup data
+  zero. Local poe-code commit 37e36fc17; public timing results predate this fix.
+  Next: investigate bounded startup/accounting cost and deadline delivery before
+  real WASM imports/initializer and meeting/media gates. These diagnostic allowances
+  clear no default startup or notetaker gate.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
