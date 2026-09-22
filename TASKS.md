@@ -23,6 +23,13 @@
 
 ## Current verified state
 
+- The corrected full-client diagnostic terminates at its 30 min import observation
+  bound: HTTP 200, all 13 classic scripts pass, seven modules prepared, one import
+  pending and none fulfilled or rejected. Last progress: 9257860 steps / 13156669
+  current data units. No application exception, readiness or join is established.
+  Zero socket attempts; cleanup closes the realm with accounted data zero. The
+  768 MB/120 s diagnostic allowances clear no default timing or heap gate.
+
 - Exact public module parsing verifies a separate default-heap blocker. Under
   128 MB, editor-core parses in 1.8 s and retains 71393848 heap bytes beyond its
   28617192-byte baseline (1396344 steps / 2101 statements). The larger loginview
@@ -32,7 +39,7 @@
   These are parse-only measurements, not full client/default timing or meeting
   proofs. No optimization is retained; source tree storage is the relevant memory
   target, not the smaller classic-source node index. Probe processes terminate,
-  no artifacts remain, and the current full-client runtime/build stay unchanged.
+  no artifacts remain, and the full-client runtime/build stay unchanged.
 
 - Host-result allocation now excludes prototype graphs already owned by the
   realm; primary reconciliation still traverses those mutable retained roots.
@@ -46,9 +53,9 @@
   All 193 selected SDK checks, strict scoped typing/build, new-test format/lint and
   exact patch application/reversal pass. The corrected live retry clears fingerprint/
   config: 190783 current / 1022045 peak units after config, versus the linked
-  regression above 16 Mi units. Later client initialization remains active under
-  768 MB/120 s diagnostic allowances. No default, full initialization, meeting or
-  media gate is cleared; retain the prototype fix and investigate the live outcome.
+  regression above 16 Mi units. The completed retry's module outcome is above.
+  No default, full initialization, meeting or media gate is cleared; retain the
+  prototype fix and investigate compiler memory and retained-graph evaluation cost.
 
 - Owned guest prototype links on SafeJS live host objects now fix the exact Zoom
   editor focus wrapper: ordinary HTML input.focus invokes the current prototype
@@ -1225,6 +1232,9 @@
   and broader DOM/library compatibility still require work. Diagnostic
   heap/time/response allowances do not clear default 128 MB, interactive readiness
   or meeting gates. Fetch completion and green classic reports prove no readiness.
+  Loginview alone now exhausts 128 MB during parsing; the corrected full-client
+  retry also remains pending at 30 min under its larger diagnostic heap. Eager
+  syntax-tree storage and retained-graph evaluation cost both require further work.
 
 - Background dynamic imports outlive the classic evaluation's PageScripts timer.
   The realm graph has document cancellation and shared step/data limits, but no
@@ -1240,9 +1250,11 @@
   AudioContext, MediaRecorder, navigator.mediaDevices/getUserMedia, Worker,
   WebAssembly and canvas getContext; cleanup data zero. The bounded canvas 2D
   subset above now passes its own adapter probe; full canvas rendering remains open.
-  The working recorder uses
-  media-device capture and AudioWorklet processing; native PCM chunk handling is
-  not a Zoom audio source. Media transport/rendering APIs need implementation,
+  The working recorder captures tab audio through getDisplayMedia and processes
+  it through an AudioWorklet at 16000 Hz; it verifies a browser surface, one audio
+  track and disabled audio processing. Native getDisplayMedia and this actual audio
+  source remain unimplemented; native PCM chunk handling is not a Zoom audio source.
+  Media transport/rendering APIs need implementation,
   separately from initialization performance and later live acceptance.
 - Baseline parser else-if nesting raises RangeError before its intended syntax
   limit diagnostic. Default-stack dataDepth for direct symbol descendants, closure property
