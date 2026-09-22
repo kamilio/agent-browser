@@ -23,6 +23,21 @@
 
 ## Current verified state
 
+- Child Workers now reuse the bounded native performance clock and user timing:
+  monotonic/coarsened now/timeOrigin, marks/measures, isolated JSON details and
+  lifetime cleanup. All 556 selected native checks across ten manifest-listed
+  files, native build, strict Worker-test typing and changed-file lint/format pass.
+  Actual offline PageScripts/DOM/SafeJS at 128 MB/16 s verifies timing, detail
+  isolation, clears and termination; cleanup data/page callbacks zero. Full
+  Performance prototype tables, resource/navigation timing and observers remain open.
+  The public network Worker, configured with Zoom's published marker replacement
+  and loaded as a no-type Blob with immediate URL revocation, progresses past timing
+  and wrapper flags but fails at missing WebAssembly after 103.5 s (943701 shared
+  steps) in a 128 MB/120 s diagnostic. Source completion is not reached; early status
+  131 is not readiness. Cleanup data/callbacks/active requests zero. This clears no
+  default 30 s, full-client, joining or media gate. The next targets remain
+  WebAssembly and full retained-graph accounting cost.
+
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
   sender detachment. Up to 64 entries/65536 initial buffer bytes are admitted;

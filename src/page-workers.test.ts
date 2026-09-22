@@ -27,6 +27,7 @@ afterEach(async () => {
 });
 function owner(signal = new AbortController().signal, copyArguments = true) {
 	const cleanup: (() => void | Promise<void>)[] = [];
+	const objects: { value: object; definition: ReleasedHostDefinition }[] = [];
 	const retained = new WeakMap<object, number>();
 	const releaseCallback = vi.fn();
 	const context: ReleasedContext = {
@@ -46,6 +47,7 @@ function owner(signal = new AbortController().signal, copyArguments = true) {
 		},
 		createHostObject(definition: ReleasedHostDefinition) {
 			const object = Object.create(null);
+			objects.push({ value: object, definition });
 			for (const [name, property] of Object.entries(
 				definition.properties ?? {},
 			))
@@ -86,6 +88,7 @@ function owner(signal = new AbortController().signal, copyArguments = true) {
 	};
 	return {
 		context,
+		objects,
 		releaseCallback,
 		async close() {
 			for (const fn of cleanup.splice(0).reverse()) await fn();
@@ -829,4 +832,68 @@ it("bounds transferred bytes and list iteration before committing ownership loss
 	).toThrow(/limit/i);
 	expect(test.evaluate("small.byteLength")).toBe(1);
 	expect(test.workers.metrics().pending).toBe(0);
+});
+
+it("exposes an owned monotonic Worker performance clock and cancels it on termination", async () => {
+	const test = fixture();
+	test.evaluate("var received;");
+	test.start(
+		"const before=performance.now();setTimeout(()=>{const after=performance.now();postMessage([performance.timeOrigin,performance.toJSON().timeOrigin,before,after]);},5);",
+	);
+	test.evaluate("worker.onmessage=e=>received=e.data;");
+	await vi.waitFor(() => expect(test.evaluate("received")).toBeDefined());
+	const received = test.evaluate("received") as number[];
+	expect(received[0]).toBeGreaterThan(0);
+	expect(received[1]).toBe(received[0]);
+	expect(received[2]).toBeGreaterThanOrEqual(0);
+	expect(received[3]).toBeGreaterThanOrEqual(received[2]);
+	for (const value of received)
+		expect(Math.abs(value * 10 - Math.round(value * 10))).toBeLessThan(0.01);
+	const capability = test.children[0].objects.find(
+		(object) => object.definition.methods?.now,
+	)?.value as {
+		now(): number;
+		readonly timeOrigin: number;
+		mark(name: string): unknown;
+	};
+	expect(capability.now()).toBeGreaterThanOrEqual(received[3]);
+	test.evaluate("worker.terminate();");
+	await vi.waitFor(() => expect(() => capability.now()).toThrow(/closed/i));
+	expect(() => capability.timeOrigin).toThrow(/closed/i);
+	expect(() => capability.mark("late")).toThrowError(
+		expect.objectContaining({ code: "closed" }),
+	);
+});
+
+it("keeps bounded Worker marks/measures isolated and releases timing entries on page close", async () => {
+	const test = fixture();
+	test.evaluate("var received;");
+	test.start(
+		"performance.mark('start',{startTime:2,detail:{value:7}});const span=performance.measure('span',{start:'start',end:5});const entries=performance.getEntriesByName('start');const detail=entries[0].detail;detail.value=9;postMessage([span.toJSON(),performance.getEntriesByName('start')[0].detail,performance.getEntriesByType('navigation').length]);performance.clearMarks();performance.clearMeasures();postMessage(performance.getEntries().length);",
+	);
+	test.evaluate("var received=[];worker.onmessage=e=>received.push(e.data);");
+	await vi.waitFor(() =>
+		expect(test.evaluate("received")).toEqual([
+			[
+				{
+					name: "span",
+					entryType: "measure",
+					startTime: 2,
+					duration: 3,
+					detail: null,
+				},
+				{ value: 7 },
+				0,
+			],
+			0,
+		]),
+	);
+	const capability = test.children[0].objects.find(
+		(object) => object.definition.methods?.now,
+	)?.value as { getEntries(): unknown[] };
+	await test.close();
+	expect(() => capability.getEntries()).toThrowError(
+		expect.objectContaining({ code: "closed" }),
+	);
+	expect(test.units.size).toBe(0);
 });

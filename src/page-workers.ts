@@ -7,6 +7,7 @@ import {
 import { AgentBrowserError } from "./errors.js";
 import type { PageBlobs } from "./page-blobs.js";
 import { PageBlobs as WorkerBlobs } from "./page-blobs.js";
+import { PageClock, createPagePerformance } from "./page-performance.js";
 import { PageTimers } from "./page-timers.js";
 import { PageUrls } from "./page-urls.js";
 import { workerGlobalBootstrapSource } from "./page-worker-bootstrap.js";
@@ -447,6 +448,9 @@ export class PageWorkers {
 			setup: (context) => {
 				record.context = context;
 				const identity = this.identity;
+				const clock = new PageClock();
+				context.onCleanup(() => clock.close());
+				const performance = createPagePerformance(context, clock);
 				const urls = new PageUrls(context);
 				const blobs = new WorkerBlobs(
 					context,
@@ -510,6 +514,7 @@ export class PageWorkers {
 								urls: { get: () => urls.port },
 								blobs: { get: () => blobs.port },
 								name: { get: () => record.name },
+								performance: { get: () => performance },
 								navigator: {
 									get: () => ({
 										userAgent: identity.userAgent,

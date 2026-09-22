@@ -170,6 +170,7 @@ export const workerGlobalBootstrapSource = `(() => {
  const navigator = {userAgent:identity.userAgent,language:identity.language,languages:Object.freeze(identity.languages)};
  define(navigator,Symbol.toStringTag,{value:'WorkerNavigator',configurable:true});
  define(globalThis,'navigator',{value:Object.freeze(navigator),configurable:true});
+ define(globalThis,'performance',{value:api.performance,writable:true,configurable:true});
  define(globalThis,'importScripts',{value:function importScripts(...urls) {if(urls.length>32) throw new RangeError('Worker import argument limit exceeded'); const converted=[]; for(const url of urls) apply(push,converted,[text(url)]); return api.importScripts(converted);},writable:true,configurable:true});
  define(globalThis,'postMessage',{value:function postMessage(data,options=undefined) {if(arguments.length===0) throw new TypeError('Missing Worker message'); if(api.accepting) api.post(copied(data,options));},writable:true,configurable:true});
  define(globalThis,'close',{value:()=>api.close(),writable:true,configurable:true});
