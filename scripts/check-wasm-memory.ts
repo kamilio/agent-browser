@@ -151,16 +151,27 @@ if (!process.argv.includes("--isolated-probe")) {
 		0,
 		0,
 		0,
-		...section(1, [2, 96, 0, 1, 127, 96, 1, 127, 0]),
+		...section(1, [3, 96, 0, 1, 127, 96, 1, 127, 0, 96, 1, 127, 1, 127]),
 		...section(2, [1, 3, 101, 110, 118, 1, 109, 2, 1, 1, 128, 16]),
-		...section(3, [2, 0, 1]),
-		...section(7, [2, 4, 108, 111, 97, 100, 0, 0, 4, 115, 97, 118, 101, 0, 1]),
+		...section(3, [3, 0, 1, 2]),
+		...section(
+			7,
+			[
+				3, 4, 108, 111, 97, 100, 0, 0, 4, 115, 97, 118, 101, 0, 1, 4, 103, 114,
+				111, 119, 0, 2,
+			],
+		),
 		...section(
 			10,
-			[2, 7, 0, 65, 0, 45, 0, 0, 11, 9, 0, 65, 0, 32, 0, 58, 0, 0, 11],
+			[
+				3, 7, 0, 65, 0, 45, 0, 0, 11, 9, 0, 65, 0, 32, 0, 58, 0, 0, 11, 6, 0,
+				32, 0, 64, 0, 11,
+			],
 		),
 	]);
-	const metered = meterWasmModule(input);
+	const metered = meterWasmModule(input, { guardMemoryGrowth: true });
+	if (!metered.memoryGrowImportName) throw new Error("Missing growth hook");
+	const growthName = metered.memoryGrowImportName;
 	if (!WebAssembly.validate(metered.originalBytes as BufferSource))
 		throw new Error("Invalid original fixture");
 	let realm: ReleasedRealm | undefined;
@@ -195,6 +206,11 @@ if (!process.argv.includes("--isolated-probe")) {
 								[metered.importName]: () => budget.visitNode(),
 								[metered.enterImportName]: () => depth.enter(),
 								[metered.leaveImportName]: () => depth.leave(),
+								[growthName]: (delta: number) => {
+									if (!memories || depth.depth === 0)
+										throw new Error("Unowned memory growth");
+									return memories.wasmGrow(handle, delta);
+								},
 							},
 						},
 					),
@@ -249,6 +265,35 @@ if (!process.argv.includes("--isolated-probe")) {
 			throw new Error("Owned memory growth failed");
 		if (depth.run(() => (wasm.exports.load as () => number)()) !== 99)
 			throw new Error("WASM lost memory after growth");
+		stage = "native-growth";
+		if (
+			depth.run(() => (wasm.exports.grow as (delta: number) => number)(1)) !==
+			pages + 1
+		)
+			throw new Error("Native growth result failed");
+		const nativeGrown = await realm.evaluate(
+			"return [next.byteLength,memory.buffer.byteLength,new Uint8Array(memory.buffer)[0]];",
+		);
+		if (
+			!nativeGrown.ok ||
+			JSON.stringify(nativeGrown.returnValue) !==
+				JSON.stringify([0, (pages + 2) * 65536, 99])
+		)
+			throw new Error("Native growth did not refresh live views");
+		if (
+			depth.run(() => (wasm.exports.grow as (delta: number) => number)(-1)) !==
+			-1
+		)
+			throw new Error("Native growth maximum failure semantics failed");
+		const preserved = await realm.evaluate(
+			"return [memory.buffer.byteLength,new Uint8Array(memory.buffer)[0]];",
+		);
+		if (
+			!preserved.ok ||
+			JSON.stringify(preserved.returnValue) !==
+				JSON.stringify([(pages + 2) * 65536, 99])
+		)
+			throw new Error("Native failed growth changed storage");
 		const wrapped = await realm.evaluate(
 			"return (()=>{const m=new WebAssembly.Memory({initial:1,maximum:2});const b=m.buffer;new Uint8Array(b)[0]=42;const p=m.grow(1);const next=m.buffer;const bytes=new Uint8Array(next);const zero=m.grow(0);return [p,b.byteLength,bytes.length,zero,next.byteLength,m.buffer.byteLength,new Uint8Array(m.buffer)[0],m instanceof WebAssembly.Memory];})();",
 		);
@@ -304,6 +349,7 @@ if (!process.argv.includes("--isolated-probe")) {
 				guestToWasm,
 				wasmToGuest,
 				ownedMemories: memories?.metrics(),
+				guardedGrowthInstructions: metered.memoryGrowInstructions,
 				failure,
 				passed,
 				cleanup: {

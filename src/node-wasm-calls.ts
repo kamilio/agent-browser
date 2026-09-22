@@ -21,6 +21,7 @@ interface MeterNames {
 	importName: string;
 	enterImportName: string;
 	leaveImportName: string;
+	memoryGrowImportName?: string;
 }
 const maxCalls = 64;
 const maxArguments = 4096;
@@ -100,9 +101,26 @@ export class NodeWasmCalls {
 			throw new AgentBrowserError("invalid-input", "Unowned WASM call");
 		return frame;
 	}
-	meterImports(names: MeterNames): WebAssembly.Imports {
+	meterImports(
+		names: MeterNames,
+		grow?: (delta: number) => number,
+	): WebAssembly.Imports {
+		const growth: Record<string, (delta: number) => number> = {};
+		if (names.memoryGrowImportName !== undefined) {
+			if (typeof grow !== "function")
+				throw new AgentBrowserError(
+					"invalid-input",
+					"Guarded WASM requires a memory growth hook",
+				);
+			growth[names.memoryGrowImportName] = (delta) => {
+				this.frame();
+				this.budget.visitNode();
+				return grow(delta);
+			};
+		}
 		return {
 			[names.importModule]: {
+				...growth,
 				[names.importName]: () => {
 					this.frame();
 					this.budget.visitNode();

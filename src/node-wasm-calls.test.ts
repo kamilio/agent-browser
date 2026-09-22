@@ -280,3 +280,30 @@ it("bounds concurrent entries before starting another callback", async () => {
 	expect(f.current).toBe(2);
 	expect(f.calls.callDepth).toBe(0);
 });
+
+it("requires an owned guarded-growth hook and propagates quota errors", async () => {
+	const f = fixture();
+	const names = {
+		importModule: "growth",
+		importName: "step",
+		enterImportName: "enter",
+		leaveImportName: "leave",
+		memoryGrowImportName: "grow",
+	};
+	expect(() => f.calls.meterImports(names)).toThrow(/growth hook/);
+	const received: number[] = [];
+	const hook = f.calls.meterImports(names, (delta) => {
+		received.push(delta);
+		return 1;
+	}).growth.grow as (delta: number) => number;
+	expect(() => hook(1)).toThrow(/Unowned/);
+	expect(received).toEqual([]);
+	expect(await f.calls.invoke(() => hook(1))).toBe(1);
+	expect(received).toEqual([1]);
+	const fail = f.calls.meterImports(names, () => {
+		throw new RangeError("memory quota");
+	}).growth.grow as (delta: number) => number;
+	await expect(f.calls.invoke(() => fail(1))).rejects.toThrow(/memory quota/);
+	expect(f.calls.pendingCalls).toBe(0);
+	await f.calls.close();
+});

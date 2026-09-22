@@ -219,3 +219,33 @@ it("bounds repeated grow(0) calls without retaining detached buffer references",
 	expect(f.references.size).toBe(1);
 	f.owner.close();
 });
+
+it("implements WASM signed-i32 growth and returns -1 for maximum failure without detaching", () => {
+	const f = fixture();
+	const handle = f.owner.createMemory(1, 2);
+	const memory = f.owner.nativeMemory(handle);
+	if (!memory) throw new Error("Missing native memory");
+	const original = memory.buffer;
+	expect(f.owner.wasmGrow(handle, -1)).toBe(-1);
+	expect(memory.buffer).toBe(original);
+	expect(f.owner.wasmGrow(handle, 1)).toBe(1);
+	expect(original.byteLength).toBe(0);
+	const grown = memory.buffer;
+	expect(f.owner.wasmGrow(handle, 1)).toBe(-1);
+	expect(memory.buffer).toBe(grown);
+	expect(f.owner.wasmGrow(handle, 0)).toBe(2);
+	expect(grown.byteLength).toBe(0);
+	f.owner.close();
+});
+it("fails WASM quota exhaustion before mutation and rejects foreign handles", () => {
+	const f = fixture(65536);
+	const handle = f.owner.createMemory(1, 3);
+	const memory = f.owner.nativeMemory(handle);
+	if (!memory) throw new Error("Missing native memory");
+	const original = memory.buffer;
+	expect(() => f.owner.wasmGrow(handle, 1)).toThrow(/quota/);
+	expect(memory.buffer).toBe(original);
+	expect(() => f.owner.wasmGrow({}, 0)).toThrow(/Unowned/);
+	expect(() => f.owner.wasmGrow(handle, 2 ** 32)).toThrow(/i32/);
+	f.owner.close();
+});

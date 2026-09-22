@@ -29,7 +29,7 @@ function pages(value: unknown): number {
 	return value;
 }
 /** Owns unshared wasm32 memory and live realm references. Module admission must
- * separately intercept/reject memory.grow instructions before exposing exports.
+ * route memory.grow instructions through wasmGrow before exposing exports.
  * This owner is not a page API installer or a WASM execution boundary.
  */
 export class NodeWasmMemories {
@@ -128,18 +128,27 @@ export class NodeWasmMemories {
 			throw error;
 		}
 	}
-	private grow(record: MemoryRecord, input: unknown): number {
+	private grow(
+		record: MemoryRecord,
+		input: unknown,
+		wasmInstruction = false,
+	): number {
 		this.ensureOpen();
 		const delta = pages(input);
 		if (this.growCalls >= wasmMemoryLimits.growCalls) this.limited();
 		this.growCalls++;
 		const next = record.pages + delta;
-		if (next > record.maximum)
+		if (next > record.maximum) {
+			if (wasmInstruction) return -1;
 			throw new RangeError("WASM memory maximum exceeded");
+		}
 		const release = this.provision(next, delta);
 		let previous: number;
 		try {
 			previous = record.memory.grow(delta);
+		} catch (error) {
+			if (wasmInstruction && error instanceof RangeError) return -1;
+			throw error;
 		} finally {
 			release();
 		}
@@ -158,6 +167,20 @@ export class NodeWasmMemories {
 			this.close();
 			throw error;
 		}
+	}
+	wasmGrow(handle: unknown, input: unknown): number {
+		this.ensureOpen();
+		const record = this.records.get(handle as object);
+		if (!record)
+			throw new AgentBrowserError("invalid-input", "Unowned WASM memory");
+		if (
+			typeof input !== "number" ||
+			!Number.isInteger(input) ||
+			input < -2147483648 ||
+			input > 2147483647
+		)
+			throw new TypeError("WASM growth requires an i32 argument");
+		return this.grow(record, input >>> 0, true);
 	}
 	nativeMemory(handle: unknown): WebAssembly.Memory | undefined {
 		this.ensureOpen();

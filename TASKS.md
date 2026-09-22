@@ -62,17 +62,35 @@
   initialization and every joining/media gate remain open.
 
 - Bounded native WASM memory ownership and a reusable guest Memory wrapper now
-  pass 22 manifest-listed native checks, build, strict test typing and changed-file
+  pass 24 manifest-listed native checks, build, strict test typing and changed-file
   lint/format. Creation/growth preflight SDK array/data quotas, enforce eight-memory,
   2048-page aggregate and 4096-growth limits, retain one live reference per memory
   and revoke ownership on failed admission after irreversible growth. Actual offline
   SafeJS at 128 MiB passes one-page and 320-page fixtures: full aliases, guest/WASM
   writes, growth preserving bytes and detaching old views, guest constructor/grow(0),
   WASM reads after growth and cleanup memory/data/depth zero. The grown large fixture
-  retains 21168891 bytes under explicit 32 MiB quotas. This reusable bridge is not
-  installed into page/Worker globals yet. Module admission must intercept/reject
-  native memory.grow instructions, validate imports and prevent unowned memory
-  exports before integration; default quotas and all Zoom acceptance gates remain open.
+  now retains 21234428 bytes after both JS and guarded native growth under explicit
+  32 MiB quotas. This reusable bridge is not installed into page/Worker globals yet.
+  Module admission must require guarded instrumentation, validate imports and prevent
+  unowned memory exports before integration; default quotas and all Zoom gates remain open.
+
+- Portable instrumentation now optionally replaces every memory.grow with a reserved
+  i32 -> i32 hook; guarded modules reject multiple memories. NodeWasmCalls requires
+  the hook and checks execution ownership/steps; NodeWasmMemories accepts signed i32
+  deltas, returns -1 on maximum/native allocation failure and enforces SDK quotas
+  before allocation. All 77 focused checks across three manifest-listed files,
+  browser build, strict test typing and changed-file lint/format pass. Existing
+  execution fixtures now exercise guarded function/type indices, calls, globals,
+  elements, indirect calls, starts, exits and multi-value wrappers. Offline actual
+  SDK/WASM fixtures pass one/320 pages, native growth preserving bytes and refreshing
+  views, maximum failure and cleanup zero. Actual Node24 JSPI passes growth during
+  guest-callback reentry (97 steps, depth five, 21037629 retained bytes), cancellation
+  and prior step/depth/deadline cases; cleanup data/depth/pending/memory zero. Current
+  public net.wasm (465602 bytes) has zero native growth instructions; guarded output
+  888011 bytes/205697 checks validates in 35 ms, no instantiation and zero active
+  requests. Original validation remains required. Admission for imports, table/global
+  allocation and owned memory exports, page/Worker integration, initialization and
+  every joining/media acceptance gate remain open.
 
 - Portable WASM binary instrumentation now inserts reserved step/enter/leave imports.
   Typed outer blocks route returns and function-target branches through depth cleanup;

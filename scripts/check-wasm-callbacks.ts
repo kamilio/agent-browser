@@ -1,5 +1,9 @@
 import { loadPageRuntime } from "../src/node-page-core.js";
 import { NodeWasmCalls } from "../src/node-wasm-calls.js";
+import {
+	NodeWasmMemories,
+	type WasmMemoryBudget,
+} from "../src/node-wasm-memories.js";
 import type { ReleasedCore } from "../src/safejs-extension-types.js";
 import { meterWasmModule } from "../src/wasm-metering.js";
 
@@ -26,11 +30,12 @@ await loadPageRuntime(
 if (!core) throw new Error("SafeJS core was not loaded");
 const sdk = core;
 type WasmFunction = (...args: (number | bigint)[]) => unknown;
-type ProbeBudget = InstanceType<ReleasedCore["Budget"]> & {
-	visitNode(): void;
-	enterCall(): () => void;
-	readonly currentDataSize: number;
-};
+type ProbeBudget = InstanceType<ReleasedCore["Budget"]> &
+	WasmMemoryBudget & {
+		visitNode(): void;
+		enterCall(): () => void;
+		readonly currentDataSize: number;
+	};
 function budget(maxSteps = 100000, maxCallDepth = 64): ProbeBudget {
 	return new sdk.Budget({
 		maxSteps,
@@ -65,26 +70,29 @@ const original = Uint8Array.from([
 			2, 128, 4,
 		],
 	),
-	...section(3, [2, 0, 1]),
+	...section(3, [3, 0, 1, 1]),
 	...section(
 		7,
-		[2, 3, 114, 117, 110, 0, 1, 6, 104, 101, 108, 112, 101, 114, 0, 2],
+		[
+			3, 3, 114, 117, 110, 0, 1, 6, 104, 101, 108, 112, 101, 114, 0, 2, 4, 103,
+			114, 111, 119, 0, 3,
+		],
 	),
 	...section(
 		10,
 		[
-			2, 17, 0, 65, 0, 16, 0, 58, 0, 0, 65, 0, 45, 0, 0, 65, 1, 106, 11, 7, 0,
-			32, 0, 65, 1, 106, 11,
+			3, 17, 0, 65, 0, 16, 0, 58, 0, 0, 65, 0, 45, 0, 0, 65, 1, 106, 11, 7, 0,
+			32, 0, 65, 1, 106, 11, 6, 0, 32, 0, 64, 0, 11,
 		],
 	),
 ]);
-const metered = meterWasmModule(original);
+const metered = meterWasmModule(original, { guardMemoryGrowth: true });
 ensure(
 	WebAssembly.validate(metered.originalBytes as BufferSource),
 	"Invalid original callback fixture",
 );
 const module = new WebAssembly.Module(metered.bytes as BufferSource);
-const memory = new WebAssembly.Memory({ initial: 320, maximum: 512 });
+
 const reports: unknown[] = [];
 for (const cancel of [false, true]) {
 	const quota = budget();
@@ -95,6 +103,8 @@ for (const cancel of [false, true]) {
 		16000,
 	);
 	let instance: WebAssembly.Instance | undefined;
+	let memory: WebAssembly.Memory | undefined;
+	let memories: NodeWasmMemories | undefined;
 	let callback: unknown;
 	let entered!: () => void;
 	const parked = new Promise<void>((resolve) => {
@@ -114,11 +124,17 @@ for (const cancel of [false, true]) {
 				"Selected SDK lacks full callback or live-buffer support",
 			);
 			context.onCleanup(() => calls.close());
-			const reference = context.createArrayBufferReference(memory.buffer);
+			memories = new NodeWasmMemories(context, quota);
+			context.onCleanup(() => memories?.close());
+			const handle = memories.createMemory(320, 512);
+			memory = memories.nativeMemory(handle);
+			ensure(memory, "Missing owned fixture memory");
+			const nativeMemory = memory;
+			const memoryOwner = memories;
 			return {
 				globals: {
 					port: context.createHostObject({
-						properties: { buffer: { get: () => reference } },
+						properties: { memory: { get: () => handle } },
 						methods: {
 							install: (value) => {
 								ensure(
@@ -129,9 +145,11 @@ for (const cancel of [false, true]) {
 								instance = calls.instantiate(
 									() =>
 										new WebAssembly.Instance(module, {
-											...calls.meterImports(metered),
+											...calls.meterImports(metered, (delta) =>
+												memoryOwner.wasmGrow(handle, delta),
+											),
 											env: {
-												m: memory,
+												m: nativeMemory,
 												cb: calls.suspending(() =>
 													invoke(callback),
 												) as WebAssembly.ImportValue,
@@ -142,6 +160,15 @@ for (const cancel of [false, true]) {
 							run: context.nestedOperation(() => {
 								ensure(instance, "Callback fixture is not installed");
 								return calls.invoke(instance.exports.run as WasmFunction);
+							}),
+							grow: context.nestedOperation((value) => {
+								ensure(
+									instance && typeof value === "number",
+									"Invalid growth argument",
+								);
+								return calls.invoke(instance.exports.grow as WasmFunction, [
+									value,
+								]);
 							}),
 							helper: context.nestedOperation((value) => {
 								ensure(
@@ -172,8 +199,8 @@ for (const cancel of [false, true]) {
 	let failure: unknown;
 	try {
 		const source = cancel
-			? "const bytes=new Uint8Array(port.buffer);port.install(()=>{bytes[0]=40;return port.park();});return port.run();"
-			: "const bytes=new Uint8Array(port.buffer);let count=0;port.install(()=>{count++;bytes[0]=40;return port.helper(40);});const value=port.run();return [value,bytes[0],value instanceof Promise,count];";
+			? "const bytes=new Uint8Array(port.memory.buffer);port.install(()=>{bytes[0]=40;return port.park();});return port.run();"
+			: "const bytes=new Uint8Array(port.memory.buffer);let count=0;port.install(()=>{count++;bytes[0]=40;port.grow(1);return port.helper(40);});const value=port.run();return [value,new Uint8Array(port.memory.buffer)[0],value instanceof Promise,count,bytes.length];";
 		const execution = realm.evaluate(source);
 		void execution.catch(() => {});
 		if (cancel) {
@@ -186,6 +213,7 @@ for (const cancel of [false, true]) {
 		} catch (error) {
 			failure = error;
 		}
+		ensure(memory, "Fixture memory was not initialized");
 		if (cancel) {
 			ensure(
 				failure instanceof Error &&
@@ -199,7 +227,7 @@ for (const cancel of [false, true]) {
 		} else {
 			const value = outcome as { ok?: boolean; returnValue?: unknown };
 			ensure(
-				value.ok && JSON.stringify(value.returnValue) === "[42,41,false,1]",
+				value.ok && JSON.stringify(value.returnValue) === "[42,41,false,1,0]",
 				"WASM callback result or guest synchronous return failed",
 			);
 			ensure(
@@ -216,7 +244,11 @@ for (const cancel of [false, true]) {
 			"WASM call ownership leaked",
 		);
 		reports.push({
-			case: cancel ? "cancel-suspended-import" : "guest-callback-reentry",
+			case: cancel
+				? "cancel-suspended-import"
+				: "guest-callback-reentry-and-growth",
+			bytes: memory.buffer.byteLength,
+			growthCalls: memories?.metrics().growCalls,
 			passed: true,
 			steps: quota.stepsUsed,
 			peakCallDepth: quota.peakCallDepth,
@@ -229,7 +261,8 @@ for (const cancel of [false, true]) {
 		ensure(
 			quota.currentDataSize === 0 &&
 				calls.pendingCalls === 0 &&
-				calls.callDepth === 0,
+				calls.callDepth === 0 &&
+				memories?.metrics().memories === 0,
 			"Callback fixture cleanup leaked",
 		);
 	}
@@ -301,7 +334,7 @@ console.log(
 	JSON.stringify({
 		scope: "Offline actual JSPI/SafeJS callback and reentry",
 		node: process.version,
-		bytes: memory.buffer.byteLength,
+		initialBytes: 20971520,
 		passed: true,
 		reports,
 		cleanup: { currentDataSize: 0, depth: 0, pending: 0 },

@@ -55,7 +55,7 @@ function instantiate(
 	depth?: WasmCallDepth,
 ) {
 	expect(WebAssembly.validate(bytes as BufferSource)).toBe(true);
-	const metered = meterWasmModule(bytes);
+	const metered = meterWasmModule(bytes, { guardMemoryGrowth: true });
 	expect(WebAssembly.validate(metered.originalBytes as BufferSource)).toBe(
 		true,
 	);
@@ -69,6 +69,9 @@ function instantiate(
 					[metered.importName]: step,
 					[metered.enterImportName]: () => depth?.enter(),
 					[metered.leaveImportName]: () => depth?.leave(),
+					[metered.memoryGrowImportName ?? "missing_growth_hook"]: () => {
+						throw new Error("Unadmitted memory growth");
+					},
 				},
 			},
 		);
@@ -523,4 +526,97 @@ it("unwinds asynchronous rejection and refuses overlapping entries on one depth 
 	expect(owner.current).toBe(2);
 	expect(owner.depth.depth).toBe(0);
 	expect(owner.depth.run(() => 42)).toBe(42);
+});
+
+it("routes memory.grow through the guarded import without invoking native growth", () => {
+	const input = moduleBytes(
+		section(1, [1, 0x60, 1, 0x7f, 1, 0x7f]),
+		section(2, [1, ...string("env"), ...string("m"), 2, 1, 1, 3]),
+		section(3, [1, 0]),
+		section(7, [1, ...string("run"), 0, 0]),
+		section(10, [1, 6, 0, 0x20, 0, 0x40, 0, 0x0b]),
+	);
+	expect(WebAssembly.validate(input as BufferSource)).toBe(true);
+	const metered = meterWasmModule(input, { guardMemoryGrowth: true });
+	expect(metered.memoryGrowImportName).toBe("memory_grow");
+	expect(metered.memoryGrowInstructions).toBe(1);
+	expect(WebAssembly.validate(metered.bytes as BufferSource)).toBe(true);
+	const memory = new WebAssembly.Memory({ initial: 1, maximum: 3 });
+	const received: number[] = [];
+	const instance = new WebAssembly.Instance(
+		new WebAssembly.Module(metered.bytes as BufferSource),
+		{
+			env: { m: memory },
+			[metered.importModule]: {
+				[metered.importName]: () => {},
+				[metered.enterImportName]: () => {},
+				[metered.leaveImportName]: () => {},
+				[metered.memoryGrowImportName ?? "missing_growth_hook"]: (
+					delta: number,
+				) => {
+					received.push(delta);
+					return 42;
+				},
+			},
+		},
+	);
+	expect((instance.exports.run as (delta: number) => number)(1)).toBe(42);
+	expect(received).toEqual([1]);
+	expect(memory.buffer.byteLength).toBe(65536);
+	const native = meterWasmModule(input);
+	expect(native.memoryGrowImportName).toBeUndefined();
+	const unguarded = new WebAssembly.Instance(
+		new WebAssembly.Module(native.bytes as BufferSource),
+		{
+			env: { m: memory },
+			[native.importModule]: {
+				[native.importName]: () => {},
+				[native.enterImportName]: () => {},
+				[native.leaveImportName]: () => {},
+			},
+		},
+	);
+	expect((unguarded.exports.run as (delta: number) => number)(1)).toBe(1);
+	expect(memory.buffer.byteLength).toBe(131072);
+});
+it("shifts calls and function references correctly with a fourth guarded import", () => {
+	const input = fixture([
+		[0x10, 1, 0x0b],
+		[0x41, 42, 0x0b],
+	]);
+	const metered = meterWasmModule(input, { guardMemoryGrowth: true });
+	const instance = new WebAssembly.Instance(
+		new WebAssembly.Module(metered.bytes as BufferSource),
+		{
+			[metered.importModule]: {
+				[metered.importName]: () => {},
+				[metered.enterImportName]: () => {},
+				[metered.leaveImportName]: () => {},
+				[metered.memoryGrowImportName ?? "missing_growth_hook"]: () => -1,
+			},
+		},
+	);
+	expect((instance.exports.run as () => number)()).toBe(42);
+	expect(metered.memoryGrowInstructions).toBe(0);
+});
+
+it("rejects multiple memories when one guarded growth hook cannot identify them", () => {
+	const bytes = moduleBytes(
+		section(2, [
+			2,
+			...string("env"),
+			...string("a"),
+			2,
+			0,
+			0,
+			...string("env"),
+			...string("b"),
+			2,
+			0,
+			0,
+		]),
+	);
+	expect(() => meterWasmModule(bytes, { guardMemoryGrowth: true })).toThrow(
+		/Unsupported/,
+	);
 });

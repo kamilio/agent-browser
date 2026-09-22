@@ -7,6 +7,7 @@ const meterModule = "agent_browser_meter_v1";
 const meterName = "step";
 const enterName = "enter";
 const leaveName = "leave";
+const memoryGrowName = "memory_grow";
 const magic = [0, 97, 115, 109, 1, 0, 0, 0];
 const typedArrayByteLength = Object.getOwnPropertyDescriptor(
 	Object.getPrototypeOf(Uint8Array.prototype),
@@ -147,11 +148,16 @@ interface Section {
  * this structural reader does not replace the WebAssembly semantic validator.
  * Supply the reserved imports yourself, enforce a deadline/step budget and
  * use WasmCallDepth.run around instantiation and all synchronous WASM entries.
- * prevent untrusted imports from blocking. Memory quotas are a separate gate.
+ * prevent untrusted imports from blocking. Set guardMemoryGrowth to route memory.grow
+ * through the reserved i32 -> i32 import; admit one owned memory and enforce its
+ * quotas in that hook. Unguarded instrumentation does not enforce memory quotas.
  * MVP + reference/bulk-memory instructions are supported; SIMD, threads, GC,
  * exceptions and tail calls are rejected. No runtime dependency is introduced.
  */
-export function meterWasmModule(input: Uint8Array): {
+export function meterWasmModule(
+	input: Uint8Array,
+	options: { guardMemoryGrowth?: boolean } = {},
+): {
 	originalBytes: Uint8Array;
 	bytes: Uint8Array;
 	importModule: string;
@@ -159,7 +165,12 @@ export function meterWasmModule(input: Uint8Array): {
 	enterImportName: string;
 	leaveImportName: string;
 	checkpoints: number;
+	memoryGrowImportName?: string;
+	memoryGrowInstructions: number;
 } {
+	const guardedGrowth = options.guardMemoryGrowth === true;
+	const addedImports = guardedGrowth ? 4 : 3;
+	const addedTypes = guardedGrowth ? 2 : 1;
 	if (!(input instanceof Uint8Array) || !typedArrayByteLength) invalid();
 	try {
 		if (typedArrayByteLength.call(input) > maxInput) invalid();
@@ -184,6 +195,7 @@ export function meterWasmModule(input: Uint8Array): {
 	let typeCount = 0;
 	let importedFunctions = 0;
 	let definedFunctions = 0;
+	let memories = 0;
 	const functionTypes: { parameters: number; results: number[] }[] = [];
 	const definedTypes: number[] = [];
 	for (const section of sections) {
@@ -205,7 +217,7 @@ export function meterWasmModule(input: Uint8Array): {
 			r.done();
 		} else if (section.id === 2) {
 			const count = r.count();
-			if (count + 3 > maxEntries) invalid();
+			if (count + addedImports > maxEntries) invalid();
 			for (let index = 0; index < count; index++) {
 				if (r.name() === meterModule) invalid();
 				r.name();
@@ -218,6 +230,7 @@ export function meterWasmModule(input: Uint8Array): {
 						table(r);
 						break;
 					case 2:
+						memories++;
 						limits(r);
 						break;
 					case 3:
@@ -241,14 +254,18 @@ export function meterWasmModule(input: Uint8Array): {
 			const count = r.count();
 			for (let index = 0; index < count; index++) {
 				if (section.id === 4) table(r);
-				else limits(r);
+				else {
+					memories++;
+					limits(r);
+				}
 			}
 			r.done();
 		}
 	}
 	if (
-		importedFunctions + definedFunctions + 3 > maxEntries ||
-		typeCount >= maxEntries
+		importedFunctions + definedFunctions + addedImports > maxEntries ||
+		typeCount + addedTypes > maxEntries ||
+		(guardedGrowth && memories > 1)
 	)
 		invalid();
 	const wrapperTypes: number[][] = [];
@@ -264,7 +281,7 @@ export function meterWasmModule(input: Uint8Array): {
 			const key = type.results.join(",");
 			let index = wrapperIndices.get(key);
 			if (index === undefined) {
-				index = typeCount + 1 + wrapperTypes.length;
+				index = typeCount + addedTypes + wrapperTypes.length;
 				wrapperIndices.set(key, index);
 				wrapperTypes.push(type.results);
 			}
@@ -272,11 +289,11 @@ export function meterWasmModule(input: Uint8Array): {
 		}
 		blockTypes.set(typeIndex, w.finish());
 	}
-	if (typeCount + 1 + wrapperTypes.length > maxEntries) invalid();
+	if (typeCount + addedTypes + wrapperTypes.length > maxEntries) invalid();
 	const functionIndex = (r: Reader, w: Writer) => {
 		const index = r.u32();
 		if (index >= importedFunctions + definedFunctions) invalid();
-		w.u32(index < importedFunctions ? index : index + 3);
+		w.u32(index < importedFunctions ? index : index + addedImports);
 	};
 	const expression = (r: Reader, w: Writer) => {
 		for (let count = 0; count < maxEntries; count++) {
@@ -301,6 +318,7 @@ export function meterWasmModule(input: Uint8Array): {
 		invalid();
 	};
 	let checkpoints = 0;
+	let memoryGrowInstructions = 0;
 	const instrumentBody = (bytes: Uint8Array, typeIndex: number): Uint8Array => {
 		const r = new Reader(bytes);
 		const w = new Writer();
@@ -331,6 +349,15 @@ export function meterWasmModule(input: Uint8Array): {
 				w.put(0x0c);
 				w.u32(depth - 1);
 				continue;
+			}
+			if (opcode === 0x40) {
+				memoryGrowInstructions++;
+				if (guardedGrowth) {
+					if (r.u32() !== 0) invalid();
+					w.put(0x10);
+					w.u32(importedFunctions + 3);
+					continue;
+				}
 			}
 			w.put(opcode);
 			if (opcode === 0x10 || opcode === 0xd2) {
@@ -390,21 +417,30 @@ export function meterWasmModule(input: Uint8Array): {
 		const r = new Reader(section.bytes);
 		const w = new Writer();
 		if (section.id === 1 || section.id === 2) {
-			w.u32(r.count() + (section.id === 1 ? 1 + wrapperTypes.length : 3));
+			w.u32(
+				r.count() +
+					(section.id === 1 ? addedTypes + wrapperTypes.length : addedImports),
+			);
 			w.copy(r.take(section.bytes.length - r.position));
 			if (section.id === 1) {
 				w.put(0x60, 0, 0);
+				if (guardedGrowth) w.put(0x60, 1, 0x7f, 1, 0x7f);
 				for (const results of wrapperTypes) {
 					w.put(0x60, 0);
 					w.u32(results.length);
 					w.copy(Uint8Array.from(results));
 				}
 			} else {
-				for (const name of [meterName, enterName, leaveName]) {
+				for (const name of [
+					meterName,
+					enterName,
+					leaveName,
+					...(guardedGrowth ? [memoryGrowName] : []),
+				]) {
 					w.name(meterModule);
 					w.name(name);
 					w.put(0);
-					w.u32(typeCount);
+					w.u32(typeCount + (name === memoryGrowName ? 1 : 0));
 				}
 			}
 		} else if (section.id === 7) {
@@ -501,6 +537,8 @@ export function meterWasmModule(input: Uint8Array): {
 		enterImportName: enterName,
 		leaveImportName: leaveName,
 		checkpoints,
+		memoryGrowImportName: guardedGrowth ? memoryGrowName : undefined,
+		memoryGrowInstructions,
 	};
 }
 
