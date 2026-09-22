@@ -23,6 +23,21 @@
 
 ## Current verified state
 
+- Finished compact AST storage now releases its parser-only persistent-boundary
+  bookkeeping set; runtime lazy-boundary and decoded-identity storage stay intact.
+  Contribution: safejs-release-parser-boundaries.patch. Exact seven-module offline
+  linking at 128 MB retains 97923784 heap bytes versus 100027232 control (about
+  2.1 MB saved), with identical 63562723 code-buffer bytes, materialized-record
+  counts, 8353220 steps and 5965045 current units. All 137 selected SDK checks across
+  nine files, scoped core compilation, changed-source format/lint and byte-exact
+  patch forward/reverse checks pass. No native source/build changes were needed.
+  The live 192 MB diagnostic passes all 13 classics and prepares seven modules,
+  then exhausts heap (exit 134); cleanup/socket state is unverified. This modest
+  offline saving clears no default heap/time/readiness/join/media gate. A separate
+  lazy parameter-default candidate decoded 1788 fewer graph records but retained
+  effectively the same heap; it is rejected and reverted. All owned probes terminate;
+  temporary assets, configs, drivers, candidate tests and backups are removed.
+
 - Dynamic imports now have an opt-in SDK elapsed host-time deadline independent of
   the originating classic task. Contribution: safejs-source-import-deadlines.patch.
   The native module adapter requires the immutable policy and uses the page execution

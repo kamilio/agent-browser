@@ -1,0 +1,12 @@
+diff --git a/src/parse/compact-module-ast.ts b/src/parse/compact-module-ast.ts
+--- a/src/parse/compact-module-ast.ts
++++ b/src/parse/compact-module-ast.ts
+@@ -116,6 +116,8 @@
+     }
+     this.stringIDs.clear();
+     this.shapeIDs.clear();
++    // Parser transfers consult this set; finished storage can no longer pack.
++    this.persistentBoundaries.clear();
+   }
+ 
+   /** Called only after the parser has completed and validated function syntax. */
