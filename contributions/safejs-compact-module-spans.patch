@@ -1,0 +1,553 @@
+diff --git a/src/parse/parser.ts b/src/parse/parser.ts
+--- a/src/parse/parser.ts
++++ b/src/parse/parser.ts
+@@ -1,4 +1,5 @@
+ import { boundIdentifiers } from "./bindings.js";
++import { CompactSourcePositions, compactSourceSpan, compactDerivedPosition } from "./compact-spans.js";
+ import { validatePrivateNames } from "./private-names.js";
+ import { RESERVED_IDENTIFIER_SPELLINGS, tokenize, tokenizeModule, type Position, type Token } from "./tokenizer.js";
+ import { assignFreshIds, assignIds } from "./assign-ids.js";
+@@ -705,7 +706,7 @@
+   }
+ }
+
+-export function parseSourceModule(source: string, filename = "<input>", owner?: CompileOwner, options: {sharedPositions?: boolean; compactTokens?: boolean} = {}): ParsedSourceModule {
++export function parseSourceModule(source: string, filename = "<input>", owner?: CompileOwner, options: {sharedPositions?: boolean; compactTokens?: boolean; compactSpans?: boolean} = {}): ParsedSourceModule {
+   const compilation = new CompileScope(owner);
+   const syntax: SourceModuleSyntax = {imports: [], exports: [], moduleRequests: []};
+   let parser: Parser | undefined;
+@@ -715,10 +716,10 @@
+       throw new SandboxError({budget: "stringLength", current: source.length, limit});
+     owner?.budget.visitNode(source.length);
+     parser = new Parser(
+-      (options.compactTokens ? tokenizeModule : tokenize)(source, {allowRegexLiterals: true, statementList: true, compilation, sharedPositions: options.sharedPositions}),
++      (options.compactTokens || options.compactSpans ? tokenizeModule : tokenize)(source, {allowRegexLiterals: true, statementList: true, compilation, sharedPositions: options.sharedPositions}, options.compactSpans ? new CompactSourcePositions(source) : undefined),
+       source, compilation, "top-level",
+       {...ordinaryFunctionContext, newTarget: false, return: false, requireAsyncAwait: true,
+-        grammar: {await: true, yield: false, strict: true}}, true, syntax, options.sharedPositions === true || options.compactTokens === true
++        grammar: {await: true, yield: false, strict: true}}, true, syntax, options.sharedPositions === true || options.compactTokens === true || options.compactSpans === true
+     );
+     const module = (options.sharedPositions ? assignFreshIds : assignIds)(parser.parseModule());
+     if (source.includes("#")) validatePrivateNames(module);
+@@ -5850,15 +5851,17 @@
+     column += 1;
+   }
+
+-  return { line, column, offset };
++  const position = { line, column, offset };
++  return compactDerivedPosition(base, position) ?? position;
+ }
+
+ function rebasePosition(position: Position, base: Position): Position {
+-  return {
++  const rebased = {
+     line: base.line + position.line - 1,
+     column: position.line === 1 ? base.column + position.column - 1 : position.column,
+     offset: base.offset + position.offset
+   };
++  return compactDerivedPosition(base, rebased) ?? rebased;
+ }
+
+ function isLiteralPropertyKey(token: Token): boolean {
+@@ -5886,6 +5889,8 @@
+ }
+
+ function createSpan(start: Position, end: Position): SourceSpan {
++  const compact = compactSourceSpan(start, end);
++  if (compact !== undefined) return compact;
+   return {
+     start: Object.isFrozen(start) ? start : { ...start },
+     end: Object.isFrozen(end) ? end : { ...end }
+diff --git a/src/parse/parse-export.ts b/src/parse/parse-export.ts
+--- a/src/parse/parse-export.ts
++++ b/src/parse/parse-export.ts
+@@ -127,8 +127,11 @@
+ }
+
+ function createSpan(start: SourceSpan["start"], end: SourceSpan["end"]): SourceSpan {
++  const compact = compactSourceSpan(start, end);
++  if (compact !== undefined) return compact;
+   return {
+     start: { ...start },
+     end: { ...end }
+   };
+ }
++import { compactSourceSpan } from "./compact-spans.js";
+diff --git a/src/parse/tokenizer.ts b/src/parse/tokenizer.ts
+--- a/src/parse/tokenizer.ts
++++ b/src/parse/tokenizer.ts
+@@ -1,5 +1,6 @@
+ import { RegexCompileGuard, type CompileScope } from "../interp/regex/compile-guard.js";
+ import { CompactTokens } from "./compact-tokens.js";
++import type { CompactSourcePositions } from "./compact-spans.js";
+
+ export type Position = {
+   line: number;
+@@ -161,9 +162,10 @@
+ /** Internal module tokenization with bounded materialized token/position caches. */
+ export function tokenizeModule(
+   source: string,
+-  options: TokenizeOptions = {}
++  options: TokenizeOptions = {},
++  sourcePositions?: CompactSourcePositions
+ ): Token[] {
+-  const tokens = new CompactTokens();
++  const tokens = new CompactTokens(sourcePositions);
+   new Lexer(source, { ...options, sharedPositions: true }, tokens.indexed).tokenize();
+   return tokens.finish();
+ }
+diff --git a/src/parse/compact-tokens.ts b/src/parse/compact-tokens.ts
+--- a/src/parse/compact-tokens.ts
++++ b/src/parse/compact-tokens.ts
+@@ -1,4 +1,5 @@
+ import type { Position, Token, TokenType } from "./tokenizer.js";
++import type { CompactSourcePositions } from "./compact-spans.js";
+
+ const types: readonly TokenType[] = [
+   "identifier",
+@@ -26,6 +27,8 @@
+   private readonly positions = new Map<number, Position>();
+   private last?: Token;
+   private retired = 0;
++
++  constructor(private readonly sourcePositions?: CompactSourcePositions) {}
+
+   // The lexer/parser only use indexing, length, push, at and prefix retirement.
+   // Array methods read this indexed facade; token records are materialized on demand.
+@@ -55,6 +58,10 @@
+   finish(): Token[] {
+     // Parsing needs every token's row initially, but not spare growth capacity.
+     this.rows = this.rows.slice(0, this.values.length * stride);
++    if (this.sourcePositions && this.last) {
++      this.last.start = this.sourcePositions.position(this.last.start.offset);
++      this.last.end = this.sourcePositions.position(this.last.end.offset);
++    }
+     return this.indexed;
+   }
+
+@@ -116,6 +123,7 @@
+
+   private position(base: number): Position {
+     const offset = this.rows[base + 2]!;
++    if (this.sourcePositions) return this.sourcePositions.position(offset);
+     const cached = this.positions.get(offset);
+     if (cached !== undefined) return cached;
+     const position = Object.freeze({
+diff --git a/src/modules/source-graph.ts b/src/modules/source-graph.ts
+--- a/src/modules/source-graph.ts
++++ b/src/modules/source-graph.ts
+@@ -144,7 +144,7 @@
+         return known;
+       }
+       this.options.budget?.chargeDataUsage(source.source.length + source.id.length + 1);
+-      const parsed = parseSourceModule(source.source, source.id, this.options.compilation?.owner ?? this.options.compileOwner, {sharedPositions:true, compactTokens:true});
++      const parsed = parseSourceModule(source.source, source.id, this.options.compilation?.owner ?? this.options.compileOwner, {sharedPositions:true, compactTokens:true, compactSpans:true});
+       const importMeta = Object.create(null) as SandboxObject;
+       setSandboxPrototype(importMeta,null);
+       const record: RecordEntry = {id:source.id, source:source.source, parsed,
+diff --git a/src/parse/compact-spans.ts b/src/parse/compact-spans.ts
+new file mode 100644
+--- /dev/null
++++ b/src/parse/compact-spans.ts
+@@ -0,0 +1,153 @@
++import type { SourceSpan } from "./parser.js";
++import type { Position } from "./tokenizer.js";
++
++const positionOwners = new WeakMap<Position, CompactSourcePositions>();
++const getOwner = WeakMap.prototype.get.bind(positionOwners);
++const setOwner = WeakMap.prototype.set.bind(positionOwners);
++const cacheSize = 514;
++const writableSpan = Symbol("compiler span writability");
++
++/** Immutable source coordinates shared by compiler-owned offset spans. */
++export class CompactSourcePositions {
++  private readonly sourceLength: number;
++  private readonly lines = [0];
++  private readonly positions = new Map<number, Position>();
++  private readonly makeSpan: (start: number, end: number) => SourceSpan;
++
++  constructor(source: string) {
++    this.sourceLength = source.length;
++    for (let offset = 0; offset < source.length; offset++) {
++      const code = source.charCodeAt(offset);
++      if (code === 13 && source.charCodeAt(offset + 1) === 10) offset++;
++      if (code === 10 || code === 13 || code === 0x2028 || code === 0x2029)
++        this.lines.push(offset + 1);
++    }
++    // Span getters use a different receiver, so capture their source index.
++    // eslint-disable-next-line @typescript-eslint/no-this-alias
++    const owner = this;
++    type Endpoint = number | { assigned: Position };
++    class Span implements SourceSpan {
++      #start: Endpoint;
++      #end: Endpoint;
++
++      constructor(start: number, end: number) {
++        this.#start = start;
++        this.#end = end;
++        Object.defineProperties(this, descriptors);
++      }
++
++      get start(): Position {
++        return typeof this.#start === "number"
++          ? owner.position(this.#start)
++          : this.#start.assigned;
++      }
++      set start(value: Position) {
++        if (Object.isFrozen(this))
++          throw new TypeError("Cannot assign to a frozen source span.");
++        this.#start =
++          getOwner(value) === owner ? value.offset : { assigned: value };
++      }
++      get end(): Position {
++        return typeof this.#end === "number"
++          ? owner.position(this.#end)
++          : this.#end.assigned;
++      }
++      set end(value: Position) {
++        if (Object.isFrozen(this))
++          throw new TypeError("Cannot assign to a frozen source span.");
++        this.#end =
++          getOwner(value) === owner ? value.offset : { assigned: value };
++      }
++    }
++    // Shared own accessors preserve enumerable start/end fields without a pair
++    // of getter closures or permanently retained Position objects per span.
++    const descriptors = {
++      start: {
++        ...Object.getOwnPropertyDescriptor(Span.prototype, "start")!,
++        enumerable: true,
++      },
++      end: {
++        ...Object.getOwnPropertyDescriptor(Span.prototype, "end")!,
++        enumerable: true,
++      },
++      // Sealed accessor-only objects otherwise report as frozen. This private
++      // data field preserves the distinction for the mutable endpoint setters.
++      [writableSpan]: { value: true, writable: true, configurable: true },
++    };
++    // The fields belong to each span. Deleting one must not expose an inherited
++    // getter that silently recreates the deleted endpoint.
++    delete (Span.prototype as Partial<SourceSpan>).start;
++    delete (Span.prototype as Partial<SourceSpan>).end;
++    this.makeSpan = (start, end) => new Span(start, end);
++  }
++
++  position(offset: number): Position {
++    this.assertOffset(offset);
++    const cached = this.positions.get(offset);
++    if (cached !== undefined) return cached;
++    let low = 0,
++      high = this.lines.length;
++    while (low + 1 < high) {
++      const middle = low + Math.floor((high - low) / 2);
++      if (this.lines[middle]! <= offset) low = middle;
++      else high = middle;
++    }
++    const position = Object.freeze({
++      line: low + 1,
++      column: offset - this.lines[low]! + 1,
++      offset,
++    });
++    setOwner(position, this);
++    if (this.positions.size === cacheSize)
++      this.positions.delete(this.positions.keys().next().value!);
++    this.positions.set(offset, position);
++    return position;
++  }
++
++  span(start: number, end: number): SourceSpan {
++    this.assertOffset(start);
++    this.assertOffset(end);
++    return this.makeSpan(start, end);
++  }
++
++  compatiblePosition(position: Position): Position | undefined {
++    if (
++      !Number.isSafeInteger(position.offset) ||
++      position.offset < 0 ||
++      position.offset > this.sourceLength
++    )
++      return undefined;
++    const point = this.position(position.offset);
++    return point.line === position.line && point.column === position.column
++      ? point
++      : undefined;
++  }
++
++  private assertOffset(offset: number): void {
++    if (
++      !Number.isSafeInteger(offset) ||
++      offset < 0 ||
++      offset > this.sourceLength
++    )
++      throw new RangeError("Source coordinate offset is outside its source.");
++  }
++}
++
++/** Rebased template coordinates compact only when their existing data agrees. */
++export function compactDerivedPosition(
++  base: Position,
++  position: Position,
++): Position | undefined {
++  return getOwner(base)?.compatiblePosition(position);
++}
++
++/** Only privately owned points from the same source can become offset spans. */
++export function compactSourceSpan(
++  start: Position,
++  end: Position,
++): SourceSpan | undefined {
++  const owner = getOwner(start);
++  return owner !== undefined && getOwner(end) === owner
++    ? owner.span(start.offset, end.offset)
++    : undefined;
++}
+diff --git a/src/parse/compact-spans.test.ts b/src/parse/compact-spans.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/parse/compact-spans.test.ts
+@@ -0,0 +1,243 @@
++import { expect, it } from "vitest";
++import { Budget, SandboxError } from "../interp/budget.js";
++import { CompactSourcePositions, compactSourceSpan } from "./compact-spans.js";
++import {
++  functionSources,
++  functionStrictness,
++  templateSources,
++} from "./function-source.js";
++import { parseSourceModule } from "./source-module.js";
++import { tokenize, tokenizeModule } from "./tokenizer.js";
++
++const fixtures = [
++  "",
++  "import {x} from './dep.js';export const result=await Promise.resolve(x);",
++  "/* before */\r\nexport const astral='😀';\u2028// comment\u2029export const result=`a${astral}b${`c${1}`}`;\n",
++  "export class Example {#x=1;static {this.marker=2;}get value(){return this.#x;}}",
++  "export const value={async method(){return /a[b-c]+/g;}};outer:for(const item of /a/.exec('a')){if(item)break outer;}",
++  "export default function named(){return (1+2)};export const arrow=(x)=>({x,method(){return this.x;}});",
++  "export const value=`first\u2028second${1}\u2029third`;",
++  "export const value=`first\r\n${(()=>{return `nested${2}`})()}\nlast`;",
++  `export const result=(${Array.from({ length: 800 }, (_, i) => `v${i}`).join(",")})=>({value:v0});`,
++  `export const result=[${Array.from({ length: 3000 }, (_, i) => `${i}`).join(",")}];export default function(){return result.length;}`,
++];
++
++function metadata(root: unknown) {
++  const pending = [root];
++  const visited = new Set<object>();
++  const result: unknown[] = [];
++  while (pending.length) {
++    const value = pending.pop();
++    if (!value || typeof value !== "object" || visited.has(value)) continue;
++    // Only AST identities matter; reconstructed coordinate records may share less.
++    if ("nodeId" in value) {
++      visited.add(value);
++      result.push([
++        (value as { nodeId?: number }).nodeId,
++        functionSources.get(value as Parameters<typeof functionSources.get>[0]),
++        functionStrictness.get(
++          value as Parameters<typeof functionStrictness.get>[0],
++        ),
++        templateSources.get(value as Parameters<typeof templateSources.get>[0]),
++      ]);
++    }
++    pending.push(...Object.values(value));
++  }
++  return result;
++}
++
++it.each(fixtures)(
++  "preserves source coordinates and token data for %j",
++  (source) => {
++    const options = {
++      allowRegexLiterals: true,
++      statementList: true,
++      sharedPositions: true,
++    };
++    const positions = new CompactSourcePositions(source);
++    expect(Array.from(tokenizeModule(source, options, positions))).toEqual(
++      tokenize(source, options),
++    );
++  },
++);
++
++it.each(fixtures)(
++  "preserves complete trees, IDs, metadata, JSON and budgets for %j",
++  (source) => {
++    function compile(compactSpans: boolean) {
++      const budget = new Budget({
++        maxSteps: 1000000,
++        stringLength: 100000,
++        dataSize: 1000000,
++      });
++      const lease = budget.acquireCompileOwner();
++      try {
++        const parsed = parseSourceModule(source, "fixture.js", lease.owner, {
++          sharedPositions: true,
++          compactTokens: true,
++          compactSpans,
++        });
++        return {
++          parsed,
++          json: JSON.stringify(parsed),
++          metadata: metadata(parsed.module),
++          steps: budget.stepsUsed,
++          data: budget.currentDataSize,
++        };
++      } finally {
++        lease.release();
++      }
++    }
++    expect(compile(true)).toEqual(compile(false));
++  },
++);
++
++it("keeps public span fields as independent mutable data records", () => {
++  const parsed = parseSourceModule("export const value=1;");
++  const span = parsed.module.span;
++  expect(Object.getOwnPropertyDescriptor(span, "start")).toMatchObject({
++    value: span.start,
++    writable: true,
++    enumerable: true,
++    configurable: true,
++  });
++  expect(Object.isFrozen(span.start)).toBe(false);
++});
++
++it("keeps own enumerable fields, assignments, sealing and freezing", () => {
++  const owner = new CompactSourcePositions("a\r\nb\u2028c");
++  const span = owner.span(0, 6);
++  expect(Object.keys(span)).toEqual(["start", "end"]);
++  expect(JSON.parse(JSON.stringify(span))).toEqual({
++    start: { line: 1, column: 1, offset: 0 },
++    end: { line: 3, column: 2, offset: 6 },
++  });
++  const point = { line: 99, column: 88, offset: 77 };
++  span.start = point;
++  expect(span.start).toBe(point);
++  span.end = owner.position(3);
++  expect(span.end).toEqual({ line: 2, column: 1, offset: 3 });
++  Object.seal(span);
++  span.start = owner.position(0);
++  expect(span.start.offset).toBe(0);
++  Object.freeze(span);
++  expect(() => {
++    span.start = point;
++  }).toThrow("frozen");
++  expect(() => {
++    span.end = point;
++  }).toThrow("frozen");
++});
++
++it("keeps saved coordinates immutable and correct after bounded cache eviction", () => {
++  const owner = new CompactSourcePositions("x".repeat(2000));
++  const span = owner.span(1, 2);
++  const saved = span.start;
++  for (let offset = 0; offset < 1500; offset++) owner.position(offset);
++  expect(span.start).toEqual(saved);
++  expect(Object.isFrozen(saved)).toBe(true);
++  expect(() => {
++    saved.offset = 9;
++  }).toThrow(TypeError);
++});
++
++it("keeps deleted endpoint fields absent until assigned again", () => {
++  const owner = new CompactSourcePositions("abc");
++  const span = owner.span(0, 3);
++  delete (span as Partial<typeof span>).start;
++  expect(span.start).toBeUndefined();
++  expect(Object.keys(span)).toEqual(["end"]);
++  span.start = owner.position(1);
++  expect(span.start.offset).toBe(1);
++});
++
++it("rejects foreign and forged ownership and keeps separate source coordinates", () => {
++  const first = new CompactSourcePositions("a\nb");
++  const second = new CompactSourcePositions("abc");
++  expect(
++    compactSourceSpan(first.position(0), second.position(3)),
++  ).toBeUndefined();
++  expect(
++    compactSourceSpan({ ...first.position(0) }, { ...first.position(3) }),
++  ).toBeUndefined();
++  expect(compactSourceSpan(first.position(0), first.position(3))?.end).toEqual({
++    line: 2,
++    column: 2,
++    offset: 3,
++  });
++  expect(
++    compactSourceSpan(second.position(0), second.position(3))?.end,
++  ).toEqual({ line: 1, column: 4, offset: 3 });
++});
++
++it("rejects offsets outside their source before publishing owned coordinates", () => {
++  const owner = new CompactSourcePositions("abc");
++  for (const offset of [-1, 4, 0.5, NaN, Infinity]) {
++    expect(() => owner.position(offset)).toThrow(RangeError);
++    expect(() => owner.span(0, offset)).toThrow(RangeError);
++  }
++  expect(owner.position(3)).toEqual({ line: 1, column: 4, offset: 3 });
++});
++
++it.each([
++  "export const = 1;",
++  "export const value=`bad${;}`;",
++  "import {x} from ;",
++  "export {missing};",
++  "export const value='\\1';",
++])("preserves diagnostics for %j", (source) => {
++  const errors = [false, true].map((compactSpans) => {
++    try {
++      parseSourceModule(source, "fixture.js", undefined, {
++        sharedPositions: true,
++        compactTokens: true,
++        compactSpans,
++      });
++    } catch (error) {
++      return error as Error;
++    }
++    throw new Error("Expected syntax rejection.");
++  });
++  expect(errors[1]).toMatchObject({
++    name: errors[0].name,
++    message: errors[0].message,
++  });
++  expect(Object.getOwnPropertyNames(errors[1])).toEqual(
++    Object.getOwnPropertyNames(errors[0]),
++  );
++});
++
++it.each(["steps", "stringLength", "dataSize"] as const)(
++  "preserves compilation %s enforcement",
++  (limit) => {
++    const source =
++      limit === "dataSize"
++        ? "export const value=/a{10}/;"
++        : "export const value=1;";
++    const failures = [false, true].map((compactSpans) => {
++      const budget = new Budget({
++        maxSteps: limit === "steps" ? 3 : 100000,
++        stringLength: limit === "stringLength" ? 3 : 1000,
++        dataSize: limit === "dataSize" ? 1 : 10000,
++      });
++      const lease = budget.acquireCompileOwner();
++      try {
++        parseSourceModule(source, "fixture.js", lease.owner, {
++          sharedPositions: true,
++          compactTokens: true,
++          compactSpans,
++        });
++      } catch (error) {
++        expect(error).toBeInstanceOf(SandboxError);
++        return { error, steps: budget.stepsUsed };
++      } finally {
++        lease.release();
++      }
++      throw new Error("Expected budget rejection.");
++    });
++    expect(failures[1]).toMatchObject({
++      error: { code: "budgetExceeded", budget: limit },
++      steps: failures[0].steps,
++    });
++  },
++);

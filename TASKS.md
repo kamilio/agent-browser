@@ -23,6 +23,20 @@
 
 ## Current verified state
 
+- Canonical modules now compact source spans into two offsets with bounded
+  coordinate reconstruction; public parsing stays unchanged. Contribution:
+  safejs-compact-module-spans.patch. Exact loginview tree/IDs/source metadata and
+  accounting digest match control: 889089 nodes / 22269 functions, 4165502 steps /
+  3485657 current / 3506328 peak units. Retained heap beyond baseline measures
+  174754944 bytes versus 206211744 in control (~15% less). Endpoint assignment,
+  deletion, sealing/freezing, foreign ownership and cache eviction are covered;
+  template coordinate mismatches keep their original representation. All 270
+  selected SDK checks, scoped typing/build, new-file format/lint and exact patch
+  application/reversal pass. Parsing measures 16.2 s versus 10.5 s in the 512 MB
+  diagnostics; complete 128 MB loginview parsing still exhausts the heap. No
+  default/full-client/meeting gate clears. Probes terminate, temporary artifacts
+  are removed, and the SDK retains the candidate.
+
 - Canonical modules now use compact numeric token rows with bounded token/position
   caches; public tokenization stays eager. Contribution:
   safejs-compact-module-tokens.patch. Exact loginview lexing (1195771 tokens) passes
@@ -1251,6 +1265,8 @@
   syntax-tree storage and retained-graph evaluation cost both require further work.
   Compact tokenization clears the isolated 128 MB lexer probe, but complete
   loginview parsing still fails that heap cap. This is not a full compiler pass.
+  Compact spans reduce retained tree heap above; the final 128 MB probe still
+  fails. AST nodes, arrays and remaining strings/storage require further work.
 
 - Background dynamic imports outlive the classic evaluation's PageScripts timer.
   The realm graph has document cancellation and shared step/data limits, but no
