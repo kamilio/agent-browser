@@ -23,6 +23,18 @@
 
 ## Current verified state
 
+- Explicit SafeJS budget views now lease sibling realms without resetting quotas
+  or sharing globals/prototype caches; ordinary reentry/reset and duplicate-view
+  guards remain active. Contribution: safejs-shared-realm-compile-lease.patch.
+  Ten new regressions and the formerly failing shared-policy check pass. 294 SDK
+  checks across 17 files pass; three joined-callback timeouts reproduce on original
+  source. Strict core/new-test typing and scoped build pass; patch roundtrip exact.
+  Compiled 128 MB/16 s offline fixture executes Blob-generated child code beside
+  the native page, isolates globals, copies bytes, shares limits and cleans data/
+  callbacks to zero. SDK source/build/tests retained; temporary probes removed.
+  Page Worker API/loading/CSP, message/transfer queues, timers/importScripts,
+  termination, WebAssembly, media and every Zoom/notetaker acceptance gate remain open.
+
 - Page-owned Blob/object URL primitives now provide immutable UTF-8/buffer-view/blob
   parts, bounded storage/work, slice/text/arrayBuffer/bytes, trusted origin URLs,
   snapshot resolution, revocation and cleanup. 194 selected native checks across
@@ -1566,8 +1578,8 @@
   deep plain-object copying also overflow the native stack on baseline. Older
   scope-root shape expectations and a
   baseline Promise snapshot timeout. Tested capture/prototype fixes do not clear this gate.
-- Three baseline joined-callback rejection failures, earlier shared-budget realm
-  reentry failure, a PageScripts timer probe's generic callback script-error and
+- Three baseline joined-callback rejection failures, a PageScripts timer probe's
+  generic callback script-error and
   an onload non-callable-handler failure. Prior intermittent default 1 s idle
   initialization failures keep timing reliability open despite recent nine-case passes.
 - Full SDK package build: unresolved tiny-mcp-client dependency types through the
