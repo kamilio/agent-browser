@@ -292,9 +292,26 @@
   39087 steps / 22395140 units, cleanup zero. Loaded 30 s Worker times out in parent
   setup at 448446 steps; serial 120 s diagnostic parent succeeds, child still times
   out at 120658 ms / 881068 steps without completion/status, cleanup zero. No useful
-  startup gain established. Validation build removed. Carrier/ancestor/provider
-  ownership remains open before capture reuse; retain fresh foreign-frame reads.
-  Full startup/default limits and every joining/meeting/media gate remain open.
+  startup gain established. Carrier/ancestor/provider ownership remains open
+  before whole-frame capture reuse; retain fresh foreign-frame reads.
+  Actual Worker CPU profiles put graph visits and GC first; symbol enumeration is
+  a prominent allocation site. Maintained SafeJS now pins closure finalization and
+  captures frozen SDK closure keys once in a protected weak registry. Indexed reads
+  protect the cached lists from late iterator hooks; descriptors, classification,
+  descendants and foreign objects/property tables stay fresh. Reproduced enumeration
+  hook erases 1017 units to 2; unindexed candidate iterator hook erases 1011 to 2.
+  Six new and 102 selected existing checks, strict new-test typing, scoped lint/
+  format, isolated SDK compilation/eight imports pass (poe-code b2c09d20f; no push).
+  Final alternating 400-closure warm scans retain 1400 units: control CPU 0.153/0.146
+  ms versus candidate 0.097/0.082 ms (36–44% improvement in that fixture). Actual
+  five-case JSPI/WASM and public initializer pass at unchanged accounting totals,
+  cleanup zero. Final full Worker still times out at 30398 ms / 882055 steps with
+  parent success, no completion/status and cleanup zero; no useful startup gain
+  established. Concurrent dependency/type rebuilds caused temporary compile failures;
+  restored dependencies and the final compile pass. All owned builds/profiles/probes
+  removed. Next: reduce graph-walk scratch allocations while preserving fresh
+  measurement, nested walks and complete primary limits. Full startup/default limits
+  and every joining/meeting/media gate remain open.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
