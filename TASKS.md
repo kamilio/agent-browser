@@ -23,6 +23,17 @@
 
 ## Current verified state
 
+- Exact public module parsing verifies a separate default-heap blocker. Under
+  128 MB, editor-core parses in 1.8 s and retains 71393848 heap bytes beyond its
+  28617192-byte baseline (1396344 steps / 2101 statements). The larger loginview
+  source exhausts 128 MB before parsing returns. A 512 MB diagnostic parses it:
+  207673200 retained heap bytes beyond a 33412352-byte baseline, 4165502 steps /
+  3297 statements. Its tree has 889089 nodes and spans and 1157912 positions.
+  These are parse-only measurements, not full client/default timing or meeting
+  proofs. No optimization is retained; source tree storage is the relevant memory
+  target, not the smaller classic-source node index. Probe processes terminate,
+  no artifacts remain, and the current full-client runtime/build stay unchanged.
+
 - Host-result allocation now excludes prototype graphs already owned by the
   realm; primary reconciliation still traverses those mutable retained roots.
   This fixes a regression exposed by the first full-client retry after linking:
