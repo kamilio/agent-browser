@@ -105,7 +105,7 @@
   initializer completes. Maintained check-zoom-wasm-initialization at Node24 JSPI/
   128 MB, explicit 32 MiB quotas/120 s deadline passes: 39087 steps, 22395140 retained
   units, latest 8.4 s including two public downloads, cleanup owned resources/data/
-  requests zero. This isolates the glue tail; complete Worker/page startup, guest fetch and
+  requests zero. This isolates the glue tail; complete Worker/page startup and
   later media callbacks remain unverified. No source is rewritten and
   no function imports are stubbed. Native build/script lint/format pass.
   Table/Global wrappers and streaming/custom sections remain absent; page/Worker
@@ -235,11 +235,15 @@
   Actual diagnostics DS/DE and cleanup data/callbacks/active requests zero. Explicit
   32 MiB quotas/120 s deadline remain diagnostic; the rest of the full Worker is
   omitted, and only its diagnostic logger is supplied by the fixture. Parent bytes
-  come from restricted host transport, not guest fetch: PageFetch rejects a
-  maxResponseBytes override above its fixed 262144-byte default. Guest fetch needs
-  an explicit bounded opt-in policy before it can carry this binary. Next: that
-  policy and primary retained-root/capture allocation cost, preserving full
-  accounting and defaults.
+  come from restricted host transport, not guest fetch. The subsequent maintained
+  check-zoom-worker-wasm-handshake now clears isolated actual page fetch/CORS,
+  Worker transfer and real glue initialization at Node24 JSPI/128 MiB: 59.4 s /
+  616192 steps / 22993069 retained units, status 30 then DS/DE, donor zero and
+  20971520 memory bytes. Streaming accounting observes 167312 encoded/465602 decoded
+  bytes with no unmetered failure; cleanup data/callbacks/retained response bytes/
+  active requests zero. Complete Worker/client startup and every meeting/media
+  acceptance gate remain open; explicit 32 MiB quotas/120 s deadline clear no
+  defaults. Primary retained-root/capture allocation cost remains the startup target.
   Public current net_thread.min.js fetch succeeds (390978 units); instrumented actual
   source runs in a native Worker at 128 MB with the application profile, then hits its
   30 s initialization deadline at 493789 shared steps before the diagnostic marker.
@@ -249,6 +253,17 @@
   measurement. The next startup target is this full accounting cost; preserve
   primary scans, quota/depth enforcement and cancellation. Profile artifacts removed.
   This proves neither source initialization nor any Zoom/media acceptance gate.
+
+
+- PageFetch now accepts an explicit maxResponseBytes override up to 1 MiB while
+  retaining its 256 KiB default and all other ceilings. Existing PageBindingOptions
+  fetchLimits carry this opt-in; no dependency or additional policy field is needed.
+  Three new baseline failures reproduce. All 275 selected native fetch checks across
+  ten manifest-listed files, strict changed-test typing, native build and scoped
+  lint/format pass. Coverage preserves exact binary bytes, transport limit forwarding,
+  the 1 MiB boundary/oversize rejection, malformed limit rejection, clone retention
+  and cumulative quotas. Local browser commit 9bfc3bc; no push. Actual public Zoom
+  Worker fetch handshake above passes separately; full Worker/page readiness does not.
 
 - Child Workers now publish the document's validated userAgent/language/languages
   profile as a frozen guest snapshot with WorkerNavigator toString branding. The
