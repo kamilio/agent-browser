@@ -321,9 +321,18 @@
   Unchanged Worker profile times out at 30815 ms / 879192 steps, parent success,
   no completion/status and cleanup zero. Of roughly 40 s sampled startup time,
   GC accounts for 14.9 s and recursive graph visits 11.4 s; closure root append/
-  collection remains visible. Owned builds, profiles and probes removed. Next:
-  reduce closure-capture allocation and redundant graph work without cross-walk
-  caching of mutable/foreign objects or weakening full primary scans.
+  collection remains visible. Native function/generator root vectors now use indexed
+  measurement via a protected weak ownership registry; caller-provided collectors
+  retain iterator observations/errors. A reproduced late iterator hook erases 1001
+  units to 1 on baseline. Five native function variants retain charges and reject
+  a 500-unit limit even during reconciliation holds. All 129 selected checks across
+  12 files, strict test typing, scoped lint/format, isolated build/eight imports pass
+  (poe-code 7d25bb8a0, no push). Actual five-case JSPI/WASM and public initializer
+  pass at unchanged totals with zero cleanup; initializer takes 9.0 s on this run.
+  Full Worker still times out at 30705 ms / 881869 steps, parent success, no completion/
+  status, cleanup zero. No useful startup gain claimed. Owned builds, profiles and
+  probes removed. Next: reduce closure-capture allocation and redundant graph work
+  without cross-walk caching of mutable/foreign objects or weakening full primary scans.
   Full startup/default limits and all joining/meeting/media gates remain open.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
