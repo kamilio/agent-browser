@@ -35,6 +35,17 @@
   28 files plus 109 across nine callback/ownership files), SDK build/eight built-entry
   checks, strict new-test typing and changed-file lint pass. The full 1471-file suite
   was stopped and has no full pass.
+- Maintained SafeJS now leases explicit forkRealm views against their shared compile
+  owner without resetting consumed allowances or admitting a duplicate live view.
+  Sibling close/cancellation and failed construction/cleanup preserve the surviving
+  realm. Suspended guest awaits and native asynchronous calls register their real
+  invocation-scope roots until resumption/disposal, so sibling reconciliation keeps
+  their data charged. Full primary reconciliation remains active. Eleven regressions,
+  all 163 selected SDK checks across sixteen files, selected SDK build/eight built-entry
+  checks, strict new-test typing and changed-file lint/new-test format pass. The actual
+  guest WASM diagnostic below also passes against the rebuilt maintained SDK. Worker
+  installation still requires reconciling classic-script/callback-scheduling support
+  with the scratch SDK; these ownership fixes alone do not clear that gate.
 - Native WASM owners now provide original validation, stable bounded binary
   instrumentation, declared allocation/import/export admission, compilation leases,
   ordered imports through null-prototype maps, realm invokeCallback dispatch, owned
@@ -74,8 +85,9 @@
   memory growth/detachment/identity, async overloads and compile/link/runtime-trap
   error brands; 1717 steps/depth eight and cleanup resources/data/depth/pending zero.
   Table/Global wrappers, streaming/custom sections and page/Worker installers remain
-  absent. The maintained SDK lacks shared-realm ownership required by Workers;
-  reconcile and test that directly before installation. Diagnostic 32 MiB quotas
+  absent. Shared-realm ownership is now fixed in the maintained SDK; reconcile its
+  remaining classic-script/callback-scheduling support before installation.
+  Diagnostic 32 MiB quotas
   do not clear default page 16 MiB/262144-element limits. Next: page/Worker installers,
   actual Zoom instantiation with its real imports, initialization performance and
   every joining/admission/presence/roster/chat/audio/transcription/playback/microphone/
