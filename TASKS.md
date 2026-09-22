@@ -23,6 +23,28 @@
 
 ## Current verified state
 
+- SDK source graphs and their classic import loaders preserve already certified
+  immutable empty namespace tables; registered/wrapped namespaces keep the mutable
+  fallback. Incremental contribution: safejs-source-immutable-namespaces.patch.
+  Controlled compiled SDK 128 MB warm medians: baseline 639/640 ms, candidate
+  520 ms (about 19%); identical 30024 steps / 29392 current / 29657 peak charges.
+  88 focused SDK checks pass, including five new live-mutation/import/quota/held-
+  callback/registered-namespace cases; four compatibility cases also pass the exact
+  baseline. Scoped core/test compilation and declarations, new-test format/lint and
+  exact patch forward/reverse application pass. Actual compiled SDK/native 128 MB
+  fixture renders imported 999 after waiting for the downstream handler, settles
+  imports and closes with data/requests/sockets zero. The authorized 768 MB/120 s
+  live trace still exits nonzero: 13 classics pass, seven modules prepare/link,
+  editor evaluation advances 22235 budgeted steps in 85 s before cleanup interrupts
+  it; import counts remain 1/7/0/0. About 81 of the final 85 s sampled CPU window
+  remains under graph accounting; empty-environment inspection takes 0.14 s versus
+  4.7 s in the prior trace. No complete initialization speedup/readiness/join claimed;
+  default 30 s/128 MB and meeting/media gates remain open. Cleanup data zero and
+  zero socket attempts verified. Working SDK source/build retain the candidate;
+  temporary instrumentation restored, all processes terminal and artifacts removed.
+  Next: reduce remaining per-node retained-graph traversal/private-symbol cost with
+  controlled mutation/reentry fixtures; preserve full reconciliation and quotas.
+
 - Authorized phase/CPU trace narrows the pending Zoom import to editor evaluation.
   All seven module-instantiation phases finish in 0–15 ms each; rolldown evaluation
   finishes in 360 ms. Editor evaluation remains active for 83 s until host cleanup
