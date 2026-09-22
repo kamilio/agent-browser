@@ -16,7 +16,8 @@ import { decodeWorkerImportedScript } from "../src/worker-fetch.js";
 // Run only with authorization, selecting the compiled SDK and public media root:
 // AGENT_BROWSER_SAFEJS_SOURCE_ROOT=/path/to/safe-js \
 // AGENT_BROWSER_ZOOM_MEDIA_ROOT=https://st1.zoom.us/web-media/u9n13za/ \
-//   node --max-old-space-size=128 dist/scripts/check-zoom-worker-initialization.js
+//   /path/to/node24 --experimental-wasm-jspi --max-old-space-size=128 \
+//     dist/scripts/check-zoom-worker-initialization.js
 // The default initialization deadline is 30 s. Explicit diagnostic allowances up
 // to 120 s do not clear that gate. This fixture loads no meeting/client and
 // configures no socket transport. Source completion does not establish readiness.
@@ -51,6 +52,7 @@ let childReport:
 	| { ok: boolean; elapsedMs: number; error?: unknown }
 	| undefined;
 let runtime: PageRuntime | undefined;
+let parentRuntimeError: Record<string, unknown> | undefined;
 
 // Report bounded own-data error identifiers, never arbitrary source excerpts.
 function failureDetails(failure: unknown): Record<string, unknown> {
@@ -73,6 +75,8 @@ function failureDetails(failure: unknown): Record<string, unknown> {
 				message,
 			);
 		if (missing) fields.missingIdentifier = missing[1];
+		if (message === "Unknown host object definition field.")
+			fields.diagnostic = "unknownHostObjectDefinitionField";
 	}
 	return fields;
 }
@@ -85,6 +89,7 @@ const { factory } = await loadPageRuntime(
 			classicScripts: true,
 			classicScriptErrors: "report",
 			callbackScheduling: "after-prefix",
+			webAssembly: "bounded-v1",
 			domExpandos: "bounded-v1",
 		},
 	},
@@ -101,6 +106,8 @@ const { factory } = await loadPageRuntime(
 						const evaluation = (async () => {
 							try {
 								const result = await realm.evaluate(source, config);
+								if (!isFixture && !result.ok)
+									parentRuntimeError = failureDetails(result.error);
 								if (isFixture)
 									childReport = {
 										ok: result.ok,
@@ -111,6 +118,7 @@ const { factory } = await loadPageRuntime(
 									};
 								return result;
 							} catch (error) {
+								if (!isFixture) parentRuntimeError = failureDetails(error);
 								if (isFixture)
 									childReport = {
 										ok: false,
@@ -265,6 +273,7 @@ worker.onerror=()=>document.body.setAttribute('data-worker-error','true');
 			assetUnits,
 			configuredUnits,
 			parentOk,
+			parentRuntimeError,
 			childReport,
 			sourceComplete,
 			statuses,

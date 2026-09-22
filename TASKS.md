@@ -116,23 +116,17 @@
   Actual offline PageScripts/DOM/SafeJS at 128 MB/16 s verifies timing, detail
   isolation, clears and termination; cleanup data/page callbacks zero. Full
   Performance prototype tables, resource/navigation timing and observers remain open.
-  The public network Worker, configured with Zoom's published marker replacement
-  and loaded as a no-type Blob with immediate URL revocation, progresses past timing
-  and wrapper flags but fails at missing WebAssembly after 103.5 s (943701 shared
-  steps) in a 128 MB/120 s diagnostic. Source completion is not reached; early status
-  131 is not readiness. Cleanup data/callbacks/active requests zero. This clears no
-  default 30 s, full-client, joining or media gate. The next targets remain
-  WebAssembly and full retained-graph accounting cost.
-  Reusable opt-in scripts/check-zoom-worker-initialization.ts now applies the
-  published network configuration, checks both EOF delivery and the child result,
-  bounds status collection and verifies cleanup. Native build and script lint/format
-  pass. Authorized current public-asset run at 128 MB/30 s exits with failure:
-  child timeout at 30009 ms/892133 shared steps, no EOF, cleanup verified zero.
-  Read-only net.wasm metadata (465602 bytes; no instantiation) shows 21 function
-  imports (22 total) and an unshared memory import, minimum 320/maximum 2048 pages
-  (20/128 MiB).
-  Real WASM support needs memory-view identity, guest callbacks and bounded,
-  cancellable execution; a native host call alone would bypass SafeJS checkpoints.
+  The current authorized public net_thread.min.js diagnostic now enables bounded
+  WASM and uses Node24 JSPI against the maintained SDK. Asset fetch succeeds
+  (390978 units), but parent setup fails after 43698 shared steps with the SDK's
+  unknownHostObjectDefinitionField diagnostic; no child Worker/source completion
+  or binary instantiation occurs. Current host-capabilities.ts accepts only
+  properties/methods/indexed/named, while the enabled browser DOM expando policy
+  adds expandos. Next: reconcile bounded host-object expandos directly in SafeJS,
+  then rerun the public Worker with real WASM imports/initializer. Cleanup tracked
+  data/page callbacks/active requests zero. The earlier scratch SDK reached missing
+  WASM after 103.5 s/943701 steps; that is not maintained-SDK initialization or a
+  default startup pass. Joining, media and notetaker acceptance remain open.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
