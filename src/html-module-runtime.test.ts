@@ -133,6 +133,9 @@ function fakeCore(
 		defineExtension: vi.fn((definition) => definition),
 		createRealm: vi.fn((options) => {
 			const realm = makeRealm(options);
+			Object.defineProperty(realm, "sourceImportTimeoutMs", {
+				value: options.sourceImportTimeoutMs,
+			});
 			Object.defineProperty(realm, "stringCompilation", {
 				value: options.stringCompilation ?? "allow",
 			});

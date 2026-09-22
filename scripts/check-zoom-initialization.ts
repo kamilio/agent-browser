@@ -113,6 +113,7 @@ const { factory } = await loadPageRuntime(
 				...core,
 				createRealm(options: Parameters<ReleasedCore["createRealm"]>[0]) {
 					const resolver = options.sourceResolver;
+					let observedLifetime = false;
 					const realm = core.createRealm({
 						...options,
 						...(resolver
@@ -120,6 +121,22 @@ const { factory } = await loadPageRuntime(
 									sourceResolver: async (
 										...args: Parameters<NonNullable<typeof resolver>>
 									) => {
+										const signal = args[2].signal;
+										if (signal && !observedLifetime) {
+											observedLifetime = true;
+											signal.addEventListener(
+												"abort",
+												() => {
+													reportFailure(
+														signal.reason,
+														0,
+														undefined,
+														"module-lifetime-abort",
+													);
+												},
+												{ once: true },
+											);
+										}
 										const start = performance.now();
 										try {
 											const result = await resolver(...args);
@@ -295,6 +312,7 @@ function reportFailure(
 	failure: unknown,
 	characters: number,
 	filename?: string,
+	event: "runtime-failure" | "module-lifetime-abort" = "runtime-failure",
 ) {
 	function own(value: unknown, key: string): unknown {
 		if (!value || typeof value !== "object" || types.isProxy(value))
@@ -329,7 +347,7 @@ function reportFailure(
 	}
 	console.log(
 		JSON.stringify({
-			event: "runtime-failure",
+			event,
 			filename: scriptLabel(filename),
 			characters,
 			...fields,

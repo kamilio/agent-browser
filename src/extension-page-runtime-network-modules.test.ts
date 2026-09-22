@@ -126,6 +126,9 @@ function fakeCore() {
 		defineExtension: (definition) => definition,
 		createRealm: vi.fn((options) => {
 			const realm = makeRealm(options);
+			Object.defineProperty(realm, "sourceImportTimeoutMs", {
+				value: options.sourceImportTimeoutMs,
+			});
 			realms.push(realm);
 			return realm;
 		}),
@@ -158,6 +161,67 @@ function fixture(
 	cleanups.push(() => runtime.close());
 	return { ...test, factory, runtime, options, realm: test.realms[0] };
 }
+
+it("gives each import the page execution timeout before lazy setup", () => {
+	const options = runtimeOptions();
+	const test = fixture({ networkSourceModules: graph() }, options);
+	expect(test.realm.options.sourceImportTimeoutMs).toBe(
+		options.limits.timeoutMs,
+	);
+	expect(test.realm.evaluate).not.toHaveBeenCalled();
+});
+
+it.each([
+	"missing",
+	"inherited",
+	"accessor",
+	"different",
+	"writable",
+	"configurable",
+])(
+	"rejects an unavailable import deadline policy (%s) and closes the realm",
+	async (shape) => {
+		const test = fakeCore();
+		const create = vi.mocked(test.core.createRealm).getMockImplementation();
+		if (!create) throw new Error("Missing fake realm constructor");
+		const getter = vi.fn(() => 1000);
+		vi.mocked(test.core.createRealm).mockImplementation((options) => {
+			const realm = { ...create(options) };
+			if (shape === "inherited")
+				Object.setPrototypeOf(realm, {
+					sourceImportTimeoutMs: options.sourceImportTimeoutMs,
+				});
+			else if (shape !== "missing")
+				Object.defineProperty(
+					realm,
+					"sourceImportTimeoutMs",
+					shape === "accessor"
+						? { get: getter }
+						: {
+								value:
+									shape === "different"
+										? Number(options.sourceImportTimeoutMs) + 1
+										: options.sourceImportTimeoutMs,
+								writable: shape === "writable",
+								configurable: shape === "configurable",
+							},
+				);
+			return realm;
+		});
+		const options = runtimeOptions();
+		const factory = extensionPageRuntime(test.core, {
+			networkSourceModules: graph(),
+		});
+		expect(() => factory.createPageRuntime(options)).toThrow(
+			expect.objectContaining({ code: "unsupported" }),
+		);
+		await test.realms[0].close();
+		expect(test.realms[0].evaluate).not.toHaveBeenCalled();
+		expect(test.realms[0].close).toHaveBeenCalled();
+		expect(getter).not.toHaveBeenCalled();
+		expect(options.onClosed).toHaveBeenCalledOnce();
+	},
+);
 
 it("forwards asynchronous dependencies and exact module options to the fake core", async () => {
 	const fetched = deferred<Readonly<ScriptFetchResult>>();

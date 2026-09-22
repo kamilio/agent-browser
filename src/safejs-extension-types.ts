@@ -76,6 +76,7 @@ export interface ReleasedRealm {
 	readonly stringCompilation?: "allow" | "deny";
 	readonly classicScriptErrors?: "fatal" | "report";
 	readonly supportsDiscardResult?: true;
+	readonly sourceImportTimeoutMs?: number;
 	evaluate(
 		source: string,
 		options?: {
@@ -120,6 +121,7 @@ export interface ReleasedCore {
 		callbackScheduling?: "after-prefix";
 		stringCompilation?: "allow" | "deny";
 		sourceResolver?: ReleasedSourceResolver;
+		sourceImportTimeoutMs?: number;
 		extensions: readonly unknown[];
 		builtinOverrides?: { console?: string };
 		grants?: readonly string[];

@@ -23,6 +23,27 @@
 
 ## Current verified state
 
+- Dynamic imports now have an opt-in SDK elapsed host-time deadline independent of
+  the originating classic task. Contribution: safejs-source-import-deadlines.patch.
+  The native module adapter requires the immutable policy and uses the page execution
+  timeout per import; expiry revokes the realm, including shared/cyclic module work.
+  Deadlines cover resolution through evaluation/TLA and are cleared on settlement or
+  revocation. Cancellation is cooperative; synchronous host work can delay delivery.
+  21 SDK deadline contracts and 144 selected preservation checks pass; three
+  callback-scheduling timeouts reproduce on the exact saved source baseline. All 26
+  focused native network-module checks pass; broader module selection has 220 passes
+  and the same 14 baseline DOM-bootstrap expectation failures. Strict test/core typing,
+  scoped SDK build, native build, changed-code lint/new-test format and three-file
+  byte-exact patch application/reversal pass. Actual native adapter at 128 MB verifies
+  success remains usable beyond 1 s, TLA expiry prevents resume, and close data is zero.
+  A longer live 192 MB run prepares seven modules, then exhausts heap (exit 134) before
+  deadline delivery; cleanup is unverified for that run. The 384 MB diagnostic verifies
+  deadline-triggered revocation before its 180 s observation bound, HTTP 200 / all 13
+  classics / seven prepared modules, zero sockets and cleanup data zero. Exit 1 reflects
+  incomplete initialization. Neither allowance clears default heap/time/readiness/join
+  gates. Runtime decoding/retention and repeated capture traversal remain next targets.
+  All owned probes terminate and temporary validation drivers/configs/backups are removed.
+
 - A bounded desktop-client capture census passes all 13 classics and links all
   seven modules, then remains pending in editor-core evaluation at the 120 s import
   observation bound. Evaluation records 5653 measurements / 121604715 graph visits /
@@ -48,8 +69,9 @@
   Exact externals.min.js digest matches control: 54585 nodes / 791 function sources,
   168460 steps; cold retained heap falls from 18107256 to 6084896 bytes plus 2075356
   code-buffer bytes. This is storage improvement, not an initialization timing proof.
-  The native 192 MB diagnostic now passes 13 classics and prepares all seven modules
-  without the earlier loading OOM; preload heap measures 133198024 versus the previous
+  The earlier native 192 MB diagnostic passes 13 classics and prepares all seven
+  modules within its 60 s observation bound; the longer run above still exhausts heap.
+  Preload heap measures 133198024 versus the previous
   142526696 bytes, and post-emoji compile heap 176144320. Import settlement and default
   128 MB/30 s runtime acceptance remain open. Temporary instrumentation is restored.
 
@@ -1333,9 +1355,10 @@
   full-client runtime heap and initialization performance remain unverified.
   Live preload now measures about 133.2 MB before module compilation; classic-script
   retention and module evaluation/reconciliation cost remain the next memory and
-  performance targets. The 192 MB bounded run still has one pending import; the
-  later instrumented 384 MB census verifies all seven link successfully and remains
-  pending during editor-core evaluation at its 120 s import observation bound.
+  performance targets. The longer 192 MB run exhausts heap after seven modules prepare.
+  The instrumented 384 MB census verifies all seven link and remains pending in editor
+  evaluation; the later 384 MB run revokes at its new 120 s import deadline, with no
+  readiness/join and cleanup data zero. These runs clear no default heap/time gate.
   The earlier 768 MB statement trace prepares all seven but stays pending at 15 min,
   reaching editor statement 1353 after React DOM and DOMPurify complete; the later
   full-client run remains pending at 30 min. Selected borrowed document methods
@@ -1344,10 +1367,12 @@
   work. Compilation, fetch completion and green classic reports prove no readiness;
   diagnostic heap/time/response allowances clear no default runtime or meeting gate.
 
-- Background dynamic imports outlive the classic evaluation's PageScripts timer.
-  The realm graph has document cancellation and shared step/data limits, but no
-  demonstrated per-import evaluation deadline/TLA timeout. Do not clear the default
-  30 s acceptance gate or settle all imports inside their originating classic task.
+- Background dynamic imports have a separate per-import deadline/TLA timeout above;
+  expiry revokes the realm rather than allowing partially initialized work to resume.
+  Shared step/data limits and document cancellation remain active. Cooperative delivery
+  does not bound a blocking synchronous host call or parsing operation. Do not clear
+  the default 30 s initialization gate or settle all imports inside their originating
+  classic task; the full client still exceeds memory/time acceptance.
 - Interactive Zoom initialization/join and every notetaker capability listed above.
   Iframe navigation, srcdoc/policy contexts and child script realms remain unsupported.
   Diagnostics block optional file-paa.zoom.us and cdn.cookielaw.org origins;

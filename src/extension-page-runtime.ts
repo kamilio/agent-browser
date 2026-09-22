@@ -395,6 +395,7 @@ export function extensionPageRuntime(
 						: { stringCompilation: effectiveStringCompilation }),
 					...(moduleScope
 						? {
+								sourceImportTimeoutMs: options.limits.timeoutMs,
 								sourceResolver: (specifier, referrer, resolution) => {
 									ensureOpen();
 									return moduleScope.resolve(specifier, referrer, resolution);
@@ -409,6 +410,23 @@ export function extensionPageRuntime(
 					sink: options.sink,
 					limits: extensionPageRuntimeLimits,
 				});
+				if (moduleScope) {
+					const policy = Object.getOwnPropertyDescriptor(
+						realm,
+						"sourceImportTimeoutMs",
+					);
+					if (
+						!policy ||
+						!Object.hasOwn(policy, "value") ||
+						policy.value !== options.limits.timeoutMs ||
+						policy.writable ||
+						policy.configurable
+					)
+						throw new AgentBrowserError(
+							"unsupported",
+							"SafeJS source import deadline policy is unavailable",
+						);
+				}
 				if (effectiveStringCompilation !== undefined) {
 					const policy = Object.getOwnPropertyDescriptor(
 						realm,

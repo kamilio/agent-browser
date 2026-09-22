@@ -189,6 +189,9 @@ function fakeCore(
 			releaseCallback() {},
 			close: state.close,
 		};
+		Object.defineProperty(realm, "sourceImportTimeoutMs", {
+			value: options.sourceImportTimeoutMs,
+		});
 		if (stringPolicy)
 			Object.defineProperty(realm, "stringCompilation", stringPolicy);
 		if (scriptErrorPolicy)

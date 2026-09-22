@@ -117,6 +117,9 @@ function fakeCore() {
 		defineExtension: (definition) => definition,
 		createRealm: vi.fn((options) => {
 			const realm = makeRealm(options);
+			Object.defineProperty(realm, "sourceImportTimeoutMs", {
+				value: options.sourceImportTimeoutMs,
+			});
 			realms.push(realm);
 			return realm;
 		}),
