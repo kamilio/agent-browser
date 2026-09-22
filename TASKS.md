@@ -255,6 +255,24 @@
   ancestor/provider provenance remains necessary before sharing capture lists.
   Full startup/default limits and every meeting/media acceptance gate remain open.
 
+- Ordinary guest-literal tracking and owned symbol-key reuse are rejected and
+  removed. Literal tracking passes 130 selected checks but regresses warm CPU
+  0.282 to 0.397 ms and fails actual parent setup with TypeError before child entry.
+  Symbol reuse passes 95 selected checks and retains 42000 warm units at CPU
+  0.829 to 0.718 ms, but full Worker completion/status still fails. Shadow execution
+  counters reach 11703 control versus 8904 candidate nodes; no useful live gain is
+  established. A proxy-gated follow-up is inconclusive: heavy concurrent load and
+  another workspace build deleting SDK output invalidate that comparison.
+  Three SDK source files match HEAD; owned compiled modules are restored from an
+  isolated baseline compiler output, with all eight import checks passing. Actual
+  five-case JSPI/WASM and real public imports/initializer pass on that isolated
+  baseline, cleanup zero. Initializer 39087 steps / 22395140 units is unchanged;
+  loaded-host time is 53.7 s versus earlier 8.3 s, not a performance comparison.
+  All candidate tests/probes/build snapshots removed; unrelated work preserved.
+  Next: private interpreter capture ownership with conservative foreign-frame
+  fallback, rather than further table/dispatcher tweaks. Use isolated output for
+  runtime probes during concurrent builds. Every startup/join/media gate stays open.
+
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
   sender detachment. Up to 64 entries/65536 initial buffer bytes are admitted;
