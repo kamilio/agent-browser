@@ -325,6 +325,7 @@ export function extensionPageRuntime(
 					limits: options.limits,
 					documentUrl: options.workerDocumentUrl,
 					policy: options.workerPolicy,
+					fetch: options.workerFetch,
 					stringCompilation: effectiveStringCompilation,
 					report: (message) => options.sink.error(message),
 					fail: () => {

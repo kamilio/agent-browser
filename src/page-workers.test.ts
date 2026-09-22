@@ -5,7 +5,11 @@ import { PageBlobs } from "./page-blobs.js";
 import { pageUrlBootstrapSource } from "./page-url-bootstrap.js";
 import { PageUrls } from "./page-urls.js";
 import { pageWorkerBootstrapSource } from "./page-worker-bootstrap.js";
-import { PageWorkers, type WorkerBudget } from "./page-workers.js";
+import {
+	type PageWorkerOptions,
+	PageWorkers,
+	type WorkerBudget,
+} from "./page-workers.js";
 import type {
 	ReleasedContext,
 	ReleasedCore,
@@ -84,7 +88,10 @@ function owner(signal = new AbortController().signal, copyArguments = true) {
 		},
 	};
 }
-function fixture(copyArguments = true) {
+function fixture(
+	copyArguments = true,
+	overrides: Partial<PageWorkerOptions> = {},
+) {
 	const controller = new AbortController();
 	const parent = owner(controller.signal, copyArguments);
 	const children: ReturnType<typeof owner>[] = [];
@@ -148,6 +155,7 @@ function fixture(copyArguments = true) {
 		policy,
 		report,
 		fail,
+		...overrides,
 	});
 	const vm = createContext({
 		structuredClone,
@@ -470,14 +478,13 @@ it("enforces the lifetime creation quota after terminated workers release their 
 	});
 });
 
-it("rejects foreign/revoked URLs, disallowed CSP, non-JavaScript source and modules", () => {
+it("rejects foreign/revoked URLs, disallowed CSP, unavailable network loading and modules", () => {
 	const test = fixture();
 	for (const source of [
 		"new Worker()",
 		"Worker('blob:https://example.test/none')",
 		"new Worker('https://example.test/worker.js')",
 		"new Worker('blob:https://example.test/unknown')",
-		"new Worker(URL.createObjectURL(new Blob(['x'],{type:'text/plain'})))",
 	])
 		expect(() => test.evaluate(source)).toThrow();
 	test.evaluate(
@@ -522,3 +529,132 @@ it("identifies the isolated global as a dedicated worker without exposing constr
 		]),
 	);
 });
+
+it("loads same-origin classic source asynchronously and preserves queued messages and final location", async () => {
+	let release!: (value: {
+		url: string;
+		source: string;
+		stringCompilation: "allow";
+	}) => void;
+	const fetch = vi.fn(
+		() =>
+			new Promise<{ url: string; source: string; stringCompilation: "allow" }>(
+				(resolve) => {
+					release = resolve;
+				},
+			),
+	);
+	const test = fixture(true, { fetch });
+	test.evaluate(
+		"var worker=new Worker('/worker.js');var received;worker.onmessage=e=>received=e.data;worker.postMessage('queued');",
+	);
+	await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+	expect(test.children).toHaveLength(0);
+	release({
+		url: "https://example.test/final.js",
+		source: "onmessage=e=>{postMessage([e.data,location.href]);close();};",
+		stringCompilation: "allow",
+	});
+	await vi.waitFor(() =>
+		expect(test.evaluate("received")).toEqual([
+			"queued",
+			"https://example.test/final.js",
+		]),
+	);
+	expect(test.policy.mock.calls.map((call) => call[0])).toEqual([
+		"https://example.test/worker.js",
+		"https://example.test/final.js",
+	]);
+});
+
+it.each(["terminate", "close", "timeout"] as const)(
+	"cancels pending network source on %s and discards late adapter results",
+	async (action) => {
+		let release!: (value: {
+			url: string;
+			source: string;
+			stringCompilation: "allow";
+		}) => void;
+		let signal!: AbortSignal;
+		const fetch = vi.fn((_url: string, input: AbortSignal) => {
+			signal = input;
+			return new Promise<{
+				url: string;
+				source: string;
+				stringCompilation: "allow";
+			}>((resolve) => {
+				release = resolve;
+			});
+		});
+		const test = fixture(true, {
+			fetch,
+			limits: scriptLimits({ timeoutMs: 25 }),
+		});
+		test.evaluate(
+			"var worker=new Worker('/worker.js');var errors=[];worker.onerror=e=>errors.push(e.message);worker.postMessage('held');",
+		);
+		await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce(), {
+			interval: 1,
+		});
+		if (action === "terminate") test.evaluate("worker.terminate();");
+		if (action === "close") await test.close();
+		await vi.waitFor(() =>
+			expect(test.workers.metrics()).toMatchObject({
+				active: 0,
+				pending: 0,
+				retainedUnits: 0,
+			}),
+		);
+		expect(signal.aborted).toBe(true);
+		expect(test.evaluate("errors.length")).toBe(action === "timeout" ? 1 : 0);
+		release({
+			url: "https://example.test/worker.js",
+			source: "postMessage('late');",
+			stringCompilation: "allow",
+		});
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(test.children).toHaveLength(0);
+		expect(test.units.size).toBe(0);
+	},
+);
+
+it.each([
+	{
+		url: "https://other.test/worker.js",
+		source: "",
+		stringCompilation: "allow",
+	},
+	{
+		url: "https://example.test/worker.js",
+		source: "x".repeat(262144),
+		stringCompilation: "allow",
+	},
+	{
+		url: "https://example.test/worker.js",
+		source: "",
+		stringCompilation: "invalid",
+	},
+])(
+	"contains rejected network loader results before creating a realm: %j",
+	async (loaded) => {
+		const test = fixture(true, { fetch: vi.fn(async () => loaded as never) });
+		test.evaluate(
+			"var worker=new Worker('/worker.js');var errors=[];worker.onerror=e=>errors.push(e.type);",
+		);
+		await vi.waitFor(() => expect(test.evaluate("errors")).toEqual(["error"]));
+		await vi.waitFor(() => expect(test.workers.metrics().active).toBe(0));
+		expect(test.children).toHaveLength(0);
+	},
+);
+
+it.each(["", "text/plain"])(
+	"runs classic Blob Worker source without HTTP MIME restrictions: %s",
+	async (type) => {
+		const test = fixture();
+		test.evaluate(
+			`var worker=new Worker(URL.createObjectURL(new Blob(["postMessage('ready');close();"],{type:${JSON.stringify(type)}})));var received;worker.onmessage=e=>received=e.data;`,
+		);
+		await vi.waitFor(() => expect(test.evaluate("received")).toBe("ready"));
+	},
+);

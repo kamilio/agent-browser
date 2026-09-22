@@ -9,6 +9,7 @@ import type {
 	ReleasedRealm,
 } from "./safejs-extension-types.js";
 import type { SafeJsBudget, ScriptLimits } from "./safejs.js";
+import type { WorkerScriptFetch, WorkerScriptSource } from "./worker-fetch.js";
 
 export interface WorkerBudget extends SafeJsBudget {
 	forkRealm(): WorkerBudget;
@@ -21,6 +22,7 @@ export interface PageWorkerOptions {
 	limits: Readonly<ScriptLimits>;
 	documentUrl: string;
 	policy(url: string): void;
+	fetch?: WorkerScriptFetch;
 	stringCompilation?: "allow" | "deny";
 	report(message: string): void;
 	fail(error: unknown): void;
@@ -54,12 +56,6 @@ const typedBuffer = intrinsicGetter<object>(
 const viewBuffer = intrinsicGetter<object>(DataView.prototype, "buffer");
 const regexpSource = intrinsicGetter<string>(RegExp.prototype, "source");
 const decoder = new TextDecoder();
-const javascriptTypes = new Set([
-	"text/javascript",
-	"application/javascript",
-	"text/ecmascript",
-	"application/ecmascript",
-]);
 interface WorkerRecord {
 	url: string;
 	name: string;
@@ -76,6 +72,7 @@ interface WorkerRecord {
 	prefixes: Set<Promise<void>>;
 	outgoing: number;
 	disposed: boolean;
+	stringCompilation?: "allow" | "deny";
 }
 interface Packet {
 	record: WorkerRecord;
@@ -157,6 +154,26 @@ function fatal(error: unknown): boolean {
 	if (!error || typeof error !== "object" || types.isProxy(error)) return false;
 	const code = Object.getOwnPropertyDescriptor(error, "code")?.value;
 	return code === "budgetExceeded" || code === "reentry";
+}
+function awaitSource(
+	operation: Promise<Readonly<WorkerScriptSource>>,
+	signal: AbortSignal,
+): Promise<Readonly<WorkerScriptSource>> {
+	return new Promise((resolve, reject) => {
+		const cancel = () => reject(signal.reason);
+		operation.then(
+			(value) => {
+				signal.removeEventListener("abort", cancel);
+				resolve(value);
+			},
+			(error) => {
+				signal.removeEventListener("abort", cancel);
+				reject(error);
+			},
+		);
+		if (signal.aborted) cancel();
+		else signal.addEventListener("abort", cancel, { once: true });
+	});
 }
 
 export class PageWorkers {
@@ -254,23 +271,37 @@ export class PageWorkers {
 		)
 			limited();
 		const url = new URL(input);
-		if (url.protocol !== "blob:")
-			throw new AgentBrowserError(
-				"unsupported",
-				"Network worker loading is not yet supported",
-			);
 		this.options.policy(url.href);
-		const blob = this.blobs.resolveObjectUrl(url.href);
-		if (!blob)
-			throw new TypeError(
-				"Worker Blob URL is revoked or belongs to another page",
-			);
-		if (!javascriptTypes.has(blob.type.split(";", 1)[0].trim()))
-			throw new TypeError("Worker requires a JavaScript MIME type");
-		const source = decoder.decode(blob.bytes);
+		let source: string | undefined;
+		if (url.protocol === "blob:") {
+			const blob = this.blobs.resolveObjectUrl(url.href);
+			if (!blob)
+				throw new TypeError(
+					"Worker Blob URL is revoked or belongs to another page",
+				);
+			// Classic Worker MIME checks apply only to HTTP(S), not Blob sources.
+			source = decoder.decode(blob.bytes);
+		} else {
+			if (
+				!["https:", "http:"].includes(url.protocol) ||
+				url.username ||
+				url.password ||
+				url.origin !== new URL(this.options.documentUrl).origin
+			)
+				throw new AgentBrowserError(
+					"policy-denied",
+					"Classic Worker source must be same-origin",
+				);
+			if (!this.options.fetch)
+				throw new AgentBrowserError(
+					"unsupported",
+					"Worker network loader is unavailable",
+				);
+		}
 		if (
+			source !== undefined &&
 			source.length + workerGlobalBootstrapSource.length >
-			this.options.limits.maxSourceCodeUnits
+				this.options.limits.maxSourceCodeUnits
 		)
 			limited();
 		const record: WorkerRecord = {
@@ -282,6 +313,7 @@ export class PageWorkers {
 			prefixes: new Set(),
 			outgoing: 0,
 			disposed: false,
+			stringCompilation: this.options.stringCompilation,
 		};
 		const port = this.owner.createHostObject({
 			properties: {
@@ -304,10 +336,71 @@ export class PageWorkers {
 		this.created++;
 		// Begin outside the parent's host call; source bytes were snapshotted above.
 		record.initialization = Promise.resolve().then(() =>
-			this.initialize(record, source),
+			this.load(record, source),
 		);
 		void record.initialization.catch((error) => this.failure(record, error));
 		return port;
+	}
+	private async load(record: WorkerRecord, snapshot: string | undefined) {
+		let source = snapshot;
+		if (this.closed || this.owner.signal.aborted || record.state !== "loading")
+			return;
+		const timeout = setTimeout(
+			() =>
+				this.failure(
+					record,
+					new AgentBrowserError("timeout", "Worker initialization timed out"),
+				),
+			this.options.limits.timeoutMs,
+		);
+		try {
+			if (source === undefined) {
+				const fetch = this.options.fetch;
+				if (!fetch) throw new TypeError("Worker network loader is unavailable");
+				const loaded = await awaitSource(
+					fetch(record.url, record.controller.signal),
+					record.controller.signal,
+				);
+				if (
+					this.closed ||
+					this.owner.signal.aborted ||
+					record.state !== "loading"
+				)
+					return;
+				const final = new URL(loaded.url);
+				if (
+					final.origin !== new URL(this.options.documentUrl).origin ||
+					!["https:", "http:"].includes(final.protocol) ||
+					final.username ||
+					final.password
+				)
+					throw new AgentBrowserError(
+						"policy-denied",
+						"Worker loader returned a foreign source",
+					);
+				this.options.policy(final.href);
+				if (
+					typeof loaded.source !== "string" ||
+					loaded.source.length + workerGlobalBootstrapSource.length >
+						this.options.limits.maxSourceCodeUnits
+				)
+					limited();
+				if (
+					loaded.stringCompilation !== "allow" &&
+					loaded.stringCompilation !== "deny"
+				)
+					throw new TypeError("Invalid Worker source policy");
+				record.url = final.href;
+				record.stringCompilation =
+					record.stringCompilation === "deny"
+						? "deny"
+						: loaded.stringCompilation;
+				source = loaded.source;
+			}
+			await this.initialize(record, source);
+		} finally {
+			clearTimeout(timeout);
+		}
 	}
 	private async initialize(record: WorkerRecord, source: string) {
 		if (this.closed || this.owner.signal.aborted || record.state !== "loading")
@@ -407,51 +500,39 @@ export class PageWorkers {
 				};
 			},
 		});
-		const timeout = setTimeout(
-			() =>
-				this.failure(
-					record,
-					new AgentBrowserError("timeout", "Worker initialization timed out"),
-				),
-			this.options.limits.timeoutMs,
+		record.realm = this.options.core.createRealm({
+			classicScripts: true,
+			callbackScheduling: "after-prefix",
+			stringCompilation: record.stringCompilation,
+			extensions: [extension],
+			grants: ["guest:retain"],
+			budget: this.options.budget.forkRealm(),
+			signal: record.controller.signal,
+			limits: {
+				extensions: 1,
+				hostObjects: 128,
+				callbacks: 1024,
+				guestReferences: 128,
+				cleanups: 8,
+			},
+			sink: {
+				log: () => undefined,
+				error: () => this.report("Worker console error"),
+			},
+		});
+		const result = await record.realm.evaluate(
+			workerGlobalBootstrapSource + source,
+			{ filename: record.url, discardResult: true },
 		);
-		try {
-			record.realm = this.options.core.createRealm({
-				classicScripts: true,
-				callbackScheduling: "after-prefix",
-				stringCompilation: this.options.stringCompilation,
-				extensions: [extension],
-				grants: ["guest:retain"],
-				budget: this.options.budget.forkRealm(),
-				signal: record.controller.signal,
-				limits: {
-					extensions: 1,
-					hostObjects: 128,
-					callbacks: 1024,
-					guestReferences: 128,
-					cleanups: 8,
-				},
-				sink: {
-					log: () => undefined,
-					error: () => this.report("Worker console error"),
-				},
-			});
-			const result = await record.realm.evaluate(
-				workerGlobalBootstrapSource + source,
-				{ filename: record.url, discardResult: true },
+		if (!result.ok)
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Worker script execution failed",
 			);
-			if (!result.ok)
-				throw new AgentBrowserError(
-					"invalid-input",
-					"Worker script execution failed",
-				);
-			if (record.state === "loading") {
-				record.state = "ready";
-				record.timers?.wake();
-				this.wake();
-			}
-		} finally {
-			clearTimeout(timeout);
+		if (record.state === "loading") {
+			record.state = "ready";
+			record.timers?.wake();
+			this.wake();
 		}
 	}
 	private post(record: WorkerRecord, outgoing: boolean, value: unknown) {
@@ -597,6 +678,7 @@ export class PageWorkers {
 			record.state === "closed"
 		)
 			return;
+		if (record.state === "closing" && !fatal(error)) return;
 		if (fatal(error)) this.options.fail(error);
 		else {
 			try {
@@ -608,6 +690,7 @@ export class PageWorkers {
 				this.options.fail(error);
 			}
 		}
+		if (!record.realm) record.controller.abort(error);
 		this.closeSelf(record);
 	}
 	private closeSelf(record: WorkerRecord) {

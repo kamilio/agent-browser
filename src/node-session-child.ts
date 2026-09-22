@@ -109,6 +109,7 @@ async function receive(raw: unknown) {
 			document: DocumentTree,
 			fetch?: PageFetchTransport,
 			networkSourceModules?: PageNetworkModuleOptions,
+			workerFetch?: PageScriptOptions["workerFetch"],
 		) => {
 			let owner = pageOwners.get(document);
 			if (!owner) {
@@ -118,6 +119,7 @@ async function receive(raw: unknown) {
 					{
 						...(message.scripts as PageScriptOptions | undefined),
 						fetch,
+						workerFetch,
 						networkSourceModules,
 					},
 				);
@@ -206,7 +208,12 @@ async function receive(raw: unknown) {
 												...(networkSourceModules ? { modules: true } : {}),
 											},
 											owner: (document) =>
-												ownerFor(document, context.fetch, networkSourceModules),
+												ownerFor(
+													document,
+													context.fetch,
+													networkSourceModules,
+													context.fetchWorker,
+												),
 										}),
 									}
 								: {}),

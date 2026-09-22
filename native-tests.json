@@ -1106,5 +1106,6 @@
   "src/script-node-iterators.test.ts",
   "src/page-blobs.test.ts",
   "src/page-workers.test.ts",
-  "src/worker-csp.test.ts"
+  "src/worker-csp.test.ts",
+  "src/worker-fetch.test.ts"
 ]

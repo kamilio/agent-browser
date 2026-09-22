@@ -445,6 +445,7 @@ const browser = new BrowserSession({
 						observed,
 						{
 							fetch: context.fetch,
+							workerFetch: context.fetchWorker,
 							networkSourceModules: {
 								documentUrl: response.url,
 								entries: [],

@@ -1156,3 +1156,101 @@ it("shares the script request limit with the document module provider", async ()
 		"https://example.com/module-child.js",
 	]);
 });
+
+it("loads Worker entry source under worker-src while script-src denies page scripts", async () => {
+	let fetch!: NonNullable<DocumentLoaderContext["fetchWorker"]>;
+	const { session, requests } = fixture(
+		{
+			loadDocument: async (input, context) => {
+				if (!context.fetchWorker) throw Error("Missing Worker provider");
+				fetch = context.fetchWorker;
+				return loadBrowserDocument(input, context);
+			},
+		},
+		async (input) =>
+			response(
+				input.url,
+				input.url === initialUrl
+					? "<html><body>Worker policy fixture</body></html>"
+					: "postMessage('ready');",
+				{
+					headers:
+						input.url === initialUrl
+							? {
+									"content-type": ["text/html"],
+									"content-security-policy": [
+										"worker-src 'self'; script-src 'none'",
+									],
+								}
+							: { "content-type": ["text/javascript"] },
+				},
+			),
+	);
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	await expect(
+		fetch(scriptUrl, new AbortController().signal),
+	).resolves.toMatchObject({ url: scriptUrl, source: "postMessage('ready');" });
+	expect(requests.map((input) => input.url)).toEqual([initialUrl, scriptUrl]);
+});
+
+it("enforces Worker entry policy and foreign redirects before issuing forbidden requests", async () => {
+	let fetch!: NonNullable<DocumentLoaderContext["fetchWorker"]>;
+	const { session, requests } = fixture(
+		{
+			loadDocument: async (input, context) => {
+				if (!context.fetchWorker) throw Error("Missing Worker provider");
+				fetch = context.fetchWorker;
+				return loadBrowserDocument(input, context);
+			},
+		},
+		async (input) =>
+			response(input.url, input.url === initialUrl ? "<html></html>" : "", {
+				headers:
+					input.url === initialUrl
+						? {
+								"content-type": ["text/html"],
+								"content-security-policy": [
+									"worker-src 'self'; script-src 'unsafe-inline'",
+								],
+							}
+						: { location: [crossOriginUrl] },
+				status: input.url === initialUrl ? 200 : 302,
+			}),
+	);
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	await expect(
+		fetch(crossOriginUrl, new AbortController().signal),
+	).rejects.toMatchObject({ code: "policy-denied" });
+	await expect(
+		fetch(scriptUrl, new AbortController().signal),
+	).rejects.toMatchObject({ code: "policy-denied" });
+	expect(requests.map((input) => input.url)).toEqual([initialUrl, scriptUrl]);
+});
+
+it("blocks Worker loading before a network request when worker-src denies it", async () => {
+	let fetch!: NonNullable<DocumentLoaderContext["fetchWorker"]>;
+	const { session, requests } = fixture(
+		{
+			loadDocument: async (input, context) => {
+				if (!context.fetchWorker) throw Error("Missing Worker provider");
+				fetch = context.fetchWorker;
+				return loadBrowserDocument(input, context);
+			},
+		},
+		async (input) =>
+			response(input.url, "<html></html>", {
+				headers: {
+					"content-type": ["text/html"],
+					"content-security-policy": ["worker-src 'none'; script-src 'self'"],
+				},
+			}),
+	);
+	const tab = session.createTab().id;
+	await session.navigate(tab, initialUrl);
+	await expect(
+		fetch(scriptUrl, new AbortController().signal),
+	).rejects.toMatchObject({ code: "policy-denied" });
+	expect(requests.map((input) => input.url)).toEqual([initialUrl]);
+});

@@ -116,8 +116,10 @@ import {
 } from "./stylesheet-fetch.js";
 import type { UploadActionRunner } from "./upload-transfers.js";
 import type { WebSocketTransport } from "./websocket-transport.js";
+import { decodeWorkerScript, type WorkerScriptFetch } from "./worker-fetch.js";
 
 export interface DocumentLoaderContext {
+	readonly fetchWorker?: WorkerScriptFetch;
 	readonly topLevelDocument?: true;
 	readonly initializeDocument?: (
 		tree: DocumentTree,
@@ -2329,6 +2331,7 @@ export class BrowserSession {
 			scriptSignal: AbortSignal,
 			admission?: DocumentScriptAdmission,
 			documentScoped = false,
+			destination: "script" | "worker" = "script",
 		) => {
 			const moduleController = documentScoped ? new AbortController() : undefined;
 			const abortNavigation = () => {
@@ -2369,10 +2372,22 @@ export class BrowserSession {
 								signal: policySignal,
 								maxRedirects: this.transport.limits?.maxRedirects ?? 10,
 								checkContentSecurityPolicy: (url, redirectCount) => {
-									resourcePolicy?.check("script", url, redirectCount);
+									resourcePolicy?.check(destination, url, redirectCount);
 									const owner = candidate
 										? documentScriptCsp(candidate)
 										: undefined;
+									if (destination === "worker") {
+										if (
+											parseNetworkUrl(url).origin !== parseNetworkUrl(responseUrl).origin ||
+											owner?.unsupported ||
+											((fetchCspBlocked || owner?.enforced) && !resourcePolicy)
+										)
+											throw new AgentBrowserError(
+												"policy-denied",
+												"Worker source or policy is unavailable",
+											);
+											return;
+									}
 									if (
 										owner?.unsupported ||
 										((fetchCspBlocked || owner?.enforced) &&
@@ -2478,6 +2493,17 @@ export class BrowserSession {
 						scriptSignal: AbortSignal,
 						admission?: DocumentScriptAdmission,
 					) => fetchPolicyScript(resourceUrl, policy, scriptSignal, admission, true),
+					fetchWorker: async (resourceUrl: string, workerSignal: AbortSignal) => {
+						const result = await fetchPolicyScript(
+							resourceUrl,
+							{ mode: "no-cors", credentials: "same-origin" },
+							workerSignal,
+							undefined,
+							true,
+							"worker",
+						);
+						return decodeWorkerScript(result.response, 4_194_304);
+					},
 					fetchScript: (resourceUrl: string) =>
 						journal.run("script", resourceUrl, "GET", async () => {
 							assertScriptOwner();

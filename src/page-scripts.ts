@@ -39,6 +39,7 @@ import {
 } from "./safejs.js";
 import type { ScriptCallbackRuntime } from "./script-events.js";
 import type { SessionPage } from "./session.js";
+import type { WorkerScriptFetch } from "./worker-fetch.js";
 
 export type {
 	PageRealm,
@@ -47,6 +48,7 @@ export type {
 } from "./page-runtime.js";
 
 export interface PageScriptOptions extends PageBindingOptions {
+	workerFetch?: WorkerScriptFetch;
 	budgetProfile?: ScriptBudgetProfile;
 	networkSourceModules?: PageNetworkModuleOptions;
 	limits?: Partial<ScriptLimits>;
@@ -107,6 +109,14 @@ export class PageScripts {
 			"networkSourceModules",
 			true,
 		) as PageNetworkModuleOptions | undefined;
+		const workerFetch = moduleInputData(options, "workerFetch", true) as
+			| WorkerScriptFetch
+			| undefined;
+		if (workerFetch !== undefined && typeof workerFetch !== "function")
+			throw new AgentBrowserError(
+				"invalid-input",
+				"Invalid Worker fetch configuration",
+			);
 		const budgetProfile = options.budgetProfile;
 		this.limits = scriptLimits(options.limits, budgetProfile);
 		if (networkSourceModules !== undefined) {
@@ -158,6 +168,7 @@ export class PageScripts {
 				this.bindings?.console.buffer.write(level, values);
 			};
 			this.runtime = factory.createPageRuntime({
+				workerFetch,
 				workerDocumentUrl: page.document.url,
 				workerPolicy: (url) => {
 					this.ensureOpen();
