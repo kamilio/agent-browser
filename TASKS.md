@@ -44,7 +44,7 @@
   all 163 selected SDK checks across sixteen files, selected SDK build/eight built-entry
   checks, strict new-test typing and changed-file lint/new-test format pass. The actual
   guest WASM diagnostic below also passes against the rebuilt maintained SDK. Worker
-  installation still requires reconciling callback scheduling with the scratch SDK;
+  installation still requires reconciling the remaining compilation/error policies;
   these ownership fixes alone do not clear that gate.
 - Maintained SafeJS now supports opt-in classicScripts with persistent intrinsic
   globals, immutable injected lexical capabilities, Script grammar and retained
@@ -56,9 +56,20 @@
   formatting pass. Actual offline Node24 JSPI/SafeJS verifies synchronous WASM in
   a classic child realm, persistent global var identity and preserved shared steps;
   all five guest API diagnostic cases and cleanup resources/data/depth/pending zero
-  pass at 128 MiB with explicit diagnostic quotas. Callback scheduling, string
+  pass at 128 MiB with explicit diagnostic quotas. String
   compilation policy, classic error reporting/dynamic imports and related scratch
   SDK contributions still require reconciliation before page/Worker integration.
+- Maintained SafeJS now supports opt-in callbackScheduling: "after-prefix": later
+  source can run once all callback prefixes finish, while tails retain their scopes,
+  compilation tickets and operation-specific rejection ownership. Source remains
+  exclusive; cancellation/close waits for queued work before resource release. Full
+  primary graph reconciliation stays active. Suspended generator locals now count
+  toward data limits. All 122 selected scheduling/callback/ownership/module checks
+  and 55 generator/snapshot checks pass, along with SDK build/eight entry checks,
+  strict new-test typing and changed-file lint/new-test formatting. Actual offline
+  guest WASM diagnostics pass all five cases in both exclusive and after-prefix
+  modes against the rebuilt maintained SDK; cleanup resources/data/depth/pending
+  return to zero. This does not clear page/Worker installation or Zoom/media gates.
 - Native WASM owners now provide original validation, stable bounded binary
   instrumentation, declared allocation/import/export admission, compilation leases,
   ordered imports through null-prototype maps, realm invokeCallback dispatch, owned
@@ -99,7 +110,7 @@
   error brands; 1717 steps/depth eight and cleanup resources/data/depth/pending zero.
   Table/Global wrappers, streaming/custom sections and page/Worker installers remain
   absent. Shared-realm ownership is now fixed in the maintained SDK; reconcile its
-  remaining callback scheduling and guest compilation/error policies before installation.
+  remaining guest compilation/error policies before installation.
   Diagnostic 32 MiB quotas
   do not clear default page 16 MiB/262144-element limits. Next: page/Worker installers,
   actual Zoom instantiation with its real imports, initialization performance and

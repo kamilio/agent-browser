@@ -9,6 +9,9 @@ import type { ReleasedCore } from "../src/safejs-extension-types.js";
 // No page/Worker installer, public asset, socket, meeting or media is exercised.
 const root = process.env.AGENT_BROWSER_SAFEJS_SOURCE_ROOT;
 if (!root) throw new Error("Select the compiled SDK explicitly");
+const callbackScheduling = process.env.AGENT_BROWSER_WASM_CALLBACK_SCHEDULING;
+if (callbackScheduling !== undefined && callbackScheduling !== "after-prefix")
+	throw new Error("WASM callback scheduling must be after-prefix or unset");
 let core: ReleasedCore | undefined;
 await loadPageRuntime(
 	root,
@@ -151,6 +154,7 @@ const extension = core.defineExtension({
 	},
 });
 const realm = core.createRealm({
+	...(callbackScheduling ? { callbackScheduling } : {}),
 	extensions: [extension],
 	grants: ["source:nested", "array-buffer:share"],
 	budget,
@@ -234,6 +238,7 @@ try {
 	});
 	const classicRealm = core.createRealm({
 		classicScripts: true,
+		...(callbackScheduling ? { callbackScheduling } : {}),
 		extensions: [classicExtension],
 		grants: ["source:nested", "array-buffer:share"],
 		budget: classicBudget,
@@ -291,6 +296,7 @@ try {
 		JSON.stringify({
 			scope: "Offline actual SafeJS/JSPI guest WebAssembly API",
 			node: process.version,
+			callbackScheduling: callbackScheduling ?? "exclusive",
 			passed: reports.length === 5,
 			reports,
 			cleanup: { ...metrics, currentDataSize: budget.currentDataSize },
