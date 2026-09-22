@@ -41,8 +41,25 @@
   Ordinary host ingress still copies. Untracked host views retain conservative scans,
   and huge explicit guest key enumeration remains unbounded by this accounting fix.
   Diagnostic 32 MiB quotas do not clear the default page 16 MiB/262144-element gate.
-  Actual Zoom WASM imports, synchronous callbacks, page/Worker API integration,
-  initialization performance and joining/media acceptance remain open.
+  Actual Zoom WASM imports, page/Worker API integration, initialization performance
+  and joining/media acceptance remain open; offline callback ownership passes below.
+
+- Offline actual JSPI/SafeJS callback and WASM reentry now pass at 20 MiB in a
+  128 MiB process: guest calls receive scalar results without adding await, native
+  and guest memory writes agree, and close leaves data/depth/pending zero. The
+  maintained SDK fixes full invokeCallback settlement inside a granted nestedOperation;
+  startCallback retains separate prefix/tail behavior. Seven regressions and 109
+  focused SDK checks across nine files, SDK build/eight built-entry checks, typing
+  and changed-file lint pass. Browser 49 manifest-listed checks, build, typing and
+  changed-file lint/format pass. Actual JSPI also verifies suspended cancellation,
+  steps (26 for limit 25), depth eight and sampled deadline (1024 steps).
+  NodeWasmCalls requires the modern Suspending/promising API: the diagnostic uses
+  /tmp/agent-browser-node24-runtime/bin/node v24.14.0 with explicit
+  --experimental-wasm-jspi; default Node v22 rejects with controlled unsupported.
+  Asynchronous imports in start functions are unsupported. This is a low-level
+  owned execution bridge, not a page/Worker WebAssembly global or Zoom startup pass.
+  Compile/import/memory admission, default page quotas, actual Zoom instantiation,
+  initialization and every joining/media gate remain open.
 
 - Portable WASM binary instrumentation now inserts reserved step/enter/leave imports.
   Typed outer blocks route returns and function-target branches through depth cleanup;
@@ -58,10 +75,8 @@
   instrumentation produces 887959 bytes/205697 checks from 465602 bytes in 54 ms;
   original and output validate, no instantiation performed. Transport closes active
   requests zero. This is not a page API or Zoom startup pass: bounded imports,
-  synchronous SafeJS callbacks and page/Worker integration remain open. The offline
-  memory bridge gate above passes separately. Current Node v22 has no default
-  Suspending/promising WASM API; its
-  promise-integration flag is experimental and has not been enabled or validated.
+  page/Worker integration remain open. The offline memory and callback bridges
+  above pass separately; default Node v22 has no supported Suspending/promising API.
 
 - Child Workers now reuse the bounded native performance clock and user timing:
   monotonic/coarsened now/timeOrigin, marks/measures, isolated JSON details and
@@ -82,8 +97,9 @@
   bounds status collection and verifies cleanup. Native build and script lint/format
   pass. Authorized current public-asset run at 128 MB/30 s exits with failure:
   child timeout at 30009 ms/892133 shared steps, no EOF, cleanup verified zero.
-  Read-only net.wasm metadata (465602 bytes; no instantiation) shows 20 function
-  imports and an unshared memory import, minimum 320/maximum 2048 pages (20/128 MiB).
+  Read-only net.wasm metadata (465602 bytes; no instantiation) shows 21 function
+  imports (22 total) and an unshared memory import, minimum 320/maximum 2048 pages
+  (20/128 MiB).
   Real WASM support needs memory-view identity, guest callbacks and bounded,
   cancellable execution; a native host call alone would bypass SafeJS checkpoints.
 

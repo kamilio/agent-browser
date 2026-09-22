@@ -57,6 +57,10 @@ export interface ReleasedContext {
 		prototype: unknown,
 		assertActive?: () => void,
 	): void;
+	invokeCallback?(
+		callback: unknown,
+		options?: { thisValue?: unknown; args?: readonly unknown[] },
+	): Promise<unknown>;
 	startCallback(
 		callback: unknown,
 		options?: { thisValue?: unknown; args?: readonly unknown[] },
