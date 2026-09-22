@@ -281,8 +281,20 @@
   Actual five-case JSPI/WASM and real public imports/initializer pass, cleanup zero;
   initializer remains 39087 steps / 22395140 units. Full Worker still times out at
   30048 ms / 879429 steps with no completion/status, cleanup zero. Local poe-code
-  commit 98864fd9e; no push or startup gain claimed. Private accounting root vectors
-  and carrier/ancestor/provider provenance remain open before capture-list reuse.
+  commit 98864fd9e; no push or startup gain claimed. Private binding accounting
+  vectors now use pinned own-index writes, immutable lists/records and indexed
+  measurement; one optional group replaces the cached singleton wrapper array.
+  Three reproduced late push/iterator/inherited-field cases erase 1000 units to
+  zero. Four new and 92 selected existing checks, strict test typing, scoped lint/
+  format, isolated compilation/eight imports pass (poe-code d3f172469; no push).
+  Actual five-case JSPI/WASM passes serially at original limits after a concurrent
+  run stops before its last two cases; real public initializer passes at unchanged
+  39087 steps / 22395140 units, cleanup zero. Loaded 30 s Worker times out in parent
+  setup at 448446 steps; serial 120 s diagnostic parent succeeds, child still times
+  out at 120658 ms / 881068 steps without completion/status, cleanup zero. No useful
+  startup gain established. Validation build removed. Carrier/ancestor/provider
+  ownership remains open before capture reuse; retain fresh foreign-frame reads.
+  Full startup/default limits and every joining/meeting/media gate remain open.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
