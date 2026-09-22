@@ -620,3 +620,65 @@ it("rejects multiple memories when one guarded growth hook cannot identify them"
 		/Unsupported/,
 	);
 });
+
+it("reports original imports, signatures, allocations and exports for admission", () => {
+	const bytes = moduleBytes(
+		section(1, [1, 0x60, 1, 0x7f, 1, 0x7f]),
+		section(2, [
+			2,
+			...string("env"),
+			...string("f"),
+			0,
+			0,
+			...string("env"),
+			...string("memory"),
+			2,
+			1,
+			1,
+			3,
+		]),
+		section(3, [1, 0]),
+		section(4, [1, 0x70, 1, 1, 2]),
+		section(6, [1, 0x7f, 0, 0x41, 0, 0x0b]),
+		section(7, [
+			3,
+			...string("run"),
+			0,
+			1,
+			...string("memory"),
+			2,
+			0,
+			...string("g"),
+			3,
+			0,
+		]),
+		section(10, [1, 6, 0, 0x20, 0, 0x10, 0, 0x0b]),
+	);
+	expect(WebAssembly.validate(bytes as BufferSource)).toBe(true);
+	const result = meterWasmModule(bytes, { guardMemoryGrowth: true });
+	expect(result.declarations).toMatchObject({
+		imports: [
+			{
+				module: "env",
+				name: "f",
+				kind: "function",
+				signature: { parameters: [0x7f], results: [0x7f] },
+			},
+			{ module: "env", name: "memory", kind: "memory", minimum: 1, maximum: 3 },
+		],
+		exports: [
+			{
+				name: "run",
+				kind: "function",
+				index: 1,
+				signature: { parameters: [0x7f], results: [0x7f] },
+			},
+			{ name: "memory", kind: "memory", index: 0 },
+			{ name: "g", kind: "global", index: 0 },
+		],
+		memories: [],
+		tables: [{ element: 0x70, minimum: 1, maximum: 2 }],
+		globals: [{ valueType: 0x7f, mutable: false }],
+		tableGrowInstructions: 0,
+	});
+});

@@ -4,6 +4,7 @@ import {
 	NodeWasmMemories,
 	type WasmMemoryBudget,
 } from "../src/node-wasm-memories.js";
+import { NodeWasmModules } from "../src/node-wasm-modules.js";
 import type { ReleasedCore } from "../src/safejs-extension-types.js";
 import { meterWasmModule } from "../src/wasm-metering.js";
 
@@ -35,6 +36,7 @@ type ProbeBudget = InstanceType<ReleasedCore["Budget"]> &
 		visitNode(): void;
 		enterCall(): () => void;
 		readonly currentDataSize: number;
+		setRetainedDataUsage(owner: object, usage: number): void;
 	};
 function budget(maxSteps = 100000, maxCallDepth = 64): ProbeBudget {
 	return new sdk.Budget({
@@ -91,7 +93,6 @@ ensure(
 	WebAssembly.validate(metered.originalBytes as BufferSource),
 	"Invalid original callback fixture",
 );
-const module = new WebAssembly.Module(metered.bytes as BufferSource);
 
 const reports: unknown[] = [];
 for (const cancel of [false, true]) {
@@ -124,6 +125,9 @@ for (const cancel of [false, true]) {
 				"Selected SDK lacks full callback or live-buffer support",
 			);
 			context.onCleanup(() => calls.close());
+			const modules = new NodeWasmModules(quota, context.signal);
+			context.onCleanup(() => modules.close());
+			const module = modules.record(modules.compileSync(original)).module;
 			memories = new NodeWasmMemories(context, quota);
 			context.onCleanup(() => memories?.close());
 			const handle = memories.createMemory(320, 512);

@@ -84,13 +84,32 @@
   elements, indirect calls, starts, exits and multi-value wrappers. Offline actual
   SDK/WASM fixtures pass one/320 pages, native growth preserving bytes and refreshing
   views, maximum failure and cleanup zero. Actual Node24 JSPI passes growth during
-  guest-callback reentry (97 steps, depth five, 21037629 retained bytes), cancellation
+  guest-callback reentry with owned compilation (99 steps, depth five, 21039104 retained bytes), cancellation
   and prior step/depth/deadline cases; cleanup data/depth/pending/memory zero. Current
   public net.wasm (465602 bytes) has zero native growth instructions; guarded output
   888011 bytes/205697 checks validates in 35 ms, no instantiation and zero active
-  requests. Original validation remains required. Admission for imports, table/global
-  allocation and owned memory exports, page/Worker integration, initialization and
-  every joining/media acceptance gate remain open.
+  requests. Original validation remains required. Declared module admission passes
+  below; binding imports, per-instance table/global charges and owned memory exports,
+  page/Worker integration, initialization and every joining/media gate remain open.
+
+- Native module ownership now validates the stable original before compilation,
+  reports original signatures/imports/exports and bounds declared memory/table/global
+  sizes. Admission supports numeric function imports and one imported owned-memory
+  slot; reference boundaries, table/global imports, defined memories and native
+  table.grow reject. Eight retained modules, two pending compilations and sixteen
+  compile attempts bound ownership. Source/metadata credits and slots survive
+  cancellation until native settlement; close awaits work and discards late results.
+  All 92 native checks across four manifest-listed files, build, strict new/changed
+  test typing and changed-file lint/format pass. Public current net.wasm admits and
+  compiles with actual SDK budget at 128 MiB in 61 ms: 21 numeric functions, one
+  320/2048-page memory import, fixed 1026-element table, one mutable i32 global and
+  41 function exports. Its retained source/metadata charge is 1366307 bytes; close
+  releases module/data/requests to zero. No public binary instantiation performed.
+  Actual SDK/JSPI fixture also passes owned synchronous compilation, callback/reentry,
+  native memory growth, cancellation and prior CPU limits with cleanup zero. Native
+  compilation is not preemptible; credits do not measure V8 generated machine code.
+  Next: realm-owned import binding/instantiation, per-instance table/global quotas,
+  page/Worker WebAssembly APIs, actual Zoom initialization and all joining/media gates.
 
 - Portable WASM binary instrumentation now inserts reserved step/enter/leave imports.
   Typed outer blocks route returns and function-target branches through depth cleanup;

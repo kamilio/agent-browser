@@ -2,6 +2,7 @@
 	"src/wasm-metering.test.ts",
 	"src/node-wasm-calls.test.ts",
 	"src/node-wasm-memories.test.ts",
+	"src/node-wasm-modules.test.ts",
 	"src/page-dom-methods.test.ts",
 	"src/script-blank-frames.test.ts",
 	"src/canvas-draw-image.test.ts",

@@ -124,23 +124,62 @@ class Writer {
 		return this.bytes.slice(0, this.position);
 	}
 }
-function valueType(reader: Reader): void {
-	if (![0x7f, 0x7e, 0x7d, 0x7c, 0x70, 0x6f].includes(reader.byte())) invalid();
+function valueType(reader: Reader): number {
+	const type = reader.byte();
+	if (![0x7f, 0x7e, 0x7d, 0x7c, 0x70, 0x6f].includes(type)) invalid();
+	return type;
 }
-function limits(reader: Reader): void {
+function limits(reader: Reader): WasmDeclaredLimits {
 	const flags = reader.byte();
 	// No shared memories, memory64 or threads in this initial instrumentation path.
 	if (flags > 1) invalid();
-	reader.u32();
-	if (flags) reader.u32();
+	const minimum = reader.u32();
+	return { minimum, maximum: flags ? reader.u32() : undefined };
 }
-function table(reader: Reader): void {
-	if (![0x70, 0x6f].includes(reader.byte())) invalid();
-	limits(reader);
+function table(reader: Reader): WasmDeclaredTable {
+	const element = reader.byte();
+	if (![0x70, 0x6f].includes(element)) invalid();
+	return { element, ...limits(reader) };
 }
 interface Section {
 	id: number;
 	bytes: Uint8Array;
+}
+
+export interface WasmDeclaredLimits {
+	minimum: number;
+	maximum?: number;
+}
+export interface WasmDeclaredTable extends WasmDeclaredLimits {
+	element: number;
+}
+export interface WasmSignature {
+	parameters: readonly number[];
+	results: readonly number[];
+}
+export interface WasmDeclaredGlobal {
+	valueType: number;
+	mutable: boolean;
+}
+export type WasmDeclaredImport = { module: string; name: string } & (
+	| { kind: "function"; signature: WasmSignature }
+	| ({ kind: "memory" } & WasmDeclaredLimits)
+	| ({ kind: "table" } & WasmDeclaredTable)
+	| ({ kind: "global" } & WasmDeclaredGlobal)
+);
+export interface WasmDeclarations {
+	imports: WasmDeclaredImport[];
+	exports: {
+		name: string;
+		kind: "function" | "table" | "memory" | "global";
+		index: number;
+		signature?: WasmSignature;
+	}[];
+	memories: WasmDeclaredLimits[];
+	tables: WasmDeclaredTable[];
+	globals: WasmDeclaredGlobal[];
+	tableGrowInstructions: number;
+	start?: number;
 }
 
 /** Portable binary instrumentation, not a page WebAssembly implementation.
@@ -167,6 +206,7 @@ export function meterWasmModule(
 	checkpoints: number;
 	memoryGrowImportName?: string;
 	memoryGrowInstructions: number;
+	declarations: WasmDeclarations;
 } {
 	const guardedGrowth = options.guardMemoryGrowth === true;
 	const addedImports = guardedGrowth ? 4 : 3;
@@ -196,7 +236,30 @@ export function meterWasmModule(
 	let importedFunctions = 0;
 	let definedFunctions = 0;
 	let memories = 0;
-	const functionTypes: { parameters: number; results: number[] }[] = [];
+	const functionTypes: {
+		parameters: number;
+		parameterTypes: number[];
+		results: number[];
+	}[] = [];
+	const importedTypes: number[] = [];
+	const declarations: WasmDeclarations = {
+		imports: [],
+		exports: [],
+		memories: [],
+		tables: [],
+		globals: [],
+		tableGrowInstructions: 0,
+	};
+	const signatures = new Map<number, WasmSignature>();
+	const signature = (index: number): WasmSignature => {
+		const cached = signatures.get(index);
+		if (cached) return cached;
+		const type = functionTypes[index];
+		if (!type) invalid();
+		const result = { parameters: type.parameterTypes, results: type.results };
+		signatures.set(index, result);
+		return result;
+	};
 	const definedTypes: number[] = [];
 	for (const section of sections) {
 		const r = new Reader(section.bytes);
@@ -205,12 +268,15 @@ export function meterWasmModule(
 			for (let index = 0; index < typeCount; index++) {
 				if (r.byte() !== 0x60) invalid();
 				const parameters = r.count();
-				for (let i = 0; i < parameters; i++) valueType(r);
+				const parameterTypes = Array.from({ length: parameters }, () =>
+					valueType(r),
+				);
 				const resultCount = r.count();
 				const start = r.position;
 				for (let i = 0; i < resultCount; i++) valueType(r);
 				functionTypes.push({
 					parameters,
+					parameterTypes,
 					results: [...r.bytes.subarray(start, r.position)],
 				});
 			}
@@ -219,24 +285,53 @@ export function meterWasmModule(
 			const count = r.count();
 			if (count + addedImports > maxEntries) invalid();
 			for (let index = 0; index < count; index++) {
-				if (r.name() === meterModule) invalid();
-				r.name();
+				const module = r.name();
+				const name = r.name();
+				if (module === meterModule) invalid();
 				switch (r.byte()) {
-					case 0:
-						if (r.u32() >= typeCount) invalid();
+					case 0: {
+						const type = r.u32();
+						if (type >= typeCount) invalid();
+						importedTypes.push(type);
+						declarations.imports.push({
+							module,
+							name,
+							kind: "function",
+							signature: signature(type),
+						});
 						importedFunctions++;
 						break;
+					}
 					case 1:
-						table(r);
+						declarations.imports.push({
+							module,
+							name,
+							kind: "table",
+							...table(r),
+						});
 						break;
 					case 2:
 						memories++;
-						limits(r);
+						declarations.imports.push({
+							module,
+							name,
+							kind: "memory",
+							...limits(r),
+						});
 						break;
-					case 3:
-						valueType(r);
-						if (r.byte() > 1) invalid();
+					case 3: {
+						const type = valueType(r);
+						const mutable = r.byte();
+						if (mutable > 1) invalid();
+						declarations.imports.push({
+							module,
+							name,
+							kind: "global",
+							valueType: type,
+							mutable: mutable === 1,
+						});
 						break;
+					}
 					default:
 						invalid();
 				}
@@ -253,10 +348,10 @@ export function meterWasmModule(
 		} else if (section.id === 4 || section.id === 5) {
 			const count = r.count();
 			for (let index = 0; index < count; index++) {
-				if (section.id === 4) table(r);
+				if (section.id === 4) declarations.tables.push(table(r));
 				else {
 					memories++;
-					limits(r);
+					declarations.memories.push(limits(r));
 				}
 			}
 			r.done();
@@ -395,6 +490,7 @@ export function meterWasmModule(
 				if (![0x70, 0x6f].includes(r.byte())) invalid();
 			} else if (opcode === 0xfc) {
 				const sub = r.u32();
+				if (sub === 15) declarations.tableGrowInstructions++;
 				if ([8, 10, 12, 14].includes(sub)) {
 					r.u32();
 					r.u32();
@@ -447,21 +543,45 @@ export function meterWasmModule(
 			const count = r.count();
 			w.u32(count);
 			for (let i = 0; i < count; i++) {
-				w.name(r.name());
+				const name = r.name();
+				w.name(name);
 				const kind = r.byte();
 				if (kind > 3) invalid();
 				w.put(kind);
-				if (kind === 0) functionIndex(r, w);
-				else w.u32(r.u32());
+				const index = r.u32();
+				const exportKind = (["function", "table", "memory", "global"] as const)[
+					kind
+				];
+				declarations.exports.push({
+					name,
+					kind: exportKind,
+					index,
+					signature:
+						kind === 0
+							? signature(
+									index < importedFunctions
+										? importedTypes[index]
+										: definedTypes[index - importedFunctions],
+								)
+							: undefined,
+				});
+				if (kind === 0) {
+					if (index >= importedFunctions + definedFunctions) invalid();
+					w.u32(index < importedFunctions ? index : index + addedImports);
+				} else w.u32(index);
 			}
-		} else if (section.id === 8) functionIndex(r, w);
-		else if (section.id === 6) {
+		} else if (section.id === 8) {
+			declarations.start = new Reader(section.bytes).u32();
+			functionIndex(r, w);
+		} else if (section.id === 6) {
 			const count = r.count();
 			w.u32(count);
 			for (let i = 0; i < count; i++) {
 				const start = r.position;
-				valueType(r);
-				if (r.byte() > 1) invalid();
+				const type = valueType(r);
+				const mutable = r.byte();
+				if (mutable > 1) invalid();
+				declarations.globals.push({ valueType: type, mutable: mutable === 1 });
 				w.copy(r.bytes.subarray(start, r.position));
 				expression(r, w);
 			}
@@ -539,6 +659,7 @@ export function meterWasmModule(
 		checkpoints,
 		memoryGrowImportName: guardedGrowth ? memoryGrowName : undefined,
 		memoryGrowInstructions,
+		declarations,
 	};
 }
 
