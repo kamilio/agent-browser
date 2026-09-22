@@ -5,6 +5,8 @@ const maxOutput = 8_388_608;
 const maxEntries = 65_536;
 const meterModule = "agent_browser_meter_v1";
 const meterName = "step";
+const enterName = "enter";
+const leaveName = "leave";
 const magic = [0, 97, 115, 109, 1, 0, 0, 0];
 const typedArrayByteLength = Object.getOwnPropertyDescriptor(
 	Object.getPrototypeOf(Uint8Array.prototype),
@@ -101,6 +103,17 @@ class Writer {
 			this.put(byte | (remaining ? 128 : 0));
 		} while (remaining);
 	}
+	s33(value: number): void {
+		let remaining = value;
+		let more: boolean;
+		do {
+			const byte = remaining % 128;
+			remaining = Math.floor(remaining / 128);
+			more = remaining !== 0 || (byte & 64) !== 0;
+			this.put(byte | (more ? 128 : 0));
+			if (!more) return;
+		} while (more);
+	}
 	name(value: string): void {
 		const bytes = new TextEncoder().encode(value);
 		this.u32(bytes.length);
@@ -132,7 +145,8 @@ interface Section {
 /** Portable binary instrumentation, not a page WebAssembly implementation.
  * The backend must validate the returned originalBytes before compiling bytes;
  * this structural reader does not replace the WebAssembly semantic validator.
- * Supply the reserved import yourself, enforce a deadline/step budget in it and
+ * Supply the reserved imports yourself, enforce a deadline/step budget and
+ * use WasmCallDepth.run around instantiation and all synchronous WASM entries.
  * prevent untrusted imports from blocking. Memory quotas are a separate gate.
  * MVP + reference/bulk-memory instructions are supported; SIMD, threads, GC,
  * exceptions and tail calls are rejected. No runtime dependency is introduced.
@@ -142,6 +156,8 @@ export function meterWasmModule(input: Uint8Array): {
 	bytes: Uint8Array;
 	importModule: string;
 	importName: string;
+	enterImportName: string;
+	leaveImportName: string;
 	checkpoints: number;
 } {
 	if (!(input instanceof Uint8Array) || !typedArrayByteLength) invalid();
@@ -168,20 +184,28 @@ export function meterWasmModule(input: Uint8Array): {
 	let typeCount = 0;
 	let importedFunctions = 0;
 	let definedFunctions = 0;
+	const functionTypes: { parameters: number; results: number[] }[] = [];
+	const definedTypes: number[] = [];
 	for (const section of sections) {
 		const r = new Reader(section.bytes);
 		if (section.id === 1) {
 			typeCount = r.count();
 			for (let index = 0; index < typeCount; index++) {
 				if (r.byte() !== 0x60) invalid();
-				for (let groups = 0; groups < 2; groups++) {
-					const count = r.count();
-					for (let i = 0; i < count; i++) valueType(r);
-				}
+				const parameters = r.count();
+				for (let i = 0; i < parameters; i++) valueType(r);
+				const resultCount = r.count();
+				const start = r.position;
+				for (let i = 0; i < resultCount; i++) valueType(r);
+				functionTypes.push({
+					parameters,
+					results: [...r.bytes.subarray(start, r.position)],
+				});
 			}
 			r.done();
 		} else if (section.id === 2) {
 			const count = r.count();
+			if (count + 3 > maxEntries) invalid();
 			for (let index = 0; index < count; index++) {
 				if (r.name() === meterModule) invalid();
 				r.name();
@@ -207,8 +231,11 @@ export function meterWasmModule(input: Uint8Array): {
 			r.done();
 		} else if (section.id === 3) {
 			definedFunctions = r.count();
-			for (let index = 0; index < definedFunctions; index++)
-				if (r.u32() >= typeCount) invalid();
+			for (let index = 0; index < definedFunctions; index++) {
+				const type = r.u32();
+				if (type >= typeCount) invalid();
+				definedTypes.push(type);
+			}
 			r.done();
 		} else if (section.id === 4 || section.id === 5) {
 			const count = r.count();
@@ -220,14 +247,36 @@ export function meterWasmModule(input: Uint8Array): {
 		}
 	}
 	if (
-		importedFunctions + definedFunctions >= maxEntries ||
+		importedFunctions + definedFunctions + 3 > maxEntries ||
 		typeCount >= maxEntries
 	)
 		invalid();
+	const wrapperTypes: number[][] = [];
+	const wrapperIndices = new Map<string, number>();
+	const blockTypes = new Map<number, Uint8Array>();
+	for (const typeIndex of new Set(definedTypes)) {
+		const type = functionTypes[typeIndex];
+		const w = new Writer();
+		if (!type.results.length) w.put(0x40);
+		else if (type.results.length === 1) w.put(type.results[0]);
+		else if (!type.parameters) w.s33(typeIndex);
+		else {
+			const key = type.results.join(",");
+			let index = wrapperIndices.get(key);
+			if (index === undefined) {
+				index = typeCount + 1 + wrapperTypes.length;
+				wrapperIndices.set(key, index);
+				wrapperTypes.push(type.results);
+			}
+			w.s33(index);
+		}
+		blockTypes.set(typeIndex, w.finish());
+	}
+	if (typeCount + 1 + wrapperTypes.length > maxEntries) invalid();
 	const functionIndex = (r: Reader, w: Writer) => {
 		const index = r.u32();
 		if (index >= importedFunctions + definedFunctions) invalid();
-		w.u32(index < importedFunctions ? index : index + 1);
+		w.u32(index < importedFunctions ? index : index + 3);
 	};
 	const expression = (r: Reader, w: Writer) => {
 		for (let count = 0; count < maxEntries; count++) {
@@ -252,7 +301,7 @@ export function meterWasmModule(input: Uint8Array): {
 		invalid();
 	};
 	let checkpoints = 0;
-	const instrumentBody = (bytes: Uint8Array): Uint8Array => {
+	const instrumentBody = (bytes: Uint8Array, typeIndex: number): Uint8Array => {
 		const r = new Reader(bytes);
 		const w = new Writer();
 		const localGroups = r.count();
@@ -263,6 +312,12 @@ export function meterWasmModule(input: Uint8Array): {
 			valueType(r);
 		}
 		w.copy(bytes.subarray(0, r.position));
+		w.put(0x10);
+		w.u32(importedFunctions + 1);
+		// Replace the implicit function label with a typed outer block. All original
+		// branch depths still target the same labels; exits pass through leave.
+		w.put(0x02);
+		w.copy(blockTypes.get(typeIndex) ?? invalid());
 		let depth = 1;
 		while (depth) {
 			if (++checkpoints > 1_048_576) invalid();
@@ -272,6 +327,11 @@ export function meterWasmModule(input: Uint8Array): {
 			w.put(0x10);
 			w.u32(importedFunctions);
 			const opcode = r.byte();
+			if (opcode === 0x0f) {
+				w.put(0x0c);
+				w.u32(depth - 1);
+				continue;
+			}
 			w.put(opcode);
 			if (opcode === 0x10 || opcode === 0xd2) {
 				functionIndex(r, w);
@@ -282,13 +342,13 @@ export function meterWasmModule(input: Uint8Array): {
 				r.signed(33);
 				if (++depth > 1024) invalid();
 			} else if (opcode === 0x0b) depth--;
-			else if (
-				[0x0c, 0x0d, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26].includes(opcode)
-			)
+			else if ([0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26].includes(opcode))
 				r.u32();
-			else if (opcode === 0x0e) {
+			else if (opcode === 0x0c || opcode === 0x0d) {
+				if (r.u32() >= depth) invalid();
+			} else if (opcode === 0x0e) {
 				const count = r.count();
-				for (let i = 0; i <= count; i++) r.u32();
+				for (let i = 0; i <= count; i++) if (r.u32() >= depth) invalid();
 			} else if (opcode === 0x11) {
 				r.u32();
 				r.u32();
@@ -321,20 +381,31 @@ export function meterWasmModule(input: Uint8Array): {
 			w.copy(bytes.subarray(start, r.position));
 		}
 		r.done();
+		w.put(0x10);
+		w.u32(importedFunctions + 2);
+		w.put(0x0b);
 		return w.finish();
 	};
 	const rewrite = (section: Section): Uint8Array => {
 		const r = new Reader(section.bytes);
 		const w = new Writer();
 		if (section.id === 1 || section.id === 2) {
-			w.u32(r.count() + 1);
+			w.u32(r.count() + (section.id === 1 ? 1 + wrapperTypes.length : 3));
 			w.copy(r.take(section.bytes.length - r.position));
-			if (section.id === 1) w.put(0x60, 0, 0);
-			else {
-				w.name(meterModule);
-				w.name(meterName);
-				w.put(0);
-				w.u32(typeCount);
+			if (section.id === 1) {
+				w.put(0x60, 0, 0);
+				for (const results of wrapperTypes) {
+					w.put(0x60, 0);
+					w.u32(results.length);
+					w.copy(Uint8Array.from(results));
+				}
+			} else {
+				for (const name of [meterName, enterName, leaveName]) {
+					w.name(meterModule);
+					w.name(name);
+					w.put(0);
+					w.u32(typeCount);
+				}
 			}
 		} else if (section.id === 7) {
 			const count = r.count();
@@ -388,7 +459,7 @@ export function meterWasmModule(input: Uint8Array): {
 			if (count !== definedFunctions) invalid();
 			w.u32(count);
 			for (let i = 0; i < count; i++) {
-				const body = instrumentBody(r.take(r.u32()));
+				const body = instrumentBody(r.take(r.u32()), definedTypes[i]);
 				w.u32(body.length);
 				w.copy(body);
 			}
@@ -427,6 +498,42 @@ export function meterWasmModule(input: Uint8Array): {
 		bytes: output.finish(),
 		importModule: meterModule,
 		importName: meterName,
+		enterImportName: enterName,
+		leaveImportName: leaveName,
 		checkpoints,
 	};
+}
+
+/** Owns synchronous native entries and releases budget depths on traps/import
+ * exceptions. Nested entries preserve caller frames. No asynchronous callback or
+ * Promise may outlive run; WASM execution itself must remain synchronous.
+ */
+export class WasmCallDepth {
+	private readonly frames: (() => void)[] = [];
+	private readonly boundaries: number[] = [];
+	constructor(private readonly budget: { enterCall(): () => void }) {}
+	get depth(): number {
+		return this.frames.length;
+	}
+	run<Result>(operation: () => Result): Result {
+		const base = this.frames.length;
+		this.boundaries.push(base);
+		try {
+			return operation();
+		} finally {
+			while (this.frames.length > base) this.frames.pop()?.();
+			this.boundaries.pop();
+		}
+	}
+	enter(): void {
+		if (!this.boundaries.length)
+			throw new AgentBrowserError("invalid-input", "Unowned WASM entry");
+		this.frames.push(this.budget.enterCall());
+	}
+	leave(): void {
+		const base = this.boundaries[this.boundaries.length - 1];
+		if (base === undefined || this.frames.length <= base)
+			throw new AgentBrowserError("invalid-input", "Unbalanced WASM depth");
+		this.frames.pop()?.();
+	}
 }

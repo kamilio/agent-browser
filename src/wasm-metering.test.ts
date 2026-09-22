@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { meterWasmModule } from "./wasm-metering.js";
+import { WasmCallDepth, meterWasmModule } from "./wasm-metering.js";
 
 const unsigned = (input: number): number[] => {
 	let value = input;
@@ -52,6 +52,7 @@ function instantiate(
 	bytes: Uint8Array,
 	step: () => void,
 	imports: WebAssembly.Imports = {},
+	depth?: WasmCallDepth,
 ) {
 	expect(WebAssembly.validate(bytes as BufferSource)).toBe(true);
 	const metered = meterWasmModule(bytes);
@@ -59,14 +60,26 @@ function instantiate(
 		true,
 	);
 	expect(WebAssembly.validate(metered.bytes as BufferSource)).toBe(true);
-	const instance = new WebAssembly.Instance(
-		new WebAssembly.Module(metered.bytes as BufferSource),
-		{
-			...imports,
-			[metered.importModule]: { [metered.importName]: step },
-		},
-	);
-	return { ...metered, instance, run: instance.exports.run as () => number };
+	const create = () =>
+		new WebAssembly.Instance(
+			new WebAssembly.Module(metered.bytes as BufferSource),
+			{
+				...imports,
+				[metered.importModule]: {
+					[metered.importName]: step,
+					[metered.enterImportName]: () => depth?.enter(),
+					[metered.leaveImportName]: () => depth?.leave(),
+				},
+			},
+		);
+	const instance = depth ? depth.run(create) : create();
+	const entry = instance.exports.run as (...args: number[]) => number;
+	return {
+		...metered,
+		instance,
+		run: (...args: number[]) =>
+			depth ? depth.run(() => entry(...args)) : entry(...args),
+	};
 }
 
 it("preserves arithmetic, exported indices and operand-stack values across checks", () => {
@@ -293,4 +306,180 @@ it("uses independent input/output snapshots without invoking subclass parser hoo
 	expect(WebAssembly.validate(metered.bytes as BufferSource)).toBe(true);
 	expect(() => meterWasmModule(new Proxy(new Uint8Array(), {}))).toThrow();
 	expect(() => meterWasmModule(new Source(1_048_577))).toThrow();
+});
+
+function depthOwner(limit = 8, initial = 2) {
+	let current = initial;
+	let peak = initial;
+	const releases: number[] = [];
+	const depth = new WasmCallDepth({
+		enterCall() {
+			if (current === limit) throw new Error("call depth budget");
+			const entered = ++current;
+			peak = Math.max(peak, current);
+			return () => {
+				releases.push(entered);
+				current--;
+			};
+		},
+	});
+	return {
+		depth,
+		releases,
+		get current() {
+			return current;
+		},
+		get peak() {
+			return peak;
+		},
+	};
+}
+it.each([
+	["fallthrough", [0x41, 42, 0x0b], 42],
+	["return", [0x41, 42, 0x0f, 0x0b], 42],
+	["function branch", [0x41, 42, 0x0c, 0, 0x0b], 42],
+	["taken conditional function branch", [0x41, 42, 0x41, 1, 0x0d, 0, 0x0b], 42],
+	[
+		"untaken conditional function branch",
+		[0x41, 42, 0x41, 0, 0x0d, 0, 0x0b],
+		42,
+	],
+	["function branch table", [0x41, 42, 0x41, 0, 0x0e, 1, 0, 0, 0x0b], 42],
+	["nested return", [0x02, 0x40, 0x41, 42, 0x0f, 0x0b, 0x41, 3, 0x0b], 42],
+	["then", [0x41, 1, 0x04, 0x7f, 0x41, 42, 0x05, 0x41, 3, 0x0b, 0x0b], 42],
+	["else", [0x41, 0, 0x04, 0x7f, 0x41, 42, 0x05, 0x41, 3, 0x0b, 0x0b], 3],
+] as const)(
+	"releases the call-depth lease on %s while preserving results",
+	(_name, body, result) => {
+		const owner = depthOwner();
+		const test = instantiate(fixture([[...body]]), () => {}, {}, owner.depth);
+		expect(test.run()).toBe(result);
+		expect(owner.current).toBe(2);
+		expect(owner.depth.depth).toBe(0);
+		expect(owner.releases).toEqual([3]);
+	},
+);
+it("stops recursive WASM at the shared call-depth limit and restores the caller depth", () => {
+	const owner = depthOwner(8, 2);
+	const test = instantiate(
+		fixture([[0x10, 0, 0x0b]]),
+		() => {},
+		{},
+		owner.depth,
+	);
+	expect(() => test.run()).toThrow("call depth budget");
+	expect(owner.peak).toBe(8);
+	expect(owner.current).toBe(2);
+	expect(owner.depth.depth).toBe(0);
+	expect(owner.releases).toEqual([8, 7, 6, 5, 4, 3]);
+	const normal = instantiate(
+		fixture([[0x41, 42, 0x0b]]),
+		() => {},
+		{},
+		owner.depth,
+	);
+	expect(normal.run()).toBe(42);
+	expect(owner.current).toBe(2);
+});
+it.each(["native trap", "meter error", "import error", "start error"])(
+	"unwinds owned depths on %s",
+	(kind) => {
+		const owner = depthOwner();
+		const stop = new Error("owned failure");
+		if (kind === "start error") {
+			expect(() =>
+				instantiate(
+					fixture([[0x00, 0x0b]], { result: false, start: section(8, [0]) }),
+					() => {},
+					{},
+					owner.depth,
+				),
+			).toThrow();
+		} else {
+			const imports =
+				kind === "import error"
+					? section(2, [1, ...string("env"), ...string("fail"), 0, 0])
+					: undefined;
+			const body =
+				kind === "native trap"
+					? [0x00, 0x0b]
+					: kind === "import error"
+						? [0x10, 0, 0x0b]
+						: [0x41, 42, 0x0b];
+			const test = instantiate(
+				fixture([body], { imports, exportIndex: imports ? 1 : 0 }),
+				() => {
+					if (kind === "meter error") throw stop;
+				},
+				{
+					env: {
+						fail: () => {
+							throw stop;
+						},
+					},
+				},
+				owner.depth,
+			);
+			expect(() => test.run()).toThrow();
+		}
+		expect(owner.current).toBe(2);
+		expect(owner.depth.depth).toBe(0);
+		expect(owner.releases).toEqual([3]);
+	},
+);
+it("preserves caller frames across nested host-to-WASM entry and caught inner traps", () => {
+	const owner = depthOwner();
+	const inner = instantiate(fixture([[0x00, 0x0b]]), () => {}, {}, owner.depth);
+	const imports = section(2, [1, ...string("env"), ...string("nested"), 0, 0]);
+	const outer = instantiate(
+		fixture([[0x10, 0, 0x0b]], { imports, exportIndex: 1 }),
+		() => {},
+		{
+			env: {
+				nested: () => {
+					expect(owner.current).toBe(3);
+					expect(() => inner.run()).toThrow();
+					expect(owner.current).toBe(3);
+					expect(owner.depth.depth).toBe(1);
+					return 42;
+				},
+			},
+		},
+		owner.depth,
+	);
+	expect(outer.run()).toBe(42);
+	expect(owner.current).toBe(2);
+	expect(owner.peak).toBe(4);
+	expect(owner.releases).toEqual([4, 3]);
+});
+it("wraps multi-value functions with parameters using correctly signed block type indices", () => {
+	const signature = [0x60, 1, 0x7f, 2, 0x7f, 0x7e];
+	const body = [0, 0x20, 0, 0x42, 7, 0x0f, 0x0b];
+	const bytes = moduleBytes(
+		section(1, [64, ...Array.from({ length: 64 }, () => signature).flat()]),
+		section(3, [1, 0]),
+		section(7, [1, ...string("run"), 0, 0]),
+		section(10, [1, ...unsigned(body.length), ...body]),
+	);
+	const owner = depthOwner();
+	const test = instantiate(bytes, () => {}, {}, owner.depth);
+	const entry = test.instance.exports.run as (
+		value: number,
+	) => [number, bigint];
+	expect(owner.depth.run(() => entry(42))).toEqual([42, 7n]);
+	expect(owner.current).toBe(2);
+});
+it("rejects unowned entries and prevents nested entry from releasing a caller lease", () => {
+	const owner = depthOwner();
+	expect(() => owner.depth.enter()).toThrow(/Unowned/);
+	expect(() => owner.depth.leave()).toThrow(/Unbalanced/);
+	owner.depth.run(() => {
+		owner.depth.enter();
+		owner.depth.run(() =>
+			expect(() => owner.depth.leave()).toThrow(/Unbalanced/),
+		);
+		expect(owner.current).toBe(3);
+		owner.depth.leave();
+	});
+	expect(owner.current).toBe(2);
 });

@@ -23,20 +23,23 @@
 
 ## Current verified state
 
-- Portable WASM binary instrumentation now inserts a reserved void budget import
-  before instructions and rewrites defined-function references in calls, exports,
-  start, globals and element segments. Stable original/output snapshots are bounded;
-  the backend must validate originalBytes before compiling the output. MVP/reference/
-  bulk-memory forms are supported; SIMD, threads, GC, exceptions and tail calls reject.
-  All 19 new manifest-listed native checks, native build, strict test typing and
-  changed-file lint/format pass, including loop/recursive/start termination and
-  indirect-call/operand/local preservation. Offline real SDK Budget stops a metered
-  loop at 26 steps for a 25-step limit and at its sampled deadline (1024 steps).
-  Authorized current net.wasm instrumentation produces 877335 bytes/205697 checks
-  from 465602 bytes in 34 ms; original and output validate, no instantiation performed.
-  Public transport closes with active requests zero. This is not a page API or a
-  Zoom startup pass: memory accounting/view identity, bounded imports, synchronous
-  SafeJS callbacks, call-depth ownership and page/Worker integration remain open.
+- Portable WASM binary instrumentation now inserts reserved step/enter/leave imports.
+  Typed outer blocks route returns and function-target branches through depth cleanup;
+  direct calls, exports, start, globals and element references retain their targets.
+  Stable original/output snapshots are bounded; validate originalBytes before compiling
+  output. MVP/reference/bulk-memory forms are supported; SIMD, threads, GC, exceptions
+  and tail calls reject. All 36 manifest-listed native checks, native build, strict
+  test typing and changed-file lint/format pass, including every exit form, indirect
+  calls, multi-value/parameter signatures, traps and nested entry ownership.
+  Offline real SDK Budget stops recursion at configured depth eight, restores the
+  caller depth one and permits reuse; step exhaustion (26 for limit 25) and sampled
+  deadline (1024 steps) unwind owned depths to zero. Authorized current net.wasm
+  instrumentation produces 887959 bytes/205697 checks from 465602 bytes in 54 ms;
+  original and output validate, no instantiation performed. Transport closes active
+  requests zero. This is not a page API or Zoom startup pass: memory accounting/view
+  identity, bounded imports, synchronous SafeJS callbacks and page/Worker integration
+  remain open. Current Node v22 has no default Suspending/promising WASM API; its
+  promise-integration flag is experimental and has not been enabled or validated.
 
 - Child Workers now reuse the bounded native performance clock and user timing:
   monotonic/coarsened now/timeOrigin, marks/measures, isolated JSON details and
