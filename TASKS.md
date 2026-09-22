@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Active cached full-client diagnostic after the document-method fix: seven modules
+  prepared, import pending without rejection; trace reaches editor statement 1084.
+  React DOM completes normally in 236.6 s / 151.2 s process CPU / 40979 steps.
+  Host has four CPUs, load about 41 and CPU pressure about 98%, with no cgroup CPU
+  throttling; wall-time comparisons under this contention are not reliable.
+  Observation is bounded to 30 min under diagnostic 768 MB/120 s allowances.
+  Session 49153 / PID 540608 uses temporary SDK interpreter tracing; wait for its
+  termination before exact restoration from /tmp/agent-browser-zoom-full-arg98mhs
+  or any SDK/native build. This clears no initialization, meeting or media gate.
+
 - SDK numeric-only/otherwise empty child frames share their parent's accounting
   projection instead of adding zero-unit wrapper groups. Full ancestry validation,
   metadata getter order and retained callbacks remain active; charged bindings,
