@@ -309,9 +309,22 @@
   parent success, no completion/status and cleanup zero; no useful startup gain
   established. Concurrent dependency/type rebuilds caused temporary compile failures;
   restored dependencies and the final compile pass. All owned builds/profiles/probes
-  removed. Next: reduce graph-walk scratch allocations while preserving fresh
-  measurement, nested walks and complete primary limits. Full startup/default limits
-  and every joining/meeting/media gate remain open.
+  removed. Maintained SafeJS now reuses private weak visit markers with a fresh
+  generation for every complete graph walk; reentrant walks use separate registries.
+  Pinned operations/private fields protect bookkeeping from late host hooks. Baseline
+  visited-set poisoning drops 1013 units to 7; the regression now keeps the full charge.
+  All 215 selected checks (six new), strict test typing, scoped lint/format, isolated
+  compilation/eight imports pass (poe-code 9e95e10dc; no push). Alternating 2000-object
+  scans keep 77218 units: CPU 2.272/2.264 ms control versus 2.062/2.108 ms candidate
+  (7–9% reduction); garbage collections 42/42 versus 40/39. Closure scans keep 727
+  units with smaller CPU gains and 13/13 versus 10/10 collections. Actual five-case
+  JSPI/WASM and public initializer pass at unchanged totals, cleanup zero. Loaded
+  initializer takes 32.6 s; full Worker still times out at 30065 ms / 879132 steps,
+  parent success, no completion/status and cleanup zero. No useful actual startup
+  gain established. Owned validation artifacts removed. Next: reduce remaining
+  graph-walk allocations/visits without skipping primary scans or trusting foreign
+  carriers/providers. Full startup/default limits and all joining/meeting/media
+  gates remain open.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
