@@ -23,6 +23,17 @@
 
 ## Current verified state
 
+- Shallow recursive child traversal is rejected and reverted: avoiding continuation
+  allocation below depth 16 passed 125 selected SDK preservation checks across 18
+  files and scoped compilation, but supplied no useful live initialization gain.
+  Serial candidate/control at 384 MB both pass 13 classics, prepare seven modules,
+  revoke at the 120 s import deadline, report zero sockets and clean up at data zero.
+  Vendor CPU is 55.95 s candidate versus 54.10 s control; last observed progress is
+  9011089 versus 9013560 steps (observation timing is not an exact speed measure).
+  Full primary graph walking remains the cost target. Exact source baseline and
+  rebuilt baseline are retained; both probes terminate and temporary inputs are removed.
+  No default heap/time/readiness/join/media gate is cleared.
+
 - Desktop CPU profiling at 384 MB confirms retained-graph measurement dominates
   late initialization: 95.97% of weighted samples in the final 28 s window (excluding
   the final 2 s). Visitor self time is 53.09%, private/symbol inspection 9.38%,
