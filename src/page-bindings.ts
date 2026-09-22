@@ -4,6 +4,10 @@ import { PageWebSockets, type PageWebSocketLimits } from "./page-websockets.js";
 import { pageWebSocketBootstrapGlobal } from "./page-websocket-bootstrap.js";
 import { PageXmlHttpRequests } from "./page-xml-http-requests.js";
 import { pageXmlHttpRequestBootstrapGlobal } from "./page-xml-http-request-bootstrap.js";
+import {
+	PageDomMethods,
+	pageDomMethodsBootstrapGlobal,
+} from "./page-dom-methods.js";
 import { PageEventConstructors } from "./page-event-constructors.js";
 import { pageEventBootstrapGlobal } from "./page-event-bootstrap.js";
 import {
@@ -92,6 +96,7 @@ export function pageBindingGlobalNames(
 		...(enableEventConstructors ? [pageEventBootstrapGlobal] : []),
 		...(enableEventConstructors ? [pageDomConstructorBootstrapGlobal] : []),
 		...(enableEventConstructors ? [pageDomParserBootstrapGlobal] : []),
+		...(enableEventConstructors ? [pageDomMethodsBootstrapGlobal] : []),
 		...(existingDocumentWebSockets(document)
 			? [pageWebSocketBootstrapGlobal]
 			: []),
@@ -147,6 +152,7 @@ export class PageBindings {
 	readonly network?: PageFetch;
 	readonly xmlHttpRequests?: PageXmlHttpRequests;
 	readonly eventConstructors?: PageEventConstructors;
+	readonly domMethods?: PageDomMethods;
 	readonly passkeys?: PagePasskeys;
 	readonly webSockets?: PageWebSockets;
 	readonly navigator: object;
@@ -220,6 +226,8 @@ export class PageBindings {
 					events,
 					() => this.dom?.eventBindings,
 				);
+			if (enableEventConstructors)
+				this.domMethods = new PageDomMethods(page.document, context);
 			const socketOwner = existingDocumentWebSockets(page.document);
 			if (socketOwner)
 				this.webSockets = new PageWebSockets(
@@ -594,7 +602,7 @@ export class PageBindings {
 			);
 			this.dom = new ScriptDom(
 				page.document,
-				context,
+				this.domMethods?.factory ?? context,
 				{
 					events,
 					window: this.window,
@@ -646,6 +654,9 @@ export class PageBindings {
 								name: unknown,
 							) => this.dom.hasInstance(value, name),
 						}
+					: {}),
+				...(this.domMethods
+					? { [pageDomMethodsBootstrapGlobal]: this.domMethods.bootstrap }
 					: {}),
 				...(this.eventConstructors
 					? { [pageEventBootstrapGlobal]: this.eventConstructors.bootstrap }
@@ -699,6 +710,7 @@ export class PageBindings {
 		if (this.closedValue) return;
 		this.closedValue = true;
 		this.eventConstructors?.close();
+		this.domMethods?.close();
 		this.webSockets?.close();
 		this.xmlHttpRequests?.close();
 		this.passkeys?.close();

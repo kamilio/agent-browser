@@ -9,7 +9,7 @@
   the acceptance gates below describe future readiness.
 - Test meeting: https://quora.zoom.us/j/7982110526. The approved diagnostic route
   https://app.zoom.us/wc/7982110526/join returns HTTP 200 with server-rendered
-  name and Join controls, but interactive initialization still fails. No meeting
+  name and Join controls, but interactive initialization remains unverified. No meeting
   has been joined. Acceptance requires joining/admission and presence, roster/chat,
   audio capture/transcription, playback/live microphone/avatar, leaving and cleanup.
 - Reduce retained-graph accounting cost while preserving memory/depth limits,
@@ -42,7 +42,7 @@
   fixtures/logs/profiles are removed. The full-graph trace below identifies later
   initialization costs; this candidate has no complete live Zoom speedup proof.
 
-- Latest candidate full-graph trace reaches the 15 min import-observation bound:
+- Earlier full-graph statement trace reaches the 15 min import-observation bound:
   13 classics pass, seven modules prepare, counts remain 1/7/0/0, and 248561 steps
   advance across 895 s of progress reports. Editor statements 0–1352 complete
   normally; cleanup interrupts statement 1353 of 2101, not a proven application
@@ -76,16 +76,37 @@
   node-brand/attribute cases pass (55 focused checks from native-tests.json).
   Working build and new iterator/bootstrap format/lint checks pass. Actual SDK/native
   128 MB probes verify traversal/reference state, iterator/form/map brands and cleanup
-  data zero. Zoom's isolated bundled DOMPurify initializer completes (~20 s); four
-  benign markup calls stop throwing but incorrectly return empty strings.
-  Actual SDK probes narrow the next blocker to borrowed document methods: direct
-  parsed-document tag queries return `<b>hello</b>`, while the creator's tag query
-  called on that document still selects its original empty body. Borrowed
-  createNodeIterator likewise rejects the parsed body as foreign. Next: preserve
-  the call receiver in native DOM method dispatch, then verify benign sanitizer
-  outputs and continue full application initialization. No sanitizer correctness,
-  complete application readiness, default performance or meeting/media gate clears.
-  Probe processes terminate; temporary fixtures/logs are removed.
+  data zero. The borrowed-method regression below is now fixed for the two
+  selected methods; other DOM methods and prototype tables remain incomplete.
+
+- Page initialization now publishes retained guest methods for Document/Element
+  getElementsByTagName and Document.createNodeIterator. Borrowed calls dispatch to
+  registered receiver operations, including parsed/auxiliary/template documents,
+  with interface/owner checks, publication readiness and lifecycle revocation.
+  Three retained functions are shared per page and released on close; recycled node/
+  port identities and invalid publications reject. Other methods remain bound to
+  their original native node; callback filters and foreign iterator roots remain
+  unsupported. Thirteen new contracts plus existing parser/iterator/publication/
+  extension-bootstrap/window-global cases pass (147 focused native checks).
+  Working build and new-source/test/bootstrap format/lint checks pass. Actual
+  SDK/native 128 MB probe verifies borrowed parsed-body queries, BODY/B iterator
+  traversal and prototype identity. Isolated bundled DOMPurify 3.0.9 initializes
+  in 21.1 s under the explicit 120 s diagnostic allowance. Four benign fixtures now
+  preserve bold text, span attributes and form/input content, and remove a comment;
+  form attribute order changes. Cleanup releases all SDK data; asset transport closes
+  with active requests zero. These fixtures clear the empty-output regression,
+  not sanitizer security, full library conformance or application readiness.
+  The default AgentBrowser identity still selects 53 legacy scripts: HTTP 200,
+  16 executed, Vue reaches its 120 s deadline at 1007007 total steps; no client
+  modules prepare. Zero socket attempts and cleanup data zero verified. This is
+  separate from the desktop-identity module graph. The desktop retry with 768 MB,
+  120 s script/network allowances, two 30 s windows and 120 s import observation
+  executes 13 classics and prepares seven modules; counts remain 1 pending /
+  7 prepared / 0 fulfilled / 0 rejected at the observation bound. This is not an
+  application exception or readiness pass. Zero socket attempts and cleanup data
+  zero verified. Next: address full-graph initialization cost and remaining DOM
+  compatibility. Default performance and every meeting/media gate remain open.
+  Processes terminate and temporary fixtures/logs are removed.
 
 - Editor initialization is narrowed to React DOM's lazy initializer. The earlier
   live root-statement trace completes statement 0 in 19.5 s / 3594 steps and
@@ -999,11 +1020,12 @@
 
 - The editor alone clears its offline 128 MB compilation gate above. The complete
   static graph includes loginview (3485587 chars), editor (1095001), emoji (888017),
-  i18n (362461), lodash (126038), rolldown (1365) and the 4383-char entry. The latest
-  768 MB live trace prepares all seven but remains pending at the 15 min observation
+  i18n (362461), lodash (126038), rolldown (1365) and the 4383-char entry. The earlier
+  768 MB statement trace prepares all seven but remains pending at the 15 min observation
   bound, reaching editor statement 1353 after React DOM and DOMPurify complete.
-  The isolated sanitizer now exposes incorrect receivers in borrowed DOM methods;
-  initialization performance and library compatibility both require work. Diagnostic
+  Selected borrowed document methods now preserve receivers, and the isolated
+  sanitizer passes four benign output fixtures. Complete initialization performance
+  and broader DOM/library compatibility still require work. Diagnostic
   heap/time/response allowances do not clear default 128 MB, interactive readiness
   or meeting gates. Fetch completion and green classic reports prove no readiness.
 

@@ -2,7 +2,7 @@ export const pageDomConstructorBootstrapGlobal = "__agentBrowserDomHasInstance";
 export const pageDomParserBootstrapGlobal = "__agentBrowserParseHtmlDocument";
 
 // Host-backed nodes retain their capability identity. These constructors provide
-// interface branding; their prototypes do not yet supply the DOM method tables.
+// interface branding and selected methods; full prototype tables remain incomplete.
 export const pageDomConstructorBootstrapSource = `
 if (typeof __agentBrowserDomHasInstance === "function") {
 	const hasInstance = __agentBrowserDomHasInstance;
@@ -43,6 +43,16 @@ if (typeof __agentBrowserDomHasInstance === "function") {
 	const CharacterData = install("CharacterData", Node);
 	install("Text", CharacterData);
 	install("Comment", CharacterData);
+	if (typeof __agentBrowserDomMethods === "function") {
+		const port = __agentBrowserDomMethods();
+		const invoke = port.invoke;
+		for (const [Interface, name] of [[Document, "getElementsByTagName"], [Element, "getElementsByTagName"], [Document, "createNodeIterator"]]) {
+			const key = Interface.name + "." + name;
+			const method = function(...args) { return invoke(this, key, ...args); };
+			port.publish(key, method);
+			Object.defineProperty(Interface.prototype, name, {value: method, writable:true, configurable:true});
+		}
+	}
 	for (const [name, value] of [["ELEMENT_NODE", 1], ["TEXT_NODE", 3], ["COMMENT_NODE", 8], ["DOCUMENT_NODE", 9], ["DOCUMENT_TYPE_NODE", 10], ["DOCUMENT_FRAGMENT_NODE", 11]]) {
 		Object.defineProperty(Node, name, {value, enumerable: true});
 		Object.defineProperty(Node.prototype, name, {value, enumerable: true});
