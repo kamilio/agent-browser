@@ -546,6 +546,33 @@ export function extensionPageRuntime(
 			};
 			return {
 				budget,
+				sourceModuleStatus() {
+					if (closed || !realm?.sourceModuleStatus) return undefined;
+					ensureOpen();
+					const status = realm.sourceModuleStatus();
+					const result = {} as Record<keyof typeof status, number>;
+					for (const key of [
+						"pendingImports",
+						"preparedModules",
+						"fulfilledImports",
+						"rejectedImports",
+					] as const) {
+						const descriptor =
+							status && Object.getOwnPropertyDescriptor(status, key);
+						if (
+							!descriptor ||
+							!("value" in descriptor) ||
+							!Number.isSafeInteger(descriptor.value) ||
+							descriptor.value < 0
+						)
+							throw new AgentBrowserError(
+								"unsupported",
+								"SafeJS source-module status is unavailable",
+							);
+						result[key] = descriptor.value;
+					}
+					return Object.freeze(result);
+				},
 				supportsSourceModules: moduleScope !== undefined,
 				...(classicScripts &&
 				htmlEntries &&

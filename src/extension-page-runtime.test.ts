@@ -1365,3 +1365,65 @@ it("does not invoke an accessor claiming discard support", async () => {
 		"discardResult",
 	);
 });
+
+it("keeps source-module status optional for older SDKs", async () => {
+	const shared = fakeCore();
+	const runtime = extensionPageRuntime(shared.core).createPageRuntime(
+		policyPageOptions(),
+	);
+	pageRuntimes.push(runtime);
+	await runtime.initialize();
+	expect(runtime.sourceModuleStatus?.()).toBeUndefined();
+});
+
+it("copies source-module facts as an immutable snapshot and hides them after close", async () => {
+	const shared = fakeCore();
+	const createRealm = shared.core.createRealm;
+	const status = {
+		pendingImports: 1,
+		preparedModules: 2,
+		fulfilledImports: 3,
+		rejectedImports: 0,
+	};
+	shared.core.createRealm = (options) => ({
+		...createRealm(options),
+		sourceModuleStatus: () => status,
+	});
+	const runtime = extensionPageRuntime(shared.core).createPageRuntime(
+		policyPageOptions(),
+	);
+	pageRuntimes.push(runtime);
+	await runtime.initialize();
+	const before = runtime.sourceModuleStatus?.();
+	expect(before).toEqual(status);
+	expect(Object.isFrozen(before)).toBe(true);
+	status.pendingImports = 0;
+	expect(before?.pendingImports).toBe(1);
+	expect(runtime.sourceModuleStatus?.()?.pendingImports).toBe(0);
+	await runtime.close();
+	expect(runtime.sourceModuleStatus?.()).toBeUndefined();
+});
+
+it("rejects invalid status facts without running field accessors", async () => {
+	const shared = fakeCore();
+	const createRealm = shared.core.createRealm;
+	const getter = vi.fn(() => 0);
+	const status = Object.defineProperty(
+		{ preparedModules: 0, fulfilledImports: 0, rejectedImports: 0 },
+		"pendingImports",
+		{ get: getter },
+	);
+	shared.core.createRealm = (options) => ({
+		...createRealm(options),
+		sourceModuleStatus: () => status as never,
+	});
+	const runtime = extensionPageRuntime(shared.core).createPageRuntime(
+		policyPageOptions(),
+	);
+	pageRuntimes.push(runtime);
+	await runtime.initialize();
+	expect(() => runtime.sourceModuleStatus?.()).toThrow(
+		"SafeJS source-module status is unavailable",
+	);
+	expect(getter).not.toHaveBeenCalled();
+});

@@ -1,3 +1,4 @@
+import type { PageSourceModuleStatus } from "./page-runtime.js";
 import type { SafeJsBudget } from "./safejs.js";
 
 export interface ReleasedSourceModule {
@@ -66,6 +67,7 @@ export interface ReleasedContext {
 }
 
 export interface ReleasedRealm {
+	sourceModuleStatus?(): Readonly<PageSourceModuleStatus>;
 	readonly stringCompilation?: "allow" | "deny";
 	readonly classicScriptErrors?: "fatal" | "report";
 	readonly supportsDiscardResult?: true;

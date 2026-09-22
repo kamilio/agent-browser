@@ -63,10 +63,18 @@ export interface PageRuntimeEvaluationOptions {
 	discardResult?: boolean;
 }
 
+export interface PageSourceModuleStatus {
+	readonly pendingImports: number;
+	readonly preparedModules: number;
+	readonly fulfilledImports: number;
+	readonly rejectedImports: number;
+}
+
 export interface PageRuntime {
 	readonly budget: SafeJsBudget;
 	readonly closed: boolean;
 	readonly supportsSourceModules?: boolean;
+	sourceModuleStatus?(): Readonly<PageSourceModuleStatus> | undefined;
 	prepareModule?(request: HtmlModuleRequest): Promise<HtmlModuleSource>;
 	prepareClassicScript?(
 		request: HtmlClassicScriptRequest,

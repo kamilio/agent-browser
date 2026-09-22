@@ -13,6 +13,7 @@ import type {
 	PageRuntime,
 	PageRuntimeError,
 	PageRuntimeFactory,
+	PageSourceModuleStatus,
 } from "../src/page-runtime.js";
 import { PageScripts } from "../src/page-scripts.js";
 import { ScriptLoader } from "../src/script-loader.js";
@@ -32,9 +33,9 @@ import { BrowserSession } from "../src/session.js";
 // inserted scripts after each window. The second window captures timers scheduled
 // by scripts whose execution outlasts the first window. Set
 // AGENT_BROWSER_ZOOM_OBSERVATION_MS between 0 and 30000 for each window.
-// Await a pending webclient ES fetch for up to 30 s after those windows. Set
+// Observe pending source imports outside classic tasks for up to 30 s afterward. Set
 // AGENT_BROWSER_ZOOM_IMPORT_WAIT_MS between 0 and 120000 to change that bound.
-// Fetch completion does not certify module evaluation, admission or meeting media.
+// Import settlement does not certify interactive readiness, admission or meeting media.
 const packageRoot = process.env.AGENT_BROWSER_SAFEJS_SOURCE_ROOT;
 if (!packageRoot)
 	throw new Error("Select the compiled SafeJS package explicitly");
@@ -70,6 +71,9 @@ const blockedOrigins = [
 	"https://file-paa.zoom.us",
 	"https://cdn.cookielaw.org",
 ];
+// The loginview module exceeds the transport default of 2 MiB. Keep the
+// diagnostic allowance explicit and bounded separately from guest source quotas.
+const transportLimits = { maxResponseBytes: 4_194_304 };
 const loaderLimits = {
 	modules: true,
 	maxScripts: 256,
@@ -382,7 +386,11 @@ const browser = new BrowserSession({
 	webSocketTransport: socketTransport,
 	limits: { maxScriptRequests: 64, navigationTimeoutMs: 180000 },
 	createTransport: (cookieJar) =>
-		new NodeNetworkTransport({ cookieJar, blockedOrigins }),
+		new NodeNetworkTransport({
+			cookieJar,
+			blockedOrigins,
+			limits: transportLimits,
+		}),
 	loadDocument: (response, context) =>
 		loadBrowserDocument(response, {
 			...context,
@@ -426,6 +434,8 @@ let status: number | undefined;
 let webclientImports: Record<string, unknown>[] = [];
 let importObservationTimedOut = false;
 let webclientFetchVerified = false;
+let sourceModuleStatuses: (Readonly<PageSourceModuleStatus> | undefined)[] = [];
+let moduleSettlementVerified = false;
 try {
 	const tab = browser.createTab();
 	const navigation = await browser.navigate(tab.id, url);
@@ -449,21 +459,36 @@ try {
 					entry.kind === "script" &&
 					new URL(entry.url).pathname.endsWith("/webclient.es.min.js"),
 			);
+	const moduleStatuses = () =>
+		runtimes.map((runtime) =>
+			runtime.closed ? undefined : runtime.sourceModuleStatus?.(),
+		);
+	const importsPending = () =>
+		imports().some((entry) => entry.state === "pending") ||
+		moduleStatuses().some((status) => status && status.pendingImports > 0);
 	const importDeadline = performance.now() + importWaitMs;
-	if (imports().some((entry) => entry.state === "pending")) {
+	if (importsPending()) {
 		console.log(
-			JSON.stringify({ event: "pending-webclient-import", importWaitMs }),
+			JSON.stringify({ event: "pending-source-modules", importWaitMs }),
 		);
 		while (
-			imports().some((entry) => entry.state === "pending") &&
+			importsPending() &&
 			performance.now() < importDeadline &&
 			![...owners].every((owner) => owner.closed)
 		)
 			await new Promise<void>((resolve) => setTimeout(resolve, 250));
 	}
-	importObservationTimedOut = imports().some(
-		(entry) => entry.state === "pending",
-	);
+	importObservationTimedOut = importsPending();
+	sourceModuleStatuses = moduleStatuses();
+	moduleSettlementVerified =
+		sourceModuleStatuses.length > 0 &&
+		sourceModuleStatuses.every(
+			(status) =>
+				status &&
+				status.pendingImports === 0 &&
+				status.fulfilledImports > 0 &&
+				status.rejectedImports === 0,
+		);
 	report = documentScriptState(browser.page(tab.id).document)?.report;
 	webclientImports = imports()
 		.slice(0, 16)
@@ -513,6 +538,7 @@ try {
 			importObservationTimedOut,
 			userAgent: browser.identity.userAgent,
 			loaderLimits,
+			transportLimits,
 			blockedOrigins,
 			moduleScripts: "enabled through the policy-aware native loader",
 			status,
@@ -520,6 +546,8 @@ try {
 			report,
 			webclientImports,
 			webclientFetchVerified,
+			sourceModuleStatuses,
+			moduleSettlementVerified,
 			pageRuntimeClosedBeforeCleanup,
 			applicationReadinessVerified: false,
 			meetingJoinVerified: false,
@@ -534,6 +562,7 @@ try {
 		pageRuntimeClosedBeforeCleanup ||
 		importObservationTimedOut ||
 		!webclientFetchVerified ||
+		!moduleSettlementVerified ||
 		report.failed ||
 		report.halted ||
 		!cleanupVerified
