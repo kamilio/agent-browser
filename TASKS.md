@@ -23,6 +23,20 @@
 
 ## Current verified state
 
+- Desktop CPU profiling at 384 MB confirms retained-graph measurement dominates
+  late initialization: 95.97% of weighted samples in the final 28 s window (excluding
+  the final 2 s). Visitor self time is 53.09%, private/symbol inspection 9.38%,
+  scope-root validation 8.66%, and interpreted capture-provider self time 7.05%.
+  Next target: visitor/property inspection and repeated traversal work, preserving
+  fresh provider/metadata effects, DFS ordering and primary limits during holds;
+  scope snapshot sharing alone addresses a smaller share. This is attribution,
+  not a speedup. HTTP 200 / 13 classics / seven prepared modules, deadline revocation
+  at 120 s, zero socket attempts, cleanup data zero and terminal exit 1 verified.
+  The profiled 192 MB run instead exhausts heap after seven prepare (exit 134),
+  with cleanup unverified; the earlier unprofiled clean exit proves no reliable
+  192 MB gate. No code/build changes or initialization/join acceptance. Both probes
+  terminate; the profile and analysis script are removed.
+
 - Compact AST lazy records now allocate through a constructor per accessor layout,
   preserving Object.prototype, and keep nodeId as a mutable nonenumerable data
   field from creation. Contribution: safejs-compact-record-layouts.patch. This
@@ -86,7 +100,7 @@
   30138848 scope reads hit snapshots (96.4%). The six distinct declined scopes have
   private-name metadata; no module/resource/accessor metadata is observed among
   them. Counts include instrumentation overhead and establish no timing improvement.
-  Next target: cheaper traversal of repeated interpreted captures sharing scopes,
+  The later CPU profile above prioritizes visitor/property inspection over scope sharing,
   preserving fresh metadata/callback effects and primary reconciliation during holds;
   previously rejected guarded caches are not an established solution. HTTP 200,
   zero sockets, no readiness/join, cleanup data zero and terminal probe status verified.
@@ -1393,6 +1407,8 @@
   performance targets. The longer 192 MB run exhausts heap after seven modules prepare.
   With the later record-layout fix, a 192 MB run prepares seven and revokes at its
   120 s import deadline without OOM, with no readiness/join and cleanup data zero.
+  CPU profiling at 192 MB later exhausts heap after seven prepare; this heap allowance
+  is not a reliable gate. The 384 MB profile revokes at deadline with cleanup zero.
   The instrumented 384 MB census verifies all seven link and remains pending in editor
   evaluation; the later 384 MB run also revokes at its 120 s import deadline.
   These runs clear no default heap/time gate.
