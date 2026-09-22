@@ -5,6 +5,7 @@ import {
 } from "./document-script-csp.js";
 import { existingDocumentWebSockets } from "./document-websocket-owner.js";
 import type { DocumentTree } from "./document.js";
+import { documentIdentity } from "./document-identity.js";
 import { AgentBrowserError } from "./errors.js";
 import {
 	type HtmlClassicScriptRequest,
@@ -198,6 +199,7 @@ export class PageScripts {
 						);
 				},
 				workerDocumentUrl: page.document.url,
+				workerIdentity: documentIdentity(page.document),
 				workerPolicy: (url, redirects) => {
 					this.ensureOpen();
 					const resource = documentResourceCsp(page.document);

@@ -1,4 +1,9 @@
 import { types } from "node:util";
+import {
+	type BrowserIdentity,
+	browserIdentityHeaders,
+	defaultBrowserIdentity,
+} from "./browser-identity.js";
 import { AgentBrowserError } from "./errors.js";
 import type { PageBlobs } from "./page-blobs.js";
 import { PageBlobs as WorkerBlobs } from "./page-blobs.js";
@@ -29,6 +34,7 @@ export interface PageWorkerOptions {
 	budget: WorkerBudget;
 	limits: Readonly<ScriptLimits>;
 	documentUrl: string;
+	identity?: Readonly<BrowserIdentity>;
 	policy(url: string, redirects?: number): void;
 	fetch?: WorkerScriptFetch;
 	importFetch?: WorkerImportFetch;
@@ -197,6 +203,7 @@ export class PageWorkers {
 	private tick?: ReturnType<typeof setTimeout>;
 	private readonly running = new Set<object>();
 	private closed = false;
+	private readonly identity: Readonly<BrowserIdentity>;
 	private created = 0;
 	private messages = 0;
 	private retainedUnits = 0;
@@ -206,6 +213,8 @@ export class PageWorkers {
 		private readonly options: PageWorkerOptions,
 	) {
 		this.ensureOpen();
+		this.identity = options.identity ?? defaultBrowserIdentity;
+		browserIdentityHeaders(this.identity);
 		this.port = owner.createHostObject({
 			properties: {
 				baseUrl: {
@@ -436,6 +445,7 @@ export class PageWorkers {
 			},
 			setup: (context) => {
 				record.context = context;
+				const identity = this.identity;
 				const urls = new PageUrls(context);
 				const blobs = new WorkerBlobs(
 					context,
@@ -499,6 +509,13 @@ export class PageWorkers {
 								urls: { get: () => urls.port },
 								blobs: { get: () => blobs.port },
 								name: { get: () => record.name },
+								navigator: {
+									get: () => ({
+										userAgent: identity.userAgent,
+										language: identity.language,
+										languages: identity.languages,
+									}),
+								},
 								location: {
 									get: () => ({
 										href: location.href,

@@ -1,5 +1,9 @@
 import { createContext, runInContext } from "node:vm";
 import { afterEach, expect, it, vi } from "vitest";
+import {
+	createBrowserIdentity,
+	defaultBrowserIdentity,
+} from "./browser-identity.js";
 import { pageBlobBootstrapSource } from "./page-blob-bootstrap.js";
 import { PageBlobs } from "./page-blobs.js";
 import { pageUrlBootstrapSource } from "./page-url-bootstrap.js";
@@ -691,4 +695,62 @@ it("delivers a child's outgoing message while that child's incoming task waits o
 		expect(test.evaluate("seen")).toEqual(["started", "started"]),
 	);
 	await vi.waitFor(() => expect(test.workers.metrics().pending).toBe(0));
+});
+
+it("publishes the document identity in child Workers without exposing page credentials", async () => {
+	const identity = createBrowserIdentity({
+		userAgent: "AgentBrowser/custom",
+		languages: ["fr-ca", "en"],
+	});
+	const test = fixture(true, { identity });
+	test.evaluate("var received=[];");
+	test.start(
+		"postMessage([navigator.userAgent,navigator.language,navigator.languages,Object.prototype.toString.call(navigator),typeof navigator.credentials,typeof navigator.mediaDevices]);",
+	);
+	test.evaluate("worker.onmessage=e=>received.push(e.data);");
+	await vi.waitFor(() =>
+		expect(test.evaluate("received")).toEqual([
+			[
+				identity.userAgent,
+				"fr-CA",
+				["fr-CA", "en"],
+				"[object WorkerNavigator]",
+				"undefined",
+				"undefined",
+			],
+		]),
+	);
+	expect(identity.languages).toEqual(["fr-CA", "en"]);
+});
+
+it("uses isolated frozen Worker identity snapshots and the default profile when no identity is supplied", async () => {
+	const test = fixture();
+	test.evaluate("var received=[];");
+	test.start(
+		"try{navigator.languages.push('private');}catch{} try{navigator.userAgent='changed';}catch{} postMessage([navigator.userAgent,navigator.language,navigator.languages,Object.isFrozen(navigator),Object.isFrozen(navigator.languages)]);",
+	);
+	test.evaluate("worker.onmessage=e=>received.push(e.data);");
+	await vi.waitFor(() =>
+		expect(test.evaluate("received")).toEqual([
+			[
+				defaultBrowserIdentity.userAgent,
+				defaultBrowserIdentity.language,
+				[...defaultBrowserIdentity.languages],
+				true,
+				true,
+			],
+		]),
+	);
+	expect(defaultBrowserIdentity.languages).toEqual(["en-US"]);
+});
+
+it("rejects a forged Worker identity without invoking native getters", () => {
+	const getter = vi.fn(() => "private");
+	const identity = Object.defineProperty({}, "userAgent", {
+		get: getter,
+	}) as ReturnType<typeof createBrowserIdentity>;
+	expect(() => fixture(true, { identity })).toThrow(
+		"Expected an identity created by this module",
+	);
+	expect(getter).not.toHaveBeenCalled();
 });

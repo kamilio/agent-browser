@@ -324,6 +324,7 @@ export function extensionPageRuntime(
 					budget: workerBudget,
 					limits: options.limits,
 					documentUrl: options.workerDocumentUrl,
+					identity: options.workerIdentity,
 					policy: options.workerPolicy,
 					fetch: options.workerFetch,
 					importFetch: options.workerImportFetch,

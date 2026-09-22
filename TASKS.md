@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Child Workers now publish the document's validated userAgent/language/languages
+  profile as a frozen guest snapshot with WorkerNavigator toString branding. The
+  profile is pinned by the Worker owner, uses the same identity as page/HTTP requests
+  and exposes no credentials or media devices. All 74 selected native checks across
+  four manifest-listed files, native build, strict Worker-test typing and Worker
+  lint/format pass. Actual offline PageScripts/DOM/SafeJS at 128 MB/16 s verifies
+  custom identity, frozen snapshots, Worker-to-DOM delivery/termination and cleanup
+  data/page callbacks zero. This is a three-field subset; WorkerNavigator constructor/
+  prototype tables, other navigator APIs and all Zoom/media acceptance remain open.
+
 - Classic Workers now support synchronous sequential importScripts through SafeJS
   nested evaluation, HTTP(S) imports with child script-src/default-src admission,
   redirect checks and same-origin credentials, plus owned JavaScript Blob imports.
@@ -41,8 +51,8 @@
   matching; sharing Blob URLs between sibling Workers is unsupported. Classic
   same-origin entry loading, worker-src, cookies/lifetime and response CSP remain
   verified. Current Zoom media assets use Blob Workers/importScripts; native fetch
-  decoded net_thread.min.js without executing it. Module workers, transfers, child
-  navigator, WebAssembly, media and every default/live Zoom initialization/join/
+  decoded net_thread.min.js without executing it. Module workers, transfers, full
+  WorkerNavigator, WebAssembly, media and every default/live Zoom initialization/join/
   notetaker gate remain open. Automations is untouched; no meeting has been joined.
 
 - Blob classic Workers now use isolated, cooperative SafeJS realms with a shared
@@ -59,8 +69,8 @@
   message-callback and timer step-budget exhaustion close the whole page and release
   tracked data to zero. These diagnostic allowances clear no default timing gate.
   Module workers, transfers, full EventTarget/MessageEvent branding, child
-  navigator, WebAssembly and media remain unsupported; importScripts and child
-  Blob/URL are verified above.
+  navigator APIs, WebAssembly and media remain unsupported; importScripts, child
+  Blob/URL and the three-field navigator identity subset are verified above.
   Default timing, live initialization/readiness/join and every notetaker gate remain
   open. Working Automations is untouched; no meeting has been joined.
 

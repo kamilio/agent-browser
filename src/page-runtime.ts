@@ -1,3 +1,4 @@
+import type { BrowserIdentity } from "./browser-identity.js";
 import { AgentBrowserError } from "./errors.js";
 import type {
 	HtmlClassicScriptRequest,
@@ -101,6 +102,7 @@ export interface PageRuntimeOptions {
 	workerImportPolicy?: WorkerImportPolicy;
 	workerPolicy?: (url: string, redirects?: number) => void;
 	workerDocumentUrl?: string;
+	workerIdentity?: Readonly<BrowserIdentity>;
 	stringCompilation?: "allow" | "deny";
 	regexSourceLength?: number;
 	regexCompileAllocations?: number;
