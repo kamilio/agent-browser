@@ -1,0 +1,416 @@
+diff --git a/src/parse/tokenizer.ts b/src/parse/tokenizer.ts
+--- a/src/parse/tokenizer.ts
++++ b/src/parse/tokenizer.ts
+@@ -1,4 +1,5 @@
+ import { RegexCompileGuard, type CompileScope } from "../interp/regex/compile-guard.js";
++import { CompactTokens } from "./compact-tokens.js";
+
+ export type Position = {
+   line: number;
+@@ -157,6 +158,16 @@
+   return lexer.tokenize();
+ }
+
++/** Internal module tokenization with bounded materialized token/position caches. */
++export function tokenizeModule(
++  source: string,
++  options: TokenizeOptions = {}
++): Token[] {
++  const tokens = new CompactTokens();
++  new Lexer(source, { ...options, sharedPositions: true }, tokens.indexed).tokenize();
++  return tokens.finish();
++}
++
+ export function collectComments(source: string): Comment[] {
+   const comments: Comment[] = [];
+   tokenize(source, { allowRegexLiterals: true, statementList: true, comments });
+@@ -183,7 +194,6 @@
+   private index = 0;
+   private line = 1;
+   private column = 1;
+-  private readonly tokens: Token[] = [];
+   private readonly groupingState: GroupingState = {stack: [], classHeads: [], tokenCount: 0};
+   private lastClosedStatementBoundary = false;
+   private legacyStringEscape = false;
+@@ -192,7 +202,8 @@
+
+   constructor(
+     private readonly source: string,
+-    private readonly options: TokenizeOptions
++    private readonly options: TokenizeOptions,
++    private readonly tokens: Token[] = []
+   ) {}
+
+   tokenize(): Token[] {
+diff --git a/src/parse/parser.ts b/src/parse/parser.ts
+--- a/src/parse/parser.ts
++++ b/src/parse/parser.ts
+@@ -1,6 +1,6 @@
+ import { boundIdentifiers } from "./bindings.js";
+ import { validatePrivateNames } from "./private-names.js";
+-import { RESERVED_IDENTIFIER_SPELLINGS, tokenize, type Position, type Token } from "./tokenizer.js";
++import { RESERVED_IDENTIFIER_SPELLINGS, tokenize, tokenizeModule, type Position, type Token } from "./tokenizer.js";
+ import { assignFreshIds, assignIds } from "./assign-ids.js";
+ import { evalFunctionDeclarations, functionSources, functionStrictness, templateSources } from "./function-source.js";
+ import { formatParseError } from "./format-error.js";
+@@ -705,7 +705,7 @@
+   }
+ }
+
+-export function parseSourceModule(source: string, filename = "<input>", owner?: CompileOwner, options: {sharedPositions?: boolean} = {}): ParsedSourceModule {
++export function parseSourceModule(source: string, filename = "<input>", owner?: CompileOwner, options: {sharedPositions?: boolean; compactTokens?: boolean} = {}): ParsedSourceModule {
+   const compilation = new CompileScope(owner);
+   const syntax: SourceModuleSyntax = {imports: [], exports: [], moduleRequests: []};
+   let parser: Parser | undefined;
+@@ -715,10 +715,10 @@
+       throw new SandboxError({budget: "stringLength", current: source.length, limit});
+     owner?.budget.visitNode(source.length);
+     parser = new Parser(
+-      tokenize(source, {allowRegexLiterals: true, statementList: true, compilation, sharedPositions: options.sharedPositions}),
++      (options.compactTokens ? tokenizeModule : tokenize)(source, {allowRegexLiterals: true, statementList: true, compilation, sharedPositions: options.sharedPositions}),
+       source, compilation, "top-level",
+       {...ordinaryFunctionContext, newTarget: false, return: false, requireAsyncAwait: true,
+-        grammar: {await: true, yield: false, strict: true}}, true, syntax, options.sharedPositions === true
++        grammar: {await: true, yield: false, strict: true}}, true, syntax, options.sharedPositions === true || options.compactTokens === true
+     );
+     const module = (options.sharedPositions ? assignFreshIds : assignIds)(parser.parseModule());
+     if (source.includes("#")) validatePrivateNames(module);
+diff --git a/src/modules/source-graph.ts b/src/modules/source-graph.ts
+--- a/src/modules/source-graph.ts
++++ b/src/modules/source-graph.ts
+@@ -144,7 +144,7 @@
+         return known;
+       }
+       this.options.budget?.chargeDataUsage(source.source.length + source.id.length + 1);
+-      const parsed = parseSourceModule(source.source, source.id, this.options.compilation?.owner ?? this.options.compileOwner, {sharedPositions:true});
++      const parsed = parseSourceModule(source.source, source.id, this.options.compilation?.owner ?? this.options.compileOwner, {sharedPositions:true, compactTokens:true});
+       const importMeta = Object.create(null) as SandboxObject;
+       setSandboxPrototype(importMeta,null);
+       const record: RecordEntry = {id:source.id, source:source.source, parsed,
+diff --git a/src/parse/compact-tokens.ts b/src/parse/compact-tokens.ts
+new file mode 100644
+--- /dev/null
++++ b/src/parse/compact-tokens.ts
+@@ -0,0 +1,139 @@
++import type { Position, Token, TokenType } from "./tokenizer.js";
++
++const types: readonly TokenType[] = [
++  "identifier",
++  "private-identifier",
++  "keyword",
++  "escaped-keyword",
++  "numeric",
++  "regex",
++  "string",
++  "template",
++  "punctuator",
++  "eof",
++];
++const stride = 7;
++const legacyEscape = 256;
++const tokenCacheSize = 256;
++const positionCacheSize = tokenCacheSize * 2 + 2;
++
++/** Private indexed storage for module compilation; the public tokenizer stays eager. */
++export class CompactTokens {
++  private rows = new Uint32Array(1024 * stride);
++  private readonly values: Array<string | undefined> = [];
++  private readonly templates = new Map<number, Token["templateExpressions"]>();
++  private readonly tokens = new Map<number, Token>();
++  private readonly positions = new Map<number, Position>();
++  private last?: Token;
++  private retired = 0;
++
++  // The lexer/parser only use indexing, length, push, at and prefix retirement.
++  // Array methods read this indexed facade; token records are materialized on demand.
++  readonly indexed: Token[] = new Proxy([] as Token[], {
++    get: (target, key, receiver) => {
++      if (key === "length") return this.values.length;
++      if (key === "push") return this.push;
++      const index = arrayIndex(key);
++      return index === undefined
++        ? Reflect.get(target, key, receiver)
++        : this.get(index);
++    },
++    set: (_target, key, value) => {
++      const index = arrayIndex(key);
++      if (index === undefined || value !== undefined || index !== this.retired)
++        throw new TypeError(
++          "Compact token storage only permits ordered prefix retirement.",
++        );
++      this.values[index] = undefined;
++      this.templates.delete(index);
++      this.tokens.delete(index);
++      this.retired++;
++      return true;
++    },
++  });
++
++  finish(): Token[] {
++    // Parsing needs every token's row initially, but not spare growth capacity.
++    this.rows = this.rows.slice(0, this.values.length * stride);
++    return this.indexed;
++  }
++
++  private push = (token: Token): number => {
++    // String/template scanners annotate the last token after publishing it.
++    // Commit those annotations before that token becomes a historical row.
++    if (this.last !== undefined) {
++      const previous = this.values.length - 1;
++      if (this.last.legacyEscape)
++        this.rows[previous * stride + 6] |= legacyEscape;
++      if (this.last.templateExpressions !== undefined)
++        this.templates.set(previous, this.last.templateExpressions);
++    }
++    const index = this.values.length;
++    const base = index * stride;
++    if (base + stride > this.rows.length) {
++      const rows = new Uint32Array(this.rows.length * 2);
++      rows.set(this.rows);
++      this.rows = rows;
++    }
++    this.rows.set(
++      [
++        token.start.line,
++        token.start.column,
++        token.start.offset,
++        token.end.line,
++        token.end.column,
++        token.end.offset,
++        types.indexOf(token.type),
++      ],
++      base,
++    );
++    this.values.push(token.value);
++    this.last = token;
++    return index + 1;
++  };
++
++  private get(index: number): Token | undefined {
++    if (index < this.retired || index >= this.values.length) return undefined;
++    if (index === this.values.length - 1) return this.last;
++    const cached = this.tokens.get(index);
++    if (cached !== undefined) return cached;
++    const base = index * stride;
++    const bits = this.rows[base + 6]!;
++    const token: Token = {
++      type: types[bits & 255]!,
++      value: this.values[index]!,
++      start: this.position(base),
++      end: this.position(base + 3),
++    };
++    if (bits & legacyEscape) token.legacyEscape = true;
++    const expressions = this.templates.get(index);
++    if (expressions !== undefined) token.templateExpressions = expressions;
++    if (this.tokens.size === tokenCacheSize)
++      this.tokens.delete(this.tokens.keys().next().value!);
++    this.tokens.set(index, token);
++    return token;
++  }
++
++  private position(base: number): Position {
++    const offset = this.rows[base + 2]!;
++    const cached = this.positions.get(offset);
++    if (cached !== undefined) return cached;
++    const position = Object.freeze({
++      line: this.rows[base]!,
++      column: this.rows[base + 1]!,
++      offset,
++    });
++    if (this.positions.size === positionCacheSize)
++      this.positions.delete(this.positions.keys().next().value!);
++    this.positions.set(offset, position);
++    return position;
++  }
++}
++
++function arrayIndex(key: string | symbol): number | undefined {
++  if (typeof key !== "string") return undefined;
++  const index = Number(key);
++  return Number.isSafeInteger(index) && index >= 0 && String(index) === key
++    ? index
++    : undefined;
++}
+diff --git a/src/parse/compact-tokens.test.ts b/src/parse/compact-tokens.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/parse/compact-tokens.test.ts
+@@ -0,0 +1,178 @@
++import { expect, it } from "vitest";
++import { Budget, SandboxError } from "../interp/budget.js";
++import { CompactTokens } from "./compact-tokens.js";
++import {
++  functionSources,
++  functionStrictness,
++  templateSources,
++} from "./function-source.js";
++import { parseSourceModule } from "./source-module.js";
++import { tokenize, tokenizeModule } from "./tokenizer.js";
++
++const fixtures = [
++  "import {x} from './dep.js';export const result=await Promise.resolve(x);",
++  "/* before */\r\nexport const astral='😀';\u2028// comment\u2029export const result=`a${astral}b${`c${1}`}`;",
++  "export class Example {#x=1;static {this.marker=2;}get value(){return this.#x;}}",
++  "const value={class:1,async method(){return /a[b-c]+/g;}};for(const item of /a/.exec('a')){};export {value};",
++  `export function long(${Array.from({ length: 400 }, (_, i) => `arg${i}=()=>${i}`).join(",")}){return arg0;}export const result=long();`,
++  `export const result=(${Array.from({ length: 800 }, (_, i) => `v${i}`).join(",")})=>({value:v0,method(){return this.value;}});`,
++  `export const result=[${Array.from({ length: 3000 }, (_, i) => `${i}`).join(",")}];export default function(){return result.length;}`,
++];
++
++it.each(fixtures)("preserves every materialized token for %j", (source) => {
++  const options = {
++    allowRegexLiterals: true,
++    statementList: true,
++    sharedPositions: true,
++  };
++  expect(Array.from(tokenizeModule(source, options))).toEqual(
++    tokenize(source, options),
++  );
++});
++
++it("preserves scanner annotations when the last token becomes historical", () => {
++  const source = "'\\1';`a${`b${1}`}c`;";
++  const options = { allowLegacyEscapes: true, allowRegexLiterals: true };
++  const actual = Array.from(tokenizeModule(source, options));
++  expect(actual).toEqual(tokenize(source, options));
++  expect(actual[0].legacyEscape).toBe(true);
++  expect(actual[2].templateExpressions).toHaveLength(1);
++});
++
++function metadata(root: unknown) {
++  const pending = [root];
++  const visited = new Set<object>();
++  const result: unknown[] = [];
++  while (pending.length) {
++    const value = pending.pop();
++    if (!value || typeof value !== "object" || visited.has(value)) continue;
++    visited.add(value);
++    result.push([
++      functionSources.get(value as Parameters<typeof functionSources.get>[0]),
++      functionStrictness.get(
++        value as Parameters<typeof functionStrictness.get>[0],
++      ),
++      templateSources.get(value as Parameters<typeof templateSources.get>[0]),
++    ]);
++    pending.push(...Object.values(value));
++  }
++  return result;
++}
++
++it.each(fixtures)(
++  "preserves module trees, IDs, source metadata and compilation work for %j",
++  (source) => {
++    function compile(compactTokens: boolean) {
++      const budget = new Budget({
++        maxSteps: 1000000,
++        stringLength: 100000,
++        dataSize: 1000000,
++      });
++      const lease = budget.acquireCompileOwner();
++      try {
++        const parsed = parseSourceModule(source, "fixture.js", lease.owner, {
++          sharedPositions: true,
++          compactTokens,
++        });
++        return {
++          parsed,
++          metadata: metadata(parsed.module),
++          steps: budget.stepsUsed,
++          data: budget.currentDataSize,
++        };
++      } finally {
++        lease.release();
++      }
++    }
++    expect(compile(true)).toEqual(compile(false));
++  },
++);
++
++it.each([
++  "export const = 1;",
++  "export const value=`bad${;}`;",
++  "import {x} from ;",
++  "export const first=1;export const first=2;",
++  "export {missing};",
++  "export const value='\\1';",
++  "export const value=/unterminated;",
++])("preserves syntax diagnostics for %j", (source) => {
++  const errors = [false, true].map((compactTokens) => {
++    try {
++      parseSourceModule(source, "fixture.js", undefined, {
++        sharedPositions: true,
++        compactTokens,
++      });
++    } catch (error) {
++      return error as Error;
++    }
++    throw new Error("Expected syntax rejection.");
++  });
++  expect(errors[1]).toMatchObject({
++    name: errors[0].name,
++    message: errors[0].message,
++  });
++  expect(Object.getOwnPropertyNames(errors[1])).toEqual(
++    Object.getOwnPropertyNames(errors[0]),
++  );
++});
++
++it.each(["steps", "stringLength", "dataSize"] as const)(
++  "preserves compilation %s enforcement",
++  (limit) => {
++    const source =
++      limit === "dataSize"
++        ? "export const value=/a{10}/;"
++        : "export const value=1;";
++    const failures = [false, true].map((compactTokens) => {
++      const budget = new Budget({
++        maxSteps: limit === "steps" ? 3 : 100000,
++        stringLength: limit === "stringLength" ? 3 : 1000,
++        dataSize: limit === "dataSize" ? 1 : 10000,
++      });
++      const lease = budget.acquireCompileOwner();
++      try {
++        parseSourceModule(source, "fixture.js", lease.owner, {
++          sharedPositions: true,
++          compactTokens,
++        });
++      } catch (error) {
++        expect(error).toBeInstanceOf(SandboxError);
++        return { error, steps: budget.stepsUsed };
++      } finally {
++        lease.release();
++      }
++      throw new Error("Expected budget rejection.");
++    });
++    expect(failures[1]).toMatchObject({
++      error: { code: "budgetExceeded", budget: limit },
++      steps: failures[0].steps,
++    });
++  },
++);
++
++it("retires only an ordered token prefix and keeps lookahead/EOF available", () => {
++  const buffer = new CompactTokens().indexed;
++  const point = (offset: number) =>
++    Object.freeze({ line: 1, column: offset + 1, offset });
++  for (let i = 0; i < 1100; i++)
++    buffer.push({
++      type: "identifier",
++      value: `v${i}`,
++      start: point(i),
++      end: point(i + 1),
++    });
++  buffer.push({ type: "eof", value: "", start: point(1100), end: point(1100) });
++  const saved = buffer[0];
++  expect(buffer[1099].value).toBe("v1099");
++  expect(buffer[0]).toEqual(saved);
++  expect(() => {
++    buffer[1] = undefined!;
++  }).toThrow("ordered prefix");
++  for (let i = 0; i < 1099; i++) buffer[i] = undefined!;
++  expect(buffer[0]).toBeUndefined();
++  expect(saved.value).toBe("v0");
++  expect(buffer[1099].value).toBe("v1099");
++  expect(buffer.at(-1)?.type).toBe("eof");
++  expect(buffer[1101]).toBeUndefined();
++});

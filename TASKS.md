@@ -23,23 +23,37 @@
 
 ## Current verified state
 
-- The corrected full-client diagnostic terminates at its 30 min import observation
-  bound: HTTP 200, all 13 classic scripts pass, seven modules prepared, one import
+- Canonical modules now use compact numeric token rows with bounded token/position
+  caches; public tokenization stays eager. Contribution:
+  safejs-compact-module-tokens.patch. Exact loginview lexing (1195771 tokens) passes
+  128 MB and matches the eager token digest; eager lexing alone exhausts that heap.
+  Retained lexer storage drops from 152019032 to 57701692 bytes including buffers.
+  Full-tree comparison preserves 889089 nodes / 22269 functions, source metadata,
+  IDs and 4165502 steps / 3485657 current / 3506328 peak units. All 236 selected SDK
+  checks, scoped typing/build, new-file format/lint and exact patch forward/reverse
+  application pass. Measured lexing takes 2.8 vs 1.0 s; full parsing 8.5 vs 3.8 s
+  in the 512 MB comparison. Complete loginview parsing still exhausts 128 MB;
+  retained syntax trees remain the memory target. No full-client gain or gate pass.
+  Probe processes terminate, temporary artifacts are removed, SDK retains candidate.
+
+- The latest full-client diagnostic, before compact module tokens, reaches its
+  30 min import observation bound: HTTP 200, all 13 classic scripts pass, seven
+  modules prepared, one import
   pending and none fulfilled or rejected. Last progress: 9257860 steps / 13156669
   current data units. No application exception, readiness or join is established.
   Zero socket attempts; cleanup closes the realm with accounted data zero. The
   768 MB/120 s diagnostic allowances clear no default timing or heap gate.
 
-- Exact public module parsing verifies a separate default-heap blocker. Under
+- Earlier eager-token parsing verifies a separate default-heap blocker. Under
   128 MB, editor-core parses in 1.8 s and retains 71393848 heap bytes beyond its
   28617192-byte baseline (1396344 steps / 2101 statements). The larger loginview
   source exhausts 128 MB before parsing returns. A 512 MB diagnostic parses it:
   207673200 retained heap bytes beyond a 33412352-byte baseline, 4165502 steps /
   3297 statements. Its tree has 889089 nodes and spans and 1157912 positions.
   These are parse-only measurements, not full client/default timing or meeting
-  proofs. No optimization is retained; source tree storage is the relevant memory
-  target, not the smaller classic-source node index. Probe processes terminate,
-  no artifacts remain, and the full-client runtime/build stay unchanged.
+  proofs. Those parse-only probes retained no optimization. Source-tree storage
+  remains the compiler-memory target after compact tokenization above, rather
+  than the smaller classic-source node index. Processes terminate; no artifacts.
 
 - Host-result allocation now excludes prototype graphs already owned by the
   realm; primary reconciliation still traverses those mutable retained roots.
@@ -1235,6 +1249,8 @@
   Loginview alone now exhausts 128 MB during parsing; the corrected full-client
   retry also remains pending at 30 min under its larger diagnostic heap. Eager
   syntax-tree storage and retained-graph evaluation cost both require further work.
+  Compact tokenization clears the isolated 128 MB lexer probe, but complete
+  loginview parsing still fails that heap cap. This is not a full compiler pass.
 
 - Background dynamic imports outlive the classic evaluation's PageScripts timer.
   The realm graph has document cancellation and shared step/data limits, but no
