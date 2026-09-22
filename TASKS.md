@@ -100,10 +100,14 @@
   probe clones `<b>hello</b>`, returns the parsed body, text child and following
   SPAN, with SDK data and transport requests zero on close. The earlier isolated
   bundled DOMPurify 3.0.9 probe initializes in 21.1 s under the explicit 120 s
-  diagnostic allowance. Current baseline and prototype-enabled node-input attempts
-  both hit the 120 s initializer deadline before their input checks in this loaded
-  environment; both close at data zero. Node-input sanitizer behavior and current
-  initializer timing remain unverified. The earlier four benign fixtures
+  diagnostic allowance. A subsequent profiled 128 MB initializer completes in
+  48.1 s elapsed / 25.3 s process CPU, with 71437 steps and 76338 retained units.
+  Both native-node and string `<b>hello</b>` inputs return `<b>hello</b>`; cleanup
+  data and active transport requests are zero. This supersedes the two earlier
+  120 s initializer timeouts before input checks in the loaded environment. The
+  sampled profile attributes most initializer time to retained-graph measurement,
+  with additional intrinsic-root collection cost; sampled elapsed durations are
+  not process CPU totals. The earlier four benign fixtures
   preserve bold text, span attributes and form/input content, and remove a comment;
   form attribute order changes. Cleanup releases all SDK data; asset transport closes
   with active requests zero. These fixtures clear the empty-output regression,
@@ -137,6 +141,30 @@
   restored and artifacts are removed. Next: reproduce the initializer's larger
   retained-graph cost offline before changing accounting; full initialization,
   default 30 s/128 MB and every meeting/media acceptance gate remain open.
+
+- SDK intrinsic root caches now ignore writes to unrelated guest function tables.
+  A weak membership set tracks tables captured by intrinsic retention groups;
+  registered-table writes, prototype changes and baseline completion still invalidate
+  the caches. Table projections and all descendant/quota/held-callback scans remain
+  active; restored untracked tables keep their conservative scan. Contribution:
+  safejs-intrinsic-table-invalidation.patch. Four new contracts cover unrelated
+  writes, later registration, descendant quota rejection and shared-budget teardown.
+  All 119 focused SDK checks pass, including builtin prototypes, restored realms,
+  intrinsic projections, held quotas and ownership reconciliation. Exact saved source passes
+  the other three new contracts and fails cache reuse as expected. Scoped core/test
+  typing, new-test format/lint and exact patch application/reversal pass.
+  Compiled 128 MB root-collection fixture (200 groups, four methods each, 10000
+  unrelated writes per sample) warm CPU median falls from 84.1 to 24.4 ms (~71%);
+  measured charge stays zero on both, as do cleanup data. This measures empty-group
+  collection overhead, not complete graph or live Zoom performance. The identical
+  offline native 128 MB sanitizer fixture completes on the candidate in 119.0 s
+  elapsed / 27.3 s process CPU, with the same 71437 steps / 76338 retained units as
+  the earlier successful run. Native-node and string bold-text inputs both remain
+  `<b>hello</b>`; cleanup data and transport requests are zero. Saved-build comparison
+  reaches its 120 s deadline at 70314 initializer steps and closes at data zero;
+  CPU contention prevents a complete candidate/baseline initializer timing claim.
+  Processes terminate and temporary profiles/fixtures are removed. The working SDK
+  source/build retain the candidate; default timing and all meeting/media gates remain open.
 
 - SDK single-read function-properties candidate is rejected and reverted. Its
   factory accessor certificate preserves derived/proxy/native-hook reads, live
