@@ -135,14 +135,20 @@
   Local poe-code commit ba19c0538; no push. Individual native calls/scans remain
   nonpreemptible, and host-clock changes retain the node-limit fallback.
   Public net_thread.min.js (390978 units) clears parent setup and enters its child
-  Worker, but source completion/readiness still fails. Latest 30 s/120 s probes
-  settle at 30624/120781 ms with AgentBrowserError timeout, at 879847/887517 shared
-  steps; neither outer wait expires first. Cleanup tracked data/page callbacks/
-  active requests zero in both. The current source profile identifies full graph
-  reconciliation and GC as dominant costs; its artifact was removed. Next: reduce
-  startup accounting cost without bypassing primary scans, then qualify real WASM
-  imports/initializer and every meeting/media gate. These diagnostic allowances
-  clear no default startup or notetaker gate.
+  Worker, but source completion/readiness still fails. Latest baseline 30 s control
+  settles at 30765 ms / 880194 shared steps with AgentBrowserError timeout; the prior
+  120 s control settled at 120781 ms / 887517 steps. Neither outer wait expires first;
+  cleanup tracked data/page callbacks/active requests zero. Instrumented 30 s baseline
+  controls vary from 2696 to 7081 child graph passes, so candidate timing establishes
+  no startup gain. String-field and frozen-symbol cache candidates were discarded;
+  254/251 selected SDK checks passed, but public readiness never passed. Candidate
+  WASM reentry/growth passes; DOM and page/Worker installation deadlines fail on both
+  candidate and restored baseline in this validation. Timing gates remain open.
+  Committed source/build restored to ba19c0538, candidate tests removed. Full graph
+  reconciliation and GC remain the measured costs. Next: establish reliable actual
+  DOM/page/Worker timing and reduce startup accounting cost without bypassing primary
+  scans, then qualify real WASM imports/initializer and every meeting/media gate.
+  These diagnostic allowances clear no default startup or notetaker gate.
 
 - Worker messages now accept bounded ArrayBuffer transfer lists (legacy sequence or
   options.transfer iterable), using SafeJS structuredClone for serialization and
