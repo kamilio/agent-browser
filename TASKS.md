@@ -104,6 +104,12 @@
   receiver rejection (29813 steps / 45314 peak units); cleanup closes with data zero.
   The basic 1 s probe times out and cleans up to zero; this does not clear that gate
   or full client initialization, sanitizer conformance, meeting or media gates.
+  The exact current public DOMPurify slice (21008 UTF-16 units) also passes benign
+  RETURN_DOM_FRAGMENT calls, preserving bold/span content and attributes; enabling
+  the shadowroot attribute path imports the fragment into the original document.
+  Under 128 MB/120 s diagnostic limits, initialization takes 105.9 s and the two
+  calls 58.3 s (134339 total steps / 85275 peak units); cleanup data zero, process
+  terminal, no artifacts retained. No comparison or sanitizer security claim.
   Working build and new-source/test/bootstrap format/lint checks pass. Actual
   SDK/native 128 MB probe verifies borrowed parsed-body queries, BODY/B iterator
   traversal and prototype identity. Actual SDK/native 128 MB prototype-capture
