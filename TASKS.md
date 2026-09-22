@@ -162,12 +162,15 @@
   times out, so no complete local fingerprint conformance/performance claim.
   Latest live retry clears the earlier FingerprintJS 120 s timeout: its call
   completes in 53.5 s / 89652 steps. All initial document scripts and externals
-  pass; seven modules prepare and the live import continues advancing, with counts
-  1 pending / 7 prepared / 0 fulfilled / 0 rejected after 204 s of import observation.
-  SDK/native builds must stay unchanged while this process is live. Temporary editor
-  tracing checks sourceReference, but module execution identifies its source through
-  scope.lookupModuleId; correct the trace only after the current probe terminates.
-  The 30 min observation bound and extended heap/time allowances remain diagnostic.
+  pass; the 30 min import observation ends with counts 1 pending / 7 prepared /
+  0 fulfilled / 0 rejected, after 6.73 million additional budgeted steps. No module
+  rejection is proven. Zero socket attempts and cleanup data zero verified; process
+  terminates. Incorrect sourceReference-based instrumentation is restored exactly.
+  A bounded 5 min import diagnostic now uses scope.lookupModuleId, module-entry
+  markers, editor statement CPU/data readings and Node CPU profiling. SDK/native
+  builds must stay unchanged while this process is live; restore instrumentation
+  and remove ephemeral artifacts after validation. Extended heap/time allowances
+  remain diagnostic.
   Default performance and every readiness/meeting/media gate remain open.
 
 - SDK intrinsic root caches now ignore writes to unrelated guest function tables.
