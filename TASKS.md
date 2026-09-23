@@ -23,6 +23,23 @@
 
 ## Current verified state
 
+- Maintained SafeJS conservative record data snapshots now stay private from
+  later native Array hooks and inherited index setters (poe-code b46eddc27;
+  local, no push). Reproduction drops 1015→9 units and bypasses quota500;
+  pinned appends to a private array without an inherited prototype preserve 1015
+  and reject the quota. Fresh capture order, aliases, cycles, mutable descendants,
+  foreign proxy ordering and primary reconciliation remain active. All 168 selected
+  checks across 19 files pass with actual GC, strict new-test typing, scoped lint,
+  SDK compilation and eight entry checks. Focused mixed/reference/sparse scans
+  retain identical charges; sampled CPU is 104→107 / 89→93 / 52→52 ms, so this
+  is accounting hardening without a startup gain claim.
+  First public profiling probe times out before externals; second reaches HTTP 200
+  and externals but fails its execution-timeout gate (182114 steps, 2644502 peak
+  units). Both verify cleanup data zero / sockets zero; no readiness or join.
+  The second probe's 27.9 s sampled window attributes 20.1 s inclusive to graph
+  traversal and 4.0 s self to GC, with symbol enumeration, closure properties/
+  captures and fresh descriptors hot. Next: attribute remaining owner/closure
+  traversal cost after dictionary tracking, preserving live reads and limits.
 - Maintained SafeJS (poe-code e633427b5; local, no push) now updates SDK-owned
   scalar/key totals incrementally and reuses immutable symbol-key lists. Bulk static string dictionaries in classic
   Scripts (at least 256 fields) qualify from creation; small literals and default
