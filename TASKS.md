@@ -18,42 +18,40 @@
 
 - Maintained SafeJS source/build: /home/kjopek/project/poe-code/packages/safe-js.
   Reuse this browser's working dist; preserve unrelated changes in both trees.
-  The full native and full SafeJS suites have no completed pass established for
-  the current trees. A concurrent SafeJS rebase changed commit IDs; the live
-  probes below used the existing compiled build, not a rebuild of rebased sources.
+  The selected current SafeJS workspace build and eight built-import checks pass.
+  Full native and full SafeJS suites remain unestablished.
 - Retained SafeJS work includes private accounting snapshots, bounded capture
   pooling, direct SDK getter dispatch, tracked fixed-key records, module snapshot
   elision, import/export indexes, flattened symbol snapshots (88e23ce0c), primitive
   literal scope elision (dde38754b), and metered import deadlines (bbf28b754).
-- Deferred source-module functions (b4102164c, formerly 2d1d36a8e) preserve fresh
-  captures, complete quotas and one charge across materialization/old snapshots.
-  Scripts, generators and dynamic source references remain eager. Before rebase,
-  249 selected tests across 30 files passed, with two existing skips; typing,
-  scoped lint, selected build and eight built imports passed. Reversed 3703-function
-  fixtures used about 30% less CPU with equal outputs, steps, charges and cleanup.
-  This does not establish live startup or validate the entire rebased tree.
+- Deferred source-module functions (b4102164c) preserve fresh captures, complete
+  quotas and one charge across materialization/old snapshots. Scripts, generators
+  and dynamic source references remain eager.
 - Browser diagnostic fix 2d43d80 keeps bounded observation open while delayed
-  callbacks bootstrap the client, and reports pending callbacks. Strict typing
-  against working declarations, formatting and six observation scenarios pass.
-- Earlier desktop-identity Zoom 7.2.0.12729 probe passed all 13 classic scripts and
-  prepared seven modules, but its import expired at 120 s. No readiness, joining
-  or sockets; cleanup verified zero data. The default AgentBrowser identity
-  receives a different landing page and has not reached the meeting client.
-- Latest desktop live probe used temporary in-memory 600 s script/import limits
-  with 256 MiB heap; checked-in limits were unchanged. HTTP 200, seven modules
-  prepared, then import deadline failure. Last sample: 9021025 steps / 7060475
-  data units. The report records 12 scripts executed and one execution-closed
-  failure. No socket attempts or meeting admission; zero-data/socket cleanup passed.
-  This extended diagnostic clears no normal-resource acceptance gate.
-- Actual module CPU profile: 42006 samples over 510.8 s; about 71% retained-data
-  reconciliation, 28% GC, 34% visitor self time and 9% visited-set lookup.
-  Earlier classic-library profiling showed about 95% reconciliation and under
-  1% GC. Module allocation pressure now needs attribution before choosing a fix.
-  Profiles and small comparison probes stay in memory; no report files retained.
-- Fixed-key guest records are already tracked. A generic shared-record allocation
-  fixture points to descriptor/key snapshots, but does not identify the actual
-  Zoom allocation sites. Strict-arguments tracking, broader capture caches and
-  optional-state registry trials showed no reliable gain and remain discarded.
+  callbacks bootstrap the client, and reports pending callbacks. Strict typing,
+  formatting and six observation scenarios pass. Live validation observed two
+  pending callbacks after both windows, then the delayed external-library load.
+- Latest live Zoom 7.2.0.12729 check used the rebuilt maintained SDK, desktop
+  identity, 120 s script / 180 s import-observation limits and 256 MiB heap.
+  HTTP 200; all 13 classic scripts passed and seven modules were prepared before
+  module evaluation exceeded its deadline. Client readiness and joining failed
+  verification; no socket attempts. Process exited; cleanup verified closed
+  runtimes, zero retained data and closed sockets. No debug listener remains.
+- Profiling points to retained-data reconciliation (~71% of module CPU) and GC
+  (~28%). Classic-library allocation sampling points to descriptors and walk
+  snapshots. Actual module allocation attribution remains open. Extended 600 s
+  diagnostics also failed to initialize; no normal-resource gate is cleared.
+- Single-symbol snapshot fix 55ac5eba2 keeps the first descriptor in visit-local
+  storage and allocates a private vector only for additional symbols. Fresh reads,
+  foreign enumeration, callback order, depth and ordinary/held quotas stay intact.
+  Reversed compiled fixtures preserve charges/results/steps: single-symbol scans
+  use about 24% less CPU and 22% less allocation; argument scans use 13%/11% less.
+  Plain/multiple-symbol controls and real guest calls show no material regression.
+  All 303 selected checks across 35 files, scoped lint, formatting, the selected
+  workspace build and eight built imports pass. These are not joining evidence.
+- Fixed-key guest records are already tracked; no lazy arguments change is
+  implemented. Profiles/comparisons stayed in memory. The completed SafeJS build
+  log and empty scratch patch were removed; working builds are retained.
 - Native bounded canvas, worker/Wasm and sockets have separate focused probes.
   PCM handling is not a Zoom audio source; actual RTC/audio transport and the
   complete media/notetaker pipeline remain unimplemented and unverified.
@@ -81,8 +79,8 @@
 - Preserve fresh property/provider observations, complete ordinary and held
   quotas, cancellation, callback ownership and credential isolation. Do not
   revive accounting shortcuts based only on tracked ownership. Private capture
-  pools remain bounded at 64 physical slots. Discarded pooling/registry trials
-  showed no dependable CPU gain and are not maintained changes.
+  pools remain bounded at 64 physical slots. Strict-arguments tracking, broader
+  capture caches and optional-state registry trials remain discarded.
 - Pending imports retain deadlines; TLA expiry revokes the realm. Cooperative
   checks do not bound unmetered parsing or synchronous host calls.
 - Native, SafeJS, live-network, sockets and real TTY/PTY gates remain separate.
