@@ -23,9 +23,10 @@
 
 ## Current verified state
 
-- Maintained SafeJS source graphs use compact tokens/ASTs (8994da632), and packing
+- Maintained SafeJS source graphs use compact tokens/ASTs (e8c79c840), and packing
   now uses DFS and releases copied entries from unobserved parser arrays with
-  pinned property writes (408a0ff9e; local commits, no push). The real emoji asset's
+  pinned property writes (8830013af; local commits, no push). A concurrent rebase
+  preserves the tested source and tests byte-for-byte. The real emoji asset's
   319326 nodes, metadata, IDs, 2160147 steps and 12667140 code-buffer bytes match
   the prior build. With about 58 MB retained beforehand, both the original and
   DFS-only packers abort at 128 MiB old-space; parser-array retirement passes.
