@@ -896,6 +896,37 @@ it("keeps getters lazy and setters identical without mutating the definition", (
 	).toBe(undefined);
 });
 
+it.skipIf(typeof globalThis.gc !== "function")(
+	"releases unused source definitions after installation while keeping host access live",
+	async () => {
+		const owner = fakeOwner();
+		const windowGlobal = new PageWindowGlobal([]);
+		const hosts: object[] = [];
+		const definitions: WeakRef<ReleasedHostDefinition>[] = [];
+		let value = 7;
+		function create() {
+			const definition = {
+				properties: { value: { get: () => value } },
+			};
+			hosts.push(windowGlobal.createHostObject(owner.context, definition));
+			definitions.push(new WeakRef(definition));
+		}
+		create();
+		const window = windowGlobal.createHostObject(owner.context, {});
+		windowGlobal.install(owner.context, { window, self: window });
+		create();
+		for (let round = 0; round < 8; round++) {
+			await new Promise<void>((resolve) => setImmediate(resolve));
+			globalThis.gc?.();
+		}
+		for (const definition of definitions)
+			expect(definition.deref()).toBeUndefined();
+		value = 11;
+		for (const host of hosts) expect(Reflect.get(host, "value")).toBe(11);
+		await owner.close();
+	},
+);
+
 it("shares mapped getters for one property record while preserving its receiver and live operation", () => {
 	const test = fixture();
 	const unrelated = {};

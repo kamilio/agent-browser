@@ -58,7 +58,8 @@ export class PageWindowGlobal {
 		${pageBlobBootstrapSource}
 		${pageWorkerBootstrapSource}
 	})();`;
-	private readonly definitions = new WeakMap<object, ReleasedHostDefinition>();
+	private definitions: WeakMap<object, ReleasedHostDefinition> | undefined =
+		new WeakMap();
 	private window?: object;
 	private reference?: unknown;
 	private bound = false;
@@ -116,7 +117,7 @@ export class PageWindowGlobal {
 			...definition,
 			...(mappedProperties ? { properties: mappedProperties } : {}),
 		});
-		this.definitions.set(object, definition);
+		this.definitions?.set(object, definition);
 		return object;
 	}
 
@@ -132,7 +133,7 @@ export class PageWindowGlobal {
 				"unsupported",
 				"Native window bindings required",
 			);
-		const definition = this.definitions.get(window);
+		const definition = this.definitions?.get(window);
 		if (!definition)
 			throw new AgentBrowserError(
 				"unsupported",
@@ -143,7 +144,7 @@ export class PageWindowGlobal {
 		const document = globals.document;
 		const createElement =
 			document && typeof document === "object"
-				? this.definitions.get(document)?.methods?.createElement
+				? this.definitions?.get(document)?.methods?.createElement
 				: undefined;
 		const names = [
 			...Object.keys(definition.properties ?? {}),
@@ -167,8 +168,10 @@ export class PageWindowGlobal {
 		const location = globals.location;
 		const origin =
 			location && typeof location === "object"
-				? this.definitions.get(location)?.properties?.origin?.get
+				? this.definitions?.get(location)?.properties?.origin?.get
 				: undefined;
+		// Only installation reads this registry; later capabilities own snapshots.
+		this.definitions = undefined;
 		const blobs = new PageBlobs(owner, () => {
 			const value = origin?.();
 			return typeof value === "string" ? value : "null";
