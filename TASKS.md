@@ -123,6 +123,16 @@
   source-reference walks preserve 1037 units but vary between runs. Exact owned
   source restoration and maintained build/eight imports pass; candidate code,
   tests and temporary artifacts removed. No live initialization improvement claimed.
+  SDK-owned function-prototype tracking plus immutable accessor-edge projection
+  is also discarded: 405 candidate checks across 17 files pass, including explicit
+  GC, with strict typing/lint/format/build/eight imports. Initial function/class
+  CPU results conflict; the final split uses 302→298 / 40.2→41.2 / 31.1→30.1 ms
+  per 20 constructor/function/class walks, preserving 185000/40927/25927 units.
+  No useful consistent gain established. Live candidate passes externals at
+  67.7 s wall / 62.4 s CPU, fetches seven ES modules, then hits the import deadline;
+  12 of 13 classics pass, preparation completion is unverified, sockets zero,
+  no readiness/join, cleanup zero. Owned source restored exactly, candidate tests
+  removed, maintained build/eight imports pass, temporary artifacts removed.
 - Bounded array/record capture pooling remains capped at 64 physical slots.
   Prior 600-array / 600-record fixtures preserve charge with about 14% / 19–20%
   less CPU; sampled allocation falls about 22%, and 900 MB gates fail before and
