@@ -218,6 +218,20 @@ function createScriptLoader(
 }
 
 const runtimes: PageRuntime[] = [];
+const webclientScripts: { format: "classic" | "module"; ok: boolean }[] = [];
+function webclientFormat(
+	value: string | undefined,
+): "classic" | "module" | undefined {
+	if (value === undefined) return undefined;
+	try {
+		const pathname = new URL(value).pathname;
+		if (pathname.endsWith("/webclient.min.js")) return "classic";
+		if (pathname.endsWith("/webclient.es.min.js")) return "module";
+	} catch {
+		return undefined;
+	}
+	return undefined;
+}
 function currentDataSize(runtime: PageRuntime): number | undefined {
 	return (runtime.budget as { currentDataSize?: number }).currentDataSize;
 }
@@ -374,6 +388,7 @@ const observed: PageRuntimeFactory = {
 					filename,
 					characters: source.length,
 					currentDataSize: currentDataSize(runtime),
+					memory: process.memoryUsage(),
 				}),
 			);
 			let ok = false;
@@ -387,6 +402,8 @@ const observed: PageRuntimeFactory = {
 				error = runtime.errorDetails(failure);
 				throw failure;
 			} finally {
+				const format = webclientFormat(evaluationOptions.filename);
+				if (format) webclientScripts.push({ format, ok });
 				console.log(
 					JSON.stringify({
 						event: "script",
@@ -471,6 +488,7 @@ let importObservationTimedOut = false;
 let webclientFetchVerified = false;
 let sourceModuleStatuses: (Readonly<PageSourceModuleStatus> | undefined)[] = [];
 let moduleSettlementVerified = false;
+let webclientCodeVerified = false;
 try {
 	const tab = browser.createTab();
 	const navigation = await browser.navigate(tab.id, url);
@@ -491,8 +509,7 @@ try {
 			.requests(tab.id)
 			.entries.filter(
 				(entry) =>
-					entry.kind === "script" &&
-					new URL(entry.url).pathname.endsWith("/webclient.es.min.js"),
+					entry.kind === "script" && webclientFormat(entry.url) !== undefined,
 			);
 	const moduleStatuses = () =>
 		runtimes.map((runtime) =>
@@ -558,6 +575,13 @@ try {
 		webclientImports.every(
 			(entry) => entry.state === "complete" && entry.status === 200,
 		);
+	const formats = new Set(imports().map((entry) => webclientFormat(entry.url)));
+	webclientCodeVerified =
+		webclientFetchVerified &&
+		(!formats.has("module") || moduleSettlementVerified) &&
+		(!formats.has("classic") ||
+			(webclientScripts.some((script) => script.format === "classic") &&
+				webclientScripts.every((script) => script.ok)));
 } catch (failure) {
 	navigationError =
 		failure instanceof AgentBrowserError ? failure.code : "probe-failed";
@@ -600,6 +624,8 @@ try {
 			report,
 			webclientImports,
 			webclientFetchVerified,
+			webclientScripts,
+			webclientCodeVerified,
 			sourceModuleStatuses,
 			moduleSettlementVerified,
 			pageRuntimeClosedBeforeCleanup,
@@ -615,8 +641,7 @@ try {
 		!report?.complete ||
 		pageRuntimeClosedBeforeCleanup ||
 		importObservationTimedOut ||
-		!webclientFetchVerified ||
-		!moduleSettlementVerified ||
+		!webclientCodeVerified ||
 		report.failed ||
 		report.halted ||
 		!cleanupVerified
