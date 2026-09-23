@@ -16,55 +16,44 @@
 
 ## Current verified state
 
-- Maintained SafeJS source/build: /home/kjopek/project/poe-code/packages/safe-js.
-  Reuse this browser's working dist; preserve unrelated changes in both trees.
-  The selected current SafeJS workspace build and eight built-import checks pass.
-  Full native and full SafeJS suites remain unestablished.
-- Retained SafeJS work includes private accounting snapshots, bounded capture
-  pooling, direct SDK getter dispatch, tracked fixed-key records, module snapshot
-  elision, import/export indexes, flattened symbol snapshots (88e23ce0c), primitive
-  literal scope elision (dde38754b), and metered import deadlines (bbf28b754).
-- Deferred source-module functions (b4102164c) preserve fresh captures, complete
-  quotas and one charge across materialization/old snapshots. Scripts, generators
-  and dynamic source references remain eager.
-- Browser diagnostic fix 2d43d80 keeps bounded observation open while delayed
-  callbacks bootstrap the client, and reports pending callbacks. Strict typing,
-  formatting and six observation scenarios pass. Live validation observed two
-  pending callbacks after both windows, then the delayed external-library load.
-- Latest live Zoom 7.2.0.12729 check used the rebuilt maintained SDK, desktop
-  identity, 120 s script / 180 s import-observation limits and 256 MiB heap.
-  HTTP 200; nine classic scripts passed, then externals.min.js exceeded its
-  120 s deadline (~71 s CPU), before client imports. No readiness, joining or
-  socket attempts. Process exited; cleanup verified closed runtimes, zero data
-  and closed sockets. Earlier pre-Object.create-fix checks reached seven modules
-  before evaluation expiry; the new fix's live module impact is unverified.
-- Pre-Object.create-fix profiling points to reconciliation (~71% of module CPU) and GC
-  (~28%). A 20 s module-phase sample estimates 1.54 GB temporary allocation:
-  descriptors 30%, property names 12%, traversal self 32%. A separate 10 s module
-  sample counted 905k ordinary-table descriptor reads, 413k argument reads and
-  374k array reads. Both bounded samples closed with zero-data/socket cleanup;
-  neither verifies readiness. Results stayed in memory.
-- Guest Object.create fix 2be9a4d68 uses existing mutation-tracked property tables.
-  Before evidence: unchanged two-field objects recaptured names/two descriptors;
-  after: no recapture. All 286 selected checks across 13 files and scoped lint
-  pass, including mutation/held quotas, accessors, prototypes and snapshots.
-  Reversed compiled fixtures keep equal charges/growth/steps with ~42% less
-  walk CPU and ~97% less allocation; construction is slightly slower. Maintained
-  workspace build and eight built imports pass; fixture gains do not prove startup.
-- Single-symbol snapshot fix 55ac5eba2 keeps the first descriptor in visit-local
-  storage and allocates a private vector only for additional symbols. Fresh reads,
-  foreign enumeration, callback order, depth and ordinary/held quotas stay intact.
-  Reversed compiled fixtures preserve charges/results/steps: single-symbol scans
-  use about 24% less CPU and 22% less allocation; argument scans use 13%/11% less.
-  Plain/multiple-symbol controls and real guest calls show no material regression.
-  All 303 selected checks across 35 files, scoped lint, formatting, the selected
-  workspace build and eight built imports pass. These are not joining evidence.
-- Fixed-key guest records are already tracked; no lazy arguments change is
-  implemented. Profiles/comparisons stayed in memory. The completed SafeJS build
-  log and empty scratch patch were removed; working builds are retained.
-- Native bounded canvas, worker/Wasm and sockets have separate focused probes.
-  PCM handling is not a Zoom audio source; actual RTC/audio transport and the
-  complete media/notetaker pipeline remain unimplemented and unverified.
+- Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse this
+  browser's working dist and preserve unrelated changes. The selected workspace
+  build and eight built-import checks pass; full native/SafeJS passes remain open.
+- Retained accounting work includes private snapshots, bounded capture pooling,
+  tracked fixed-key records, import/export indexes, deferred module functions,
+  symbol snapshot elision and metered import deadlines. Scripts, generators and
+  dynamic source references still create functions eagerly. Fresh observations,
+  complete quotas and materialization identity remain required.
+- Browser fix 2d43d80 keeps bounded observation open during delayed bootstrap.
+  Strict typing, formatting, six scenarios and live delayed callbacks verified it.
+- Earlier 120 s / 256 MiB live checks either timed out in externals.min.js or
+  prepared seven modules before import expiry. None established readiness or
+  joining. All completed probes verified closed runtimes, zero data and sockets.
+- Module profiling found reconciliation (~71% CPU), GC (~28%) and substantial
+  temporary allocation (1.54 GB sampled over 20 s). After Object.create tracking,
+  a 10 s live sample still recorded 602k ordinary-table descriptor reads. React's
+  144 eight-field DOM property records contributed 66% of those reads; Zoom's
+  external-library constructor source confirmed the shape. Profiles stayed in memory.
+- Object.create fix 2be9a4d68 uses existing mutation-tracked property tables.
+  All 286 selected tests and scoped lint passed. Compiled fixtures preserve
+  charges/growth/steps, using ~42% less walk CPU and ~97% less allocation.
+- Ordinary constructor receiver fix 3b9bddb3f extends that tracking to fresh
+  instances while preserving native prototypes and explicit return identities.
+  The React-shaped regression failed before with eight fresh descriptor reads.
+  All 334 selected checks across 14 files, scoped lint, the maintained build and
+  eight built imports pass. Reversed, warmed compiled fixtures preserve charges
+  and native growth, using ~13% less walk CPU and ~98% less temporary allocation.
+  These fixture results do not establish live startup or normal-budget acceptance.
+- The latest extended live check uses the rebuilt SDK, a 256 MiB heap and
+  temporary 600 s script/import limits. Externals passed (~81 s CPU); seven
+  modules were prepared before the import deadline expired. Last sample:
+  9002962 steps / 7039655 data units. The DOM contained only a loading image and
+  "Joining Meeting..."; no controls/admission or sockets were verified. Twelve
+  classic scripts passed and one failed after closure. Zero-data/socket cleanup
+  passed; the process stopped. Checked-in limits and working browser dist are unchanged.
+- No lazy arguments change is implemented. Native canvas, worker/Wasm and socket
+  probes are separate gates. PCM handling is not a Zoom audio source; actual RTC
+  capture, transcription, playback, microphone and avatar support remain open.
 
 ## Outstanding gates
 
@@ -72,8 +61,9 @@
   verify interactive controls and actual joining/admission/presence. Explicit
   120 s / 256 MiB diagnostics clear no default-resource acceptance gate.
   Source-module deferral does not optimize classic-script function hoisting.
-  Verify Object.create's live module impact and identify the remaining untracked
-  property-table producers before choosing further accounting changes.
+  Identify the active module/evaluation path and current cost after both property
+  tracking fixes before choosing further accounting changes. No live startup
+  speedup has been established from the fixture improvements.
 - Verify every notetaker capability listed above. The working notetaker captures
   one browser audio track with getDisplayMedia and a 16000 Hz AudioWorklet, with
   audio processing disabled. No equivalent native source, transcription,
