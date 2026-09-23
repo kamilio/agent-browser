@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Maintained SafeJS dispatches frozen SDK-owned property getters directly
+  (7fb7e4cc6, local only), preserving fresh returned tables, repeated reads and
+  foreign/missing/data descriptor fallbacks. An experimental before-fix regression
+  reduces 1007 units to one through an inherited descriptor get field; a pinned
+  own-field check prevents it. All 166 selected checks across 15 files pass after
+  serial snapshot reruns, including explicit GC workers; strict test typing,
+  scoped lint, new test formatting and final maintained build/eight imports pass.
+  Final serial CPU is 894.0→657.8 ms (~26% lower) in a 5000-closure fixture and
+  74.0→69.6 ms (~6% lower) in a 1000-function module; charges stay 10016/1028.
+  Early larger estimates are superseded; no whole-page startup/readiness claim.
 - Maintained SafeJS skips discarded source-module public binding snapshots
   (cdda757a9, local only). Before-fix regression observes one snapshot; the fix
   observes zero. Default public snapshots and fresh retained-data reconciliation,
@@ -77,15 +87,15 @@
   owned test typing, scoped lint/format and SDK build/eight imports. A 1200-entry
   source module fixture preserves 91254 steps / 148120 current and peak units;
   warmed CPU rounds fall about 20–30%. No full-page speedup established.
-- The final uninstrumented snapshot-change SDK/public diagnostic at supported
-  256 MiB and 120 s source/network allowances returns HTTP 200, passes all 13
-  classics, fetches the webclient shim/ES entry (187/4383 bytes), and prepares
+- The final uninstrumented guarded getter-dispatch SDK/public diagnostic at
+  supported 256 MiB and 120 s source/network allowances returns HTTP 200, passes
+  all 13 classics, fetches the webclient shim/ES entry (187/4383 bytes), and prepares
   seven ES modules before the source import deadline revokes the realm. Latest
-  sampled progress: 9014267 steps / 6856675 units. Cleanup verifies data/sockets
+  sampled progress: 9012769 steps / 6854895 units. Cleanup verifies data/sockets
   zero; no fulfilled import, UI readiness, socket attempt or meeting join.
-  Shared CPU load prevents timing attribution. The reusable SDK contains the
-  tested snapshot change; temporary validation artifacts removed. Supported
-  diagnostic scaling clears no default-resource gate; the 120 s cap stays intact.
+  Preparation and shared CPU variation prevent startup timing attribution.
+  The reusable SDK contains the tested getter-dispatch change; temporary artifacts
+  removed. Supported scaling clears no default-resource gate; the 120 s cap stays.
 - Bounded array/record capture pooling remains capped at 64 physical slots.
   Prior 600-array / 600-record fixtures preserve charge with about 14% / 19–20%
   less CPU; sampled allocation falls about 22%, and 900 MB gates fail before and
