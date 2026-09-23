@@ -23,23 +23,40 @@
 
 ## Current verified state
 
-- Maintained SafeJS reuses private closure capture buffers within each measurement
-  (38656085c; local commit). Pending frames retain exclusive ownership; available
-  slots release guest references. Only vectors of at most 64 slots are reused:
-  an uncapped candidate exhausts a 128 MiB heap on wide duplicate captures whose
-  graph charges only 243 units; the retained cap fits and preserves that charge.
-  A 600-closure fixture still charges 360600 units, with about 40% less warmed CPU
-  and 81% less sampled allocation. Its allocation gate falls from 22.1 MB to 44 KB
-  with inlining disabled for attribution. All 130 focused tests across 16 files
-  pass, including both GC checks, strict typing/lint and SDK build/eight imports.
-  Compiled Node24 default-stack 1025/1026 capture-depth boundaries pass. The initial
-  candidate at 30 s advances 188113 externals steps; the capped candidate at the
-  explicit 120 s diagnostic limit advances 200234, still execution-timeout.
-  Nine classics preserve their steps/data; normal externals entry is 1636769 units,
-  capped peak 2255072. Both public runs clean up data/sockets to zero; neither
-  imports the client or verifies readiness/join/media. Next: measure remaining
-  full-page traversal/GC pressure without weakening metadata reads or full quotas.
-  Validated reusable SDK updated; temporary probes removed. No startup pass claimed.
+- Maintained SafeJS snapshots arguments onto private continuation frames and
+  reuses bounded capture storage (ed281df99; local commit, no push). Compiled Node24
+  default-stack baseline raises RangeError for both 1024 and 1025 nested arguments;
+  the fix charges 11281 units for 1024 and reports budgetExceeded/dataDepth for
+  1025. Descriptors are captured before callbacks; siblings, aliases, nested scans,
+  accessor captures and held quotas remain active. All 155 focused tests across
+  16 files pass (six existing skips), strict runtime/test typing, scoped lint,
+  test formatting and SDK build/eight imports pass. A 600-arguments fixture keeps
+  its 22216-unit charge with about 25% less warmed CPU and 22% less sampled total
+  allocation over 2000 measurements. Actual DOM constructor baseline/candidate
+  both pass 25 assertions at an explicit 16 s diagnostic deadline, preserving
+  47315 steps / 62044 peak units; both time out at the default 1 s deadline.
+  A repeated-closure-property-read shortcut is rejected: existing native hooks
+  make later reads expose retained data. No metadata or primary reconciliation
+  shortcut is retained. The validated reusable SDK contains the arguments fix.
+- Normal public Zoom initialization at an explicit 192 MiB heap / 120 s source
+  deadline completes all 13 classics in one run (externals 91.6 s), then rejects
+  the ES import after loginview fetch timeouts. Repeats still time out in externals;
+  raising the heap does not provide reliable startup. The offline normal CDN route
+  preserves the nine initial classics' exact steps/data. Its baseline externals
+  passes at 112.9 s; both full candidate replays time out (latest 190439 delta
+  steps, 2647742 peak units, zero replay misses). Frozen bytes stabilize sources, not
+  callback scheduling; only the public CDN image's numeric timestamp is normalized.
+  All completed public/replay runs clean up data/sockets to zero. The isolated
+  replay's 60 s import allowance is not exercised before externals fails. Module graph,
+  readiness, joining/notetaker/media and default-resource acceptance remain open.
+- Maintained private closure capture pooling remains capped at 64 slots
+  (cf488c731). The uncapped 128 MiB OOM regression charges only 243 units; the cap
+  fits and preserves that charge. The 600-closure fixture preserves 360600 units
+  with about 40% less warmed CPU / 81% less sampled allocation; its attributed
+  capture allocation falls from 22.1 MB to 44 KB. The prior 130 focused tests,
+  both GC checks and compiled 1025/1026 closure-depth boundaries pass. Next:
+  remaining full-page traversal/GC pressure with full metadata reads and quotas.
+  Temporary validation tools, logs, profiles and private fixtures removed.
 - Actual ES chunks, including 3.49M-unit loginview and 1.10M-unit editor-core,
   compile with the existing Unicode application regex allowances; the apparent
   editor string-limit failure was a probe omitting those allowances. Four captured
