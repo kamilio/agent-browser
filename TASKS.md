@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Maintained SafeJS skips discarded source-module public binding snapshots
+  (cdda757a9, local only). Before-fix regression observes one snapshot; the fix
+  observes zero. Default public snapshots and fresh retained-data reconciliation,
+  including ordinary/held quota enforcement, remain active. All 1420 selected
+  tests across 41 files pass after serial reruns (33 optional skips); initial
+  recursion/namespace timeouts occurred under shared CPU load. Strict test typing,
+  scoped lint, new test formatting and maintained build/eight imports pass.
+  Deferred module functions are rejected: real-module CPU is about 13% worse;
+  simple synthetic CPU is unchanged. Units are preserved and cold creation falls
+  to zero, but the rejected SDK still hits Zoom's 120 s import deadline.
 - Maintained SafeJS bounds repeated visited-capture lookups (0afbe9079) with
   four private positive identities per measurement, cleared on success/failure.
   The before-fix regression performs 101 lookups per shared root; the fix
@@ -67,14 +77,15 @@
   owned test typing, scoped lint/format and SDK build/eight imports. A 1200-entry
   source module fixture preserves 91254 steps / 148120 current and peak units;
   warmed CPU rounds fall about 20–30%. No full-page speedup established.
-- The final uninstrumented visited-capture SDK/public diagnostic at supported 256 MiB
-  and 120 s source/network allowances returns HTTP 200, passes all 13 classics,
-  fetches the webclient shim/ES entry (187/4383 bytes), and prepares seven ES
-  modules before the source import deadline revokes the realm. Latest sampled
-  progress: 9022851 steps / 6882683 units. Cleanup verifies data/sockets zero;
-  no fulfilled import, UI readiness or meeting join. Reusable SDK includes the
-  tested capture-lookup change. Supported diagnostic
-  scaling clears no default-resource gate; the 120 s application cap stays intact.
+- The final uninstrumented snapshot-change SDK/public diagnostic at supported
+  256 MiB and 120 s source/network allowances returns HTTP 200, passes all 13
+  classics, fetches the webclient shim/ES entry (187/4383 bytes), and prepares
+  seven ES modules before the source import deadline revokes the realm. Latest
+  sampled progress: 9014267 steps / 6856675 units. Cleanup verifies data/sockets
+  zero; no fulfilled import, UI readiness, socket attempt or meeting join.
+  Shared CPU load prevents timing attribution. The reusable SDK contains the
+  tested snapshot change; temporary validation artifacts removed. Supported
+  diagnostic scaling clears no default-resource gate; the 120 s cap stays intact.
 - Bounded array/record capture pooling remains capped at 64 physical slots.
   Prior 600-array / 600-record fixtures preserve charge with about 14% / 19–20%
   less CPU; sampled allocation falls about 22%, and 900 MB gates fail before and
