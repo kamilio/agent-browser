@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Fresh host-function property-table tracking is rejected and removed. A weak-owner
+  census finds hot managed length/name tables in externals accounting. Tracking
+  cuts focused sampled allocations about 86%, but CPU rises 528→828 ms. Serial
+  public 128 MiB/30 s baseline/candidate probes both time out in externals,
+  reaching 191287/184271 steps with identical 2252153 peak units; shared contention
+  limits comparisons. Both verify cleanup data zero and sockets zero; no readiness
+  or join. Next: reduce tiny metadata-table traversal without Proxy guard overhead,
+  preserving native mutation, live descendants and full primary reconciliation.
+  Maintained source/build restored; 106 checks across eight files with actual GC,
+  SDK compilation and eight entry checks pass. Temporary probe artifacts removed.
 - Maintained SafeJS conservative record data snapshots now stay private from
   later native Array hooks and inherited index setters (poe-code b46eddc27;
   local, no push). Reproduction drops 1015→9 units and bypasses quota500;
