@@ -45,25 +45,34 @@
   showed a loading image and "Joining Meeting...". No controls, admission, presence
   or sockets were established. Cleanup verified closed runtimes, zero retained
   data and closed sockets; the process exited 1 and is gone.
-- A CPU sample from that same process still showed retained-graph traversal as
-  expensive, with garbage collection taking about 22% of the 10.6 s sample.
-  A separate 10 s allocation sample attributed about 52 MB to the walker,
-  reflection, root iteration and bound-function captures. These are diagnostic
-  samples, not comparable startup benchmarks. Profiles stayed in memory and
-  the diagnostic inspector was closed. No owned temporary artifacts remain.
+- A fresh early-editor census found about 12600 visits per scan: 3703 deferred
+  functions, 1604 materialized closures, 935 ordinary objects and 223 arrays.
+  Each scan made about 25000 capture calls. The graph walker was already V8
+  optimized in all 20 live samples (status 81, matching an optimized control),
+  so failure to optimize is not established as the startup bottleneck.
+- An identity-sharing trial saved 8-15% CPU in an isolated deferred-function
+  fixture but retained all 3703 deferred-state objects after materialization;
+  the current implementation released all of them. The trial and its tests were
+  discarded, and the maintained build plus eight imports were restored and verified.
+  Its 120 s live retest still hit the source-import deadline: 12 classic scripts
+  completed, the last aborted with the realm, and only "Joining Meeting..." was
+  visible. All completed probes verified runtime/data/socket cleanup.
 - Correct source attribution uses each function's scope module ID: earlier hot
   offsets belonged to Rolldown's export-copy helper; later samples reached React
   initialization in editor-core. FingerprintJS polling does not establish a queue
-  deadlock. The data walker reaches Node's optimizing compiler in a warmed fixture.
+  deadlock. Profiles and diagnostics stay in memory; no owned artifacts remain.
 - Native canvas, worker/Wasm and socket probes are separate gates. PCM handling
   is not a Zoom audio source; actual RTC capture, transcription, playback,
   microphone and avatar support remain unverified.
 
 ## Outstanding gates
 
+- A single bounded 30-minute initialization diagnostic is running on the restored
+  SDK with a 256 MiB heap and an interactive handoff if source modules settle.
+  Follow the existing process through its terminal result; no meeting is verified.
 - Finish client initialization within normal heap/time/source allowances, then
-  verify interactive controls and actual joining/admission/presence. Explicit
-  120 s / 256 MiB diagnostics clear no default-resource acceptance gate.
+  verify interactive controls and actual joining/admission/presence. Extended
+  diagnostic allowances clear no default-resource acceptance gate.
   Source-module deferral does not optimize classic-script function hoisting.
   Investigate the remaining retained-graph traversal and allocation costs during
   editor-core evaluation without weakening native/provider observations.
