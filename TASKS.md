@@ -25,11 +25,27 @@
   fixed-key source records, discarded module-snapshot elision and static module
   export/import indexes. Indexes preserve live bindings and cycle/ambiguity
   handling; a 600-export fixture uses 3604 rather than 183304 steps.
-- Latest live profile that completes externals: HTTP 200, all 13
-  classics pass, seven ES modules prepare, main import hits its 120 s deadline.
-  Last sampled 8997712 steps / 6906886 units. Sockets zero; cleanup data zero.
-  The final 90 s window attributes 60.6 s inclusive CPU to reconciliation,
-  33.3 s visitor self CPU and 18.9 s GC. No readiness or joining verified.
+- Live allocation sampling estimates 22.1 GiB cumulative allocation, not heap
+  use; almost all is under reconciliation. Native descriptors account for about
+  30%, visitor self allocations 29%, symbol snapshot capture 10%. Only about 17%
+  of externals symbol descriptor reads are on tracked tables; caching only those
+  descriptors has limited coverage and is not implemented.
+- Maintained symbol-snapshot fix (84a93eecb, local only) replaces per-symbol
+  wrapper objects with alternating keys/descriptors in the private vector.
+  Before-fix allocation test observes two wrappers; candidate observes zero.
+  Fresh descriptor/provider reads, pre-callback ordering and full quotas remain.
+  Initial 97 selected checks across 13 files pass; final 30 checks across four
+  files include native hook privacy for records/closures and ordinary/held quotas.
+  Strict typing, scoped lint, maintained selected build and eight built imports
+  pass. Reversed compiled comparisons preserve charges/provider reads and reduce
+  CPU about 19% for symbol records, 14% for closures, 11–21% for mixed roots.
+  Accepted isolated SDK updated; its eight built imports pass.
+- Latest authorized live candidate: HTTP 200, 12/13 classics pass; an empty
+  classic task reports execution-closed when the module lifetime expires.
+  Externals passes in 110.7 s elapsed / 67.2 s CPU. Seven modules prepare, but
+  the main import hits its 120 s deadline. Last sampled 8992329 steps / 7022883
+  units. Sockets zero; cleanup data zero. No startup gain, readiness or joining
+  established. These diagnostic allowances do not clear default-resource gates.
 - Maintained primitive-literal fix (a2a31bb07, local only) avoids an empty child
   CompileScope and context copy while preserving await and full retained-data
   reconciliation. Before-fix
