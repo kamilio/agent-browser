@@ -23,8 +23,28 @@
 
 ## Current verified state
 
+- Maintained SafeJS accounting traverses host expando roots directly through the
+  existing iterative walker (262d12dd9; local commit, no push). Two regressions
+  reproduce a later native array-iterator hook exposing/omitting the temporary
+  root array and bypassing primary data quotas, held and unheld; both pass after
+  the fix. All 95 selected checks across nine SDK files pass, including host/record/
+  array depth boundaries, live descendants and revocation. Strict changed-test
+  typing, scoped lint/format, build and eight import checks pass. Actual browser
+  before/after checks preserve all 21 assertions, 46645 steps / 53725 current /
+  69724 peak units, cleanup zero. Serial 2048-empty-host/100-pass fixture preserves
+  4096 units; CPU median 211→214 ms establishes no speedup. Fresh sampled desktop
+  30 s/128 MiB public Zoom run times out in navigation before externals begins;
+  cleanup zero data / sockets verified, no readiness/join or default-gate pass.
+  About 58.4% of active profile samples enter graph accounting, 61.8% reconciliation,
+  and 34.5% are GC; these overlap and are sampled attribution, not exact timings.
+  Realm.retainedRoots still uses Array.from(hostObjects).flatMap(hostObjectGuestRoots),
+  allocating per-host root arrays on each reconciliation (about 1.1% profile self).
+  Next: remove that remaining allocation path with fresh-root and quota regressions;
+  investigate overall allocation pressure rather than treating a small visitor
+  shortcut as sufficient. All startup/full-client memory/meeting/media gates remain
+  open. Owned validation artifacts removed; reusable isolated SDK updated.
 - Maintained SafeJS host expando storage now uses existing revision-tracked tables
-  (fc6675361; local commit, no push). Unchanged accounting no longer recaptures
+  (fc6675361, rebased as ae02c6e21; local commit, no push). Unchanged accounting no longer recaptures
   expando descriptors; writes invalidate projections and descendants/providers
   remain freshly measured. The regression fails before the fix and passes after it.
   All 68 selected checks across six SDK files pass, plus strict new-test typing,
@@ -2382,7 +2402,7 @@
 - Reusable validated isolated SDK:
   /home/kjopek/project/poe-code/out/agent-browser-zoom-desktop-ihql25/candidate,
   including maintained host-member accounting fix 5e6686f52 and tracked host
-  expando projections fc6675361.
+  expando projections ae02c6e21, plus direct root traversal 262d12dd9.
 - Focused SDK contribution patches: contributions/. Some recovered accounting
   patches still need reconciliation; a temporary metadata patch header was normalized
   only in the retained scratch SDK.
