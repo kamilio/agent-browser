@@ -61,9 +61,11 @@
   offsets belonged to Rolldown's export-copy helper; later samples reached React
   initialization in editor-core. FingerprintJS polling does not establish a queue
   deadlock. Profiles and diagnostics stay in memory; no owned artifacts remain.
-- Native canvas, worker/Wasm and socket probes are separate gates. PCM handling
-  is not a Zoom audio source; actual RTC capture, transcription, playback,
-  microphone and avatar support remain unverified.
+- Native canvas, worker/Wasm and socket probes are separate gates. PcmCapture
+  accepts supplied PCM16 frames but has no live producer wired to it. PageMedia
+  implements CSS matchMedia, not capture. The native page runtime currently lacks
+  MediaStream, mediaDevices capture, RTCPeerConnection and Web Audio/AudioWorklet
+  implementations; these are implementation gaps, not merely untested features.
 
 ## Outstanding gates
 
@@ -77,10 +79,14 @@
   Investigate the remaining retained-graph traversal and allocation costs during
   editor-core evaluation without weakening native/provider observations.
   Fixture improvements have not established a complete live startup speedup.
-- Verify every notetaker capability listed above. The working notetaker captures
-  one browser audio track with getDisplayMedia and a 16000 Hz AudioWorklet, with
-  audio processing disabled. No equivalent native source, transcription,
-  playback, microphone or avatar pipeline is proven.
+- Implement and verify every notetaker capability listed above. Automations'
+  packages/zoom-notetaker/src/capture-page.js captures one browser audio track
+  with getDisplayMedia and a 16000 Hz AudioWorklet, with audio processing disabled.
+  Its meeting-page.js uses a 48000 Hz AudioContext/MediaStream destination for
+  virtual microphone and playback; track-audio-page.js optionally captures cloned
+  incoming WebRTC tracks, in addition to the mandatory mixed recording. Native
+  support needs actual media sources and transport before PCM/transcription can
+  establish meeting audio. Keep the working Automations implementation unchanged.
 - Verify server-selected page behavior: the default identity can receive a
   different landing page, while the desktop document has no server-rendered
   Join controls. Join requires working JavaScript handlers. Optional blocking
