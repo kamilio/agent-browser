@@ -23,20 +23,39 @@
 
 ## Current verified state
 
-- Maintained SafeJS keeps foreign-proxy descriptor snapshots private from native
-  Array map/species hooks (cc5623758), and reuses bounded record capture buffers
-  (5464b7bf8; local commits, no push). Four before-fix regressions expose snapshots,
-  lose 1015→1 units and miss ordinary/held data quotas. Private indexed capture
-  restores the charge without skipping descriptor traps. Record pooling preserves
-  callback order, siblings, aliases, nested scans and failed-capture cleanup.
-  All 90 focused tests across 15 files pass, strict test typing/scoped lint/format
-  and SDK build/eight imports pass. A 600-record fixture preserves 38400 units with
-  about 19–20% less warmed CPU; sampled allocation over 2000 measurements falls
+- Tested SafeJS reuses bounded array snapshot buffers (local 9b52a525b; currently
+  pending replay in the shared poe-code rebase). Eight guards preserve early
+  snapshots across prototype callbacks, siblings, aliases, nested scans, failed
+  capture and ordinary/held quotas. A 600-array fixture retains 33000 units with
+  about 14% less warmed CPU; sampled allocation across 2000 measurements falls
   from 1.01 GB to 0.79 GB (22%). Its 900 MB allocation gate fails before and passes
-  after. The reusable SDK contains both fixes. The uninstrumented public run at
-  120 s / 192 MiB still times out in externals: 187748 delta steps, 2252153 peak
-  units, no client imports. Nine initial classics retain their exact steps/data;
-  cleanup data/sockets zero. No full-page startup speedup or readiness pass claimed.
+  on the maintained build. Buffers remain capped at 64 physical slots.
+- The tested symbol-descriptor fix uses private null-prototype snapshots and
+  indexed record reads. Eight before-fix native push/iterator/index-setter guards
+  expose descriptors and reduce records 1016→10 / closures 1017→11 units, missing
+  ordinary and held quotas. The fix restores charges and quotas while preserving
+  foreign iterators, descriptor reads and capture-before-callback ordering.
+  All 120 focused tests across 17 files pass (two existing GC skips), strict owned
+  test typing/scoped lint/format, SDK build/eight imports and compiled boundaries
+  pass before the concurrent rebase. The reusable SDK contains the tested fixes.
+  The symbol source patch is preserved in rebase autostash
+  10227c883eda91475ba32d42f3e88351e13d70ff; its new test remains untracked.
+  Commit it after the owner resolves run.replay.stress.test.ts and finishes the
+  shared rebase; preserve foreign work and keep the commit focused. No push.
+- The array candidate's uninstrumented public run at 120 s / 192 MiB still times
+  out in externals: 213381 delta steps, 2257762 peak units, no client imports.
+  The final combined SDK at 30 s / 192 MiB also times out there: 184385 delta
+  steps, 2252153 peak. Both retain all nine initial classics' exact steps/data
+  and clean up data/sockets to zero. Scheduling varies; these runs prove no
+  full-page startup speedup, ES graph readiness or meeting join.
+- Sampled externals scope fanout (74 of 2386 measurements, no nested scans):
+  236061 scope visits, 220067 repeats (93%); 431037 appended roots, 299038
+  already seen (69%); maximum ancestor depth 12. This does not justify a scope
+  cache: later metadata/provider reads can expose changed retained data. Next:
+  reduce repeated native descriptor/type checks with explicit semantic guards,
+  benchmark before maintained edits, then retest normal public initialization.
+  Foreign-proxy private descriptor snapshots and bounded record pooling remain
+  validated (prior local cc5623758 / 5464b7bf8, also pending rebase replay).
 - Compiled Node24 default-stack boundaries remain intact: 1024 records charge
   15361 units, 1024 arguments charge 11281 and 1025 indexed closures charge 1029;
   each next level reports budgetExceeded/dataDepth. Arguments pooling previously
@@ -54,9 +73,8 @@
   factory closures comprise 47% of first object visits, tracked record projections
   21%; instrumentation is diagnostic and does not establish startup performance.
   A mislabelled array-descriptor counter is excluded from analysis.
-  Temporary diagnostic SDK copies, tools, logs and profiles removed. Next:
-  measure closure-to-scope collection fanout and repeated native descriptor reads,
-  preserving observable providers, metadata, full primary graph and quotas.
+  Mislabelled descriptor counts stay excluded. Observable providers, metadata,
+  full primary graph reconciliation and quotas remain required.
 - Normal public Zoom initialization at an explicit 192 MiB heap / 120 s source
   deadline completes all 13 classics in one run (externals 91.6 s), then rejects
   the ES import after loginview fetch timeouts. Repeats still time out in externals;
