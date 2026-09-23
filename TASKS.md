@@ -23,6 +23,20 @@
 
 ## Current verified state
 
+- Maintained SafeJS argument data snapshots now stay private from later native
+  Array hooks (poe-code 2cd7e530b; no push). The reproduced hook drops baseline
+  accounting from 1039 to 25 units; the fix retains 1039 and rejects quota500.
+  Fresh descriptor capture, mutable descendants and callback ordering remain active.
+  All 99 selected checks across 13 files pass with actual GC, plus strict typing,
+  scoped lint, package compilation and eight build-entry checks. Focused scalar/
+  reference scans retain identical charges with 57–67% fewer sampled allocations;
+  reference-heavy CPU rises about 14%, so no general startup gain is claimed.
+  Serial 128 MiB/30 s baseline/candidate live runs both time out in the earlier
+  187143-character script, with cleanup zero and sockets zero; no readiness/join.
+  Coarse externals sampling attributes about 20.7 GB of cumulative allocations
+  (including collected objects) chiefly to traversal/descriptors; fine sampling
+  itself exhausts the heap. Next: fresh descriptor allocation cost, preserving
+  mutable/foreign observations and full primary reconciliation during callback holds.
 - Maintained poe-code SafeJS now has guarded live buffers, typed-array metadata
   accounting, shared forkRealm ownership and retained suspended scope/generator
   roots. Full primary graph reconciliation stays active. Full invokeCallback
