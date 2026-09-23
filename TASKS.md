@@ -23,6 +23,25 @@
 
 ## Current verified state
 
+- Broader classic fixed-key data-table tracking is rejected and reverted: the
+  public externals asset has at most 43 literal fields, below the existing
+  256-string-table threshold, but tracking mixed tables from 16 fields yields no
+  useful initialization gain. All 179 selected SDK checks, strict typing, lint,
+  build/eight imports and 21 actual browser assertions pass; before/after browser
+  accounting remains 46645 steps / 53725 current / 69724 peak, cleanup zero.
+  The focused 28-field benchmark preserves 1231 units with a noisy CPU median
+  36.3→35.3 ms. Public desktop 30 s/128 MiB execution still times out after nine
+  classics: externals advances 178830 steps with 2644502 peak units, versus the
+  earlier baseline 183176 / 2252153; no readiness/imports/join, cleanup data and
+  sockets zero. Different timing/CPU contention proves no speedup or precise
+  slowdown. A baseline allocation sample estimates 24.7 GB cumulative preparation
+  churn and 8.9 GB externals churn, predominantly graph walks and property
+  snapshots; these are sampling estimates, not retained heap. Next: reduce
+  repeated capture/traversal in the primary walker with ownership/invalidation
+  evidence while retaining fresh mutable descendants, provider reads and full
+  held quota reconciliation. All full-client and meeting/media gates remain open.
+  Owned experimental source/tests and validation artifacts removed; baseline
+  maintained build restored and reusable isolated SDK preserved.
 - Maintained SafeJS realm root collection uses one ordered private snapshot,
   eliminating per-host singleton arrays and native Array.from/flatMap/push hooks
   (ae2a16513; local commit, no push). Two before-fix regressions omit retained host
