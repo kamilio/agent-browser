@@ -44,13 +44,6 @@
   eight built imports pass. Reversed, warmed compiled fixtures preserve charges
   and native growth, using ~13% less walk CPU and ~98% less temporary allocation.
   These fixture results do not establish live startup or normal-budget acceptance.
-- The latest extended live check uses the rebuilt SDK, a 256 MiB heap and
-  temporary 600 s script/import limits. Externals passed (~81 s CPU); seven
-  modules were prepared before the import deadline expired. Last sample:
-  9002962 steps / 7039655 data units. The DOM contained only a loading image and
-  "Joining Meeting..."; no controls/admission or sockets were verified. Twelve
-  classic scripts passed and one failed after closure. Zero-data/socket cleanup
-  passed; the process stopped. Checked-in limits and working browser dist are unchanged.
 - Source tracing maps `html-classic:59` to FingerprintJS 3.3.3, specifically its
   screen-frame polling code. One 30 s sample saw only this callback before
   shutdown released module linking. A subsequent sample linked all seven modules
@@ -59,6 +52,20 @@
   30 s probes closed with zero data and sockets; neither joined the meeting.
   A longer queue trace ended with SIGTERM before sampling (four modules prepared);
   its process is gone, but it emitted no runtime cleanup report. No artifacts remain.
+- Array literal fix b19ea46d6 reuses descriptors for privately tracked classic
+  and source-module arrays. Native mutations invalidate snapshots, including
+  partially rejected length shrinks; descendants and quotas remain fresh.
+  All 322 distinct selected checks, scoped lint, the maintained workspace build
+  and eight built-import checks pass. Reversed compiled fixtures retain 3699
+  data units, 1000 units of native growth and 803 node visits, with ~17% less
+  accounting CPU and ~89% less temporary allocation. Live acceptance remains open.
+- Latest live check used that SDK with a 256 MiB heap and temporary 600 s limits.
+  All 13 classics passed; externals used ~59 s CPU. All seven modules linked and
+  rolldown evaluated, but editor-core was still evaluating when the 600 s import
+  observation ended. Last sample: 9029257 steps / 6943205 data units. The DOM
+  still showed only a loading image and "Joining Meeting..."; no controls,
+  admission or sockets. Cleanup verified closed runtimes, zero data and sockets;
+  the process exited. Checked-in limits and working browser dist are unchanged.
 - No lazy arguments change is implemented. Native canvas, worker/Wasm and socket
   probes are separate gates. PCM handling is not a Zoom audio source; actual RTC
   capture, transcription, playback, microphone and avatar support remain open.
@@ -69,8 +76,8 @@
   verify interactive controls and actual joining/admission/presence. Explicit
   120 s / 256 MiB diagnostics clear no default-resource acceptance gate.
   Source-module deferral does not optimize classic-script function hoisting.
-  Measure queue ownership/waiting and editor-core execution after both property
-  tracking fixes before choosing further accounting changes. No live startup
+  Profile active editor-core work and its retained graph after array tracking
+  before choosing further accounting changes. No complete live startup
   speedup has been established from the fixture improvements.
 - Verify every notetaker capability listed above. The working notetaker captures
   one browser audio track with getDisplayMedia and a 16000 Hz AudioWorklet, with
