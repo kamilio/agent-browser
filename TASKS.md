@@ -23,20 +23,28 @@
 
 ## Current verified state
 
-- Normal CDN startup still times out in externals at both 30 s and the explicit
-  120 s diagnostic limit (174489 / 192907 steps; cleanup data/sockets zero).
-  Actual ES chunks, including 3.49M-unit loginview and 1.10M-unit editor-core,
+- Maintained SafeJS reuses private closure capture buffers within each measurement
+  (38656085c; local commit). Pending frames retain exclusive ownership; available
+  slots release guest references. Only vectors of at most 64 slots are reused:
+  an uncapped candidate exhausts a 128 MiB heap on wide duplicate captures whose
+  graph charges only 243 units; the retained cap fits and preserves that charge.
+  A 600-closure fixture still charges 360600 units, with about 40% less warmed CPU
+  and 81% less sampled allocation. Its allocation gate falls from 22.1 MB to 44 KB
+  with inlining disabled for attribution. All 130 focused tests across 16 files
+  pass, including both GC checks, strict typing/lint and SDK build/eight imports.
+  Compiled Node24 default-stack 1025/1026 capture-depth boundaries pass. The initial
+  candidate at 30 s advances 188113 externals steps; the capped candidate at the
+  explicit 120 s diagnostic limit advances 200234, still execution-timeout.
+  Nine classics preserve their steps/data; normal externals entry is 1636769 units,
+  capped peak 2255072. Both public runs clean up data/sockets to zero; neither
+  imports the client or verifies readiness/join/media. Next: measure remaining
+  full-page traversal/GC pressure without weakening metadata reads or full quotas.
+  Validated reusable SDK updated; temporary probes removed. No startup pass claimed.
+- Actual ES chunks, including 3.49M-unit loginview and 1.10M-unit editor-core,
   compile with the existing Unicode application regex allowances; the apparent
   editor string-limit failure was a probe omitting those allowances. Four captured
-  compact parser results coexist at 90.2 MB used heap under a 128 MiB cap, not a
-  full initialized module graph. A separate instrumented startup hits its 180 s
-  process cap before externals starts; no cleanup pass for that killed run.
-  Its late 2 s profile samples 44.9% GC / 31.2% traversal; aggregate accounting
-  invokes 63.6M capture appends, filtering 11.4M absent / 49.2M visited roots.
-  Next: reduce private capture snapshot allocation while preserving every metadata
-  read and full reconciliation. Fresh 58 SafeJS checks pass (two GC checks skipped)
-  and all 48 declared native budget-profile assertions pass. Temporary probes
-  removed; no new runtime patch or initialization/join/media acceptance claimed.
+  compact parser results coexist at 90.2 MB used heap under a 128 MiB cap; this
+  does not verify the initialized module graph's memory or execution.
 
 - Maintained SafeJS keeps array snapshots/continuations private (28fb87e86) and
   reuses private frames within each measurement (389f23d75; local commits).
