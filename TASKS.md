@@ -23,6 +23,24 @@
 
 ## Current verified state
 
+- Window construction definitions now retire after installation extracts its
+  window/document/origin operations (2411ac4; local commit, no push). An actual-GC
+  regression fails before the fix and passes after it for both earlier and later
+  host objects, while live access survives. The controlled 256-style probe keeps
+  82688 names and retains zero source definitions instead of 256; additional heap
+  falls 21.3→18.1 MB. All 309 selected checks across seven manifest files pass with
+  GC enabled, plus build, strict test typing and scoped lint/format with existing
+  import-order/rule exclusions. Actual SafeJS before/after checks preserve all 17
+  style/window/Image/Blob-origin/URL assertions, 46266 steps / 53696 current /
+  69364 peak units, and cleanup data zero. The fresh 120 s/128 MiB public diagnostic
+  returns HTTP 200 and passes nine classics, but externals times out; cleanup data
+  zero / sockets zero verified. No client import, readiness, join or startup gain
+  is established. A separate synthetic 300000-node compact index adds 14.7 MB heap;
+  this is not Zoom's node count. Maintained SafeJS still sums immutable host member
+  keys on every pass; the earlier accounting-projections contribution has a tested
+  approach absent from current source. Next: reproduce and port that optimization
+  while retaining mutable descendant effects and full held primary reconciliation.
+  Full startup/memory/meeting/media gates remain open; temporary probes removed.
 - Native inline styles share operations across canonical CSS aliases within each
   element (ae9fb15); window mapping shares wrappers for identical property records
   within each host definition (ea5950e; local commits, no push). The controlled
