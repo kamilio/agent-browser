@@ -29,7 +29,7 @@
 - Earlier 120 s / 256 MiB live checks either timed out in externals.min.js or
   prepared seven modules before import expiry. None established readiness or
   joining. All completed probes verified closed runtimes, zero data and sockets.
-- Module profiling found reconciliation (~71% CPU), GC (~28%) and substantial
+- Startup profiling found reconciliation (~71% CPU), GC (~28%) and substantial
   temporary allocation (1.54 GB sampled over 20 s). After Object.create tracking,
   a 10 s live sample still recorded 602k ordinary-table descriptor reads. React's
   144 eight-field DOM property records contributed 66% of those reads; Zoom's
@@ -51,6 +51,14 @@
   "Joining Meeting..."; no controls/admission or sockets were verified. Twelve
   classic scripts passed and one failed after closure. Zero-data/socket cleanup
   passed; the process stopped. Checked-in limits and working browser dist are unchanged.
+- Source tracing maps `html-classic:59` to FingerprintJS 3.3.3, specifically its
+  screen-frame polling code. One 30 s sample saw only this callback before
+  shutdown released module linking. A subsequent sample linked all seven modules
+  and reached editor-core evaluation before shutdown, so a queue deadlock is not
+  established. Full retained-data reconciliation dominates both paths. Completed
+  30 s probes closed with zero data and sockets; neither joined the meeting.
+  A longer queue trace ended with SIGTERM before sampling (four modules prepared);
+  its process is gone, but it emitted no runtime cleanup report. No artifacts remain.
 - No lazy arguments change is implemented. Native canvas, worker/Wasm and socket
   probes are separate gates. PCM handling is not a Zoom audio source; actual RTC
   capture, transcription, playback, microphone and avatar support remain open.
@@ -61,7 +69,7 @@
   verify interactive controls and actual joining/admission/presence. Explicit
   120 s / 256 MiB diagnostics clear no default-resource acceptance gate.
   Source-module deferral does not optimize classic-script function hoisting.
-  Identify the active module/evaluation path and current cost after both property
+  Measure queue ownership/waiting and editor-core execution after both property
   tracking fixes before choosing further accounting changes. No live startup
   speedup has been established from the fixture improvements.
 - Verify every notetaker capability listed above. The working notetaker captures
