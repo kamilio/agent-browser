@@ -23,6 +23,27 @@
 
 ## Current verified state
 
+- Maintained SafeJS source graphs now use compact tokens and AST storage during
+  preparation (poe-code 8994da632; local, no push). IDs and top-level-await scans
+  traverse compiler rows without expanding cold bodies. The real i18n module's
+  40943 nodes have identical tree/ID digests and 431224 budget steps. Three fresh
+  128 MiB controls retain median 16.42→9.60 MB added JavaScript heap, plus a
+  1.60 MB compact buffer; parsing CPU increases 0.44→1.04 s. All 1409 selected
+  SDK checks across 44 files pass (33 skipped), along with strict new-test typing,
+  scoped lint, the maintained SDK build and eight entry checks.
+  A fresh extended 120 s/128 MiB live run finishes externals in 96.4 s and admits
+  editor-core after i18n, then aborts with a confirmed heap OOM and no verified
+  cleanup. An earlier candidate attempt hits the outer watchdog before vendor
+  startup; sampling also misses i18n because externals reaches its deadline.
+  Neither establishes a normal startup gain, readiness or join.
+  Controlled preparation of the six-module public i18n dependency graph also
+  exhausts the 128 MiB heap for baseline and candidate. A candidate phase check
+  prepares five distinct modules, retaining about 57 MB heap / 51 MB buffers,
+  before aborting without completing emoji preparation. Diagnostic regex limits
+  are explicit; this is preparation evidence, not client execution or cleanup.
+  Next: reproduce and reduce large-literal preparation peaks with prior modules
+  retained, then distinguish remaining browser-state retention. Keep defaults,
+  volatile observations, quotas and full held primary scans intact.
 - Maintained SafeJS appends private graph continuation frames with pinned native
   push to a null-prototype stack, eliminating per-frame property descriptors
   (poe-code 347f0a65b; local, no push). Depth boundaries, DFS snapshots, proxy
@@ -56,9 +77,8 @@
   during module preparation, without a final result or verified application
   cleanup. This does not pass the normal startup, full-client heap, readiness or
   meeting gates. Temporary validation artifacts removed; working builds retained.
-  Next: profile retained heap before i18n preparation and distinguish SDK locale
-  data, retained Script AST/context and module parser allocations at the same
-  memory limit; keep volatile observations, quotas and held primary scans intact.
+  Compact source preparation and its remaining heap gates are recorded above;
+  retained Script AST/context and later module preparation still need attribution.
 - Host-function metadata shortcuts remain rejected. The certified census covers
   only 52 tables / about 3% of eligible object visits; focused improvements never
   established a public startup gain. Maintained tables retain fresh observations.
