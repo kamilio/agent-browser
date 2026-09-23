@@ -302,6 +302,7 @@ export class PageBindings {
 				{
 					isClosed: () => this.closed,
 					isBusy: () => lifecycle.isBusy?.() ?? false,
+					isTaskBusy: () => lifecycle.isTimerBusy?.() ?? false,
 					startCallback: (callback, args, value) =>
 						lifecycle.startCallback(callback, args, value),
 				},

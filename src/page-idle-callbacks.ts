@@ -85,7 +85,10 @@ export class PageIdleCallbacks {
 	private closed = false;
 
 	constructor(
-		private readonly callbacks: ScriptCallbackRuntime & { isBusy?(): boolean },
+		private readonly callbacks: ScriptCallbackRuntime & {
+			isBusy?(): boolean;
+			isTaskBusy?(): boolean;
+		},
 		private readonly factory: ScriptHostObjectFactory,
 		private readonly fail: (error: unknown) => void,
 		private readonly clock: { now(): number },
@@ -220,7 +223,12 @@ export class PageIdleCallbacks {
 		if (this.running || !this.records.size) return;
 		const now = this.now();
 		const busy = this.callbacks.isBusy?.() ?? false;
-		if (this.closed) return;
+		// Timeout delivery is a task too. A classic script and its microtasks
+		// keep ownership even after an idle callback's deadline has expired.
+		if (this.callbacks.isTaskBusy?.() || this.closed) {
+			this.disarm();
+			return;
+		}
 		let due = busy
 			? Number.POSITIVE_INFINITY
 			: Math.max(now + idleCallbackIntervalMs, this.idleDeadline);
@@ -259,6 +267,9 @@ export class PageIdleCallbacks {
 			this.close();
 			return;
 		}
+		// An alarm may have been armed before the classic task started.
+		// Completion wakes the owner; do not poll while that task is running.
+		if (this.callbacks.isTaskBusy?.() || this.closed) return;
 		const now = this.now();
 		let record: IdleCallback | undefined;
 		for (const candidate of this.records.values())

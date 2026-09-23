@@ -167,6 +167,7 @@ function runtimeFixture(options: IdleOptions = {}) {
 	let runtimeOptions: PageRuntimeOptions | undefined;
 	let globals: Record<string, unknown> | undefined;
 	const runtime = {
+		supportsSourceModules: true,
 		budget: { stepsUsed: 7, peakCallDepth: 2, peakDataSize: 12 },
 		closed: false as boolean,
 		initialize: vi.fn(async () => {
@@ -429,6 +430,101 @@ it("queues positive idle timeouts through the runtime while evaluation is busy",
 	expect(test.owner.metrics().pendingCallbacks).toBe(0);
 	await vi.advanceTimersByTimeAsync(20);
 	expect(callback).toHaveBeenCalledOnce();
+});
+
+it.each([false, true])(
+	"defers expired idle tasks until the classic script checkpoint returns (already armed=%s)",
+	async (alreadyArmed) => {
+		const test = runtimeFixture();
+		await test.owner.evaluate("initialize");
+		const window = idleWindow(test.owner.window);
+		const evaluation = deferred<PageRuntimeResult>();
+		const deadlines: Deadline[] = [];
+		const callback = vi.fn((deadline: Deadline) => deadlines.push(deadline));
+		if (alreadyArmed) window.requestIdleCallback(callback, { timeout: 5 });
+		test.runtime.evaluate.mockImplementationOnce(() => {
+			if (!alreadyArmed) window.requestIdleCallback(callback, { timeout: 5 });
+			return evaluation.promise;
+		});
+		const pending = test.owner.evaluate("held classic script and microtasks", {
+			classicScriptTask: true,
+		});
+		await settle();
+		try {
+			await vi.advanceTimersByTimeAsync(25);
+			expect(test.runtime.startCallback).not.toHaveBeenCalled();
+			expect(callback).not.toHaveBeenCalled();
+			expect(test.owner.metrics()).toMatchObject({
+				active: true,
+				pendingCallbacks: 0,
+			});
+			// Only the script execution deadline remains; blocked idle work does not poll.
+			expect(vi.getTimerCount()).toBe(1);
+		} finally {
+			evaluation.resolve({ ok: true });
+			await pending;
+		}
+		await vi.advanceTimersByTimeAsync(0);
+		expect(callback).toHaveBeenCalledOnce();
+		expect(deadlines[0]).toMatchObject({ didTimeout: true });
+		expect(deadlines[0]?.timeRemaining()).toBe(0);
+		expect(test.owner.metrics()).toMatchObject({
+			active: false,
+			pendingCallbacks: 0,
+		});
+	},
+);
+
+it("cancels an expired idle task held behind a classic script", async () => {
+	const test = runtimeFixture();
+	await test.owner.evaluate("initialize");
+	const window = idleWindow(test.owner.window);
+	const evaluation = deferred<PageRuntimeResult>();
+	const callback = vi.fn();
+	const handle = window.requestIdleCallback(callback, { timeout: 5 });
+	test.runtime.evaluate.mockImplementationOnce(() => evaluation.promise);
+	const pending = test.owner.evaluate("held classic script", {
+		classicScriptTask: true,
+	});
+	await settle();
+	try {
+		await vi.advanceTimersByTimeAsync(10);
+		window.cancelIdleCallback(handle);
+	} finally {
+		evaluation.resolve({ ok: true });
+		await pending;
+	}
+	await vi.advanceTimersByTimeAsync(10);
+	expect(callback).not.toHaveBeenCalled();
+	expect(test.runtime.startCallback).not.toHaveBeenCalled();
+});
+
+it("allows a module to await an expired idle task", async () => {
+	const test = runtimeFixture();
+	await test.owner.evaluate("initialize");
+	const window = idleWindow(test.owner.window);
+	test.runtime.evaluate.mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				window.requestIdleCallback(
+					() => resolve({ ok: true, returnValue: 42 }),
+					{ timeout: 5 },
+				);
+			}),
+	);
+	const pending = test.owner.evaluate("module awaiting an idle task", {
+		sourceType: "module",
+		filename: "https://fixture.invalid/entry.js",
+	});
+	await settle();
+	expect(test.owner.metrics().active).toBe(true);
+	await vi.advanceTimersByTimeAsync(5);
+	expect(await pending).toMatchObject({ ok: true, value: 42 });
+	expect(test.runtime.startCallback).toHaveBeenCalledOnce();
+	expect(test.owner.metrics()).toMatchObject({
+		active: false,
+		pendingCallbacks: 0,
+	});
 });
 
 it("keeps timer and frame handles and metrics independent of idle cancellation", async () => {
