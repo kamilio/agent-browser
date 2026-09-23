@@ -23,6 +23,26 @@
 
 ## Current verified state
 
+- Maintained SafeJS pins its private accessor/adaptor registries (b71bdbc7e;
+  local commit, no push). Six before-fix failures expose registry insertion/read
+  hooks or omit retained payloads and bypass held/unheld primary quotas. All six
+  now pass, with 86 selected SDK checks, strict typing/lint, build/eight imports
+  and 21 actual browser assertions; accounting remains 46645 steps / 53725 current /
+  69724 peak, cleanup zero. Serial public desktop 30 s/128 MiB baseline still
+  times out in externals at 188486 steps / 2252153 peak units; no imports/readiness/
+  join, cleanup data/sockets zero. Accessor-table edge projections are rejected:
+  141 selected plus 13 follow-up checks pass, including depth and native Array-hook
+  isolation, and a 128-table fixture retains 6144 units with CPU median 210→160 ms,
+  but public progress remains effectively identical at 188608 / 2644503 peak.
+  Public preparation charges differ and their cause remains unverified; only the
+  intended compiled accessor projection differs, and no live gain is proven.
+  The baseline census counts 52.4 million fresh object entries / 22.7 million closure
+  visits across 34890 walks, establishing traversal volume rather than cache safety.
+  Candidate source/tests are removed, maintained baseline build restored, validation
+  artifacts removed and reusable isolated SDK retains only the verified registry fix.
+  Next: larger repeated closure/scope graph work with explicit ownership/invalidation,
+  preserving fresh provider/descendant reads and full held primary quotas. Full
+  initialization/join/notetaker/media gates remain open; Automations stays unchanged.
 - Broader classic fixed-key data-table tracking is rejected and reverted: the
   public externals asset has at most 43 literal fields, below the existing
   256-string-table threshold, but tracking mixed tables from 16 fields yields no
@@ -2438,7 +2458,7 @@
   /home/kjopek/project/poe-code/out/agent-browser-zoom-desktop-ihql25/candidate,
   including maintained host-member accounting fix 5e6686f52 and tracked host
   expando projections ae02c6e21, direct root traversal 262d12dd9 and realm root
-  collection ae2a16513.
+  collection ae2a16513 and private accessor registries b71bdbc7e.
 - Focused SDK contribution patches: contributions/. Some recovered accounting
   patches still need reconciliation; a temporary metadata patch header was normalized
   only in the retained scratch SDK.
