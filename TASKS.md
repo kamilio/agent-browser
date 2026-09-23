@@ -23,17 +23,26 @@
 
 ## Current verified state
 
-- Actual classic externals descriptor attribution identifies the mutable,
-  guest-created 2517-entry translation dictionary as the main sampled owner:
-  14.3 million fresh string-descriptor reads. Initially frozen records account for less
-  than 1% of record reads in a separate visitor census, so generic frozen-object
-  caching is not the next target. Fresh classic literal tracking is rejected and
-  removed after 325 checks across 16 files pass but no live startup gain is established:
-  initial-script CPU 9.0→17.6 s; externals baseline/candidate both hit 30 s, with
-  184298/179579 step deltas and cleanup zero / sockets zero / no readiness or join.
-  Public runner results keep native cloning; pre-existing SDK edits are preserved.
-  Next: dictionary accounting that preserves identity, mutation and volatile reads,
-  avoiding cold snapshot rebuilds and the overhead of tracking every literal.
+- Maintained SafeJS (poe-code e633427b5; local, no push) now updates SDK-owned
+  scalar/key totals incrementally and reuses immutable symbol-key lists. Bulk static string dictionaries in classic
+  Scripts (at least 256 fields) qualify from creation; small literals and default
+  runner outputs remain native. Mutable descendants, accessors, bigint/symbol
+  observations, foreign proxy ordering and held primary reconciliation stay fresh.
+  Early SDK observer aliases survive construction, and native growth of a warmed
+  dictionary rejects at the next checkpoint. 330 selected checks across 17 files
+  pass with actual GC, plus strict new-test typing, scoped lint, SDK compilation
+  and eight build-entry checks. Focused 2517-field scans retain 78325 units while
+  tracked construction falls 3174→15 ms and 6000 warm scans 823→7 ms.
+  Serial public Zoom probes at 128 MiB/30 s observe the actual dictionary Script
+  at 20.9→4.2 s wall / 16.1→7.6 s CPU, with identical 189663 steps and
+  370700 current / 565448 peak units; shared CPU contention limits speed claims.
+  Baseline hits navigation timeout before externals. Candidate reaches HTTP 200
+  and externals but still hits its 30 s execution deadline (174142 steps,
+  2251998 peak units). Both verify cleanup data zero / sockets zero; no readiness
+  or meeting join. Externals startup gains and later full-client gates remain open.
+  Attribution previously identified this dictionary's 14.3 million descriptor reads;
+  broad literal tracking was rejected. Next: measure remaining externals accounting
+  cost and preserve volatile reads before extending ownership coverage.
 - Maintained SafeJS argument data snapshots now stay private from later native
   Array hooks (poe-code 2cd7e530b; no push). The reproduced hook drops baseline
   accounting from 1039 to 25 units; the fix retains 1039 and rejects quota500.
