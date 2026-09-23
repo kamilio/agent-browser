@@ -23,27 +23,29 @@
 
 ## Current verified state
 
-- Maintained SafeJS source graphs now use compact tokens and AST storage during
-  preparation (poe-code 8994da632; local, no push). IDs and top-level-await scans
-  traverse compiler rows without expanding cold bodies. The real i18n module's
-  40943 nodes have identical tree/ID digests and 431224 budget steps. Three fresh
-  128 MiB controls retain median 16.42→9.60 MB added JavaScript heap, plus a
-  1.60 MB compact buffer; parsing CPU increases 0.44→1.04 s. All 1409 selected
-  SDK checks across 44 files pass (33 skipped), along with strict new-test typing,
-  scoped lint, the maintained SDK build and eight entry checks.
-  A fresh extended 120 s/128 MiB live run finishes externals in 96.4 s and admits
-  editor-core after i18n, then aborts with a confirmed heap OOM and no verified
-  cleanup. An earlier candidate attempt hits the outer watchdog before vendor
-  startup; sampling also misses i18n because externals reaches its deadline.
-  Neither establishes a normal startup gain, readiness or join.
-  Controlled preparation of the six-module public i18n dependency graph also
-  exhausts the 128 MiB heap for baseline and candidate. A candidate phase check
-  prepares five distinct modules, retaining about 57 MB heap / 51 MB buffers,
-  before aborting without completing emoji preparation. Diagnostic regex limits
-  are explicit; this is preparation evidence, not client execution or cleanup.
-  Next: reproduce and reduce large-literal preparation peaks with prior modules
-  retained, then distinguish remaining browser-state retention. Keep defaults,
-  volatile observations, quotas and full held primary scans intact.
+- Maintained SafeJS source graphs use compact tokens/ASTs (8994da632), and packing
+  now uses DFS and releases copied entries from unobserved parser arrays with
+  pinned property writes (408a0ff9e; local commits, no push). The real emoji asset's
+  319326 nodes, metadata, IDs, 2160147 steps and 12667140 code-buffer bytes match
+  the prior build. With about 58 MB retained beforehand, both the original and
+  DFS-only packers abort at 128 MiB old-space; parser-array retirement passes.
+  The actual six-module i18n graph now parses AND links at the same heap limit:
+  8329048 steps / 5960199 current units, 83.13 MB heap / 63.53 MB buffers retained.
+  Its former build aborts. No client evaluation or realm cleanup is claimed from
+  this controlled graph check; diagnostic regex limits are explicit.
+  All 125 selected SDK checks across 12 files pass, including alias/cycle and
+  native-hook isolation, strict new-test typing, scoped lint, the maintained SDK
+  build and eight entry checks. Fresh 120 s/128 MiB public probes still abort
+  during module preparation without final reports or verified application cleanup.
+  Externals finishes in 91.2 s normally / 100.6 s sampled; no startup gain is
+  established and the normal 30 s initialization gate remains open.
+  A 128 KiB-interval live allocation sample survives before i18n: 128.6 MB actual
+  heap and about 112.7 MiB sampled live allocations. Estimated stack groups include
+  closures 13.1 MiB, host-record validation 10.8, inline styles 10.2 and window
+  getter wrappers 6.8; samples are not exact retention totals. Next: reduce private
+  capability-definition copies and style/window wrapper allocations while preserving
+  validated snapshots, canonical identities, live effects, quotas and full held
+  primary scans. Default heap/time, readiness/join and all media gates remain open.
 - Maintained SafeJS appends private graph continuation frames with pinned native
   push to a null-prototype stack, eliminating per-frame property descriptors
   (poe-code 347f0a65b; local, no push). Depth boundaries, DFS snapshots, proxy
