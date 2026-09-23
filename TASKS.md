@@ -89,6 +89,22 @@
   The live probe clears the observed externals heap abort above; its 30 s execution
   timeout remains. Next: measure delayed callback and primary graph accounting cost
   at this actual classic bundle gate. Owned artifacts removed; one working build reused.
+- Actual maintained externals profiling at 128 MiB attributes 13.9 of 24.6 sampled
+  seconds to graph measurement and 7.8 s to GC; createEvalSource is 1.3 s inclusive.
+  The deadline probe verifies cleanup data zero and sockets zero, with no readiness/
+  join. Measurement-local traversal-frame reuse is rejected and fully removed:
+  serial shared-build baseline/candidate runs both stop in the earlier initial
+  Script at 30 s, with 189554/188321 step deltas including compilation. Shared CPU
+  contention and lower candidate work establish no useful startup gain; source and
+  working build are restored. Baseline failures in checkpoint intrinsic expectations
+  and microtask-only host-array proof polling are corrected, retaining hash, graph
+  and provenance assertions (poe-code a6739d949, ba36236f2). A reproduced 100 ms Node
+  reference-oracle startup timeout has a 1 s bound (071584199); SDK/native acceptance
+  deadlines stay unchanged. Final 51 checks across those two files and eight restored
+  build entry checks pass; candidate preservation also passes 117 checks with actual
+  GC. Next: allocation attribution and conservative owned retention summaries,
+  preserving mutable/foreign observations and full primary scans during callback
+  holds. All temporary validation artifacts removed. Full meeting/media gates remain.
 - Maintained SafeJS now shares immutable token/AST source positions only when source
   module graphs select them (poe-code 287924508; no push). Public parser defaults
   retain independent mutable positions. All 2093 selected checks across 100 files
