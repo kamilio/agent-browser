@@ -65,6 +65,22 @@
   6034520 units; cleanup data and active requests zero. This narrows the next
   performance target to editor evaluation, but establishes no native page
   readiness, admission or default-resource pass.
+- Sparse editor CPU profile attributes about 96% of sampled wall time to
+  retained-data reconciliation, with little GC. A fresh census using the normal
+  main-module entry point records 14202 walks and 59.4 million closure visits
+  (about 4200 per walk), mostly hoisted module functions. Parsing the actual
+  assets counts 3703 top-level declarations: 2049 in loginview and 1363 in
+  editor-core. Investigate physical hoist/binding retention rather than omitting
+  retained scopes from accounting. Of 121.7 million
+  already-seen object captures, the existing four-entry cache handles 121.1
+  million; enlarging it is not the next target. The diagnostic expires at
+  120.050 s, with cleanup data/active requests zero; no page globals or joining.
+- Shared optional-state registry trial is discarded. The 62 initial and 123
+  additional selected checks, strict typing, selected build and eight built
+  imports pass, but reversed compiled comparisons show no reliable closure gain
+  and ordinary records tend to regress. Charges/provider counts are identical.
+  Owned trial sources/tests removed; maintained restoration build and eight
+  built imports pass. No live candidate probe or accepted runtime change.
 - Maintained primitive-literal fix (a2a31bb07, local only) avoids an empty child
   CompileScope and context copy while preserving await and full retained-data
   reconciliation. Before-fix
@@ -106,8 +122,10 @@
 ## Outstanding gates
 
 - Finish client initialization within normal heap/time/source allowances. Target
-  editor evaluation costs identified by the isolated graph before retesting the
-  complete native page. Seven
+  repeated traversal of hoisted functions during editor evaluation before
+  retesting the complete native page. Any retention redesign must account for
+  physically retained scopes and preserve fresh provider/property reads and
+  full ordinary/held quotas. Seven
   modules clear offline compile/link but live evaluation remains too costly.
   Explicit 120 s / 256 MiB diagnostics clear no default-resource acceptance gate;
   earlier larger/longer runs also established no interactive readiness.
