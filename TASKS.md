@@ -23,6 +23,24 @@
 
 ## Current verified state
 
+- Maintained SafeJS caches copied host-member charges and pins native access to
+  private host/guest registries and member maps (5e6686f52; local commit, no push).
+  Regression tests reproduce key/read/insertion-hook exposure before the fix;
+  revocation resets charges, and mutable descendants/providers and full primary
+  reconciliation during holds remain active. All 231 selected checks across nine
+  files pass, plus strict test typing, scoped lint/format, SDK build and eight
+  import checks. Actual SafeJS preserves all 17 style/window/Image/Blob-origin/URL
+  assertions, 46266 steps / 53696 current / 69364 peak units, cleanup data zero.
+  The focused 128-host/131072-member fixture preserves 1561984 data units; median
+  CPU for 100 measurements falls about 30.9→6.8 ms (about 78%). This is not public
+  startup evidence. Fresh desktop-identity 120 s/128 MiB Zoom diagnostic returns
+  HTTP 200 and passes nine classics, but externals times out at 120.12 s; no client
+  imports/readiness/join, cleanup data zero / sockets zero verified. Default 30 s
+  initialization, full-client memory and every meeting/media gate remain open.
+  Next: investigate remaining full-graph traversal/materialization cost; evaluate
+  tracked expando projections and temporary root-array allocations without caching
+  mutable descendants or weakening held primary scans. Temporary probes removed;
+  the validated isolated SDK replaces the reusable desktop candidate below.
 - Window construction definitions now retire after installation extracts its
   window/document/origin operations (2411ac4; local commit, no push). An actual-GC
   regression fails before the fix and passes after it for both earlier and later
@@ -36,10 +54,9 @@
   returns HTTP 200 and passes nine classics, but externals times out; cleanup data
   zero / sockets zero verified. No client import, readiness, join or startup gain
   is established. A separate synthetic 300000-node compact index adds 14.7 MB heap;
-  this is not Zoom's node count. Maintained SafeJS still sums immutable host member
-  keys on every pass; the earlier accounting-projections contribution has a tested
-  approach absent from current source. Next: reproduce and port that optimization
-  while retaining mutable descendant effects and full held primary reconciliation.
+  this is not Zoom's node count. The later maintained member-charge fix above
+  addresses repeated immutable key sums while retaining mutable descendant effects
+  and full held primary reconciliation.
   Full startup/memory/meeting/media gates remain open; temporary probes removed.
 - Native inline styles share operations across canonical CSS aliases within each
   element (ae9fb15); window mapping shares wrappers for identical property records
@@ -2343,6 +2360,9 @@
 - Working SDK source/build: /tmp/agent-browser-zoom-sdk/packages/safe-js.
 - Maintained SDK source/build: /home/kjopek/project/poe-code/packages/safe-js;
   direct typed-array accounting and live-buffer fixes are verified there.
+- Reusable validated isolated SDK:
+  /home/kjopek/project/poe-code/out/agent-browser-zoom-desktop-ihql25/candidate,
+  including maintained host-member accounting fix 5e6686f52.
 - Focused SDK contribution patches: contributions/. Some recovered accounting
   patches still need reconciliation; a temporary metadata patch header was normalized
   only in the retained scratch SDK.
