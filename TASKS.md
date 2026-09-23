@@ -23,6 +23,21 @@
 
 ## Current verified state
 
+- Opt-in owned-scope capture memoization is rejected and reverted. Sealed metadata,
+  tracked assignments/binding changes, empty-environment revocation and conservative
+  caller/restored scope fallback preserve 263 selected SDK checks across 20 files
+  (two existing skips) and 11 focused guards, including same-walk held quotas,
+  context carrier changes, prototype getters and private cache/native hook isolation.
+  SDK build/eight imports and initial strict test typing/scoped lint pass. Actual
+  browser before/after preserves all 21 assertions and 46645 steps / 53725 current /
+  69724 peak, cleanup zero. Serial 400-closure/nine-ancestor/500-pass fixture keeps
+  435 units but CPU median rises 63.4→104.7 ms (about 65%); ownership guards do not
+  amortize collection in this fixture. No public candidate run is warranted and no
+  initialization/join/media gate is cleared. All eight owned runtime changes and
+  the candidate tests are removed, maintained baseline build restored, validation
+  artifacts removed and reusable SDK preserved. Next: uncached record-property
+  capture and the host-copying failure that prevented broader classic-record
+  tracking, preserving native growth, descendants/providers and full held quotas.
 - Maintained SafeJS pins its private accessor/adaptor registries (b71bdbc7e;
   local commit, no push). Six before-fix failures expose registry insertion/read
   hooks or omit retained payloads and bypass held/unheld primary quotas. All six
