@@ -23,6 +23,24 @@
 
 ## Current verified state
 
+- Maintained SafeJS tracks fixed-key classic data records at creation (19396ca3f;
+  local commit, no push), extending existing private revision accounting to small
+  records. The before-fix regression rereads two records 122 times during eight
+  loop iterations; the fix performs zero repeated reads. All 278 selected SDK
+  checks, strict test typing/scoped lint/format and SDK build/eight imports pass.
+  Host/guest cloning, aliases, prototypes, descendants and held native-growth
+  quotas remain intact. Actual browser 21 assertions preserve 46447 steps /
+  63467 current / 69477 peak, cleanup zero; a separate Node24 Worker roundtrip
+  preserves small-record aliases and cleanup zero before/after. Serial 128-record /
+  500-pass accounting retains 4635 units; CPU median improves 138.6→108.9 ms,
+  confirmed in reverse order at 127.2→102.9 ms (19–21%). Only compiled interpreter
+  output differs. Fresh public 30 s/128 MiB baseline times out during navigation;
+  candidate returns HTTP 200/passes nine classics, then externals times out at
+  180863 delta steps / 2252153 peak. Preparation/timing variation prevents a live
+  speedup claim; no imports/readiness/join, cleanup data/sockets zero. Temporary
+  validation artifacts removed; reusable SDK updated. Next: larger closure/scope
+  traversal and preparation cost, retaining full quotas; client initialization,
+  joining/notetaker/media acceptance all remain open and Automations unchanged.
 - Opt-in owned-scope capture memoization is rejected and reverted. Sealed metadata,
   tracked assignments/binding changes, empty-environment revocation and conservative
   caller/restored scope fallback preserve 263 selected SDK checks across 20 files
