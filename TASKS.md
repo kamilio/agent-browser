@@ -158,8 +158,6 @@
 
 - Reusable accepted isolated SDK:
   /home/kjopek/project/poe-code/out/agent-browser-zoom-desktop-ihql25/candidate.
-  Older scratch SDK: /tmp/agent-browser-zoom-sdk/packages/safe-js; its dependency
-  typing issues do not establish failures of the maintained build.
 - Focused SDK contributions are in contributions/; some recovered patches still
   need reconciliation. Do not apply them blindly to the maintained runtime.
 - Keep artifacts ephemeral; remove owned logs, reports and redundant builds after
