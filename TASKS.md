@@ -23,6 +23,25 @@
 
 ## Current verified state
 
+- Maintained SafeJS host expando storage now uses existing revision-tracked tables
+  (fc6675361; local commit, no push). Unchanged accounting no longer recaptures
+  expando descriptors; writes invalidate projections and descendants/providers
+  remain freshly measured. The regression fails before the fix and passes after it.
+  All 68 selected checks across six SDK files pass, plus strict new-test typing,
+  scoped lint/format and maintained SDK build with eight import checks. The first
+  build's import checks observed missing generated files that subsequently appeared;
+  the fresh rerun passes. Actual browser before/after checks preserve all 21
+  style/window/Image/Blob-origin/URL/node-expando assertions, 46645 steps / 53725
+  current / 69724 peak units, cleanup zero. A serial 128-host/8192-field fixture
+  preserves 154624 units; median CPU for 100 measurements falls 71.9→26.7 ms
+  (about 63%). This is not public startup evidence. Fresh desktop-identity
+  30 s/128 MiB public Zoom probe returns HTTP 200 and passes nine classics, but
+  externals times out at 30.09 s, 183178 steps / 2252153 peak units. No client
+  imports/readiness/join; cleanup zero data / sockets verified. All default startup,
+  full-client memory and meeting/media gates remain open. Next: investigate remaining
+  graph traversal and temporary root-array allocation cost while preserving mutable
+  descendants and full held primary scans. Owned validation artifacts removed;
+  reusable isolated SDK updated.
 - Maintained SafeJS caches copied host-member charges and pins native access to
   private host/guest registries and member maps (5e6686f52; local commit, no push).
   Regression tests reproduce key/read/insertion-hook exposure before the fix;
@@ -2362,7 +2381,8 @@
   direct typed-array accounting and live-buffer fixes are verified there.
 - Reusable validated isolated SDK:
   /home/kjopek/project/poe-code/out/agent-browser-zoom-desktop-ihql25/candidate,
-  including maintained host-member accounting fix 5e6686f52.
+  including maintained host-member accounting fix 5e6686f52 and tracked host
+  expando projections fc6675361.
 - Focused SDK contribution patches: contributions/. Some recovered accounting
   patches still need reconciliation; a temporary metadata patch header was normalized
   only in the retained scratch SDK.
