@@ -54,13 +54,29 @@
   compiled SDK refreshed; owned validation artifacts removed. Next: prove native
   Scope metadata ownership before sharing repeated capture reads; preserve foreign
   effects, mutable descendants and full primary scans during callback holds.
-- Public desktop compatibility identity selects nine initial scripts instead of 53
-  and omits the legacy Vue asset, using the same native engine. The maintained
-  isolated SDK executes CSRF, inline configuration and FingerprintJS, then times out
-  in the next 563-character inline Script at the unchanged 30 s deadline (30300 ms,
-  83824 step delta, peak 748494 units). HTTP 200; cleanup data zero; sockets zero;
-  no imports, interactive readiness or meeting join. The desktop route avoids the
-  legacy document but does not clear the startup gate.
+- Native expired idle callbacks now wait for the classic script and its microtask
+  checkpoint, sharing the existing timer-task gate (browser 3bbbda5; no push).
+  Previously armed alarms also defer without polling; cancellation and module-await
+  delivery remain live. Three baseline regressions reproduce; all 140 selected
+  checks across four manifest-listed native files pass, including the added module
+  await case. Browser build, strict test typing and scoped lint/format pass. Broader
+  checks have eight failures reproduced with this fix disconnected: seven stale DOM
+  bootstrap expectations in html-module-runtime.test.ts and an existing onload-object
+  assertion in page-bindings.test.ts. Unrelated dirty work remains uncommitted.
+- Desktop compatibility identity selects nine initial scripts instead of 53, with no
+  legacy Vue dependency. The actual native/SafeJS probe now executes all nine without
+  script failure at the unchanged 30 s deadline. The formerly failing 563-character
+  fingerprint Script completes in 641 ms at 192 MiB and 804 ms at 128 MiB (1028 steps).
+  The 192 MiB zero-observation run verifies cleanup data zero and sockets zero, but
+  does not load the main client. Delayed observation at 128 MiB reaches the real
+  classic externals.min.js asset (163960 characters), then V8 aborts from heap
+  exhaustion after script-start (retained SDK charge 2418594 units); no cleanup
+  evidence survives that crash. Current CDN loader requests externals/vendors/
+  webclient/common classic bundles; the diagnostic's old es-module-only main-client
+  matcher needs qualification. No interactive readiness or meeting join established.
+  Next: maintained compiler compaction for classic client bundles, delayed task cost
+  and accurate classic-versus-module diagnostic coverage. Full startup, Worker and
+  meeting/media acceptance gates remain open. Owned temporary evidence removed.
 - Maintained SafeJS now shares immutable token/AST source positions only when source
   module graphs select them (poe-code 287924508; no push). Public parser defaults
   retain independent mutable positions. All 2093 selected checks across 100 files
@@ -69,7 +85,8 @@
   and eight package entry checks. Separate 128 MiB synthetic compiler processes
   retain 13.7/11.5 MB without/with sharing on 5000 declarations (~16% reduction in
   this measurement). This establishes compiler allocation savings, not Zoom startup
-  progress. No post-change live startup gain claimed. Owned validation logs removed;
+  progress. The subsequent idle-task fix above, rather than position sharing, clears
+  the initial Script timeout. Owned validation logs removed;
   one isolated working SDK build retained for reuse. Repeated primary graph accounting
   and full client/Worker compilation at default heap/time remain open, followed by
   admission/presence, sockets and the meeting/media acceptance gates above.
