@@ -23,18 +23,25 @@
 
 ## Current verified state
 
-- Maintained SafeJS avoids temporary argument arrays in visited-object registry
-  operations (e7b283323; local commit). All 47 focused tests, SDK typecheck/scoped
-  lint and build/eight import checks pass. A warmed accounting fixture preserves
-  138890 units with about 6% lower median CPU; no page startup speedup is claimed.
-  Frozen offline responses reproduce externals with zero misses after narrowly
-  normalizing only the versioned CDN test image's timestamp. Nine classics retain
-  identical steps/data; timed CDN selection still varies. Controlled externals
-  runs start at exactly 345640 steps / 388053 units: baseline advances 197898 steps,
-  candidate 192526, both hit 30 s. Initial-classic profiling attributes 37% to graph
-  traversal and 28% to GC; it does not isolate externals. Every completed capture/
-  replay cleans up data/sockets to zero. Temporary fixtures/profiles removed;
-  validated reusable SDK updated. Initialization, meeting and media gates remain open.
+- Maintained SafeJS keeps array snapshots/continuations private (28fb87e86) and
+  reuses private frames within each measurement (389f23d75; local commits).
+  Eight before-fix native push/setter/iterator regressions hide array payloads or
+  frames (1008→2 units and missed quotas). All 83 focused tests across 14 files,
+  SDK typecheck/scoped lint, build/eight imports and compiled Node24 default-stack
+  1025/1026-closure boundaries pass. A 30196-unit branching fixture preserves
+  charges with about 23% lower plain-record CPU / 10% lower tracked-record CPU;
+  tracked allocation sampling estimates 4.14 MB→0.58 MB (86% lower).
+  Externals-only profiling attributes 38% to traversal and 26% to GC. The diagnostic
+  offline fixture injects externals as a parsed script before lifecycle callbacks,
+  disables CDN detection and retains the nine initial classics' exact steps/data.
+  Seven frozen responses replay with zero misses. At 30 s the array fix advances
+  192392 externals steps; frame reuse 193824: no startup speedup is claimed. At the
+  explicit 120 s diagnostic limit, externals passes in 52.5 s / 212732 steps /
+  656763 peak units; all ten scripts pass. This proves no default deadline, normal
+  CDN/client initialization, readiness, joining or media acceptance. The preceding
+  public capture with CDN detection disabled times out at navigation. Every completed
+  run cleans up data/sockets to zero. Temporary fixtures/profiles removed and the
+  validated reusable SDK updated; initial registry-call allocation fix remains.
 
 - Maintained SafeJS pins intrinsic record ownership checks/insertion (ab3b719f9)
   and traverses indexed native closure captures iteratively (8a148a0a3; local
