@@ -64,19 +64,31 @@
   bootstrap expectations in html-module-runtime.test.ts and an existing onload-object
   assertion in page-bindings.test.ts. Unrelated dirty work remains uncommitted.
 - Desktop compatibility identity selects nine initial scripts instead of 53, with no
-  legacy Vue dependency. The actual native/SafeJS probe now executes all nine without
-  script failure at the unchanged 30 s deadline. The formerly failing 563-character
-  fingerprint Script completes in 641 ms at 192 MiB and 804 ms at 128 MiB (1028 steps).
-  The 192 MiB zero-observation run verifies cleanup data zero and sockets zero, but
-  does not load the main client. Delayed observation at 128 MiB reaches the real
-  classic externals.min.js asset (163960 characters), then V8 aborts from heap
-  exhaustion after script-start (retained SDK charge 2418594 units); no cleanup
-  evidence survives that crash. Current CDN loader requests externals/vendors/
-  webclient/common classic bundles; the diagnostic's old es-module-only main-client
-  matcher needs qualification. No interactive readiness or meeting join established.
-  Next: maintained compiler compaction for classic client bundles, delayed task cost
-  and accurate classic-versus-module diagnostic coverage. Full startup, Worker and
-  meeting/media acceptance gates remain open. Owned temporary evidence removed.
+  legacy Vue dependency. All nine pass at the unchanged 30 s script deadline.
+  Before classic compiler compaction, delayed observation at 128 MiB aborts from
+  V8 heap exhaustion in externals.min.js (163960 characters), without cleanup evidence.
+  With the maintained compaction below, the same asset runs without that heap abort
+  and stops at the 30 s deadline (30063 ms, 185334 step delta including compilation,
+  peak 2252153 SDK units). HTTP 200, cleanup data zero and sockets zero are verified;
+  the main client does not load, with no interactive readiness or meeting join.
+  The diagnostic now recognizes classic webclient.min.js and webclient.es.min.js,
+  requiring successful classic execution or fulfilled source imports respectively;
+  fetch, code execution and application readiness remain separate (browser ddc2d1a).
+  Full startup, Worker and meeting/media gates remain open. Temporary evidence removed.
+- Maintained SafeJS now packs classic Script ASTs and token rows, uses offset-backed
+  spans and indexes cold nodes without materializing them (poe-code e40e3454d; no push).
+  Public parser defaults remain eager; decoded identities/mutations, source metadata,
+  private-name validation, snapshots and compilation/retention budgets are preserved.
+  Reproduced lazy-body/token regressions pass; all 2393 selected checks across 107
+  files pass (one fuzz test skipped), plus 97 checks across four files with actual GC.
+  Strict new-test typing, scoped lint/format, isolated SDK compilation/eight entry
+  checks and browser diagnostic build/seven offline asset checks pass. Fresh 128 MiB
+  compiler processes retain 19.4/6.2 MB of JavaScript heap without/with compaction for
+  the same 54584-node externals bundle, plus 2.1 MB of packed buffers with compaction.
+  This is retained compiler memory evidence, not a total-memory or startup-speed gain.
+  The live probe clears the observed externals heap abort above; its 30 s execution
+  timeout remains. Next: measure delayed callback and primary graph accounting cost
+  at this actual classic bundle gate. Owned artifacts removed; one working build reused.
 - Maintained SafeJS now shares immutable token/AST source positions only when source
   module graphs select them (poe-code 287924508; no push). Public parser defaults
   retain independent mutable positions. All 2093 selected checks across 100 files
@@ -2105,8 +2117,10 @@
   the default 30 s initialization gate or settle all imports inside their originating
   classic task; the full client still exceeds memory/time acceptance.
 - Interactive Zoom initialization/join and every notetaker capability listed above.
-  Fresh maintained baseline/candidate runs can exceed 30 s in the first Script
-  before Vue; initialization timing reliability remains open.
+  The latest maintained desktop classic route clears the observed externals heap
+  abort at 128 MiB, but externals still reaches its 30 s execution deadline before
+  vendors/main-client startup. Later client heap, initialization timing and the
+  default identity's legacy route remain unverified.
   Iframe navigation, srcdoc/policy contexts and child script realms remain unsupported.
   Diagnostics block optional file-paa.zoom.us and cdn.cookielaw.org origins;
   production actor/default 128 MB heap, meeting sockets, media and transcription
