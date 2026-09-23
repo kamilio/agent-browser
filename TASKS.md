@@ -23,6 +23,21 @@
 
 ## Current verified state
 
+- Normal CDN startup still times out in externals at both 30 s and the explicit
+  120 s diagnostic limit (174489 / 192907 steps; cleanup data/sockets zero).
+  Actual ES chunks, including 3.49M-unit loginview and 1.10M-unit editor-core,
+  compile with the existing Unicode application regex allowances; the apparent
+  editor string-limit failure was a probe omitting those allowances. Four captured
+  compact parser results coexist at 90.2 MB used heap under a 128 MiB cap, not a
+  full initialized module graph. A separate instrumented startup hits its 180 s
+  process cap before externals starts; no cleanup pass for that killed run.
+  Its late 2 s profile samples 44.9% GC / 31.2% traversal; aggregate accounting
+  invokes 63.6M capture appends, filtering 11.4M absent / 49.2M visited roots.
+  Next: reduce private capture snapshot allocation while preserving every metadata
+  read and full reconciliation. Fresh 58 SafeJS checks pass (two GC checks skipped)
+  and all 48 declared native budget-profile assertions pass. Temporary probes
+  removed; no new runtime patch or initialization/join/media acceptance claimed.
+
 - Maintained SafeJS keeps array snapshots/continuations private (28fb87e86) and
   reuses private frames within each measurement (389f23d75; local commits).
   Eight before-fix native push/setter/iterator regressions hide array payloads or
