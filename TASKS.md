@@ -23,6 +23,19 @@
 
 ## Current verified state
 
+- Maintained SafeJS indexes static explicit exports/imports and star definitions
+  (a53762476, local only), preserving live scope reads, ambiguity and cycle-path
+  resolution. A 600-export
+  regression previously exhausts 20000 steps; indexed linking uses 3604 instead
+  of 183304. Final namespace CPU across 20 modules is 35.5→15.2 ms; total loader
+  CPU varies around 1.1 s without an established improvement. Index storage adds
+  3490 charged units in that fixture and is cleared/released on close;
+  ordinary/held quotas remain enforced.
+  Before-fix tight-quota checks process all 600 definitions; reservation before
+  insertion now stops at the second definition, including during callback holds.
+  All 84 selected module checks across 11 files, strict test typing/scoped lint,
+  new test formatting and maintained build/eight imports pass. The final public
+  diagnostic reaches ES imports; its result and remaining runtime cost are below.
 - Maintained SafeJS dispatches frozen SDK-owned property getters directly
   (7fb7e4cc6, local only), preserving fresh returned tables, repeated reads and
   foreign/missing/data descriptor fallbacks. An experimental before-fix regression
@@ -87,15 +100,20 @@
   owned test typing, scoped lint/format and SDK build/eight imports. A 1200-entry
   source module fixture preserves 91254 steps / 148120 current and peak units;
   warmed CPU rounds fall about 20–30%. No full-page speedup established.
-- The final uninstrumented guarded getter-dispatch SDK/public diagnostic at
-  supported 256 MiB and 120 s source/network allowances returns HTTP 200, passes
-  all 13 classics, fetches the webclient shim/ES entry (187/4383 bytes), and prepares
-  seven ES modules before the source import deadline revokes the realm. Latest
-  sampled progress: 9012769 steps / 6854895 units. Cleanup verifies data/sockets
-  zero; no fulfilled import, UI readiness, socket attempt or meeting join.
-  Preparation and shared CPU variation prevent startup timing attribution.
-  The reusable SDK contains the tested getter-dispatch change; temporary artifacts
-  removed. Supported scaling clears no default-resource gate; the 120 s cap stays.
+- The final export-index SDK/public CPU-profile diagnostic at explicit 256 MiB
+  and 120 s source/network allowances returns HTTP 200, passes all 13 classics,
+  fetches the webclient shim/ES entry (187/4383 bytes), and prepares seven ES
+  modules before the source import deadline revokes the realm. Last sampled
+  progress: 8997712 steps / 6906886 units. Cleanup verifies data/sockets zero;
+  no fulfilled import, UI readiness, socket attempt or meeting join. Two earlier
+  runs fail in externals before ES imports; the final run passes externals in
+  61.2 s wall / 59.2 s CPU. Shared CPU variation prevents startup attribution.
+  In the final 90 s profile window, unique-frame inclusive reconciliation accounts
+  for 60.6 s; visitor self samples account for 33.3 s and GC for 18.9 s.
+  Fresh retained-graph traversal and allocation remain the next runtime targets;
+  reconciliation must stay active during callback holds. The reusable SDK
+  contains the tested indexes and getter dispatch; temporary artifacts removed.
+  Diagnostic scaling clears no default-resource gate; the 120 s cap stays.
 - Bounded array/record capture pooling remains capped at 64 physical slots.
   Prior 600-array / 600-record fixtures preserve charge with about 14% / 19–20%
   less CPU; sampled allocation falls about 22%, and 900 MB gates fail before and
