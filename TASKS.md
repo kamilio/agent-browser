@@ -23,6 +23,23 @@
 
 ## Current verified state
 
+- Maintained SafeJS realm root collection uses one ordered private snapshot,
+  eliminating per-host singleton arrays and native Array.from/flatMap/push hooks
+  (ae2a16513; local commit, no push). Two before-fix regressions omit retained host
+  data through a flattening hook and bypass held/unheld primary quotas; fixed.
+  Roots remain live through writes, aliases, deletion and cleanup. All 129 selected
+  SDK checks across 12 files pass, plus strict test typing, scoped lint/format,
+  build and eight import checks. Actual browser before/after preserves all 21
+  assertions, 46645 steps / 53725 current / 69724 peak units, cleanup zero.
+  Serial 1000-host/100-pass fixture preserves 1000 units; CPU median 105.9→105.7 ms
+  establishes no speedup. Fresh unprofiled desktop 30 s/128 MiB Zoom run returns
+  HTTP 200 and passes nine classics; externals times out at 30.09 s / 183176 steps /
+  2252153 peak units, effectively unchanged progress. No client imports/readiness/
+  join; cleanup zero data / sockets verified. All startup/full-client memory/meeting/
+  media gates remain open. Next: investigate larger retained-graph allocation and
+  traversal costs with current live allocation evidence; the recent small collector
+  changes establish no startup gain. Owned validation artifacts removed; reusable
+  isolated SDK updated.
 - Maintained SafeJS accounting traverses host expando roots directly through the
   existing iterative walker (262d12dd9; local commit, no push). Two regressions
   reproduce a later native array-iterator hook exposing/omitting the temporary
@@ -37,11 +54,10 @@
   cleanup zero data / sockets verified, no readiness/join or default-gate pass.
   About 58.4% of active profile samples enter graph accounting, 61.8% reconciliation,
   and 34.5% are GC; these overlap and are sampled attribution, not exact timings.
-  Realm.retainedRoots still uses Array.from(hostObjects).flatMap(hostObjectGuestRoots),
-  allocating per-host root arrays on each reconciliation (about 1.1% profile self).
-  Next: remove that remaining allocation path with fresh-root and quota regressions;
-  investigate overall allocation pressure rather than treating a small visitor
-  shortcut as sufficient. All startup/full-client memory/meeting/media gates remain
+  The later realm collector fix above removes the remaining per-host root arrays
+  (about 1.1% of this earlier profile's self samples). Overall allocation pressure
+  needs investigation; no small visitor shortcut establishes readiness.
+  All startup/full-client memory/meeting/media gates remain
   open. Owned validation artifacts removed; reusable isolated SDK updated.
 - Maintained SafeJS host expando storage now uses existing revision-tracked tables
   (fc6675361, rebased as ae02c6e21; local commit, no push). Unchanged accounting no longer recaptures
@@ -2402,7 +2418,8 @@
 - Reusable validated isolated SDK:
   /home/kjopek/project/poe-code/out/agent-browser-zoom-desktop-ihql25/candidate,
   including maintained host-member accounting fix 5e6686f52 and tracked host
-  expando projections ae02c6e21, plus direct root traversal 262d12dd9.
+  expando projections ae02c6e21, direct root traversal 262d12dd9 and realm root
+  collection ae2a16513.
 - Focused SDK contribution patches: contributions/. Some recovered accounting
   patches still need reconciliation; a temporary metadata patch header was normalized
   only in the retained scratch SDK.
