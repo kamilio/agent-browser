@@ -23,39 +23,41 @@
 
 ## Current verified state
 
-- Tested SafeJS reuses bounded array snapshot buffers (local 9b52a525b; currently
-  pending replay in the shared poe-code rebase). Eight guards preserve early
-  snapshots across prototype callbacks, siblings, aliases, nested scans, failed
-  capture and ordinary/held quotas. A 600-array fixture retains 33000 units with
-  about 14% less warmed CPU; sampled allocation across 2000 measurements falls
-  from 1.01 GB to 0.79 GB (22%). Its 900 MB allocation gate fails before and passes
-  on the maintained build. Buffers remain capped at 64 physical slots.
-- The tested symbol-descriptor fix uses private null-prototype snapshots and
-  indexed record reads. Eight before-fix native push/iterator/index-setter guards
-  expose descriptors and reduce records 1016→10 / closures 1017→11 units, missing
-  ordinary and held quotas. The fix restores charges and quotas while preserving
-  foreign iterators, descriptor reads and capture-before-callback ordering.
-  All 120 focused tests across 17 files pass (two existing GC skips), strict owned
-  test typing/scoped lint/format, SDK build/eight imports and compiled boundaries
-  pass before the concurrent rebase. The reusable SDK contains the tested fixes.
-  The symbol source patch is preserved in rebase autostash
-  10227c883eda91475ba32d42f3e88351e13d70ff; its new test remains untracked.
-  Commit it after the owner resolves run.replay.stress.test.ts and finishes the
-  shared rebase; preserve foreign work and keep the commit focused. No push.
-- The array candidate's uninstrumented public run at 120 s / 192 MiB still times
-  out in externals: 213381 delta steps, 2257762 peak units, no client imports.
-  The final combined SDK at 30 s / 192 MiB also times out there: 184385 delta
-  steps, 2252153 peak. Both retain all nine initial classics' exact steps/data
-  and clean up data/sockets to zero. Scheduling varies; these runs prove no
-  full-page startup speedup, ES graph readiness or meeting join.
-- Sampled externals scope fanout (74 of 2386 measurements, no nested scans):
-  236061 scope visits, 220067 repeats (93%); 431037 appended roots, 299038
-  already seen (69%); maximum ancestor depth 12. This does not justify a scope
-  cache: later metadata/provider reads can expose changed retained data. Next:
-  reduce repeated native descriptor/type checks with explicit semantic guards,
-  benchmark before maintained edits, then retest normal public initialization.
-  Foreign-proxy private descriptor snapshots and bounded record pooling remain
-  validated (prior local cc5623758 / 5464b7bf8, also pending rebase replay).
+- Shared poe-code rebase completed with both delayed-host and wall-clock replay
+  validations preserved; all 68 replay stress tests pass. Retained fixes are now
+  local f898d1bcd (private proxy descriptors), 9040d7d2d (record pooling),
+  493bc22f7 (array pooling) and 59641c1ed (private symbol descriptors). Symbol
+  regressions prevent charges falling 1016→10 / 1017→11 and enforce ordinary/held quotas.
+  No push. The reusable SDK contains the tested fixes; no pending autostash work.
+- Maintained SafeJS tracks fixed-key source module records (669911629), including
+  records returned later by functions hoisted during linking. Two before-fix
+  regressions perform 122 descriptor captures across eight counter iterations;
+  the fix performs zero. Computed keys, spreads and accessors retain fresh capture.
+  All 115 focused module/record checks across 11 files pass, along with strict
+  owned test typing, scoped lint/format and SDK build/eight imports. A 1200-entry
+  source module fixture preserves 91254 steps / 148120 current and peak units;
+  warmed CPU rounds fall about 20–30%. No full-page speedup established.
+- Normal public runs at supported 256 MiB / 120 s source / 120 s network
+  diagnostics pass all 13 classics and prepare seven ES modules, then revoke
+  at the source import deadline. Before module tracking, externals passes in
+  59.2 s; after, 58.0 s. Both retain the nine initial classics' exact steps/data,
+  fetch the webclient shim/ES entry (187/4383 bytes), and clean up data/sockets
+  to zero. Candidate progress reaches 9027032 steps / 6888700 units before
+  deadline; no fulfilled import, UI readiness or meeting join is verified.
+  Larger heap/network allowances clear no default-resource gate. A 300 s source
+  diagnostic is rejected as invalid-input before navigation by the browser's
+  120 s application cap; the policy remains unchanged.
+- Bounded array/record capture pooling remains capped at 64 physical slots.
+  Prior 600-array / 600-record fixtures preserve charge with about 14% / 19–20%
+  less CPU; sampled allocation falls about 22%, and 900 MB gates fail before and
+  pass after. The guarded native proxy-brand lookup is rejected on cost: a
+  pristine 600-table fixture with inherited handler/prototype guards costs more
+  than direct proxy queries. No shortcut added and no metadata/provider bypass.
+- Sampled externals scope fanout previously reports 93% repeated scope visits
+  and 69% already-seen appended roots, maximum ancestor depth 12. A scope cache
+  remains rejected because later metadata/provider reads can expose changed
+  retained data. Next: bounded profiling of actual ES module evaluation to locate
+  the deadline cost; keep full primary reconciliation and held quotas active.
 - Compiled Node24 default-stack boundaries remain intact: 1024 records charge
   15361 units, 1024 arguments charge 11281 and 1025 indexed closures charge 1029;
   each next level reports budgetExceeded/dataDepth. Arguments pooling previously
@@ -72,7 +74,6 @@
   attribute 40.7% to traversal and 24.4% to GC. Across 225 sampled measurements,
   factory closures comprise 47% of first object visits, tracked record projections
   21%; instrumentation is diagnostic and does not establish startup performance.
-  A mislabelled array-descriptor counter is excluded from analysis.
   Mislabelled descriptor counts stay excluded. Observable providers, metadata,
   full primary graph reconciliation and quotas remain required.
 - Normal public Zoom initialization at an explicit 192 MiB heap / 120 s source
