@@ -90,23 +90,31 @@ export class PageWindowGlobal {
 
 	createHostObject(owner: ReleasedContext, definition: ReleasedHostDefinition) {
 		const properties = definition.properties;
+		let mappedProperties = properties;
+		if (properties) {
+			type Property = NonNullable<ReleasedHostDefinition["properties"]>[string];
+			const mapped = new Map<Property, Property>();
+			mappedProperties = Object.fromEntries(
+				Object.entries(properties).map(([name, property]) => {
+					let record = mapped.get(property);
+					if (!record) {
+						record = {
+							...property,
+							...(property.get
+								? { get: () => this.map(property.get?.()) }
+								: {}),
+						};
+						mapped.set(property, record);
+					}
+					return [name, record];
+				}),
+			);
+			// The getter closures must not retain a populated construction cache.
+			mapped.clear();
+		}
 		const object = owner.createHostObject({
 			...definition,
-			...(properties
-				? {
-						properties: Object.fromEntries(
-							Object.entries(properties).map(([name, property]) => [
-								name,
-								{
-									...property,
-									...(property.get
-										? { get: () => this.map(property.get?.()) }
-										: {}),
-								},
-							]),
-						),
-					}
-				: {}),
+			...(mappedProperties ? { properties: mappedProperties } : {}),
 		});
 		this.definitions.set(object, definition);
 		return object;

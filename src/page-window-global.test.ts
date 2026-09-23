@@ -896,6 +896,42 @@ it("keeps getters lazy and setters identical without mutating the definition", (
 	).toBe(undefined);
 });
 
+it("shares mapped getters for one property record while preserving its receiver and live operation", () => {
+	const test = fixture();
+	const unrelated = {};
+	const property = {
+		get(this: unknown) {
+			if (this === property) return test.nativeWindow;
+			expect(this).toBe(separate);
+			return unrelated;
+		},
+		set: vi.fn(),
+	};
+	const separate = { get: property.get };
+	const object = test.windowGlobal.createHostObject(test.context, {
+		properties: { first: property, alias: property, separate },
+	});
+	const definition = test.definitions.get(object);
+	const properties = definition?.properties ?? {};
+	expect(properties.first.get).toBe(properties.alias.get);
+	expect(properties.first.get).not.toBe(properties.separate.get);
+	expect(properties.first.set).toBe(property.set);
+	expect(properties.alias.set).toBe(property.set);
+	const reference = {};
+	test.bind(reference);
+	expect(Reflect.get(object, "first")).toBe(reference);
+	expect(Reflect.get(object, "alias")).toBe(reference);
+	expect(Reflect.get(object, "separate")).toBe(unrelated);
+	const replacement = {};
+	property.get = function () {
+		expect(this).toBe(property);
+		return replacement;
+	};
+	expect(Reflect.get(object, "alias")).toBe(replacement);
+	expect(Reflect.set(object, "alias", 7)).toBe(true);
+	expect(property.set).toHaveBeenCalledExactlyOnceWith(7);
+});
+
 it.each([false, true])(
 	"preserves method, nested-operation and retention function identity (properties: %s)",
 	(withProperties) => {
