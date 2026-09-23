@@ -218,6 +218,7 @@ function createScriptLoader(
 }
 
 const runtimes: PageRuntime[] = [];
+const pendingCallbacks = new Set<Promise<unknown>>();
 const webclientScripts: { format: "classic" | "module"; ok: boolean }[] = [];
 function webclientFormat(
 	value: string | undefined,
@@ -380,6 +381,11 @@ const observed: PageRuntimeFactory = {
 		const startCallback: PageRuntime["startCallback"] = (...args) => {
 			try {
 				const invocation = runtime.startCallback(...args);
+				pendingCallbacks.add(invocation.result);
+				void invocation.result.then(
+					() => pendingCallbacks.delete(invocation.result),
+					() => pendingCallbacks.delete(invocation.result),
+				);
 				void invocation.result.catch((failure) =>
 					reportFailure(failure, 0, undefined, "callback-runtime-failure"),
 				);
@@ -534,15 +540,22 @@ try {
 	const importsPending = () =>
 		imports().some((entry) => entry.state === "pending") ||
 		moduleStatuses().some((status) => status && status.pendingImports > 0);
+	// A settled script loader can still have a callback loading the client.
+	// Keep the bounded observation open until its entry actually executes or a
+	// source import begins, rather than treating an empty import list as idle.
+	const bootstrapPending = () =>
+		!webclientScripts.some((script) => script.format === "classic") &&
+		!imports().some((entry) => webclientFormat(entry.url) === "module");
+	const clientWorkPending = () => importsPending() || bootstrapPending();
 	const importDeadline = performance.now() + importWaitMs;
-	if (importsPending()) {
+	if (clientWorkPending()) {
 		const importStart = performance.now();
 		let nextProgress = importStart;
 		console.log(
 			JSON.stringify({ event: "pending-source-modules", importWaitMs }),
 		);
 		while (
-			importsPending() &&
+			clientWorkPending() &&
 			performance.now() < importDeadline &&
 			![...owners].every((owner) => owner.closed)
 		) {
@@ -553,6 +566,8 @@ try {
 					JSON.stringify({
 						event: "source-module-progress",
 						elapsedMs: Math.round(now - importStart),
+						bootstrapPending: bootstrapPending(),
+						pendingCallbacks: pendingCallbacks.size,
 						sourceModuleStatuses: moduleStatuses(),
 						runtimes: runtimes.map((runtime) => ({
 							closed: runtime.closed,
@@ -565,7 +580,8 @@ try {
 			await new Promise<void>((resolve) => setTimeout(resolve, 250));
 		}
 	}
-	importObservationTimedOut = importsPending();
+	importObservationTimedOut =
+		clientWorkPending() && performance.now() >= importDeadline;
 	sourceModuleStatuses = moduleStatuses();
 	moduleSettlementVerified =
 		sourceModuleStatuses.length > 0 &&
