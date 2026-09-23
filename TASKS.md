@@ -26,8 +26,7 @@
   local fixes: flattened symbol snapshots (84a93eecb), primitive-literal scope
   elision (a2a31bb07), and metered import deadlines (108c0fa26).
 - Source-module function fix (2d1d36a8e, local only) defers unused ordinary
-  function creation
-  until lookup, while freshly accounting for pending captures and preserving a
+  function creation until lookup, while freshly accounting for pending captures and preserving a
   single function charge across materialization and older scope snapshots.
   Ordinary scripts, generators and dynamic source references remain eager.
   The selected checks cover 249 passes across 30 files, with two existing skips;
@@ -52,6 +51,18 @@
   zero data and no active/pending sockets. Next: profile remaining evaluation
   cost in the complete page, including the shared browser scope retained by
   module functions; preserve fresh observations and full quotas.
+- Fresh full-page classic-library profile: about 95% of sampled time is retained
+  reconciliation, about 52% visitor self time, and under 1% GC. Descriptor and
+  symbol inspection are visible costs; scope collection is a smaller share.
+  Module profiling was not captured: one run ended before the ES client loaded,
+  another hit the externals deadline (120.4 s elapsed / 62.8 s CPU). Both verified
+  zero-data/socket cleanup. Shared CPU contention affects diagnostic completion.
+- Strict-arguments descriptor-tracking trial is discarded: 114 selected checks,
+  typing/lint, selected build and eight imports pass, but reversed comparisons
+  regress repeated scans about 5–12%, with no consistent real-call gain. Results,
+  data charges and provider observations match. Owned trial edits/tests removed;
+  the matching previously tested build is restored and all eight imports pass.
+  Profile files, comparison scripts and the temporary SDK copy are removed.
 - Earlier editor profiling attributes about 96% of sampled wall time to retained
   reconciliation: 14202 walks, 59.4 million closure visits, and 3703 top-level
   functions in actual assets. The existing four-entry capture cache already
