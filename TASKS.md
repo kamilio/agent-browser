@@ -23,6 +23,17 @@
 
 ## Current verified state
 
+- Actual classic externals descriptor attribution identifies the mutable,
+  guest-created 2517-entry translation dictionary as the main sampled owner:
+  14.3 million fresh string-descriptor reads. Initially frozen records account for less
+  than 1% of record reads in a separate visitor census, so generic frozen-object
+  caching is not the next target. Fresh classic literal tracking is rejected and
+  removed after 325 checks across 16 files pass but no live startup gain is established:
+  initial-script CPU 9.0→17.6 s; externals baseline/candidate both hit 30 s, with
+  184298/179579 step deltas and cleanup zero / sockets zero / no readiness or join.
+  Public runner results keep native cloning; pre-existing SDK edits are preserved.
+  Next: dictionary accounting that preserves identity, mutation and volatile reads,
+  avoiding cold snapshot rebuilds and the overhead of tracking every literal.
 - Maintained SafeJS argument data snapshots now stay private from later native
   Array hooks (poe-code 2cd7e530b; no push). The reproduced hook drops baseline
   accounting from 1039 to 25 units; the fix retains 1039 and rejects quota500.
