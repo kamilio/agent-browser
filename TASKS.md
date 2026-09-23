@@ -23,6 +23,25 @@
 
 ## Current verified state
 
+- Native inline styles share operations across canonical CSS aliases within each
+  element (ae9fb15); window mapping shares wrappers for identical property records
+  within each host definition (ea5950e; local commits, no push). The controlled
+  256-style allocation probe retains 18.3 MB versus 31.7 MB, with all 82688 names
+  preserved. Element separation, receiver identity, live mutation and revocation
+  pass all 279 selected manifest tests across seven files. Build, strict changed-test
+  typing, formatting and scoped lint with existing-rule/import-order exclusions
+  pass; the legacy inline-styles suite cannot load its missing report fixture.
+  Actual SafeJS/application-profile comparison keeps 45043 steps / 53695 current /
+  66754 peak units and all 11 assertions; both builds close at zero data. Generic
+  one-second startup times out and cleans up; that default gate is not passed.
+  Fresh serial 120 s/128 MiB public runs: changed build times out in externals with
+  zero-data/socket cleanup; original native control finishes externals in 75.5 s;
+  changed repeat finishes in 97.7 s. The latter two admit i18n/editor then heap-OOM
+  without verified cleanup. No public startup gain or readiness/join is established;
+  the timing difference remains unresolved. A separate GC probe confirms unused
+  source definitions remain retained after window installation. Next: investigate
+  that registry's lifecycle and startup cost. Full memory/startup/meeting/media
+  gates remain open. Temporary validation artifacts removed; working builds reused.
 - Maintained SafeJS retains validated host-property operations in two own fixed
   slots instead of dictionary records (d6ccce08c; local commit, no push). The
   isolated 262144-property probe retains 17.4–18.3 MB additional heap versus
