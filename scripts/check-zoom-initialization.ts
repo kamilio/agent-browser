@@ -326,7 +326,10 @@ function reportFailure(
 	failure: unknown,
 	characters: number,
 	filename?: string,
-	event: "runtime-failure" | "module-lifetime-abort" = "runtime-failure",
+	event:
+		| "runtime-failure"
+		| "module-lifetime-abort"
+		| "callback-runtime-failure" = "runtime-failure",
 ) {
 	function own(value: unknown, key: string): unknown {
 		if (!value || typeof value !== "object" || types.isProxy(value))
@@ -374,6 +377,18 @@ const observed: PageRuntimeFactory = {
 	createPageRuntime(options) {
 		const runtime = factory.createPageRuntime(options);
 		runtimes.push(runtime);
+		const startCallback: PageRuntime["startCallback"] = (...args) => {
+			try {
+				const invocation = runtime.startCallback(...args);
+				void invocation.result.catch((failure) =>
+					reportFailure(failure, 0, undefined, "callback-runtime-failure"),
+				);
+				return invocation;
+			} catch (failure) {
+				reportFailure(failure, 0, undefined, "callback-runtime-failure");
+				throw failure;
+			}
+		};
 		const evaluate: PageRuntime["evaluate"] = async (
 			source,
 			evaluationOptions,
@@ -424,6 +439,7 @@ const observed: PageRuntimeFactory = {
 		return new Proxy(runtime, {
 			get(target, key) {
 				if (key === "evaluate") return evaluate;
+				if (key === "startCallback") return startCallback;
 				const value = Reflect.get(target, key, target);
 				return typeof value === "function" ? value.bind(target) : value;
 			},
