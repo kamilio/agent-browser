@@ -23,6 +23,16 @@
 
 ## Current verified state
 
+- Maintained SafeJS builds private binding snapshot vectors without allocating
+  per-entry descriptors (e2b6646f2). Three before-fix regressions show inherited
+  native get/set descriptor hooks aborting capture and appends to a frozen
+  snapshot silently losing roots. Null-prototype indexed vectors preserve
+  immutable snapshots, undefined slots, aliases and quota enforcement. All 245
+  focused checks across 20 files pass, including both GC cases explicitly enabled
+  in workers; strict owned test typing, scoped lint/format and maintained SDK
+  build/eight imports pass. A 5000-closure changing-binding fixture preserves
+  12296 units and lowers warmed CPU about 30–34%; isolated snapshot rebuilding
+  is about 6–8× faster. No whole-page speedup/readiness claim. Local commit only.
 - Maintained SafeJS keeps class constructor capture snapshots private (20a31c22a).
   Before-fix native flatMap/push hooks drop 2027 units to 1027/1 and bypass both
   ordinary/held quotas. Indexed collectors now retain fresh fields, private
@@ -46,12 +56,13 @@
   owned test typing, scoped lint/format and SDK build/eight imports. A 1200-entry
   source module fixture preserves 91254 steps / 148120 current and peak units;
   warmed CPU rounds fall about 20–30%. No full-page speedup established.
-- The final uninstrumented class-fix SDK/public diagnostic at supported 256 MiB
+- The final uninstrumented binding-snapshot SDK/public diagnostic at supported 256 MiB
   and 120 s source/network allowances returns HTTP 200, passes all 13 classics,
   fetches the webclient shim/ES entry (187/4383 bytes), and prepares seven ES
   modules before the source import deadline revokes the realm. Latest sampled
-  progress: 9024576 steps / 6884380 units. Cleanup verifies data/sockets zero;
-  no fulfilled import, UI readiness or meeting join. Supported diagnostic
+  progress: 9029396 steps / 6886344 units. Cleanup verifies data/sockets zero;
+  no fulfilled import, UI readiness or meeting join. Reusable SDK includes the
+  tested snapshot change. Supported diagnostic
   scaling clears no default-resource gate; the 120 s application cap stays intact.
 - Bounded array/record capture pooling remains capped at 64 physical slots.
   Prior 600-array / 600-record fixtures preserve charge with about 14% / 19–20%
