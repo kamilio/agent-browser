@@ -23,21 +23,40 @@
 
 ## Current verified state
 
-- Maintained SafeJS snapshots arguments onto private continuation frames and
-  reuses bounded capture storage (ed281df99; local commit, no push). Compiled Node24
-  default-stack baseline raises RangeError for both 1024 and 1025 nested arguments;
-  the fix charges 11281 units for 1024 and reports budgetExceeded/dataDepth for
-  1025. Descriptors are captured before callbacks; siblings, aliases, nested scans,
-  accessor captures and held quotas remain active. All 155 focused tests across
-  16 files pass (six existing skips), strict runtime/test typing, scoped lint,
-  test formatting and SDK build/eight imports pass. A 600-arguments fixture keeps
-  its 22216-unit charge with about 25% less warmed CPU and 22% less sampled total
-  allocation over 2000 measurements. Actual DOM constructor baseline/candidate
-  both pass 25 assertions at an explicit 16 s diagnostic deadline, preserving
-  47315 steps / 62044 peak units; both time out at the default 1 s deadline.
-  A repeated-closure-property-read shortcut is rejected: existing native hooks
-  make later reads expose retained data. No metadata or primary reconciliation
-  shortcut is retained. The validated reusable SDK contains the arguments fix.
+- Maintained SafeJS keeps foreign-proxy descriptor snapshots private from native
+  Array map/species hooks (cc5623758), and reuses bounded record capture buffers
+  (5464b7bf8; local commits, no push). Four before-fix regressions expose snapshots,
+  lose 1015→1 units and miss ordinary/held data quotas. Private indexed capture
+  restores the charge without skipping descriptor traps. Record pooling preserves
+  callback order, siblings, aliases, nested scans and failed-capture cleanup.
+  All 90 focused tests across 15 files pass, strict test typing/scoped lint/format
+  and SDK build/eight imports pass. A 600-record fixture preserves 38400 units with
+  about 19–20% less warmed CPU; sampled allocation over 2000 measurements falls
+  from 1.01 GB to 0.79 GB (22%). Its 900 MB allocation gate fails before and passes
+  after. The reusable SDK contains both fixes. The uninstrumented public run at
+  120 s / 192 MiB still times out in externals: 187748 delta steps, 2252153 peak
+  units, no client imports. Nine initial classics retain their exact steps/data;
+  cleanup data/sockets zero. No full-page startup speedup or readiness pass claimed.
+- Compiled Node24 default-stack boundaries remain intact: 1024 records charge
+  15361 units, 1024 arguments charge 11281 and 1025 indexed closures charge 1029;
+  each next level reports budgetExceeded/dataDepth. Arguments pooling previously
+  preserved 22216 units with about 25% less CPU / 22% less sampled allocation.
+  All pooled vectors remain capped at 64 slots; the earlier uncapped 128 MiB OOM
+  fixture charges only 243 units, while the retained cap fits and preserves charge.
+  The prior GC checks and 25 actual DOM assertions at an explicit 16 s diagnostic
+  deadline pass; baseline/candidate both time out at the default 1 s deadline.
+  The repeated-closure-property-read shortcut remains rejected: later native
+  reads can expose retained data. No metadata or primary reconciliation bypass.
+- A sampled normal-CDN 30 s / 192 MiB public diagnostic preserves all nine initial
+  classics and reaches 183903 externals delta steps / 2252153 peak units, then
+  times out and cleans up data/sockets to zero. Main-thread active CPU samples
+  attribute 40.7% to traversal and 24.4% to GC. Across 225 sampled measurements,
+  factory closures comprise 47% of first object visits, tracked record projections
+  21%; instrumentation is diagnostic and does not establish startup performance.
+  A mislabelled array-descriptor counter is excluded from analysis.
+  Temporary diagnostic SDK copies, tools, logs and profiles removed. Next:
+  measure closure-to-scope collection fanout and repeated native descriptor reads,
+  preserving observable providers, metadata, full primary graph and quotas.
 - Normal public Zoom initialization at an explicit 192 MiB heap / 120 s source
   deadline completes all 13 classics in one run (externals 91.6 s), then rejects
   the ES import after loginview fetch timeouts. Repeats still time out in externals;
@@ -49,14 +68,6 @@
   All completed public/replay runs clean up data/sockets to zero. The isolated
   replay's 60 s import allowance is not exercised before externals fails. Module graph,
   readiness, joining/notetaker/media and default-resource acceptance remain open.
-- Maintained private closure capture pooling remains capped at 64 slots
-  (cf488c731). The uncapped 128 MiB OOM regression charges only 243 units; the cap
-  fits and preserves that charge. The 600-closure fixture preserves 360600 units
-  with about 40% less warmed CPU / 81% less sampled allocation; its attributed
-  capture allocation falls from 22.1 MB to 44 KB. The prior 130 focused tests,
-  both GC checks and compiled 1025/1026 closure-depth boundaries pass. Next:
-  remaining full-page traversal/GC pressure with full metadata reads and quotas.
-  Temporary validation tools, logs, profiles and private fixtures removed.
 - Actual ES chunks, including 3.49M-unit loginview and 1.10M-unit editor-core,
   compile with the existing Unicode application regex allowances; the apparent
   editor string-limit failure was a probe omitting those allowances. Four captured
