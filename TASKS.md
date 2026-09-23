@@ -17,49 +17,47 @@
 ## Current verified state
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse this
-  browser's working dist and preserve unrelated changes. Selected workspace
-  builds and all eight built-import checks pass; full native/SafeJS gates remain open.
-- Browser fix 2d43d80 keeps bounded observation open during delayed bootstrap;
-  strict typing, formatting, six scenarios and live delayed callbacks verified it.
-- Accounting now uses private snapshots, bounded capture pooling, tracked records
-  and arrays, import/export indexes, deferred module functions and metered import
-  deadlines. Object.create (0636e351d), ordinary constructor receivers (cb5460953)
-  and classic/source-module array literals (b19ea46d6) reuse mutation-invalidated
-  descriptors. Selected tests and compiled fixtures verified fresh descendants,
-  ordinary/held quotas and lower accounting cost; no complete startup gain is proven.
-- Scope storage fix 4e8956eb5 pins direct native calls, removing per-operation
-  argument vectors without exposing binding cells or changing iteration. The
-  regression went from 206 vectors to zero. All 197 selected tests across 20 files
-  pass (two existing skips), as do scoped lint, formatting, the maintained build
-  and eight built imports. Reversed fixtures retain 4107 data units and 1000 units
-  of native growth, using about 6% less CPU and 32% less temporary allocation.
-- The last extended live check used a 256 MiB heap and temporary 600 s limits.
-  All 13 classics passed, all seven modules linked, and rolldown evaluated.
-  editor-core was still evaluating when the import observation ended; the DOM
-  showed only a loading image and "Joining Meeting...". No controls, admission or
-  sockets were established. Closed runtimes, zero retained data and sockets were verified.
-- Corrected node attribution uses each function's scope module ID. Earlier hot
-  offsets belong to Rolldown's export-copy helper, not the calling editor-core
-  source. A fresh pre-scope-fix 30 s sample reached React's property constructor
-  in editor-core: 2168 reconciliations consumed 24 s, with about 2.2 GB of sampled
-  temporary allocation. Accounting and property reflection dominate. A separate
-  10 s sample found many repeated arguments-object descriptors and ordinary
-  arrays; reflection-result arrays did not dominate the reported top shapes.
-  The walker reaches Node's optimizing compiler in a warmed local fixture.
-- Post-fix live validation again passed all 13 classics and linked seven modules.
-  During a bounded 30 s editor-core sample, 2506 reconciliations consumed 28.5 s;
-  React's property constructor continued executing. About 2.45 GB of allocation
-  was sampled. Workload/timing differences prevent a complete startup speed claim.
-  Intentional shutdown after sampling verified zero retained data and closed
-  runtimes/sockets (exit 1). No meeting admission or application readiness was verified.
-- FingerprintJS screen-frame polling dominated an earlier callback-only sample,
-  but later probes linked and evaluated modules before shutdown: a queue deadlock
-  is not established. Completed probes verified runtime/data/socket cleanup.
-  One older queue trace ended with SIGTERM and no runtime cleanup report; its
-  process is gone. Profiles and traces stay in memory; no artifacts remain.
-- No lazy arguments change is implemented. Native canvas, worker/Wasm and socket
-  probes are separate gates. PCM handling is not a Zoom audio source; actual RTC
-  capture, transcription, playback, microphone and avatar support remain open.
+  browser's working dist and preserve unrelated changes. The selected workspace
+  build and all eight built-import checks pass; full native/SafeJS gates remain open.
+- The native loader observes delayed bootstrap and loads classic scripts plus
+  source modules. Accounting uses private snapshots, bounded capture pooling,
+  tracked records/arrays, import/export indexes, deferred module functions and
+  metered import deadlines. Object.create tables, ordinary constructor receivers
+  and classic/module array literals reuse mutation-invalidated descriptors;
+  scope storage avoids per-operation argument arrays.
+- SafeJS commit 4eca44c48 defers unread unmapped arguments in classic scripts and
+  source modules. Binding reads and snapshots create the native arguments object;
+  mapped and bigint arguments stay eager. Descendants and materialized descriptors
+  remain freshly measured. Late materialization, aliases, ordinary/held quotas,
+  reentrant callbacks and mutable internal-symbol membership are covered.
+  Broader selected regressions passed 362 tests across 32 files (two existing
+  skips); the final arguments/symbol suite passed 69 tests across eight files.
+  Scoped lint, new-file formatting and the maintained build pass.
+- The final compiled fixture (160 retained argument scopes, 3000 walks per CPU
+  pass) used about 62% less accounting CPU and 80% less sampled allocation.
+  Both paths retained 5776 units, detected 1000 units of descendant growth and
+  1019 units including native mutation, and ended at 6795 after materialization.
+  An earlier live sample found 164 unread unmapped arguments among 203 retained
+  arguments objects. No complete live startup speedup is established.
+- The deferred-arguments live attempt used a 256 MiB heap and temporary 600 s
+  limits. All 13 classic scripts passed and seven modules linked, but editor-core
+  evaluation ended on the source-import deadline after about 526 s. The DOM still
+  showed a loading image and "Joining Meeting...". No controls, admission, presence
+  or sockets were established. Cleanup verified closed runtimes, zero retained
+  data and closed sockets; the process exited 1 and is gone.
+- A CPU sample from that same process still showed retained-graph traversal as
+  expensive, with garbage collection taking about 22% of the 10.6 s sample.
+  A separate 10 s allocation sample attributed about 52 MB to the walker,
+  reflection, root iteration and bound-function captures. These are diagnostic
+  samples, not comparable startup benchmarks. Profiles stayed in memory and
+  the diagnostic inspector was closed. No owned temporary artifacts remain.
+- Correct source attribution uses each function's scope module ID: earlier hot
+  offsets belonged to Rolldown's export-copy helper; later samples reached React
+  initialization in editor-core. FingerprintJS polling does not establish a queue
+  deadlock. The data walker reaches Node's optimizing compiler in a warmed fixture.
+- Native canvas, worker/Wasm and socket probes are separate gates. PCM handling
+  is not a Zoom audio source; actual RTC capture, transcription, playback,
+  microphone and avatar support remain unverified.
 
 ## Outstanding gates
 
@@ -67,8 +65,8 @@
   verify interactive controls and actual joining/admission/presence. Explicit
   120 s / 256 MiB diagnostics clear no default-resource acceptance gate.
   Source-module deferral does not optimize classic-script function hoisting.
-  Investigate repeated arguments-object reflection and retained graph traversal
-  during editor-core evaluation without weakening native/provider observations.
+  Investigate the remaining retained-graph traversal and allocation costs during
+  editor-core evaluation without weakening native/provider observations.
   Fixture improvements have not established a complete live startup speedup.
 - Verify every notetaker capability listed above. The working notetaker captures
   one browser audio track with getDisplayMedia and a 16000 Hz AudioWorklet, with
