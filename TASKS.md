@@ -23,6 +23,19 @@
 
 ## Current verified state
 
+- Maintained SafeJS retains validated host-property operations in two own fixed
+  slots instead of dictionary records (d6ccce08c; local commit, no push). The
+  isolated 262144-property probe retains 17.4–18.3 MB additional heap versus
+  55.2 MB before; it passes at 48 MiB old-space where the prior build aborts.
+  Accounting remains 3265792 data / 262400 work units. Snapshot/live-state,
+  revocation, prototype isolation and invalid/proxy-record behavior pass all 213
+  selected tests; strict test typing, scoped lint/format and the maintained SDK
+  build with eight import checks pass. A fresh authorized 120 s/128 MiB public
+  probe finishes externals in 90.6 s, admits i18n/editor sources, then aborts with
+  heap OOM before a final report or verified cleanup. No public startup gain,
+  readiness or join is established. Next: reduce style/window getter and method
+  closure retention without changing identity, validation, quotas or held scans.
+  Default startup, full-client memory and all meeting/media gates remain open.
 - Maintained SafeJS source graphs use compact tokens/ASTs (e8c79c840), and packing
   now uses DFS and releases copied entries from unobserved parser arrays with
   pinned property writes (8830013af; local commits, no push). A concurrent rebase
