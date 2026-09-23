@@ -23,26 +23,42 @@
 
 ## Current verified state
 
-- Maintained SafeJS now skips unused stack snapshots and array/host/brand checks
-  for privately certified SDK-created frozen closures (poe-code c39b5bce0; local,
-  no push). Foreign guards, repeated property reads, private/prototype/source/proxy
-  roots, weak contributions and full held primary reconciliation remain active.
-  Getter caching was rejected: native construction and WeakMap hooks reproduce
-  1007→2 units / quota500 bypass; the retained change preserves 1007 and rejects
-  the quota. All 254 selected checks across 18 files pass with actual GC, strict
-  new-test typing, scoped lint, the maintained SDK build and eight entry checks.
-  Focused 500-closure scans retain 7390 units and lower median CPU 373→352 ms.
-  Serial public 128 MiB/30 s baseline/candidate probes both time out in externals
-  (193346/191313 steps, identical 2252153 peak units); CPU contention limits
-  comparisons and no startup gain is established. Both verify cleanup zero /
-  sockets zero, with no readiness or join. Temporary validation artifacts removed.
-  Broader initial-script/waiting-callback census times out before externals:
-  closures account for 11.47 million of 23.19 million ordinary-object visits;
-  48.16 million of 50.55 million emitted captures are already seen. Scope visits
-  total 30.85 million with only 1913 binding-projection rebuilds. These counts
-  identify repeated traversal, not precise CPU attribution or externals coverage.
-  Next: measure repeated scope/capture collection while preserving live bindings,
-  volatile observations, quota enforcement and full held primary scans.
+- Maintained SafeJS appends private graph continuation frames with pinned native
+  push to a null-prototype stack, eliminating per-frame property descriptors
+  (poe-code 347f0a65b; local, no push). Depth boundaries, DFS snapshots, proxy
+  order, native hook isolation and full held primary reconciliation stay active.
+  All 363 selected checks across 30 files pass with actual GC, strict new-test
+  typing, scoped lint, the maintained SDK build and eight entry checks. Focused
+  branching scans retain 18574 units while median CPU falls 876→702 ms (~20%).
+  Certified frozen SDK closures also retain the narrower 41310d3c5 optimization;
+  getter caching and pinned visited-table calls remain rejected.
+- Fresh serial 128 MiB/30 s public baseline/candidate probes with 30 s observation
+  windows both time out in externals (187689/185084 steps, identical 2252153 peak
+  units). No startup gain is established; both verify cleanup zero / sockets zero,
+  with no readiness or join. The initialization probe now reports delayed callback
+  failures using bounded own-data error fields (0b85967; local, no push), preserves
+  invocation/phase promises and rejection identity, and avoids proxy traps in
+  controlled checks. The native build, scoped lint and 40 selected native checks
+  pass; native and live gates remain separate.
+- A fresh waiting-callback/externals CPU profile attributes ~87% of active samples
+  to reconciliation, 49.8% self to the graph visitor, 4.5% to continuation appends,
+  and 7.7% to GC. Visitor line ticks identify symbol enumeration (6.85% of visitor
+  ticks), closure property reads (4.31%), record key enumeration (4.26%) and frozen
+  closure registry lookup (4.0%); sampled attribution is subject to contention.
+  Earlier initial-script census did not reach externals: 11.47 million of 23.19
+  million ordinary-object visits are closures; 48.16 million of 50.55 million
+  captures are already seen; 30.85 million scope visits rebuild bindings only 1913
+  times. Shared-scope visited-call experiments show no useful improvement.
+- Extended 120 s/128 MiB-old-space diagnostic finishes externals in 107.3 s
+  (215221 steps, 681832 current / 2925610 peak units), then reaches the webclient
+  bootstrap and admits webclient.es.min.js (4383 chars), rolldown runtime (1365)
+  and i18n-core (362461). The process aborts with a confirmed JavaScript heap OOM
+  during module preparation, without a final result or verified application
+  cleanup. This does not pass the normal startup, full-client heap, readiness or
+  meeting gates. Temporary validation artifacts removed; working builds retained.
+  Next: profile retained heap before i18n preparation and distinguish SDK locale
+  data, retained Script AST/context and module parser allocations at the same
+  memory limit; keep volatile observations, quotas and held primary scans intact.
 - Host-function metadata shortcuts remain rejected. The certified census covers
   only 52 tables / about 3% of eligible object visits; focused improvements never
   established a public startup gain. Maintained tables retain fresh observations.
