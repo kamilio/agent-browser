@@ -23,6 +23,17 @@
 
 ## Current verified state
 
+- Maintained SafeJS bounds repeated visited-capture lookups (0afbe9079) with
+  four private positive identities per measurement, cleared on success/failure.
+  The before-fix regression performs 101 lookups per shared root; the fix
+  performs two while calling all 100 collectors afresh. Pending unvisited aliases,
+  primitive charges, changed descendants, reentrancy and ordinary/held quotas
+  remain enforced. All 189 focused checks across 26 files pass, including both
+  GC cases explicitly enabled in workers; strict owned test typing, scoped
+  lint/format and maintained SDK build/eight imports pass. Serial 5000-closure
+  shared-scope comparisons preserve 10016 units; median CPU is 875.4→862.9 ms
+  (about 1.4% lower), much smaller than the early prototype estimate. Local
+  commit only; no whole-page speedup or readiness claim.
 - Maintained SafeJS builds private binding snapshot vectors without allocating
   per-entry descriptors (e2b6646f2). Three before-fix regressions show inherited
   native get/set descriptor hooks aborting capture and appends to a frozen
@@ -56,13 +67,13 @@
   owned test typing, scoped lint/format and SDK build/eight imports. A 1200-entry
   source module fixture preserves 91254 steps / 148120 current and peak units;
   warmed CPU rounds fall about 20–30%. No full-page speedup established.
-- The final uninstrumented binding-snapshot SDK/public diagnostic at supported 256 MiB
+- The final uninstrumented visited-capture SDK/public diagnostic at supported 256 MiB
   and 120 s source/network allowances returns HTTP 200, passes all 13 classics,
   fetches the webclient shim/ES entry (187/4383 bytes), and prepares seven ES
   modules before the source import deadline revokes the realm. Latest sampled
-  progress: 9029396 steps / 6886344 units. Cleanup verifies data/sockets zero;
+  progress: 9022851 steps / 6882683 units. Cleanup verifies data/sockets zero;
   no fulfilled import, UI readiness or meeting join. Reusable SDK includes the
-  tested snapshot change. Supported diagnostic
+  tested capture-lookup change. Supported diagnostic
   scaling clears no default-resource gate; the 120 s application cap stays intact.
 - Bounded array/record capture pooling remains capped at 64 physical slots.
   Prior 600-array / 600-record fixtures preserve charge with about 14% / 19–20%
@@ -73,6 +84,11 @@
 - Actual ES profiles identify editor-core evaluation as the current stall:
   about 47% of CPU samples land in retained traversal and 17% in GC; property
   getters and indexed closure collectors dominate traversal line samples.
+  A separate diagnostic counts 7184 editor-core measurements; 57 sampled walks
+  average 7063 objects, 5528 owned closures and 17609 scope visits. Counter
+  overhead prevents a startup timing claim. The walker reaches TurboFan with
+  only two observed ES deoptimizations; JIT size and iterative scope traversal
+  prototypes provide no demonstrated gain and are discarded.
   Each module's link-phase interpreter work is only about 0.13–0.19 s; fetching,
   parsing and preparation consume the earlier import allowance. Quadratic
   export lookup is reproduced separately, but is not established as the main
