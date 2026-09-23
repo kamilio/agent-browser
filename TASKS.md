@@ -17,55 +17,46 @@
 ## Current verified state
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse this
-  browser's working dist and preserve unrelated changes. The selected workspace
-  build and eight built-import checks pass; full native/SafeJS passes remain open.
-- Retained accounting work includes private snapshots, bounded capture pooling,
-  tracked fixed-key records, import/export indexes, deferred module functions,
-  symbol snapshot elision and metered import deadlines. Scripts, generators and
-  dynamic source references still create functions eagerly. Fresh observations,
-  complete quotas and materialization identity remain required.
-- Browser fix 2d43d80 keeps bounded observation open during delayed bootstrap.
-  Strict typing, formatting, six scenarios and live delayed callbacks verified it.
-- Earlier 120 s / 256 MiB live checks either timed out in externals.min.js or
-  prepared seven modules before import expiry. None established readiness or
-  joining. All completed probes verified closed runtimes, zero data and sockets.
-- Startup profiling found reconciliation (~71% CPU), GC (~28%) and substantial
-  temporary allocation (1.54 GB sampled over 20 s). After Object.create tracking,
-  a 10 s live sample still recorded 602k ordinary-table descriptor reads. React's
-  144 eight-field DOM property records contributed 66% of those reads; Zoom's
-  external-library constructor source confirmed the shape. Profiles stayed in memory.
-- Object.create fix 2be9a4d68 uses existing mutation-tracked property tables.
-  All 286 selected tests and scoped lint passed. Compiled fixtures preserve
-  charges/growth/steps, using ~42% less walk CPU and ~97% less allocation.
-- Ordinary constructor receiver fix 3b9bddb3f extends that tracking to fresh
-  instances while preserving native prototypes and explicit return identities.
-  The React-shaped regression failed before with eight fresh descriptor reads.
-  All 334 selected checks across 14 files, scoped lint, the maintained build and
-  eight built imports pass. Reversed, warmed compiled fixtures preserve charges
-  and native growth, using ~13% less walk CPU and ~98% less temporary allocation.
-  These fixture results do not establish live startup or normal-budget acceptance.
-- Source tracing maps `html-classic:59` to FingerprintJS 3.3.3, specifically its
-  screen-frame polling code. One 30 s sample saw only this callback before
-  shutdown released module linking. A subsequent sample linked all seven modules
-  and reached editor-core evaluation before shutdown, so a queue deadlock is not
-  established. Full retained-data reconciliation dominates both paths. Completed
-  30 s probes closed with zero data and sockets; neither joined the meeting.
-  A longer queue trace ended with SIGTERM before sampling (four modules prepared);
-  its process is gone, but it emitted no runtime cleanup report. No artifacts remain.
-- Array literal fix b19ea46d6 reuses descriptors for privately tracked classic
-  and source-module arrays. Native mutations invalidate snapshots, including
-  partially rejected length shrinks; descendants and quotas remain fresh.
-  All 322 distinct selected checks, scoped lint, the maintained workspace build
-  and eight built-import checks pass. Reversed compiled fixtures retain 3699
-  data units, 1000 units of native growth and 803 node visits, with ~17% less
-  accounting CPU and ~89% less temporary allocation. Live acceptance remains open.
-- Latest live check used that SDK with a 256 MiB heap and temporary 600 s limits.
-  All 13 classics passed; externals used ~59 s CPU. All seven modules linked and
-  rolldown evaluated, but editor-core was still evaluating when the 600 s import
-  observation ended. Last sample: 9029257 steps / 6943205 data units. The DOM
-  still showed only a loading image and "Joining Meeting..."; no controls,
-  admission or sockets. Cleanup verified closed runtimes, zero data and sockets;
-  the process exited. Checked-in limits and working browser dist are unchanged.
+  browser's working dist and preserve unrelated changes. Selected workspace
+  builds and all eight built-import checks pass; full native/SafeJS gates remain open.
+- Browser fix 2d43d80 keeps bounded observation open during delayed bootstrap;
+  strict typing, formatting, six scenarios and live delayed callbacks verified it.
+- Accounting now uses private snapshots, bounded capture pooling, tracked records
+  and arrays, import/export indexes, deferred module functions and metered import
+  deadlines. Object.create (0636e351d), ordinary constructor receivers (cb5460953)
+  and classic/source-module array literals (b19ea46d6) reuse mutation-invalidated
+  descriptors. Selected tests and compiled fixtures verified fresh descendants,
+  ordinary/held quotas and lower accounting cost; no complete startup gain is proven.
+- Scope storage fix 4e8956eb5 pins direct native calls, removing per-operation
+  argument vectors without exposing binding cells or changing iteration. The
+  regression went from 206 vectors to zero. All 197 selected tests across 20 files
+  pass (two existing skips), as do scoped lint, formatting, the maintained build
+  and eight built imports. Reversed fixtures retain 4107 data units and 1000 units
+  of native growth, using about 6% less CPU and 32% less temporary allocation.
+- The last extended live check used a 256 MiB heap and temporary 600 s limits.
+  All 13 classics passed, all seven modules linked, and rolldown evaluated.
+  editor-core was still evaluating when the import observation ended; the DOM
+  showed only a loading image and "Joining Meeting...". No controls, admission or
+  sockets were established. Closed runtimes, zero retained data and sockets were verified.
+- Corrected node attribution uses each function's scope module ID. Earlier hot
+  offsets belong to Rolldown's export-copy helper, not the calling editor-core
+  source. A fresh pre-scope-fix 30 s sample reached React's property constructor
+  in editor-core: 2168 reconciliations consumed 24 s, with about 2.2 GB of sampled
+  temporary allocation. Accounting and property reflection dominate. A separate
+  10 s sample found many repeated arguments-object descriptors and ordinary
+  arrays; reflection-result arrays did not dominate the reported top shapes.
+  The walker reaches Node's optimizing compiler in a warmed local fixture.
+- Post-fix live validation again passed all 13 classics and linked seven modules.
+  During a bounded 30 s editor-core sample, 2506 reconciliations consumed 28.5 s;
+  React's property constructor continued executing. About 2.45 GB of allocation
+  was sampled. Workload/timing differences prevent a complete startup speed claim.
+  Intentional shutdown after sampling verified zero retained data and closed
+  runtimes/sockets (exit 1). No meeting admission or application readiness was verified.
+- FingerprintJS screen-frame polling dominated an earlier callback-only sample,
+  but later probes linked and evaluated modules before shutdown: a queue deadlock
+  is not established. Completed probes verified runtime/data/socket cleanup.
+  One older queue trace ended with SIGTERM and no runtime cleanup report; its
+  process is gone. Profiles and traces stay in memory; no artifacts remain.
 - No lazy arguments change is implemented. Native canvas, worker/Wasm and socket
   probes are separate gates. PCM handling is not a Zoom audio source; actual RTC
   capture, transcription, playback, microphone and avatar support remain open.
@@ -76,9 +67,9 @@
   verify interactive controls and actual joining/admission/presence. Explicit
   120 s / 256 MiB diagnostics clear no default-resource acceptance gate.
   Source-module deferral does not optimize classic-script function hoisting.
-  Profile active editor-core work and its retained graph after array tracking
-  before choosing further accounting changes. No complete live startup
-  speedup has been established from the fixture improvements.
+  Investigate repeated arguments-object reflection and retained graph traversal
+  during editor-core evaluation without weakening native/provider observations.
+  Fixture improvements have not established a complete live startup speedup.
 - Verify every notetaker capability listed above. The working notetaker captures
   one browser audio track with getDisplayMedia and a 16000 Hz AudioWorklet, with
   audio processing disabled. No equivalent native source, transcription,
