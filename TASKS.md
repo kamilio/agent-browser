@@ -23,6 +23,29 @@
 
 ## Current verified state
 
+- Maintained SafeJS pins intrinsic record ownership checks/insertion (ab3b719f9)
+  and traverses indexed native closure captures iteratively (8a148a0a3; local
+  commits, no push). Two before-fix native WeakSet hooks spoof or expose ownership
+  certificates. Compiled Node24 default-stack baseline raises RangeError on a
+  permitted 1025-closure chain; the fix charges 1029 units and reports
+  budgetExceeded/dataDepth for 1026 closures. All 104 selected SDK checks across
+  12 files pass (two existing skips), strict test typing/scoped lint and SDK
+  build/eight imports pass. Actual browser 21 assertions preserve 46447 steps /
+  63467 current / 69477 peak and cleanup zero. Prototype/provider/copy depth paths
+  retain separate gates; no general depth or startup performance pass is claimed.
+  Earlier tracked-table projection is rejected: a 44–45% closure-heavy fixture
+  gain loses inherited closure captures (1001→1 units) and restored iterator
+  payloads (1010→1), including held quotas. Eleven runtime-state guards preserve
+  baseline semantics (127d7f871); shortcut source/tests removed. Fresh public
+  baseline advances 186137 externals steps / 2252153 peak; rejected shortcut
+  reaches 188531 / 2644503. The retained closure-depth fix reaches 175284 /
+  2644347 peak; the loader classifies execution-timeout, while its inner body log
+  covers 17.9 s and excludes prefix waits. Preparation/queue variation prevents
+  a speedup or regression attribution. All routes pass nine classics but no
+  imports/readiness/join; cleanup data/sockets zero. Reusable SDK updated and
+  temporary artifacts removed. Next: stable full-page replay and larger traversal/
+  preparation costs with runtime-state ownership/invalidation, preserving full
+  quotas. Every initialization/join/notetaker/media gate remains open.
 - Maintained SafeJS tracks fixed-key classic data records at creation (19396ca3f;
   local commit, no push), extending existing private revision accounting to small
   records. The before-fix regression rereads two records 122 times during eight
