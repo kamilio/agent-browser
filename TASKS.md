@@ -17,59 +17,46 @@
 ## Current verified state
 
 - Maintained SafeJS source/build: /home/kjopek/project/poe-code/packages/safe-js.
-  Reuse this browser's working dist; preserve unrelated dirty sources in both
-  repositories. The full native and full SafeJS suites have no completed pass
-  established for the current trees.
-- Retained SafeJS improvements include private data snapshots/descriptors,
-  bounded capture pooling, direct SDK getter dispatch, fixed-key source records,
-  discarded module-snapshot elision and static import/export indexes. Recent
-  local fixes: flattened symbol snapshots (84a93eecb), primitive-literal scope
-  elision (a2a31bb07), and metered import deadlines (108c0fa26).
-- Source-module function fix (2d1d36a8e, local only) defers unused ordinary
-  function creation until lookup, while freshly accounting for pending captures and preserving a
-  single function charge across materialization and older scope snapshots.
-  Ordinary scripts, generators and dynamic source references remain eager.
-  The selected checks cover 249 passes across 30 files, with two existing skips;
-  strict typing, scoped lint, new-file formatting, selected workspace build and
-  all eight built imports pass. Full suites are not established.
-- Reversed compiled comparisons at 600 and 3703 hoisted functions preserve
-  output, steps, data charges and zero-data cleanup. At 3703 functions, aggregate
-  CPU falls about 30%; shared contention affects elapsed time. This is a fixture
-  result, not proof of live startup or default-resource acceptance.
-- Current unchanged Zoom module graph (7.2.0.12729) prepares seven modules but
-  expires at 122.7 s / 88.4 s CPU, with 8372226 steps and 6057821 data units.
-  Cleanup verifies no active requests and zero data. This isolated graph has no
-  page globals or sockets and establishes no native readiness or admission.
-- Default-identity native probe receives HTTP 200 after redirect to /wc/join/...
-  and times out in Vue after 120.4 s; 16 scripts execute, no meeting client is
-  fetched, no sockets open, and cleanup verifies zero data.
-- Desktop-identity native probe receives HTTP 200, passes all 13 classic scripts
-  and prepares all seven ES modules. Externals completes in 77.0 s / 67.0 s CPU;
-  its timing improvement is not attributable to source-module deferral. The
-  pending module import reaches its 120 s deadline; last sample is 8990449 steps
-  / 6881886 data units. No readiness, admission or sockets. Cleanup verifies
-  zero data and no active/pending sockets. Next: profile remaining evaluation
-  cost in the complete page, including the shared browser scope retained by
-  module functions; preserve fresh observations and full quotas.
-- Fresh full-page classic-library profile: about 95% of sampled time is retained
-  reconciliation, about 52% visitor self time, and under 1% GC. Descriptor and
-  symbol inspection are visible costs; scope collection is a smaller share.
-  Module profiling was not captured: one run ended before the ES client loaded,
-  another hit the externals deadline (120.4 s elapsed / 62.8 s CPU). Both verified
-  zero-data/socket cleanup. Shared CPU contention affects diagnostic completion.
-- Strict-arguments descriptor-tracking trial is discarded: 114 selected checks,
-  typing/lint, selected build and eight imports pass, but reversed comparisons
-  regress repeated scans about 5–12%, with no consistent real-call gain. Results,
-  data charges and provider observations match. Owned trial edits/tests removed;
-  the matching previously tested build is restored and all eight imports pass.
-  Profile files, comparison scripts and the temporary SDK copy are removed.
-- Earlier editor profiling attributes about 96% of sampled wall time to retained
-  reconciliation: 14202 walks, 59.4 million closure visits, and 3703 top-level
-  functions in actual assets. The existing four-entry capture cache already
-  handles almost all already-seen captures; enlarging it is not the next target.
-- Native bounded canvas, worker/Wasm and socket support have separate focused
-  probes. PCM handling is not a Zoom audio source. Actual meeting RTC/audio
-  transport and end-to-end media/notetaker behavior remain unimplemented.
+  Reuse this browser's working dist; preserve unrelated changes in both trees.
+  The full native and full SafeJS suites have no completed pass established for
+  the current trees. A concurrent SafeJS rebase changed commit IDs; the live
+  probes below used the existing compiled build, not a rebuild of rebased sources.
+- Retained SafeJS work includes private accounting snapshots, bounded capture
+  pooling, direct SDK getter dispatch, tracked fixed-key records, module snapshot
+  elision, import/export indexes, flattened symbol snapshots (88e23ce0c), primitive
+  literal scope elision (dde38754b), and metered import deadlines (bbf28b754).
+- Deferred source-module functions (b4102164c, formerly 2d1d36a8e) preserve fresh
+  captures, complete quotas and one charge across materialization/old snapshots.
+  Scripts, generators and dynamic source references remain eager. Before rebase,
+  249 selected tests across 30 files passed, with two existing skips; typing,
+  scoped lint, selected build and eight built imports passed. Reversed 3703-function
+  fixtures used about 30% less CPU with equal outputs, steps, charges and cleanup.
+  This does not establish live startup or validate the entire rebased tree.
+- Browser diagnostic fix 2d43d80 keeps bounded observation open while delayed
+  callbacks bootstrap the client, and reports pending callbacks. Strict typing
+  against working declarations, formatting and six observation scenarios pass.
+- Earlier desktop-identity Zoom 7.2.0.12729 probe passed all 13 classic scripts and
+  prepared seven modules, but its import expired at 120 s. No readiness, joining
+  or sockets; cleanup verified zero data. The default AgentBrowser identity
+  receives a different landing page and has not reached the meeting client.
+- Latest desktop live probe used temporary in-memory 600 s script/import limits
+  with 256 MiB heap; checked-in limits were unchanged. HTTP 200, seven modules
+  prepared, then import deadline failure. Last sample: 9021025 steps / 7060475
+  data units. The report records 12 scripts executed and one execution-closed
+  failure. No socket attempts or meeting admission; zero-data/socket cleanup passed.
+  This extended diagnostic clears no normal-resource acceptance gate.
+- Actual module CPU profile: 42006 samples over 510.8 s; about 71% retained-data
+  reconciliation, 28% GC, 34% visitor self time and 9% visited-set lookup.
+  Earlier classic-library profiling showed about 95% reconciliation and under
+  1% GC. Module allocation pressure now needs attribution before choosing a fix.
+  Profiles and small comparison probes stay in memory; no report files retained.
+- Fixed-key guest records are already tracked. A generic shared-record allocation
+  fixture points to descriptor/key snapshots, but does not identify the actual
+  Zoom allocation sites. Strict-arguments tracking, broader capture caches and
+  optional-state registry trials showed no reliable gain and remain discarded.
+- Native bounded canvas, worker/Wasm and sockets have separate focused probes.
+  PCM handling is not a Zoom audio source; actual RTC/audio transport and the
+  complete media/notetaker pipeline remain unimplemented and unverified.
 
 ## Outstanding gates
 
