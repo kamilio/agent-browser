@@ -40,12 +40,31 @@
   pass. Reversed compiled comparisons preserve charges/provider reads and reduce
   CPU about 19% for symbol records, 14% for closures, 11–21% for mixed roots.
   Accepted isolated SDK updated; its eight built imports pass.
-- Latest authorized live candidate: HTTP 200, 12/13 classics pass; an empty
+- Earlier authorized live candidate: HTTP 200, 12/13 classics pass; an empty
   classic task reports execution-closed when the module lifetime expires.
   Externals passes in 110.7 s elapsed / 67.2 s CPU. Seven modules prepare, but
   the main import hits its 120 s deadline. Last sampled 8992329 steps / 7022883
   units. Sockets zero; cleanup data zero. No startup gain, readiness or joining
   established. These diagnostic allowances do not clear default-resource gates.
+- Latest full-browser diagnostic before the deadline fix returns HTTP 200,
+  passes nine classics, then times out in externals after 120.2 s elapsed /
+  46.0 s CPU. No ES client fetch; no sockets or joining. Cleanup data zero.
+- Maintained import-deadline fix (108c0fa26, local only) connects pending import
+  deadlines to sampled budget checks during metered synchronous source work.
+  Timers still cover awaited work; completion/abort releases private guards.
+  The earlier isolated graph overran its 120 s timer until 146.2 s during source
+  preparation. Controlled compiled comparison: previous SDK finishes after the
+  simulated deadline (19644 steps); candidate aborts at 2048 steps, notifies once,
+  prepares no record and releases the guard. The 110 focused checks, refreshed
+  regression, strict typing/lint, selected build and eight built imports pass.
+  Accepted isolated SDK updated; its eight built imports pass.
+- Isolated candidate graph with the actual Zoom assets, without page globals or
+  sockets, links all seven remote modules in about 175 ms. Rolldown evaluates in
+  589 ms / 48 steps. Editor evaluation spends 42.5 s elapsed / 20.1 s CPU across
+  18493 steps before the import expires at 120.015 s total. Last 8347672 steps /
+  6034520 units; cleanup data and active requests zero. This narrows the next
+  performance target to editor evaluation, but establishes no native page
+  readiness, admission or default-resource pass.
 - Maintained primitive-literal fix (a2a31bb07, local only) avoids an empty child
   CompileScope and context copy while preserving await and full retained-data
   reconciliation. Before-fix
@@ -86,7 +105,9 @@
 
 ## Outstanding gates
 
-- Finish client initialization within normal heap/time/source allowances. Seven
+- Finish client initialization within normal heap/time/source allowances. Target
+  editor evaluation costs identified by the isolated graph before retesting the
+  complete native page. Seven
   modules clear offline compile/link but live evaluation remains too costly.
   Explicit 120 s / 256 MiB diagnostics clear no default-resource acceptance gate;
   earlier larger/longer runs also established no interactive readiness.
@@ -110,7 +131,7 @@
   fixing them. Focused measurement depth passes do not clear other graph paths.
 - Background imports retain per-import deadlines and TLA expiry revokes the
   realm. Shared step/data limits and cancellation remain active. Cooperative
-  scheduling does not bound synchronous blocking host calls or parsing.
+  scheduling does not bound unmetered parser segments or synchronous host calls.
 - Keep native, SafeJS, live-network, socket and real TTY/PTY acceptance separate.
   Native tests must come from native-tests.json. SafeJS, live Zoom and necessary
   sockets are authorized; native passes prove none of those other gates.
