@@ -23,20 +23,29 @@
 
 ## Current verified state
 
-- Host-function metadata shortcuts are rejected and removed. Tracked copies cut
-  focused sampled allocations about 86% but raise CPU 528→828 ms; fresh descriptor
-  verification instead lowers CPU 485→260 ms with identical 1000 units. Neither
-  establishes a startup gain. Latest serial 128 MiB/30 s public probes both time out
-  in externals (191304/190186 steps, identical 2252153 peak units; shared contention
-  limits comparisons). Weak-owner census verifies only 52 eligible tables:
-  externals contributes 1.25 million hits among 42.9 million object visits reaching
-  the eligibility check; a second probe confirms about 3% coverage. All four latest
-  probes verify cleanup zero / sockets zero, with no readiness or join. Candidate
-  preservation passed 249 checks across 18 files, strict typing and scoped lint.
-  Maintained source/build restored; 242 checks across 17 files with actual GC,
-  SDK compilation and eight entry checks pass. Temporary probe artifacts removed.
-  Next: attribute broader closure/retained-root traversal while preserving live
-  observations, quota enforcement and held primary scans.
+- Maintained SafeJS now skips unused stack snapshots and array/host/brand checks
+  for privately certified SDK-created frozen closures (poe-code c39b5bce0; local,
+  no push). Foreign guards, repeated property reads, private/prototype/source/proxy
+  roots, weak contributions and full held primary reconciliation remain active.
+  Getter caching was rejected: native construction and WeakMap hooks reproduce
+  1007→2 units / quota500 bypass; the retained change preserves 1007 and rejects
+  the quota. All 254 selected checks across 18 files pass with actual GC, strict
+  new-test typing, scoped lint, the maintained SDK build and eight entry checks.
+  Focused 500-closure scans retain 7390 units and lower median CPU 373→352 ms.
+  Serial public 128 MiB/30 s baseline/candidate probes both time out in externals
+  (193346/191313 steps, identical 2252153 peak units); CPU contention limits
+  comparisons and no startup gain is established. Both verify cleanup zero /
+  sockets zero, with no readiness or join. Temporary validation artifacts removed.
+  Broader initial-script/waiting-callback census times out before externals:
+  closures account for 11.47 million of 23.19 million ordinary-object visits;
+  48.16 million of 50.55 million emitted captures are already seen. Scope visits
+  total 30.85 million with only 1913 binding-projection rebuilds. These counts
+  identify repeated traversal, not precise CPU attribution or externals coverage.
+  Next: measure repeated scope/capture collection while preserving live bindings,
+  volatile observations, quota enforcement and full held primary scans.
+- Host-function metadata shortcuts remain rejected. The certified census covers
+  only 52 tables / about 3% of eligible object visits; focused improvements never
+  established a public startup gain. Maintained tables retain fresh observations.
 - Maintained SafeJS conservative record data snapshots now stay private from
   later native Array hooks and inherited index setters (poe-code b46eddc27;
   local, no push). Reproduction drops 1015→9 units and bypasses quota500;
