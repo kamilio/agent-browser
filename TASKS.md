@@ -9,7 +9,9 @@
   the acceptance gates below describe future readiness.
 - Test meeting: https://quora.zoom.us/j/7982110526. The approved diagnostic route
   https://app.zoom.us/wc/7982110526/join returns HTTP 200; the default identity has
-  server-rendered name and Join controls, but interactive initialization remains unverified. No meeting
+  server-rendered name and Join controls, but joining requires initialized JS
+  handlers: joinBtn is type=button and its form action uses javascript:. Fresh
+  desktop-identity HTML has no Join controls. Interactive initialization remains unverified. No meeting
   has been joined. Acceptance requires joining/admission and presence, roster/chat,
   audio capture/transcription, playback/live microphone/avatar, leaving and cleanup.
 - Reduce retained-graph accounting cost while preserving memory/depth limits,
@@ -114,6 +116,13 @@
   reconciliation must stay active during callback holds. The reusable SDK
   contains the tested indexes and getter dispatch; temporary artifacts removed.
   Diagnostic scaling clears no default-resource gate; the 120 s cap stays.
+  Filtering empty optional closure metadata callbacks is discarded: 105 candidate
+  checks pass (including explicit GC), but alternating 1000-function comparisons
+  establish no consistent CPU gain, with and without source-reference metadata.
+  Without metadata, median CPU is 23.8→23.7 ms per 100 walks at 1001 units;
+  source-reference walks preserve 1037 units but vary between runs. Exact owned
+  source restoration and maintained build/eight imports pass; candidate code,
+  tests and temporary artifacts removed. No live initialization improvement claimed.
 - Bounded array/record capture pooling remains capped at 64 physical slots.
   Prior 600-array / 600-record fixtures preserve charge with about 14% / 19–20%
   less CPU; sampled allocation falls about 22%, and 900 MB gates fail before and
