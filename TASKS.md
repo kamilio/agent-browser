@@ -23,6 +23,15 @@
 
 ## Current verified state
 
+- Maintained SafeJS keeps class constructor capture snapshots private (20a31c22a).
+  Before-fix native flatMap/push hooks drop 2027 units to 1027/1 and bypass both
+  ordinary/held quotas. Indexed collectors now retain fresh fields, private
+  accessors and scope roots, capture before callbacks, preserve fixed field
+  snapshot length and recover from reentrant failures. All 12 new regressions
+  and 313 focused checks across 14 files pass; strict owned test typing,
+  scoped lint/format, maintained SDK build/eight built imports pass. A warmed
+  200-class fixture preserves 48408 units with unchanged CPU; no speedup claim.
+  Local commit only, no push; reusable SDK contains the tested class fix.
 - Shared poe-code rebase completed with both delayed-host and wall-clock replay
   validations preserved; all 68 replay stress tests pass. Retained fixes are now
   local f898d1bcd (private proxy descriptors), 9040d7d2d (record pooling),
@@ -37,27 +46,27 @@
   owned test typing, scoped lint/format and SDK build/eight imports. A 1200-entry
   source module fixture preserves 91254 steps / 148120 current and peak units;
   warmed CPU rounds fall about 20–30%. No full-page speedup established.
-- Normal public runs at supported 256 MiB / 120 s source / 120 s network
-  diagnostics pass all 13 classics and prepare seven ES modules, then revoke
-  at the source import deadline. Before module tracking, externals passes in
-  59.2 s; after, 58.0 s. Both retain the nine initial classics' exact steps/data,
-  fetch the webclient shim/ES entry (187/4383 bytes), and clean up data/sockets
-  to zero. Candidate progress reaches 9027032 steps / 6888700 units before
-  deadline; no fulfilled import, UI readiness or meeting join is verified.
-  Larger heap/network allowances clear no default-resource gate. A 300 s source
-  diagnostic is rejected as invalid-input before navigation by the browser's
-  120 s application cap; the policy remains unchanged.
+- The final uninstrumented class-fix SDK/public diagnostic at supported 256 MiB
+  and 120 s source/network allowances returns HTTP 200, passes all 13 classics,
+  fetches the webclient shim/ES entry (187/4383 bytes), and prepares seven ES
+  modules before the source import deadline revokes the realm. Latest sampled
+  progress: 9024576 steps / 6884380 units. Cleanup verifies data/sockets zero;
+  no fulfilled import, UI readiness or meeting join. Supported diagnostic
+  scaling clears no default-resource gate; the 120 s application cap stays intact.
 - Bounded array/record capture pooling remains capped at 64 physical slots.
   Prior 600-array / 600-record fixtures preserve charge with about 14% / 19–20%
   less CPU; sampled allocation falls about 22%, and 900 MB gates fail before and
   pass after. The guarded native proxy-brand lookup is rejected on cost: a
   pristine 600-table fixture with inherited handler/prototype guards costs more
   than direct proxy queries. No shortcut added and no metadata/provider bypass.
-- Sampled externals scope fanout previously reports 93% repeated scope visits
-  and 69% already-seen appended roots, maximum ancestor depth 12. A scope cache
-  remains rejected because later metadata/provider reads can expose changed
-  retained data. Next: bounded profiling of actual ES module evaluation to locate
-  the deadline cost; keep full primary reconciliation and held quotas active.
+- Actual ES profiles identify editor-core evaluation as the current stall:
+  about 47% of CPU samples land in retained traversal and 17% in GC; property
+  getters and indexed closure collectors dominate traversal line samples.
+  Each module's link-phase interpreter work is only about 0.13–0.19 s; fetching,
+  parsing and preparation consume the earlier import allowance. Quadratic
+  export lookup is reproduced separately, but is not established as the main
+  blocker. Next: reduce measured closure accounting cost while preserving
+  fresh metadata/provider reads, full primary reconciliation and held quotas.
 - Compiled Node24 default-stack boundaries remain intact: 1024 records charge
   15361 units, 1024 arguments charge 11281 and 1025 indexed closures charge 1029;
   each next level reports budgetExceeded/dataDepth. Arguments pooling previously
