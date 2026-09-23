@@ -25,14 +25,14 @@
   fixed-key source records, discarded module-snapshot elision and static module
   export/import indexes. Indexes preserve live bindings and cycle/ambiguity
   handling; a 600-export fixture uses 3604 rather than 183304 steps.
-- Latest accepted live profile before the current candidate: HTTP 200, all 13
+- Latest live profile that completes externals: HTTP 200, all 13
   classics pass, seven ES modules prepare, main import hits its 120 s deadline.
   Last sampled 8997712 steps / 6906886 units. Sockets zero; cleanup data zero.
   The final 90 s window attributes 60.6 s inclusive CPU to reconciliation,
   33.3 s visitor self CPU and 18.9 s GC. No readiness or joining verified.
 - Maintained primitive-literal fix (a2a31bb07, local only) avoids an empty child
-  CompileScope and context
-  copy while preserving await and full retained-data reconciliation. Before-fix
+  CompileScope and context copy while preserving await and full retained-data
+  reconciliation. Before-fix
   tests create one empty scope for each of five primitive kinds; candidate
   creates zero. The 43 selected checks cover string limits/error locations,
   regex accounting, job scheduling and fresh ordinary/held retained-data quotas.
@@ -55,6 +55,14 @@
   fresh property/provider reads, memory/depth limits, cancellation, callback
   ownership and credential isolation. Do not revive graph-accounting shortcuts
   based only on tracked ownership. Capture pools stay capped at 64 physical slots.
+- Cross-measurement private buffer pooling is discarded: five repeated vector
+  allocations fall to zero and 87 selected checks across 12 files pass, including
+  explicit success/failure GC. Strict typing/lint and candidate build/eight imports
+  pass, but compiled CPU regresses: 600 records use 84.1→100.7 ms per 100 walks;
+  1000 module functions use 13.8→16.5 ms. Charges remain 26007/1000 units.
+  No live candidate probe; owned runtime/test changes removed. Maintained build
+  restoration and eight built imports pass. Further work must target measured
+  traversal costs. Temporary candidate artifacts removed.
 - Native bounded canvas 2D, worker/Wasm and socket support have separate focused
   probes; their availability does not establish full Zoom media compatibility.
   Actual meeting audio transport/source remains unimplemented. Native PCM chunk
