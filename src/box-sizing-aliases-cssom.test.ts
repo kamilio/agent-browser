@@ -625,3 +625,49 @@ it("rejects oversized alias cssText without changing cached canonical state", ()
 	expect(style.cssText).toBe("box-sizing: border-box;");
 	expectSizing(style, "border-box");
 });
+
+it("shares alias operations within an element while keeping element state separate", () => {
+	const tree = parseHtmlDocument("<main></main>", "https://example.com/");
+	const definitions: ScriptHostObjectDefinition[] = [];
+	const styles = new InlineStyles(tree, {
+		createHostObject(definition) {
+			definitions.push(definition);
+			return factory.createHostObject(definition);
+		},
+	});
+	const first = tree.createElement("div");
+	const second = tree.createElement("div");
+	tree.append(tree.root, first);
+	tree.append(tree.root, second);
+	const one = styles.get(first);
+	const two = styles.get(second);
+	const properties = definitions[0].properties ?? {};
+	for (const names of [
+		["background-color", "backgroundColor"],
+		[
+			"box-sizing",
+			"boxSizing",
+			"-webkit-box-sizing",
+			"WebkitBoxSizing",
+			"webkitBoxSizing",
+		],
+		["overflow-wrap", "overflowWrap", "word-wrap", "wordWrap"],
+		["float", "cssFloat"],
+	]) {
+		const canonical = properties[names[0]];
+		expect(canonical.get).toBeTypeOf("function");
+		expect(canonical.set).toBeTypeOf("function");
+		for (const name of names) {
+			expect(properties[name].get).toBe(canonical.get);
+			expect(properties[name].set).toBe(canonical.set);
+		}
+		expect(definitions[1].properties?.[names[0]].get).not.toBe(canonical.get);
+	}
+	Reflect.set(one, "wordWrap", "break-word");
+	expect(Reflect.get(one, "overflowWrap")).toBe("break-word");
+	expect(Reflect.get(two, "overflowWrap")).toBe("");
+	tree.setAttribute(first, "style", "overflow-wrap:anywhere");
+	expect(Reflect.get(one, "wordWrap")).toBe("anywhere");
+	tree.close();
+	expect(() => Reflect.get(one, "wordWrap")).toThrow();
+});

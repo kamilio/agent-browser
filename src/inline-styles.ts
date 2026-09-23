@@ -122,10 +122,11 @@ export class InlineStyles {
 			...Object.keys(cssPropertyAliases),
 		]) {
 			const canonical = canonicalCssProperty(name);
+			const operation = properties[canonical] ?? property(canonical);
 			for (const accessor of cssPropertyAccessors(name))
-				properties[accessor] = property(canonical);
+				properties[accessor] = operation;
 		}
-		properties.cssFloat = property("float");
+		properties.cssFloat = properties.float;
 		const argument = (args: readonly unknown[], minimum: number) => {
 			this.ensureOpen(id);
 			if (args.length < minimum)
