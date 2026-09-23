@@ -33,14 +33,24 @@
   pending callbacks after both windows, then the delayed external-library load.
 - Latest live Zoom 7.2.0.12729 check used the rebuilt maintained SDK, desktop
   identity, 120 s script / 180 s import-observation limits and 256 MiB heap.
-  HTTP 200; all 13 classic scripts passed and seven modules were prepared before
-  module evaluation exceeded its deadline. Client readiness and joining failed
-  verification; no socket attempts. Process exited; cleanup verified closed
-  runtimes, zero retained data and closed sockets. No debug listener remains.
-- Profiling points to retained-data reconciliation (~71% of module CPU) and GC
-  (~28%). Classic-library allocation sampling points to descriptors and walk
-  snapshots. Actual module allocation attribution remains open. Extended 600 s
-  diagnostics also failed to initialize; no normal-resource gate is cleared.
+  HTTP 200; nine classic scripts passed, then externals.min.js exceeded its
+  120 s deadline (~71 s CPU), before client imports. No readiness, joining or
+  socket attempts. Process exited; cleanup verified closed runtimes, zero data
+  and closed sockets. Earlier pre-Object.create-fix checks reached seven modules
+  before evaluation expiry; the new fix's live module impact is unverified.
+- Pre-Object.create-fix profiling points to reconciliation (~71% of module CPU) and GC
+  (~28%). A 20 s module-phase sample estimates 1.54 GB temporary allocation:
+  descriptors 30%, property names 12%, traversal self 32%. A separate 10 s module
+  sample counted 905k ordinary-table descriptor reads, 413k argument reads and
+  374k array reads. Both bounded samples closed with zero-data/socket cleanup;
+  neither verifies readiness. Results stayed in memory.
+- Guest Object.create fix 2be9a4d68 uses existing mutation-tracked property tables.
+  Before evidence: unchanged two-field objects recaptured names/two descriptors;
+  after: no recapture. All 286 selected checks across 13 files and scoped lint
+  pass, including mutation/held quotas, accessors, prototypes and snapshots.
+  Reversed compiled fixtures keep equal charges/growth/steps with ~42% less
+  walk CPU and ~97% less allocation; construction is slightly slower. Maintained
+  workspace build and eight built imports pass; fixture gains do not prove startup.
 - Single-symbol snapshot fix 55ac5eba2 keeps the first descriptor in visit-local
   storage and allocates a private vector only for additional symbols. Fresh reads,
   foreign enumeration, callback order, depth and ordinary/held quotas stay intact.
@@ -62,6 +72,8 @@
   verify interactive controls and actual joining/admission/presence. Explicit
   120 s / 256 MiB diagnostics clear no default-resource acceptance gate.
   Source-module deferral does not optimize classic-script function hoisting.
+  Verify Object.create's live module impact and identify the remaining untracked
+  property-table producers before choosing further accounting changes.
 - Verify every notetaker capability listed above. The working notetaker captures
   one browser audio track with getDisplayMedia and a 16000 Hz AudioWorklet, with
   audio processing disabled. No equivalent native source, transcription,
