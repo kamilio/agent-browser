@@ -8,8 +8,8 @@
   migration. The working Automations setup remains the operational solution;
   the acceptance gates below describe future readiness.
 - Test meeting: https://quora.zoom.us/j/7982110526. The approved diagnostic route
-  https://app.zoom.us/wc/7982110526/join returns HTTP 200 with server-rendered
-  name and Join controls, but interactive initialization remains unverified. No meeting
+  https://app.zoom.us/wc/7982110526/join returns HTTP 200; the default identity has
+  server-rendered name and Join controls, but interactive initialization remains unverified. No meeting
   has been joined. Acceptance requires joining/admission and presence, roster/chat,
   audio capture/transcription, playback/live microphone/avatar, leaving and cleanup.
 - Reduce retained-graph accounting cost while preserving memory/depth limits,
@@ -54,6 +54,25 @@
   compiled SDK refreshed; owned validation artifacts removed. Next: prove native
   Scope metadata ownership before sharing repeated capture reads; preserve foreign
   effects, mutable descendants and full primary scans during callback holds.
+- Public desktop compatibility identity selects nine initial scripts instead of 53
+  and omits the legacy Vue asset, using the same native engine. The maintained
+  isolated SDK executes CSRF, inline configuration and FingerprintJS, then times out
+  in the next 563-character inline Script at the unchanged 30 s deadline (30300 ms,
+  83824 step delta, peak 748494 units). HTTP 200; cleanup data zero; sockets zero;
+  no imports, interactive readiness or meeting join. The desktop route avoids the
+  legacy document but does not clear the startup gate.
+- Maintained SafeJS now shares immutable token/AST source positions only when source
+  module graphs select them (poe-code 287924508; no push). Public parser defaults
+  retain independent mutable positions. All 2093 selected checks across 100 files
+  pass (one fuzz test skipped), including 20 focused allocation/diagnostic/compiler
+  budget checks, strict new-test typing, scoped lint/format, isolated SDK compilation
+  and eight package entry checks. Separate 128 MiB synthetic compiler processes
+  retain 13.7/11.5 MB without/with sharing on 5000 declarations (~16% reduction in
+  this measurement). This establishes compiler allocation savings, not Zoom startup
+  progress. No post-change live startup gain claimed. Owned validation logs removed;
+  one isolated working SDK build retained for reuse. Repeated primary graph accounting
+  and full client/Worker compilation at default heap/time remain open, followed by
+  admission/presence, sockets and the meeting/media acceptance gates above.
 - Opt-in callbackScheduling: "after-prefix" admits later source only after all
   callback prefixes finish; tails preserve data/compilation charges and their own
   rejection ownership. Source stays exclusive. Close/cancellation waits for queued
