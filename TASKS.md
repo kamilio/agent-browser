@@ -17,13 +17,11 @@
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
 - The normal Zoom probe enables bounded WASM/binary Worker messages and explicit
-  1 MiB / 30 s page-fetch limits. Latest instrumented full-page check completed
-  all 13 classic scripts and admitted seven modules, but the 120 s module deadline
-  closed the realm at 11149 nodes (9598 in editor-core), at line 25, offset 32711.
-  No name/Join controls, join attempt or socket attempt; cleanup retained zero data.
-  An earlier run reached 15038 nodes. Without per-node tracing, all 13 classics
-  completed and seven modules prepared, but the same deadline expired without
-  name/Join controls, a join attempt or sockets; cleanup retained zero data.
+  1 MiB / 30 s page-fetch limits. Latest full-page check after numeric token reads
+  and Window handler fixes completed all 13 classic scripts and prepared seven
+  modules. The 120 s module deadline still expired without name/Join controls,
+  a join attempt or socket attempts; cleanup retained zero data. Per-node tracing
+  was disabled. At 112.4 s of import observation the budget reported 9029406 steps.
   No diagnostic is active. Do not repeat unchanged extended runs.
 - Maintained SafeJS uses sixteen per-walk positive capture slots.
   Actual editor graph: 337–381 ms per 100 walks versus 451–485 ms with four slots,
@@ -52,6 +50,12 @@
 - Maintained SafeJS fixes the parser's native stack overflow on long else-if
   ladders. Iterative continuations preserve the 2048-level limit, source spans and
   nearest-else binding; deeper non-ladder grammar remains a separate validation gate.
+- Compiler-owned token arrays now use a numeric reader instead of Proxy property
+  lookups. The rebuilt SDK parsed the same login module in 7.95–8.00 s CPU versus
+  9.41–9.63 s through the indexed facade, with identical coordinates, statements
+  and dependencies. Passed 230 focused tests, lint, build, 13 built SDK checks and
+  six browser SDK/JSPI checks. The normal readiness check still expires; execution
+  accounting remains the dominant unresolved startup cost.
 - Worker source nodes 15000–35000 required 21009 complete reconciliations and
   31.5–34.2 s sampled time; the visitor accounted for 16.9–17.9 s. Optimization
   tracing separated 35 warm-up deoptimizations from four in the measured interval;
