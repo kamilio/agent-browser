@@ -34,15 +34,23 @@
   34% visitor self time and 12% visited-object lookups. The largest visitor line
   counts are primitive dispatch, capture collection and closure metadata reads.
   The diagnostic closed with zero retained data; it did not attempt joining.
+- An object-first dispatch comparison preserved 6657238 units on 616 roots but
+  showed overlapping CPU ranges and unchanged allocation; it was not adopted.
+- A corrected live observer reused session queries and found no name input or
+  Join button before or after the 120 s import window (complete snapshots).
+  Cleanup passed; no socket attempts. Statement counts reached 1551 nodes in
+  rolldown-runtime and 2011 in editor-core, ending at offset 32612 in React DOM's
+  property-info constructor during attribute-table initialization. An earlier
+  observer exhausted cleanup registrations; its late observations are superseded.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
 
 ## Outstanding gates
 
-- Benchmark object-first visitor dispatch against the unchanged path on the same
-  graph; no benefit is established yet. Continue measured traversal/allocation
-  work without repeating the rejected fresh-Set visited-storage approach.
+- Investigate the measured React DOM attribute-table constructor workload and
+  retained-graph costs. Do not repeat the rejected object-first dispatch or
+  fresh-Set visited-storage approaches without new evidence.
   Preserve per-walk callbacks and avoid retained guest roots.
   Initialize within normal allowances and verify JavaScript Join controls,
   actual joining, admission and presence.
