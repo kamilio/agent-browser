@@ -29,8 +29,9 @@
   used 15–20% less CPU than two baselines with matching accounting and work.
   Validation: 109 focused source tests, lint, maintained build and 13 built checks
   on Node 24 passed. The changed build still times out during normal live startup.
-- The changed-build profile still spends about 95% of module execution in
-  accounting, including deferred reads, capture collection and visited checks.
+- Accounting still consumes about 95% of module execution. A current 5000-node
+  profile attributes 46% of sampled time to the main visitor and 10% to visited
+  lookups; scope collection and deferred reads contribute further cost.
   Each walk includes 3703 deferred module functions. Static source confirms long
   startup loops build React DOM property metadata and DOMPurify allowlists.
   Type-branch and identity-layout
@@ -38,6 +39,13 @@
   matched replay baselines varied from 16.51 to 32.04 CPU seconds. Require stable
   timings as well as matching initial state, accounting, clocks and timer delivery.
   Replay networking stays disabled; its archive was released.
+- Same-process bytecode and verbose V8 frames confirm a cold fallback at the
+  visitor's Proxy target read. A local fixture reproduces both observed fallback
+  reasons with ordinary Proxy state. Exercising that path early prevents both,
+  but improves fixture CPU only 3–6% with identical collector counts; no runtime
+  change is justified yet. Focus next on steady-state traversal and registry
+  lookups, preserving fresh observations. All probes stopped and cleaned up;
+  profiles and traces stayed in memory.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
