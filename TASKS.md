@@ -36,8 +36,15 @@
   47 tables and preserved 6656677 units on 606 roots. Sampled allocation fell from
   24.90 MB to 24.37 MB per 50 walks; CPU timings overlapped. The focused 179-function
   fixture showed a much larger allocation reduction; no startup speedup is proved.
-- Latest Zoom check of 73e115d99: 256 MiB heap, 120 s script/import limits.
-  All 13 classic scripts passed; externals.min.js used 50.6 s wall / 50.2 s CPU.
+- SafeJS 760d57a6b tracks reflected property-descriptor results using existing
+  privately owned storage. TDD reproduced 20 native descriptor reads per five
+  unchanged walks; the result is now zero. Validation: 120 tests across nine files,
+  scoped lint/formatting, maintained build and eight built-import checks. Mutations,
+  aliases, accessor order, reentry and ordinary/held quotas remain covered.
+  A controlled 37-result fixture preserved 1517 units while sampled allocation
+  fell from 2.49 MB to 0.22 MB per 100 walks; this is not a live startup speedup.
+- Latest Zoom check of 760d57a6b: 256 MiB heap, 120 s script/import limits.
+  All 13 classic scripts passed; externals.min.js used 55.8 s wall / 51.9 s CPU.
   Seven modules prepared but did not settle before the actual import deadline
   revoked the realm. No readiness, admission, presence or socket attempts. Cleanup
   verified closed runtime/sockets and zero retained data. The earlier 600 s
@@ -48,6 +55,11 @@
   calls occurred per scan. The operation census found slow Rolldown export-copy
   work, not a proven infinite loop. Native descriptors and iterator allocations
   remain significant; small allocation savings have not established startup gains.
+- Live origin tracing before 760d57a6b found 44 constructor prototypes with 263
+  descriptor reads, 37 reflection results with 148 reads, and 37 untracked arrays
+  with 340 reads. Host-bridge records contributed only 16 reads. Both accounting
+  walkers agreed on 6667663 units; cleanup succeeded. Constructor-prototype
+  tracking remains rejected; trace unknown array factories before selecting reuse.
 - Omitting deferred collection diagnostically found 14812 already-seen roots and
   about 10% lower average CPU with overlapping timings. This shortcut is unsafe and
   was not retained. Native-record descriptor reuse reduced sampled allocation about
