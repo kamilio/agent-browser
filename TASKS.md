@@ -17,7 +17,7 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse working
   builds and /tmp/agent-browser-node24-runtime/bin/node.
-- Latest uninstrumented Zoom check (d7052a82d) passed all 13 classic scripts and
+- Latest uninstrumented Zoom check (838ff9c0a) passed all 13 classic scripts and
   prepared seven modules, but the 120 s import deadline revoked the realm before
   settlement. No readiness, admission, presence or socket attempts. Cleanup closed
   runtime/sockets and retained zero data. A 600 s diagnostic also expired.
@@ -32,6 +32,10 @@
 - A controlled live graph comparison preserved 6657339 units on 604 roots and
   reduced 50-walk CPU from 0.49–0.52 s to 0.31–0.39 s with an empty visitor retained.
   Sampled allocation barely changed. This does not establish working startup.
+- Private bound-capture snapshots (838ff9c0a) preserve replaced/accessor providers
+  and fresh iteration. All 75 focused tests, scoped lint, maintained build and ten
+  built checks passed. A live comparison preserved accounting totals and reduced
+  sampled allocation from 21.0 MB to 19.3 MB per 50 walks; CPU ranges overlapped.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
