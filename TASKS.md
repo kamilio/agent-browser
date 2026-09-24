@@ -69,9 +69,14 @@
 
 ## Outstanding gates
 
-- A single bounded 30-minute initialization diagnostic is running on the restored
-  SDK with a 256 MiB heap and an interactive handoff if source modules settle.
-  Follow the existing process through its terminal result; no meeting is verified.
+- The 30-minute import diagnostic ended on its deadline after about 1741 s in
+  editor-core evaluation. All 13 classics passed and seven modules linked, but
+  the DOM still showed only loading/"Joining Meeting...". No socket attempts or
+  admission occurred. Cleanup closed the runtime, cleared retained data and
+  closed sockets; the process exited 1 and is gone. Longer allowances alone
+  have not established readiness. A visit-marker reuse trial passed 120 selected
+  regressions but did not reduce CPU on the mixed-graph fixture; it was discarded.
+  No runtime change from that trial remains.
 - Finish client initialization within normal heap/time/source allowances, then
   verify interactive controls and actual joining/admission/presence. Extended
   diagnostic allowances clear no default-resource acceptance gate.
