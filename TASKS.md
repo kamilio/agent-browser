@@ -40,9 +40,10 @@
   used 15–20% less CPU than two baselines with matching accounting and work.
   Validation: 109 focused source tests, lint, maintained build and 13 built checks
   on Node 24 passed. The changed build still times out during normal live startup.
-- Accounting still consumes about 95% of module execution. A current 5000-node
-  profile attributes 46% of sampled time to the main visitor and 10% to visited
-  lookups; scope collection and deferred reads contribute further cost.
+- Accounting consumed 70.58 of 73.83 module seconds in a current 18001-node
+  diagnostic. Early and later samples consistently attribute about 48% to the
+  main visitor and 9–10% to visited lookups; no new steady-state optimizer fallback
+  explained the timing variation. Scope collection and deferred reads add cost.
   Each walk includes 3703 deferred module functions. Static source confirms long
   startup loops build React DOM property metadata and DOMPurify allowlists.
   Type-branch and identity-layout
@@ -58,9 +59,13 @@
   lookups, preserving fresh observations. All probes stopped and cleaned up;
   profiles and traces stayed in memory.
 - Further fixed-work tests found no substantial, reliable gain from visited-state
-  cells, closure-visitor splitting, cold object-branch splitting, single type
-  dispatch, or direct factory getter bodies. Collector counts and charges matched;
-  no changes were retained. Node 22
+  cells, closure-visitor splitting, cold object-branch splitting, scope/object
+  decomposition, single type dispatch, or direct factory getter bodies. A current
+  Zoom graph held at module node 4000 confirmed no decomposition gain: 400 walks
+  took 1.15–1.18 CPU seconds unchanged versus 1.18–1.20 for the split variants,
+  with matching charges and compilation tickets. Fresh measurements used the same
+  retained graph; this was not an interactive-readiness run. No changes were retained.
+  Node 22
   did not improve the closure-heavy fixture over Node 24. Avoid repeating these
   candidates without new evidence.
 - The legacy quora.zoom.us/wc/join/7982110526 route currently redirects to the
