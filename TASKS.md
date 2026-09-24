@@ -56,9 +56,17 @@
   closure collectors and symbol traversal. Both probes closed intentionally after
   sampling, before import settlement or sockets; cleanup verified zero retained
   data. These are diagnostics, not new uninstrumented startup passes.
-  Earlier counts were about 12600 graph visits and 25000 capture calls per scan;
-  the operation census found slow Rolldown export copying, not a proven infinite
+  The operation census found slow Rolldown export copying, not a proven infinite
   loop. Allocation savings have not established working startup.
+- A fresh fixed live graph measured 6658402 units on 588 roots: 12647 visits,
+  7235 unique objects, 4312 binding roots, 3703 deferred functions and 1606
+  materialized closures. Four 50-walk passes used 9.3–9.6 ms CPU per walk;
+  sampled allocation was 20.37 MB per 50 walks. The attributed walker agreed
+  with the original, and browser cleanup passed. Local composition checks with
+  3703 deferred functions plus 1606 actual interpreted functions used only
+  2.1–2.5 ms/walk and sampled 0.33 MB per 50 walks. Function count alone does
+  not explain the live cost; raw property tables and the remaining live object/
+  provider paths need attribution. These fixtures do not prove startup speed.
 - Reusing a whole measurement worker is rejected: isolated warmed fixtures with
   4200 deferred functions preserved 10750 units and 4.2 million collector calls
   per 1000 walks, but CPU ranges overlapped (baseline 0.69–0.72 s, trial
@@ -83,9 +91,9 @@
   copyToSandbox were absent from that branch. Measure remaining array/record and
   reconciliation costs before selecting more reuse; preserve native mutations,
   provider observations and native-cloneable public results.
-  Next compare timing on a fixed live retained graph with the warmed synthetic
-  fixture before another storage change; whole-worker reuse did not explain the
-  remaining cost and must not be revived without callback isolation.
+  Next attribute the fixed live graph's expensive roots and remaining object/
+  provider paths; deferred and interpreted-function counts did not reproduce its
+  cost. Whole-worker reuse must not be revived without callback isolation.
   Fixture improvements and longer diagnostic allowances do not establish
   live/default-resource acceptance.
 - Implement and verify every notetaker capability above. Automations reference:
