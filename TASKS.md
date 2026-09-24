@@ -24,11 +24,14 @@
   3703 deferred functions per walk. Focus on steady-state traversal/allocation;
   visitor splitting, identity-layout changes and Node 22 showed no reliable gain.
   Require stable comparisons with matching accounting, clocks and timer delivery.
-- Pending-array pooling and fresh visited Sets did not improve the fixed-work
-  fixture. Registry closures and 8/16-entry capture caches showed no reliable gain
-  on a retained Zoom graph; accounting matched. Both live diagnostics passed 13
+- Allocation, registry and capture-cache variants showed no reliable gain. A
+  shared visitor with separate per-walk state, with or without shared helpers,
+  was slower in the representative fixture; accounting and collector counts matched.
+- A census at module node 4000 measured 1998 closures, 984 ordinary records and
+  3703 deferred functions per walk. Closures/records accounted for about 60% of
+  instrumented self time, deferred functions about 20%; timers add overhead.
+  Focus next on closure metadata and capture traversal. The live probe passed 13
   classics, stopped at node 4001 and released all data. No runtime changes retained.
-  Isolate per-root metadata/capture costs before more layout micro-optimizations.
 - Retained fixes cover callback ownership/release (SafeJS f4bb1f080a, browser
   d69cf5d), pending-function arrays (542c1fd4a), reconciliation (e9a8214c3), Proxy
   accounting (9fa4fc3fd) and parser costs (aece59d34, 1c5ce18cb). Callback validation:
