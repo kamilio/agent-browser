@@ -4,6 +4,10 @@ import { parseHtmlDocument } from "../src/html-parser.js";
 import { documentInteractions } from "../src/interactions.js";
 import { loadPageRuntime } from "../src/node-page-core.js";
 import { NodeNetworkTransport } from "../src/node-transport.js";
+import {
+	NodeWebSocketTransport,
+	bindDocumentWebSockets,
+} from "../src/node-websocket-transport.js";
 import type { PageRuntime, PageRuntimeFactory } from "../src/page-runtime.js";
 import { PageScripts } from "../src/page-scripts.js";
 import type {
@@ -20,7 +24,7 @@ import { decodeWorkerImportedScript } from "../src/worker-fetch.js";
 //     dist/scripts/check-zoom-worker-initialization.js
 // The default initialization deadline is 30 s. Explicit diagnostic allowances up
 // to 120 s do not clear that gate. This fixture loads no meeting/client and
-// configures no socket transport. Source completion does not establish readiness.
+// enables bounded Worker sockets. Source completion does not establish readiness.
 const packageRoot = process.env.AGENT_BROWSER_SAFEJS_SOURCE_ROOT;
 const mediaRootInput = process.env.AGENT_BROWSER_ZOOM_MEDIA_ROOT;
 if (!packageRoot || !mediaRootInput)
@@ -159,6 +163,8 @@ const document = parseHtmlDocument(
 	"<html><body></body></html>",
 	"https://app.zoom.us/wc/7982110526/join",
 );
+const socketTransport = new NodeWebSocketTransport();
+bindDocumentWebSockets(document, socketTransport);
 const html = document
 	.get(document.root)
 	.children.find((id) => document.get(id).tagName === "html");
@@ -247,18 +253,23 @@ worker.onerror=()=>document.body.setAttribute('data-worker-error','true');
 	const closes = await Promise.allSettled([page.close()]);
 	await Promise.allSettled([...evaluations]);
 	transport.close();
+	await socketTransport.close();
 	const metrics = page.metrics();
 	const currentDataSize = (
 		runtime?.budget as { currentDataSize?: number } | undefined
 	)?.currentDataSize;
 	const network = transport.metrics();
+	const webSockets = socketTransport.metrics();
 	cleanupVerified =
 		closes.every((result) => result.status === "fulfilled") &&
 		metrics.closed &&
 		metrics.pendingCallbacks === 0 &&
 		currentDataSize === 0 &&
 		network.closed &&
-		network.active === 0;
+		network.active === 0 &&
+		webSockets.closed &&
+		webSockets.active === 0 &&
+		webSockets.pending === 0;
 	const initialized =
 		parentOk &&
 		childReport?.ok === true &&
@@ -286,6 +297,7 @@ worker.onerror=()=>document.body.setAttribute('data-worker-error','true');
 				currentDataSize,
 				pendingCallbacks: metrics.pendingCallbacks,
 				network,
+				webSockets,
 			},
 		}),
 	);

@@ -269,3 +269,28 @@ it("decodes Worker WASM policy without granting string eval", () => {
 	);
 	expect(denied.wasmCompilation).toBe("deny");
 });
+
+it.each([
+	["connect-src wss://socket.test; script-src 'none'", true],
+	["connect-src 'none'; script-src *", false],
+	["default-src 'none'", false],
+	["default-src 'none'; connect-src wss://socket.test", true],
+	["connect-src wss://socket.test, connect-src 'none'", false],
+	["script-src 'none'", true],
+])(
+	"uses response connect-src and default-src for Worker sockets: %s",
+	(policy, allowed) => {
+		const loaded = decodeWorkerScript(
+			response({
+				headers: {
+					"content-type": ["text/javascript"],
+					"Content-Security-Policy": [policy],
+				},
+			}),
+		);
+		expect(typeof loaded.checkConnect).toBe("function");
+		const check = () => loaded.checkConnect?.("wss://socket.test/feed");
+		if (allowed) expect(check).not.toThrow();
+		else expect(check).toThrow(/Content Security Policy/);
+	},
+);

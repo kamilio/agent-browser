@@ -4,6 +4,8 @@ import {
 	createBrowserIdentity,
 	defaultBrowserIdentity,
 } from "./browser-identity.js";
+import { DocumentWebSockets } from "./document-websockets.js";
+import { parseHtmlDocument } from "./html-parser.js";
 import { pageBlobBootstrapSource } from "./page-blob-bootstrap.js";
 import { PageBlobs } from "./page-blobs.js";
 import { pageUrlBootstrapSource } from "./page-url-bootstrap.js";
@@ -23,6 +25,12 @@ import type {
 	ReleasedHostDefinition,
 } from "./safejs-extension-types.js";
 import { scriptLimits } from "./safejs.js";
+import type {
+	NativeWebSocketMessage,
+	WebSocketCloseResult,
+	WebSocketConnection,
+} from "./websocket-transport.js";
+import { workerConnectPolicy } from "./worker-fetch.js";
 
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
@@ -80,7 +88,11 @@ function owner(signal = new AbortController().signal, copyArguments = true) {
 					return Reflect.apply(
 						callback as (...args: unknown[]) => unknown,
 						options.thisValue,
-						(options.args ?? []).map((arg) => structuredClone(arg)),
+						(options.args ?? []).map((arg) =>
+							objects.some(({ value }) => value === arg)
+								? arg
+								: structuredClone(arg),
+						),
 					);
 				} finally {
 					finish();
@@ -101,6 +113,7 @@ function owner(signal = new AbortController().signal, copyArguments = true) {
 function fixture(
 	copyArguments = true,
 	overrides: Partial<PageWorkerOptions> = {},
+	beforeReady?: () => Promise<void>,
 ) {
 	const controller = new AbortController();
 	const parent = owner(controller.signal, copyArguments);
@@ -139,6 +152,7 @@ function fixture(
 					}
 					try {
 						runInContext(source, vm, { timeout: 1000 });
+						await beforeReady?.();
 						return { ok: true };
 					} catch (error) {
 						return { ok: false, error };
@@ -1024,4 +1038,235 @@ it("rejects enabled network Worker loaders without explicit WASM compilation pol
 	test.evaluate("var worker=new Worker('/worker.js');");
 	await vi.waitFor(() => expect(test.workers.metrics().active).toBe(0));
 	expect(test.children).toHaveLength(0);
+});
+
+function workerSockets(headers: readonly string[] = [], maxConcurrent = 4) {
+	const tree = parseHtmlDocument("", "https://example.test/page");
+	const connections: WebSocketConnection[] = [];
+	const transport = {
+		connect: vi.fn(async (url: string) => {
+			let finish!: (result: WebSocketCloseResult) => void;
+			const closed = new Promise<WebSocketCloseResult>((resolve) => {
+				finish = resolve;
+			});
+			let deliver:
+				| ((value: NativeWebSocketMessage | undefined) => void)
+				| undefined;
+			const queue: NativeWebSocketMessage[] = [];
+			let ended = false;
+			const stop = (code: number, reason: string) => {
+				ended = true;
+				deliver?.(undefined);
+				finish({ code, reason, wasClean: code === 1000 });
+			};
+			const socket: WebSocketConnection = {
+				url,
+				protocol: "",
+				closed,
+				read: () =>
+					queue.length
+						? Promise.resolve(queue.shift())
+						: ended
+							? Promise.resolve(undefined)
+							: new Promise((resolve) => {
+									deliver = resolve;
+								}),
+				send: vi.fn(async (data) => {
+					const message = { data };
+					if (deliver) {
+						const send = deliver;
+						deliver = undefined;
+						send(message);
+					} else queue.push(message);
+				}),
+				close: async (code = 1000, reason = "") => {
+					stop(code, reason);
+					return closed;
+				},
+				abort: vi.fn(() => stop(1006, "")),
+			};
+			connections.push(socket);
+			return socket;
+		}),
+	};
+	const sockets = new DocumentWebSockets(tree, transport, {
+		headerValues: headers,
+		limits: { maxConcurrent },
+	});
+	cleanups.push(async () => {
+		tree.close();
+	});
+	return { sockets, transport, connections };
+}
+
+it("keeps Worker WebSocket unavailable without an explicit transport", async () => {
+	const test = fixture();
+	test.start("postMessage(typeof WebSocket)");
+	test.evaluate("var seen=[];worker.onmessage=e=>seen.push(e.data)");
+	await vi.waitFor(() => expect(test.evaluate("seen")).toEqual(["undefined"]));
+});
+
+it("delivers Worker socket open, binary message, receiver and close events", async () => {
+	const { sockets, connections } = workerSockets();
+	const test = fixture(true, { webSockets: sockets });
+	test.start(`
+		var socket = new WebSocket('wss://example.test/feed');
+		socket.binaryType = 'arraybuffer';
+		socket.onopen = function(e) { postMessage(['open', this === socket, e.target === socket, socket.readyState === WebSocket.OPEN]); socket.send(new Uint8Array([3,7,11])); };
+		socket.onmessage = function(e) { postMessage(['message', Array.from(new Uint8Array(e.data))]); socket.close(1000, 'done'); };
+		socket.onclose = e => postMessage(['close', e.code, e.reason, e.wasClean]);
+	`);
+	test.evaluate("var seen=[];worker.onmessage=e=>seen.push(e.data)");
+	await vi.waitFor(() =>
+		expect(test.evaluate("seen")).toEqual([
+			["open", true, true, true],
+			["message", [3, 7, 11]],
+			["close", 1000, "done", true],
+		]),
+	);
+	expect(connections[0].send).toHaveBeenCalledOnce();
+	await test.close();
+	expect(sockets.metrics()).toMatchObject({
+		connecting: 0,
+		open: 0,
+		closing: 0,
+	});
+	expect(test.units.size).toBe(0);
+});
+
+it("terminates only the selected Worker's sockets and preserves shared limits", async () => {
+	const { sockets, connections } = workerSockets([], 2);
+	const test = fixture(true, { webSockets: sockets });
+	const source =
+		"var socket=new WebSocket('wss://example.test/feed'); socket.onopen=()=>postMessage('open')";
+	test.start(source);
+	test.evaluate(
+		"var first=worker; var seen=[]; first.onmessage=e=>seen.push(e.data)",
+	);
+	test.start(source);
+	test.evaluate("worker.onmessage=e=>seen.push(e.data)");
+	await vi.waitFor(() =>
+		expect(test.evaluate("seen")).toEqual(["open", "open"]),
+	);
+	expect(() => sockets.start("/feed")).toThrow(/connection limit/);
+	test.evaluate("first.terminate()");
+	await vi.waitFor(() => expect(sockets.metrics().open).toBe(1));
+	expect(connections[0].abort).toHaveBeenCalledOnce();
+	expect(connections[1].abort).not.toHaveBeenCalled();
+	await test.close();
+	expect(sockets.metrics()).toMatchObject({
+		connecting: 0,
+		open: 0,
+		closing: 0,
+	});
+	expect(connections[1].abort).toHaveBeenCalledOnce();
+});
+
+it("aborts a pending Worker handshake on termination and suppresses late callbacks", async () => {
+	const tree = parseHtmlDocument("", "https://example.test/page");
+	let signal: AbortSignal | undefined;
+	const sockets = new DocumentWebSockets(tree, {
+		connect: (_url, options) => {
+			signal = options.signal;
+			return new Promise((_resolve, reject) =>
+				signal?.addEventListener("abort", () => reject(Error("aborted")), {
+					once: true,
+				}),
+			);
+		},
+	});
+	cleanups.push(async () => {
+		tree.close();
+	});
+	const test = fixture(true, { webSockets: sockets });
+	test.start(
+		"var socket=new WebSocket('wss://example.test/feed'); socket.onopen=()=>postMessage('late')",
+	);
+	test.evaluate("var seen=[];worker.onmessage=e=>seen.push(e.data)");
+	await vi.waitFor(() => expect(signal).toBeDefined());
+	test.evaluate("worker.terminate()");
+	expect(signal?.aborted).toBe(true);
+	await vi.waitFor(() => expect(sockets.metrics().connecting).toBe(0));
+	expect(test.evaluate("seen")).toEqual([]);
+});
+
+it.each([true, false])(
+	"uses fetched Worker response CSP instead of creator connect-src (allow=%s)",
+	async (allowed) => {
+		const { sockets, transport } = workerSockets([
+			allowed ? "connect-src 'none'" : "connect-src *",
+		]);
+		const url = "https://example.test/workers/main.js";
+		const test = fixture(true, {
+			webSockets: sockets,
+			fetch: async () => ({
+				url,
+				stringCompilation: "allow",
+				checkConnect: workerConnectPolicy(url, {
+					"content-security-policy": [
+						allowed ? "connect-src wss://example.test" : "connect-src 'none'",
+					],
+				}),
+				source:
+					"try { var socket=new WebSocket('feed'); socket.onopen=()=>postMessage('open'); } catch(e) { postMessage('denied'); }",
+			}),
+		});
+		test.evaluate(
+			`var seen=[];var worker=new Worker('${url}');worker.onmessage=e=>seen.push(e.data)`,
+		);
+		await vi.waitFor(() =>
+			expect(test.evaluate("seen")).toEqual([allowed ? "open" : "denied"]),
+		);
+		expect(transport.connect).toHaveBeenCalledTimes(allowed ? 1 : 0);
+	},
+);
+
+it("inherits creator connect-src for Blob Workers", async () => {
+	const { sockets, transport } = workerSockets(["connect-src 'none'"]);
+	const test = fixture(true, { webSockets: sockets });
+	test.start(
+		"try { new WebSocket('wss://example.test/feed'); } catch(e) { postMessage('denied'); }",
+	);
+	test.evaluate("var seen=[];worker.onmessage=e=>seen.push(e.data)");
+	await vi.waitFor(() => expect(test.evaluate("seen")).toEqual(["denied"]));
+	expect(transport.connect).not.toHaveBeenCalled();
+});
+
+it("holds Worker socket events until initialization completes", async () => {
+	let ready!: () => void;
+	const gate = new Promise<void>((resolve) => {
+		ready = resolve;
+	});
+	const { sockets, transport } = workerSockets();
+	const test = fixture(true, { webSockets: sockets }, () => gate);
+	try {
+		test.start(
+			"var socket=new WebSocket('wss://example.test/feed');socket.onopen=()=>postMessage('open');",
+		);
+		test.evaluate("var seen=[];worker.onmessage=e=>seen.push(e.data)");
+		await vi.waitFor(() => expect(transport.connect).toHaveBeenCalledOnce());
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(test.evaluate("seen")).toEqual([]);
+		ready();
+		await vi.waitFor(() => expect(test.evaluate("seen")).toEqual(["open"]));
+	} finally {
+		ready();
+	}
+});
+
+it("closes Worker sockets immediately when the Worker calls self.close", async () => {
+	const { sockets, connections } = workerSockets();
+	const test = fixture(true, { webSockets: sockets });
+	test.start(
+		"var socket=new WebSocket('wss://example.test/feed');socket.onopen=()=>{postMessage('open');self.close();};",
+	);
+	test.evaluate("var seen=[];worker.onmessage=e=>seen.push(e.data)");
+	await vi.waitFor(() => expect(test.evaluate("seen")).toEqual(["open"]));
+	await vi.waitFor(() => expect(test.workers.metrics().active).toBe(0));
+	expect(connections[0].abort).toHaveBeenCalledOnce();
+	expect(sockets.metrics()).toMatchObject({
+		open: 0,
+		connecting: 0,
+		closing: 0,
+	});
 });

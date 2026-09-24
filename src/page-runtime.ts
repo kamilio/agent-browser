@@ -1,4 +1,5 @@
 import type { BrowserIdentity } from "./browser-identity.js";
+import type { DocumentWebSockets } from "./document-websockets.js";
 import { AgentBrowserError } from "./errors.js";
 import type {
 	HtmlClassicScriptRequest,
@@ -97,6 +98,7 @@ export interface PageRuntime {
 }
 
 export interface PageRuntimeOptions {
+	workerWebSockets?: DocumentWebSockets;
 	workerFetch?: WorkerScriptFetch;
 	workerImportFetch?: WorkerImportFetch;
 	workerImportPolicy?: WorkerImportPolicy;

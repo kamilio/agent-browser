@@ -1,7 +1,7 @@
 import { ContentSecurityPolicy } from "./content-security-policy.js";
 import { AgentBrowserError } from "./errors.js";
 import { type NetworkResponse, parseNetworkUrl } from "./network.js";
-import { createScriptCspPolicy } from "./script-csp-policy.js";
+import { createWorkerScriptCspPolicy } from "./script-csp-policy.js";
 import {
 	type ScriptFetchContext,
 	fetchScriptResource,
@@ -36,6 +36,7 @@ export interface WorkerScriptSource {
 	readonly stringCompilation: "allow" | "deny";
 	readonly wasmCompilation?: "allow" | "deny";
 	readonly checkImport?: WorkerImportPolicy;
+	readonly checkConnect?: (url: string) => void;
 	readonly redirectCount?: number;
 }
 export type WorkerImportPolicy = (url: string, redirects: number) => void;
@@ -89,7 +90,7 @@ export function decodeWorkerScript(
 	maxBytes = 1_048_576,
 ): Readonly<WorkerScriptSource> {
 	const decoded = decodeWorkerImportedScript(response, maxBytes);
-	const policy = createScriptCspPolicy(response.url, response.headers);
+	const policy = createWorkerScriptCspPolicy(response.url, response.headers);
 	if (policy.unsupported)
 		throw new AgentBrowserError(
 			"policy-denied",
@@ -100,7 +101,25 @@ export function decodeWorkerScript(
 		stringCompilation: policy.stringCompilation,
 		wasmCompilation: policy.wasmCompilation,
 		checkImport: workerImportPolicy(response.url, response.headers),
+		checkConnect: workerConnectPolicy(response.url, response.headers),
 	});
+}
+
+export function workerConnectPolicy(
+	documentUrl: string,
+	headers: NetworkResponse["headers"],
+): (url: string) => void {
+	const values = Object.entries(headers)
+		.filter(([name]) => name.toLowerCase() === "content-security-policy")
+		.flatMap(([, values]) => [...values]);
+	const matcher = new ContentSecurityPolicy(documentUrl, values, "connect");
+	return (url) => {
+		if (!matcher.allows(url))
+			throw new AgentBrowserError(
+				"policy-denied",
+				"Worker connection blocked by Content Security Policy",
+			);
+	};
 }
 
 export function workerImportPolicy(

@@ -183,6 +183,7 @@ export class PageScripts {
 				this.bindings?.console.buffer.write(level, values);
 			};
 			this.runtime = factory.createPageRuntime({
+				workerWebSockets: existingDocumentWebSockets(page.document),
 				workerFetch,
 				workerImportFetch,
 				workerImportPolicy: (url, redirects) => {

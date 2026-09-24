@@ -1,5 +1,8 @@
 import { documentResourceCsp } from "./document-resource-csp.js";
-import { DocumentWebSocketPolicy } from "./document-websocket-policy.js";
+import {
+	DocumentWebSocketPolicy,
+	resolveWebSocketUrl,
+} from "./document-websocket-policy.js";
 import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { validateWebSocketProtocols } from "./websocket-protocols.js";
@@ -43,6 +46,7 @@ interface Lease {
 
 export class DocumentWebSockets {
 	private readonly policy: DocumentWebSocketPolicy;
+	private readonly documentUrl: URL;
 	private readonly limits: Readonly<DocumentWebSocketLimits>;
 	private readonly leases = new Set<Lease>();
 	private readonly unregisterClose: () => unknown;
@@ -84,6 +88,7 @@ export class DocumentWebSockets {
 				"Invalid document WebSocket timeout",
 			);
 		this.policy = new DocumentWebSocketPolicy(tree, options.headerValues);
+		this.documentUrl = new URL(tree.url);
 		documentResourceCsp(tree)?.signal.addEventListener(
 			"abort",
 			() => this.close(),
@@ -108,6 +113,59 @@ export class DocumentWebSockets {
 		input: unknown,
 		options: DocumentWebSocketConnectOptions = {},
 	): Readonly<DocumentWebSocketStart> {
+		return this.startResolved(input, options, (value) =>
+			this.policy.resolve(value),
+		);
+	}
+
+	/** Native-only Worker facade sharing document leases and connection quotas. */
+	forWorker(
+		url: string,
+		checkConnect?: (url: string) => void,
+	): Pick<DocumentWebSockets, "start" | "metrics"> {
+		this.ensureOpen();
+		const worker = new URL(url);
+		if (
+			worker.origin !== this.documentUrl.origin ||
+			!["http:", "https:", "blob:"].includes(worker.protocol) ||
+			worker.username ||
+			worker.password
+		)
+			throw new AgentBrowserError(
+				"policy-denied",
+				"WebSocket Worker must be same-origin",
+			);
+		const resolve = (input: unknown) => {
+			const target = resolveWebSocketUrl(
+				input,
+				worker.href,
+				this.documentUrl.protocol === "https:",
+			);
+			if (worker.protocol === "blob:") this.policy.resolve(target.href);
+			else {
+				if (!checkConnect)
+					throw new AgentBrowserError(
+						"policy-denied",
+						"Worker connect CSP is unavailable",
+					);
+				checkConnect(target.href);
+			}
+			return { url: target.href, origin: this.documentUrl.origin };
+		};
+		return Object.freeze({
+			start: (input: unknown, options: DocumentWebSocketConnectOptions = {}) =>
+				this.startResolved(input, options, resolve),
+			metrics: () => this.metrics(),
+		});
+	}
+
+	private startResolved(
+		input: unknown,
+		options: DocumentWebSocketConnectOptions,
+		resolveTarget: (
+			input: unknown,
+		) => Readonly<{ url: string; origin: string }>,
+	): Readonly<DocumentWebSocketStart> {
 		this.ensureOpen();
 		if (!options || typeof options !== "object" || Array.isArray(options))
 			throw new AgentBrowserError("invalid-input", "Invalid WebSocket options");
@@ -117,7 +175,7 @@ export class DocumentWebSockets {
 			throw new AgentBrowserError("invalid-input", "Invalid WebSocket signal");
 		if (signal?.aborted)
 			throw new AgentBrowserError("aborted", "WebSocket connection aborted");
-		const target = this.policy.resolve(input);
+		const target = resolveTarget(input);
 		if (
 			this.leases.size >= this.limits.maxConcurrent ||
 			this.attempts >= this.limits.maxConnections
@@ -160,7 +218,7 @@ export class DocumentWebSockets {
 							"WebSocket connection aborted",
 						);
 					lease.dispatched = true;
-					this.policy.resolve(target.url);
+					resolveTarget(target.url);
 					return this.transport.connect(target.url, {
 						origin: target.origin,
 						protocols,

@@ -266,6 +266,22 @@ export function createScriptCspPolicy(
 	return compileScriptCspPolicy(documentUrl, headers, limitOverrides);
 }
 
+// Worker connections enforce connect-src separately through workerConnectPolicy.
+// Keep all other unsupported directives and parser quotas fail-closed.
+export function createWorkerScriptCspPolicy(
+	documentUrl: string,
+	headers: unknown,
+): ScriptCspPolicy {
+	return compileScriptCspPolicy(
+		documentUrl,
+		headers,
+		{},
+		undefined,
+		false,
+		true,
+	);
+}
+
 export function createNativeDocumentScriptCspPolicy(
 	tree: DocumentTree,
 	headers: unknown,
@@ -287,6 +303,7 @@ function compileScriptCspPolicy(
 	limitOverrides: Partial<ScriptCspPolicyLimits>,
 	resource?: DocumentResourceCsp,
 	topLevelDocument = false,
+	workerConnect = false,
 ): ScriptCspPolicy {
 	const issues: ScriptCspIssue[] = [];
 	const policies: Policy[] = [];
@@ -347,7 +364,11 @@ function compileScriptCspPolicy(
 						continue;
 					}
 					if (!sourceDirectives.includes(name)) {
-						if (resource?.supportsDirective(name)) continue;
+						if (
+							resource?.supportsDirective(name) ||
+							(workerConnect && name === "connect-src")
+						)
+							continue;
 						issue("unsupported-directive", name);
 						continue;
 					}

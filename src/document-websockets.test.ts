@@ -1,11 +1,11 @@
 import { getEventListeners } from "node:events";
 import { Duplex } from "node:stream";
 import { afterEach, expect, it, vi } from "vitest";
-import type { DocumentTree } from "./document.js";
 import {
-	DocumentWebSockets,
 	type DocumentWebSocketLimits,
+	DocumentWebSockets,
 } from "./document-websockets.js";
+import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { NodeWebSocketConnection } from "./node-websocket-connection.js";
@@ -636,3 +636,81 @@ it.each([false, true])(
 		expect(sockets.metrics().closing).toBe(0);
 	},
 );
+
+it("uses fetched Worker connect policy and base URL independently of document CSP", async () => {
+	const tree = parseHtmlDocument(
+		'<base href="https://foreign.test/">',
+		"https://example.com/page",
+	);
+	trees.push(tree);
+	const selected = connection("wss://example.com/workers/feed");
+	const transport = { connect: vi.fn(async () => selected.socket) };
+	const sockets = new DocumentWebSockets(tree, transport, {
+		headerValues: ["connect-src 'none'"],
+	});
+	const check = vi.fn();
+	const worker = sockets.forWorker(
+		"https://example.com/workers/main.js",
+		check,
+	);
+	await expect(worker.start("feed").connection).resolves.toBe(selected.socket);
+	expect(check.mock.calls).toEqual([
+		[selected.socket.url],
+		[selected.socket.url],
+	]);
+	expect(transport.connect).toHaveBeenCalledWith(
+		selected.socket.url,
+		expect.objectContaining({ origin: "https://example.com" }),
+	);
+	expect(() => sockets.start(selected.socket.url)).toThrow(
+		/Content Security Policy/,
+	);
+	expect(() =>
+		sockets.forWorker("blob:https://example.com/id").start(selected.socket.url),
+	).toThrow(/Content Security Policy/);
+});
+
+it("rechecks Worker CSP before dispatch and shares document admission quotas", async () => {
+	const { sockets, transport } = fixture({ maxConcurrent: 1 });
+	const check = vi
+		.fn()
+		.mockImplementationOnce(() => undefined)
+		.mockImplementation(() => {
+			throw new AgentBrowserError("policy-denied", "revoked");
+		});
+	const worker = sockets.forWorker("https://example.com/worker.js", check);
+	const attempt = worker.start("/feed");
+	expect(() => sockets.start("/feed")).toThrow(/connection limit/);
+	expect(() =>
+		sockets.forWorker("https://example.com/other.js", () => {}).start("/feed"),
+	).toThrow(/connection limit/);
+	await expect(attempt.connection).rejects.toMatchObject({
+		code: "policy-denied",
+	});
+	expect(transport.connect).not.toHaveBeenCalled();
+	expect(sockets.metrics()).toMatchObject({ connecting: 0, open: 0 });
+});
+
+it("denies missing Worker policy, foreign owners, unsafe URLs and closed document scopes", () => {
+	const { sockets, transport } = fixture();
+	expect(() => sockets.forWorker("https://foreign.test/worker.js")).toThrow(
+		/same-origin/,
+	);
+	expect(() =>
+		sockets.forWorker("https://example.com/worker.js").start("/feed"),
+	).toThrow(/CSP is unavailable/);
+	const check = vi.fn();
+	const worker = sockets.forWorker("https://example.com/worker.js", check);
+	for (const url of [
+		"ws://example.com/feed",
+		"wss://user:pass@example.com/feed",
+		"wss://example.com/feed#",
+		"file:///feed",
+		"x".repeat(4097),
+	])
+		expect(() => worker.start(url)).toThrow();
+	expect(check).not.toHaveBeenCalled();
+	sockets.close();
+	expect(() => worker.start("/feed")).toThrow(/closed/);
+	expect(transport.connect).not.toHaveBeenCalled();
+});

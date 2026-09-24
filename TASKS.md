@@ -33,11 +33,16 @@
   reduced fixture allocations but did not improve the complete Worker's 30 s run;
   no candidate runtime changes were retained. Preserve fresh scope observations.
   Use the same walker and equal dispatch overhead for fixed-graph comparisons.
-- Current Zoom media root is https://st1.zoom.us/web-media/u9n13za/. The complete
-  network Worker failed source completion at both 30 s and 120 s; status 131 at
-  120 s is not readiness. Both runs verified zero retained data after cleanup.
-  Its source constructs WebSocket connections, but the Worker realm exposes no
-  WebSocket API. Main-page sockets do not establish Worker transport support.
+- Worker WebSockets now reuse the explicit document transport and connection
+  quotas, with fetched-response connect-src, inherited Blob policy, initialization
+  ordering and termination cleanup. Passed 626 focused native tests and build;
+  real SafeJS + loopback sockets verified binary exchange, event receivers, close,
+  termination and zero retained data/open peer sockets after cleanup.
+- Zoom still advertises https://st1.zoom.us/web-media/u9n13za/. With Worker sockets
+  enabled, its complete network Worker timed out at 30 s / 909648 steps before
+  source completion or any socket attempt. Cleanup verified zero retained data.
+  The earlier 120 s run's status 131 was not readiness. No diagnostic is active;
+  do not repeat unchanged extended runs.
 - Retained fixes cover callback ownership/release (SafeJS f4bb1f080a, browser
   d69cf5d), pending-function arrays (542c1fd4a), reconciliation (e9a8214c3), Proxy
   accounting (9fa4fc3fd) and parser costs (aece59d34, 1c5ce18cb). Callback validation:
@@ -58,9 +63,9 @@
   capture-page.js (getDisplayMedia, 16000 Hz AudioWorklet), meeting-page.js
   (48000 Hz AudioContext/MediaStream microphone/playback), track-audio-page.js
   (incoming WebRTC). Native support needs actual media sources and transport.
-- Add Worker WebSocket support with explicit transport, appropriate Worker CSP,
-  bounded shared connection ownership and termination cleanup. Verify the complete
-  Worker and its WASM download/initialization protocol, not just extracted glue.
+- Resolve complete network Worker startup and verify its WASM download/
+  initialization protocol and actual Zoom socket exchange. The local Worker socket
+  check and extracted WASM glue do not establish meeting/media acceptance.
 - Verify server-selected page behavior; identity changes landing content. Optional
   file-paa.zoom.us/cdn.cookielaw.org blocking is diagnostic configuration only.
 - Complete iframe navigation/srcdoc/policy contexts and child realms, DOM branding

@@ -29,6 +29,38 @@ function boundedUrl(value: string, base?: string): URL {
 	return url;
 }
 
+// Shared by document and Worker sockets; CSP remains owned by each context.
+export function resolveWebSocketUrl(
+	input: unknown,
+	base: string,
+	secure: boolean,
+): URL {
+	if (typeof input !== "string")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"WebSocket URL must be a string",
+		);
+	const url = boundedUrl(input, base);
+	if (url.protocol === "http:") url.protocol = "ws:";
+	else if (url.protocol === "https:") url.protocol = "wss:";
+	if (url.protocol !== "ws:" && url.protocol !== "wss:")
+		throw new AgentBrowserError(
+			"invalid-input",
+			"WebSocket URL must use ws or wss",
+		);
+	if (url.username || url.password || url.href.includes("#"))
+		throw new AgentBrowserError(
+			"invalid-input",
+			"WebSocket URLs cannot contain credentials or fragments",
+		);
+	if (secure && url.protocol !== "wss:")
+		throw new AgentBrowserError(
+			"policy-denied",
+			"HTTPS documents require secure WebSocket connections",
+		);
+	return url;
+}
+
 export class DocumentWebSocketPolicy {
 	private readonly origin: string;
 	private readonly secure: boolean;
@@ -85,24 +117,7 @@ export class DocumentWebSocketPolicy {
 				"resource-limit",
 				"WebSocket URL exceeds the length limit",
 			);
-		const url = boundedUrl(input, this.baseUrl());
-		if (url.protocol === "http:") url.protocol = "ws:";
-		else if (url.protocol === "https:") url.protocol = "wss:";
-		if (url.protocol !== "ws:" && url.protocol !== "wss:")
-			throw new AgentBrowserError(
-				"invalid-input",
-				"WebSocket URL must use ws or wss",
-			);
-		if (url.username || url.password || url.href.includes("#"))
-			throw new AgentBrowserError(
-				"invalid-input",
-				"WebSocket URLs cannot contain credentials or fragments",
-			);
-		if (this.secure && url.protocol !== "wss:")
-			throw new AgentBrowserError(
-				"policy-denied",
-				"HTTPS documents require secure WebSocket connections",
-			);
+		const url = resolveWebSocketUrl(input, this.baseUrl(), this.secure);
 		let allowed: boolean;
 		documentResourceCsp(this.tree)?.check("connect", url.href);
 		try {

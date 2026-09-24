@@ -1,5 +1,5 @@
-import type { DocumentTree } from "./document.js";
 import type { DocumentWebSockets } from "./document-websockets.js";
+import type { DocumentTree } from "./document.js";
 import { AgentBrowserError } from "./errors.js";
 import type {
 	PageBindingContext,
@@ -116,10 +116,16 @@ export class PageWebSockets {
 	private sends = 0;
 
 	constructor(
-		tree: DocumentTree,
-		private readonly context: PageBindingContext,
-		private readonly lifecycle: PageBindingLifecycle,
-		private readonly owner: DocumentWebSockets,
+		tree: Pick<DocumentTree, "onClose">,
+		private readonly context: Pick<
+			PageBindingContext,
+			"createHostObject" | "retainGuestArguments" | "releaseGuestReference"
+		>,
+		private readonly lifecycle: Pick<
+			PageBindingLifecycle,
+			"startCallback" | "isClosed" | "fail"
+		> & { whenReady?(): Promise<void> },
+		private readonly owner: Pick<DocumentWebSockets, "start" | "metrics">,
 		limits: Partial<PageWebSocketLimits> = {},
 	) {
 		this.limits = Object.freeze({ ...defaults, ...limits });
@@ -747,6 +753,10 @@ export class PageWebSockets {
 		this.retainedBytes += bytes;
 		this.events.add(event);
 		if (!(await this.nextTask()) || !this.live()) return;
+		if (this.lifecycle.whenReady) {
+			await Promise.race([this.lifecycle.whenReady(), this.shutdown]);
+			if (!this.live()) return;
+		}
 		if (transition && !transition()) {
 			this.events.delete(event);
 			this.retainedBytes -= event.bytes;

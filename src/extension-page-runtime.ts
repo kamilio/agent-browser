@@ -386,6 +386,7 @@ export function extensionPageRuntime(
 					documentUrl: options.workerDocumentUrl,
 					identity: options.workerIdentity,
 					policy: options.workerPolicy,
+					webSockets: options.workerWebSockets,
 					fetch: options.workerFetch,
 					importFetch: options.workerImportFetch,
 					importPolicy: options.workerImportPolicy,

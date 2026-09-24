@@ -4,6 +4,7 @@ import {
 	browserIdentityHeaders,
 	defaultBrowserIdentity,
 } from "./browser-identity.js";
+import type { DocumentWebSockets } from "./document-websockets.js";
 import { AgentBrowserError } from "./errors.js";
 import type { PageBlobs } from "./page-blobs.js";
 import { PageBlobs as WorkerBlobs } from "./page-blobs.js";
@@ -12,6 +13,11 @@ import { PageTimers } from "./page-timers.js";
 import { PageUrls } from "./page-urls.js";
 import { pageWasmBootstrapSource } from "./page-wasm-bootstrap.js";
 import { PageWasm, type PageWasmBudget } from "./page-wasm.js";
+import {
+	pageWebSocketBootstrapGlobal,
+	pageWebSocketBootstrapSource,
+} from "./page-websocket-bootstrap.js";
+import { PageWebSockets } from "./page-websockets.js";
 import { workerGlobalBootstrapSource } from "./page-worker-bootstrap.js";
 import { PageWorkerImports } from "./page-worker-imports.js";
 import type {
@@ -39,6 +45,7 @@ export interface PageWorkerOptions {
 	documentUrl: string;
 	identity?: Readonly<BrowserIdentity>;
 	policy(url: string, redirects?: number): void;
+	webSockets?: DocumentWebSockets;
 	fetch?: WorkerScriptFetch;
 	importFetch?: WorkerImportFetch;
 	importPolicy?: WorkerImportPolicy;
@@ -103,6 +110,8 @@ interface WorkerRecord {
 	wasmCompilation: "allow" | "deny";
 	importPolicy?: WorkerImportPolicy;
 	imports?: PageWorkerImports;
+	checkConnect?: (url: string) => void;
+	webSockets?: PageWebSockets;
 }
 interface Packet {
 	record: WorkerRecord;
@@ -265,7 +274,8 @@ export class PageWorkers {
 		this.webAssembly = options.webAssembly === "bounded-v1";
 		this.bootstrapSource =
 			workerGlobalBootstrapSource +
-			(this.webAssembly ? pageWasmBootstrapSource : "");
+			(this.webAssembly ? pageWasmBootstrapSource : "") +
+			(options.webSockets ? pageWebSocketBootstrapSource : "");
 		this.identity = options.identity ?? defaultBrowserIdentity;
 		browserIdentityHeaders(this.identity);
 		this.port = owner.createHostObject({
@@ -486,6 +496,12 @@ export class PageWorkers {
 					typeof loaded.checkImport !== "function"
 				)
 					throw new TypeError("Invalid Worker import policy");
+				if (
+					loaded.checkConnect !== undefined &&
+					typeof loaded.checkConnect !== "function"
+				)
+					throw new TypeError("Invalid Worker connect policy");
+				record.checkConnect = loaded.checkConnect;
 				record.importPolicy = loaded.checkImport;
 				record.stringCompilation =
 					record.stringCompilation === "deny"
@@ -514,6 +530,7 @@ export class PageWorkers {
 				name: "agent-browser-worker",
 				globals: [
 					"__agentBrowserWorker",
+					...(this.options.webSockets ? [pageWebSocketBootstrapGlobal] : []),
 					...(webAssembly ? ["__agentBrowserWasm"] : []),
 				],
 				capabilities,
@@ -528,6 +545,33 @@ export class PageWorkers {
 							record.wasmCompilation,
 						)
 					: undefined;
+				const webSockets = this.options.webSockets
+					? new PageWebSockets(
+							{
+								onClose: (close) => {
+									context.onCleanup(close);
+									return () => false;
+								},
+							},
+							context,
+							{
+								isClosed: () =>
+									context.signal.aborted ||
+									(record.state !== "loading" && record.state !== "ready"),
+								whenReady: async () => {
+									await record.initialization;
+								},
+								startCallback: (callback, args, receiver) =>
+									this.invoke(record, callback, args, receiver?.thisValue),
+								fail: (error) => this.failure(record, error),
+							},
+							this.options.webSockets.forWorker(
+								record.url,
+								record.checkConnect,
+							),
+						)
+					: undefined;
+				record.webSockets = webSockets;
 				const identity = this.identity;
 				const clock = new PageClock();
 				context.onCleanup(() => clock.close());
@@ -590,6 +634,9 @@ export class PageWorkers {
 				const location = new URL(record.url);
 				return {
 					globals: {
+						...(webSockets
+							? { [pageWebSocketBootstrapGlobal]: webSockets.bootstrap }
+							: {}),
 						...(wasm ? { __agentBrowserWasm: wasm.port } : {}),
 						__agentBrowserWorker: context.createHostObject({
 							properties: {
@@ -672,7 +719,7 @@ export class PageWorkers {
 				hostObjects: 128,
 				callbacks: 1024,
 				guestReferences: 128,
-				cleanups: 8,
+				cleanups: 9,
 				nestedEvaluations: 8,
 			},
 			sink: {
@@ -872,6 +919,7 @@ export class PageWorkers {
 		)
 			return;
 		record.state = "closing";
+		record.webSockets?.close();
 		record.timers?.close();
 		// Finish the current task's synchronous part, then cancel suspended tails.
 		record.closing = Promise.resolve().then(async () => {
@@ -891,6 +939,7 @@ export class PageWorkers {
 	}
 	private async terminate(record: WorkerRecord) {
 		record.state = "terminated";
+		record.webSockets?.close();
 		record.imports?.close();
 		record.controller.abort();
 		record.timers?.close();
