@@ -17,13 +17,14 @@
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
 - The normal Zoom probe enables bounded WASM/binary Worker messages and explicit
-  1 MiB / 30 s page-fetch limits. Fresh full-page check with those settings:
-  all 13 classic scripts completed; seven modules were admitted. The 120 s module
-  deadline closed the realm at 15038 module nodes (13487 in editor-core), while
-  extending React's unitless CSS-property table with vendor prefixes at line 29,
-  offset 45058. No name/Join controls, join attempt or socket attempt; cleanup
-  retained zero data. This advances beyond the earlier 9068-node observation but
-  still does not reach readiness. Do not repeat unchanged extended runs.
+  1 MiB / 30 s page-fetch limits. Latest instrumented full-page check completed
+  all 13 classic scripts and admitted seven modules, but the 120 s module deadline
+  closed the realm at 11149 nodes (9598 in editor-core), at line 25, offset 32711.
+  No name/Join controls, join attempt or socket attempt; cleanup retained zero data.
+  An earlier run reached 15038 nodes. Without per-node tracing, all 13 classics
+  completed and seven modules prepared, but the same deadline expired without
+  name/Join controls, a join attempt or sockets; cleanup retained zero data.
+  No diagnostic is active. Do not repeat unchanged extended runs.
 - Maintained SafeJS uses sixteen per-walk positive capture slots.
   Actual editor graph: 337–381 ms per 100 walks versus 451–485 ms with four slots,
   with identical 6690449-unit charges. Full-page time to 6000 nodes was broadly
@@ -39,8 +40,18 @@
   2.9 s and GC 2.6 s. Seven modules prepared; the intentional stop cleaned up
   with zero retained data/sockets. Parsing the real 3.49 MB login module made
   8548753 position requests and allocated 3860297 uncached coordinates.
-  Next: investigate temporary coordinate allocation during token/AST decoding,
-  preserving source locations, mutable span behavior, quotas and cancellation.
+- SafeJS a9d68d5e67 defers coordinates on private compiler tokens; ordinary token
+  records remain eager. The rebuilt SDK reduced login-module position requests to
+  3934203 and allocations to 1984101. Alternating runs used 10.06–10.23 s CPU
+  versus 11.67 s for the warmed eager baseline. This is a parsing gain, not proven
+  application readiness. Passed 226 focused tests, lint, maintained build,
+  13 built SDK checks and six browser SDK/JSPI checks with zero retained resources.
+  Execution comparison over nodes 3000–6000 used 18.06 s CPU eager versus 13.57 s
+  lazy, both with 3107 complete reconciliations and verified cleanup. No regression
+  reproduced; separate page-load timing does not establish a reliable execution gain.
+- SafeJS 71a4da72cf fixes the parser's native stack overflow on long else-if
+  ladders. Iterative continuations preserve the 2048-level limit, source spans and
+  nearest-else binding; deeper non-ladder grammar remains a separate validation gate.
 - Worker source nodes 15000–35000 required 21009 complete reconciliations and
   31.5–34.2 s sampled time; the visitor accounted for 16.9–17.9 s. Optimization
   tracing separated 35 warm-up deoptimizations from four in the measured interval;
