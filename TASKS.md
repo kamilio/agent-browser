@@ -25,7 +25,7 @@
   metered import deadlines. Object.create tables, ordinary constructor receivers
   and classic/module array literals reuse mutation-invalidated descriptors;
   scope storage avoids per-operation argument arrays.
-- SafeJS commit 4eca44c48 defers unread unmapped arguments in classic scripts and
+- Maintained SafeJS defers unread unmapped arguments in classic scripts and
   source modules. Binding reads and snapshots create the native arguments object;
   mapped and bigint arguments stay eager. Descendants and materialized descriptors
   remain freshly measured. Late materialization, aliases, ordinary/held quotas,
@@ -33,18 +33,25 @@
   Broader selected regressions passed 362 tests across 32 files (two existing
   skips); the final arguments/symbol suite passed 69 tests across eight files.
   Scoped lint, new-file formatting and the maintained build pass.
+- SafeJS commit 03068ccf9 avoids empty fallback iterators for closures without
+  retained-value providers. Real providers, including custom iterators on empty
+  arrays, remain freshly observed. Selected capture/ownership/quota regressions
+  passed 70 tests across 12 files; scoped lint, build and eight imports pass.
+  Alternating both walkers on one retained Zoom graph preserved 6656473 units
+  across every pass. Sampled allocation fell about 3% (29.8 MB to 28.9 MB per
+  50 walks), with no CPU improvement established. No startup speedup is claimed.
 - The final compiled fixture (160 retained argument scopes, 3000 walks per CPU
   pass) used about 62% less accounting CPU and 80% less sampled allocation.
   Both paths retained 5776 units, detected 1000 units of descendant growth and
   1019 units including native mutation, and ended at 6795 after materialization.
   An earlier live sample found 164 unread unmapped arguments among 203 retained
   arguments objects. No complete live startup speedup is established.
-- The deferred-arguments live attempt used a 256 MiB heap and temporary 600 s
-  limits. All 13 classic scripts passed and seven modules linked, but editor-core
-  evaluation ended on the source-import deadline after about 526 s. The DOM still
-  showed a loading image and "Joining Meeting...". No controls, admission, presence
-  or sockets were established. Cleanup verified closed runtimes, zero retained
-  data and closed sockets; the process exited 1 and is gone.
+- The latest uninstrumented built-runtime check used a 256 MiB heap and 120 s
+  script/import observation bounds. All 13 classic scripts passed and seven
+  source modules were prepared, but the import observation expired with editor
+  evaluation still pending. No readiness, admission or presence was verified;
+  there were no socket attempts. Cleanup closed the runtime, cleared retained
+  data and closed sockets; the process exited 1.
 - A fresh early-editor census found about 12600 visits per scan: 3703 deferred
   functions, 1604 materialized closures, 935 ordinary objects and 223 arrays.
   Each scan made about 25000 capture calls. The graph walker was already V8
@@ -64,7 +71,7 @@
   process CPU per pass. Page state and scheduling varied, so these are not clean
   speed measurements. The marginal allocation benefit did not justify retaining
   a possible slowdown: the trial and its test were discarded. The baseline build
-  and all eight imports are restored and verified. No runtime change remains.
+  and all eight imports were restored and verified. No change from that trial remains.
   All probes closed with zero retained data and closed sockets; none
   established controls or joined. Inspect remaining visitor/iterator allocations.
 - An identity-sharing trial saved 8-15% CPU in an isolated deferred-function
