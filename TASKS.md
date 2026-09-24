@@ -24,37 +24,33 @@
   records/arrays, import/export indexes, deferred module functions and unread
   unmapped arguments, and metered import deadlines. Fresh descendant/native
   observations, aliases, ordinary/held quotas and reentry remain required.
-- SafeJS 0e0b1a35a reuses symbol keys of SDK-owned frozen Promise/Map/Set
-  carriers and sealed RegExp carriers. Pinned native finalization protects this
-  invariant; descriptors, internal-symbol membership, guest properties and mutable
-  descendants remain fresh. Selected validation passed 192 tests across 19 files,
-  scoped lint, new-test formatting, the maintained build and eight built imports.
-- Alternating old/new walkers on one live graph preserved 6657402 units on every
-  pass. It contained 94 eligible carriers (81 Promises). Sampled allocation fell
-  about 5% (29.9 MB to 28.4 MB per 50 walks); CPU timings overlapped. No complete
-  startup speedup is established.
-- Latest uninstrumented Zoom check of that build: 256 MiB heap, 120 s script/import
-  observation bounds, 13 classic scripts passed, seven modules prepared. Import
-  observation expired while editor evaluation remained pending. No readiness, admission,
-  presence or socket attempts. Cleanup closed the runtime and sockets and cleared
-  retained data. Longer diagnostics have also failed to establish readiness.
-- Editor profiling attributed about 71% of CPU samples to data reconciliation
-  and 25% to GC; the walker was already V8 optimized. About 12600 graph visits
-  and 25000 capture calls occurred per scan. Largest allocation buckets were
-  visit, native descriptors, iterator next and property-name arrays. Fixed read-site
-  helpers attributed about 11% of sampled allocation to own-symbol enumeration;
-  this is diagnostic attribution, not baseline throughput. Loop-wrapping probes
-  added excessive allocation and are unsuitable for judging optimization targets.
-- Reflection arrays occupied only 72 slots across two arrays in a retained live
-  graph. Reusing their descriptors preserved charges and reduced allocation about
-  4%, but CPU timings overlapped. No runtime change is justified by that comparison.
-  All completed probes verified closed runtimes/sockets and zero retained data.
-- Latest operation census found repeated work in Rolldown's export-copy helper
-  during two 10 s windows (254 and 292 evaluator entries). This establishes slow
-  copy-loop work, not an infinite loop; instrumentation affects timing.
-- Constructor-prototype tracking, visit-marker and deferred-identity trials were
-  discarded for insufficient representative benefit or retention/accounting
-  failures. No changes from these trials remain; maintained builds were restored.
+- SafeJS 61d1873e4 reuses immutable tracked accessor projections, preserving fresh
+  getter/setter captures, ordering, aliases and quotas. It fixes a reproduced native
+  iterator-hook undercount (1008 units became 7). Validation: 441 tests passed across
+  18 files, two existing skips, scoped lint, test formatting, maintained build and
+  eight built-import checks. Earlier sealed-symbol optimization 0e0b1a35a remains.
+- The accessor comparison preserved 6656190 units across every pass on one live
+  graph: 601 roots, nine eligible tables and 79 accessors. Allocation fell about
+  1.8% (25.96 MB to 25.49 MB per 50 walks); CPU timings overlapped. No startup
+  speedup is established.
+- Latest uninstrumented Zoom check of 61d1873e4: 256 MiB heap, 120 s script limit;
+  nine scripts passed, then externals.min.js hit the execution deadline at 120.4 s
+  wall time (54.8 s process CPU). This was a classic-script timeout, not an import
+  observation timeout. Host CPU pressure was high; no causal regression is proved.
+  No readiness, admission, presence or socket attempts. Cleanup verified closed
+  runtime/sockets and zero retained data. The prior build passed 13 classic scripts
+  but still expired its import observation during editor evaluation.
+- Editor profiling attributed about 71% of CPU samples to reconciliation and 25%
+  to GC; the walker was already optimized. About 12600 graph visits and 25000 capture
+  calls occurred per scan. The operation census found slow Rolldown export-copy
+  work, not a proven infinite loop. Native descriptors and iterator allocations
+  remain significant; small allocation savings have not established startup gains.
+- Omitting deferred collection diagnostically found 14812 already-seen roots and
+  about 10% lower average CPU with overlapping timings. This shortcut is unsafe and
+  was not retained. Native-record descriptor reuse reduced sampled allocation about
+  23%, without established CPU benefit; no such cache was retained. Completed probes
+  verified cleanup. Rejected constructor-prototype, visit-marker and deferred-identity
+  trials remain discarded; loop-wrapping allocation instrumentation is unsuitable.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
