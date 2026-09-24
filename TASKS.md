@@ -17,59 +17,28 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse working
   builds and /tmp/agent-browser-node24-runtime/bin/node.
-- Latest uninstrumented Zoom check (restored runtime, Node heap 512 MiB) passed all 13 classic scripts and
-  prepared seven modules, but the 120 s import deadline revoked the realm before
-  settlement. No readiness, admission, presence or socket attempts. Cleanup closed
-  runtime/sockets and retained zero data. A 600 s diagnostic also expired.
-- The 512 MiB heap advanced to 9015061 steps at 115 s, versus 8998346 at 111 s
-  in the recent 256 MiB cache check; this comparison includes backend/timing
-  differences and does not establish a precise speedup. Normal startup still
-  misses its deadline. The 600 s diagnostic with the restored backend and 512 MiB
-  heap executed 49993 module nodes (47555 in editor-core), then expired at
-  editor-core offset 697893, line 237, in Wn's method wrapper copying arguments
-  into an array. It passed the earlier React property and event tables. Complete
-  snapshots still had no name input or Join button; no join/socket attempts.
-  Cleanup closed runtime/sockets and retained zero data. This is progress through
-  initialization, not readiness or normal-startup acceptance.
-- Positive visited cache ccb727ac1 was reverted by a7a496449. Its apparent gain
-  came from a benchmark with duplicated visitor functions. Separate processes
-  using the unchanged visitor did not confirm it: a deterministic 34269-unit
-  fixture took 0.291–0.293 s baseline versus 0.294–0.313 s cached per 200 walks.
-  Live graphs of about 6.657 million units took 0.226–0.344 s baseline versus
-  0.337–0.474 s cached per 50 walks. These live graphs differed slightly and wall
-  times showed contention; neither supports a startup-speedup claim. Both probes
-  closed runtime/sockets with zero retained data. The maintained runtime is back
-  to the implementation before the cache; 58 focused accounting tests, the
-  maintained build and all 11 built checks pass. Do not reuse split-visitor timings.
-- Fast scope accounting fields (db983eba8) retain immutable null-prototype
-  records and pinned construction. A controlled live comparison preserved
-  6656514 units on 597 roots; CPU per 50 walks fell from 0.34–0.39 s to 0.23–0.30 s.
-  Allocation did not improve. Validation: 63 focused tests (including GC-enabled
-  cases), scoped lint, maintained build and eleven built checks passed. The layout
-  regression fails before the fix and passes on Node 22/24. Startup still times out.
-- Earlier validated optimizations remain: tracked array projections (7a0adb82d),
-  retained visitor code with independent per-walk state (d7052a82d), and private
-  bound-capture snapshots preserving replaced/accessor providers (838ff9c0a).
-- Profiling uninterrupted editor-core execution after the cache revert attributes
-  32% to visitor self time, 31% to GC and 11% to visited-object lookups. Enabling
-  profiling invalidated visitor code once; tracing showed no repeated visitor
-  deoptimization during the window. Treat profiler startup effects separately.
-- A descriptor census preserved 6657475 units on 607 roots: 798 records already
-  use accounting projections, most arrays use projections, and only 200 symbol
-  descriptors are captured. Remaining snapshots include arguments and guest/host
-  prototype tables. Broad descriptor caching is not supported by this evidence.
-  Both diagnostics closed with zero retained data and no socket attempts.
-- Pinning native registry methods as own WeakMap properties also showed no gain
-  in separate-process fixtures (0.292–0.314 s baseline versus 0.298–0.315 s per
-  200 walks); no runtime change was made.
-- An object-first dispatch comparison preserved 6657238 units on 616 roots but
-  showed overlapping CPU ranges and unchanged allocation; it was not adopted.
-- A corrected live observer reused session queries and found no name input or
-  Join button before or after the 120 s import window (complete snapshots).
-  Cleanup passed; no socket attempts. Statement counts reached 1551 nodes in
-  rolldown-runtime and 2011 in editor-core, ending at offset 32612 in React DOM's
-  property-info constructor during attribute-table initialization. An earlier
-  observer exhausted cleanup registrations; its late observations are superseded.
+- Normal Zoom startup still exceeds the 120 s import deadline after all 13
+  classic scripts pass and seven modules are prepared. A completed 600 s
+  diagnostic reached editor-core's argument-copying wrapper at offset 697893
+  (49993 module nodes), but exposed no name field or Join button. No join or
+  socket attempts occurred; cleanup closed runtime/sockets with zero retained data.
+- A bounded 1800 s diagnostic is running against the restored maintained runtime
+  with a 512 MiB Node heap. It watches for name/Join controls and can attempt one
+  Join action, followed by Leave if available. It has not verified admission or
+  presence. Extended limits do not satisfy the normal-startup gate. Reuse this
+  active session; finish it and verify cleanup before changing the runtime.
+- Retained optimizations: fast scope accounting fields, tracked array projections,
+  retained visitor code with independent per-walk state, and private bound-capture
+  snapshots preserving replaced/accessor providers. The positive visited cache was
+  reverted after separate-process measurements failed to confirm a benefit.
+  Restored runtime validation passed 58 focused accounting tests, the maintained
+  build and all 11 built checks. Preserve foreign uncommitted changes.
+- Current performance evidence points to retained-graph traversal and GC.
+  Repeated visitor deoptimization was not observed. Descriptor census already
+  found broad accounting-projection coverage; broad new descriptor caching lacks
+  supporting evidence. Validate optimizations using the unchanged visitor in
+  separate processes without a profiler; duplicated visitor timings misled earlier
+  comparisons. Do not infer startup gains from fixture timings.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
@@ -77,12 +46,12 @@
 ## Outstanding gates
 
 - Continue initialization beyond editor-core's method wrappers to expose Join
-  controls or a concrete compatibility failure. The extended run is terminal;
-  any further diagnostic needs a new bounded session. Reduce retained-graph
+  controls or a concrete compatibility failure. Observe the active bounded
+  diagnostic through settlement or deadline and verify cleanup. Reduce retained-graph
   reconciliation cost; repeated visitor deoptimization is not supported by the
   latest trace. Use the unchanged visitor when comparing backends.
-  Do not repeat the rejected positive visited cache, object-first dispatch or
-  fresh-Set visited-storage approaches without new evidence.
+  Do not repeat the rejected positive visited cache, object-first dispatch,
+  own-property WeakMap methods or fresh-Set visited storage without new evidence.
   Preserve per-walk callbacks and avoid retained guest roots.
   Initialize within normal allowances and verify JavaScript Join controls,
   actual joining, admission and presence.
