@@ -17,67 +17,50 @@
 ## Current verified state
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse this
-  browser's working dist. The selected SDK build and eight built-import checks
-  passed; full native/SafeJS gates remain open.
+  browser's working dist. Latest selected validation: 1001 tests across 13 files,
+  scoped lint/formatting, maintained build and eight built-import checks passed.
+  Full native/SafeJS gates remain open.
 - The loader supports delayed bootstrap, classic scripts and source modules.
   SafeJS accounting uses private snapshots, bounded capture pooling, tracked
-  records/arrays, import/export indexes, deferred module functions and unread
-  unmapped arguments, and metered import deadlines. Fresh descendant/native
-  observations, aliases, ordinary/held quotas and reentry remain required.
-- SafeJS 257e9b508 fixes a reproduced quota undercount when a native metadata
-  reader grows a later function property. Invalidated descriptors are refreshed
-  in the original key order, including under held quotas. Earlier accessor-root
-  fix 61d1873e4 and sealed-symbol optimization 0e0b1a35a remain.
-- SafeJS 73e115d99 uses existing tracked tables for copied host-function properties.
-  Combined validation: 150 tests across nine files, scoped lint, test formatting,
-  maintained build and eight built-import checks. Native edits, metadata baselines,
-  aliases, snapshots and reentrant callbacks remain observable.
-- A live graph comparison of fresh versus cached metadata descriptors covered
-  47 tables and preserved 6656677 units on 606 roots. Sampled allocation fell from
-  24.90 MB to 24.37 MB per 50 walks; CPU timings overlapped. The focused 179-function
-  fixture showed a much larger allocation reduction; no startup speedup is proved.
-- SafeJS 760d57a6b tracks reflected property-descriptor results using existing
-  privately owned storage. TDD reproduced 20 native descriptor reads per five
-  unchanged walks; the result is now zero. Validation: 120 tests across nine files,
-  scoped lint/formatting, maintained build and eight built-import checks. Mutations,
-  aliases, accessor order, reentry and ordinary/held quotas remain covered.
-  A controlled 37-result fixture preserved 1517 units while sampled allocation
-  fell from 2.49 MB to 0.22 MB per 100 walks; this is not a live startup speedup.
-- Latest Zoom check of 760d57a6b: 256 MiB heap, 120 s script/import limits.
-  All 13 classic scripts passed; externals.min.js used 55.8 s wall / 51.9 s CPU.
-  Seven modules prepared but did not settle before the actual import deadline
-  revoked the realm. No readiness, admission, presence or socket attempts. Cleanup
-  verified closed runtime/sockets and zero retained data. The earlier 600 s
-  diagnostic also expired during module execution; longer waits alone do not
-  establish working startup.
-- Editor profiling attributed about 71% of CPU samples to reconciliation and 25%
-  to GC; the walker was already optimized. About 12600 graph visits and 25000 capture
-  calls occurred per scan. The operation census found slow Rolldown export-copy
-  work, not a proven infinite loop. Native descriptors and iterator allocations
-  remain significant; small allocation savings have not established startup gains.
-- Live origin tracing before 760d57a6b found 44 constructor prototypes with 263
-  descriptor reads, 37 reflection results with 148 reads, and 37 untracked arrays
-  with 340 reads. Host-bridge records contributed only 16 reads. Both accounting
-  walkers agreed on 6667663 units. Follow-up tracing confirms raw record reads fell
-  from 501 to 353. Nine native string-split results contributed 157 of 327 remaining
-  array descriptor reads; rest-parameter and regex-split arrays were absent.
-  Both follow-up walkers agreed on 6656269 units; both probes verified cleanup.
-  No array optimization is implemented. Before reusing split-result storage,
-  account for native Symbol.split overrides and iterator hooks that can expose
-  aliases. Constructor-prototype tracking remains rejected.
-- Omitting deferred collection diagnostically found 14812 already-seen roots and
-  about 10% lower average CPU with overlapping timings. This shortcut is unsafe and
-  was not retained. Native-record descriptor reuse reduced sampled allocation about
-  23%, without established CPU benefit; no such cache was retained. Completed probes
-  verified cleanup. Rejected constructor-prototype, visit-marker and deferred-identity
-  trials remain discarded; loop-wrapping allocation instrumentation is unsuitable.
+  records/arrays, import/export indexes, deferred module functions, unread unmapped
+  arguments and metered import deadlines. Fresh native/provider observations,
+  aliases, ordinary/held quotas, snapshots and reentry remain required.
+- Maintained accounting corrections include 257e9b508 (metadata-reader edits to
+  later function fields), 61d1873e4 (accessor roots), and 0e0b1a35a (sealed symbols).
+  73e115d99 tracks copied host-function properties; 760d57a6b tracks reflected
+  descriptors. caf15de03 fixes a reproduced public-result regression: ordinary
+  run() descriptors remain natively structured-cloneable, while internal/realm
+  results retain tracked storage.
+- ad74592a4 tracks private native string-split results. It preserves native split
+  replacements, Symbol.split hooks, altered prototype chains, iterator aliases,
+  failed length shrink invalidation and quota checks. Source arrays are copied
+  before callbacks can expose the result; public run() arrays stay cloneable.
+  A controlled nine-array/157-slot fixture preserved 1803 accounting units and
+  reduced sampled allocation from 2.04 MB to 0.24 MB per 100 walks. CPU timings
+  overlapped; no live startup speedup is established.
+- Latest uninstrumented Zoom check: ad74592a4 + caf15de03, 256 MiB heap and 120 s
+  script/import limits. All 13 classic scripts passed; externals.min.js used
+  64.3 s wall / 59.6 s CPU. Seven modules prepared, but the actual import deadline
+  revoked the realm before settlement. No readiness, admission, presence or socket
+  attempts. Cleanup verified closed runtime/sockets and zero retained data.
+  An earlier 600 s diagnostic also expired during module execution.
+- Latest origin trace: 28 untracked arrays, 179 descriptor reads (previously 37
+  arrays/327 reads); raw record reads remain 353 after the reflected-descriptor
+  reduction from 501. Both walkers agreed on 6667682 units on 595 roots, and cleanup
+  passed. Remaining array reads include reflection results (72), Array constructor
+  results (60), and other arrays (47). Constructor prototypes contribute 263 of
+  the raw record reads; their tracking trial remains rejected.
+- Earlier editor sampling attributed about 71% of CPU to reconciliation and 25%
+  to GC, with about 12600 graph visits and 25000 capture calls per scan. The
+  operation census found slow Rolldown export copying, not a proven infinite loop.
+  Allocation savings have not established working startup.
+- Discarded trials remain discarded: deferred-collector skipping, mutable foreign
+  record descriptor reuse, constructor-prototype tracking, visit-marker/shared
+  deferred identities, and local-function deferral. The eager local-declaration
+  path remains. Do not use per-loop wrapper instrumentation for allocation claims.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
-- Discarded the local-function deferral trial: both controlled live variants
-  created 450 declarations and retained about 108 MB after externals.min.js.
-  CPU varied across runs without a consistent gain. Both probes verified cleanup;
-  the maintained eager local-declaration path is restored.
 
 ## Outstanding gates
 
@@ -86,9 +69,9 @@
   retained-graph traversal and allocation costs around editor initialization and
   export copying without weakening observations. The symbol census also identified
   constructor prototypes, mapped arguments and produced records; copied values from
-  copyToSandbox were absent from that branch. Investigate the identified native
-  string-split results and trace remaining unknown arrays before reuse; preserve native
-  mutations and provider observations.
+  copyToSandbox were absent from that branch. Measure remaining array/record and
+  reconciliation costs before selecting more reuse; preserve native mutations,
+  provider observations and native-cloneable public results.
   Fixture improvements and longer diagnostic allowances do not establish
   live/default-resource acceptance.
 - Implement and verify every notetaker capability above. Automations reference:
