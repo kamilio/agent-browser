@@ -46,6 +46,13 @@
   change is justified yet. Focus next on steady-state traversal and registry
   lookups, preserving fresh observations. All probes stopped and cleaned up;
   profiles and traces stayed in memory.
+- Further fixed-work tests found no substantial, reliable gain from visited-state
+  cells, closure-visitor splitting, single type dispatch, or direct factory getter
+  bodies. Collector counts and charges matched; no changes were retained. Node 22
+  did not improve the closure-heavy fixture over Node 24. Avoid repeating these
+  candidates without new evidence.
+- The legacy quora.zoom.us/wc/join/7982110526 route currently redirects to the
+  same app.zoom.us/wc/7982110526/join client; no simpler entry route was found.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
