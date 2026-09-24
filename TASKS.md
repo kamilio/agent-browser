@@ -19,16 +19,26 @@
 - The normal Zoom probe enables bounded WASM/binary Worker messages and explicit
   1 MiB / 30 s page-fetch limits. Fresh full-page check with those settings:
   all 13 classic scripts completed; seven modules were admitted. The 120 s module
-  deadline closed the realm at 9068 module nodes (7517 in editor-core), while
-  constructing React's DOM-property table near offset 35228. No name/Join controls,
-  join attempt or socket attempt; cleanup retained zero data. This is ordinary
-  React setup, not an identified missing-method/polyfill issue. Do not repeat
-  unchanged extended runs.
+  deadline closed the realm at 15038 module nodes (13487 in editor-core), while
+  extending React's unitless CSS-property table with vendor prefixes at line 29,
+  offset 45058. No name/Join controls, join attempt or socket attempt; cleanup
+  retained zero data. This advances beyond the earlier 9068-node observation but
+  still does not reach readiness. Do not repeat unchanged extended runs.
 - Fresh post-download Worker CPU sample: retained-data visitor self time was
   20.1 of 30.6 s; typed-array classification was only 0.15 s. Earlier startup
   profiling also identifies graph accounting; the visitor is already optimized.
-  Maintained SafeJS remains 79f0215058. Private visit-generation records and
+  Private visit-generation records and
   private-brand routing showed no gain; discarded without source changes.
+- Maintained SafeJS df848a278b extends the per-walk positive capture cache from
+  four to sixteen slots, preserving fresh providers, quotas and reconciliation.
+  One actual editor measurement had 3703 deferred roots, 2023 closures, and 7662
+  extra positive registry lookups with four slots. On the same retained graph,
+  sixteen slots took 337–381 ms per 100 walks versus 451–485 ms, with identical
+  6690449-unit charges. Full-page time to 6000 module nodes was broadly similar
+  (31.8 vs 33.0 s); a clear overall startup gain is not established.
+  Passed 200 focused accounting tests, including the previously failing
+  sixteen-root lookup bound and success/failure GC cleanup, 13 built SDK checks,
+  the selected workspace build and focused lint. No runtime deadline increase.
 - Splitting the visitor improved a retained-intrinsic fixture, but regressed the
   actual Zoom page. At the same 6000 module nodes / editor-core offset 32525,
   baseline took 33.0 s wall / 27.4 s CPU versus 47.2 / 36.2 s for the split.
@@ -37,8 +47,10 @@
 - A baseline editor-core profile between module nodes 3000 and 6000 also exposed
   deferred-function collect/read costs (1.03 / 0.58 s). A shared-method prototype
   preserved the fixture's 57797-unit charge but showed no clear speedup
-  (227–250 vs 227–244 ms per 100 walks); no SDK source changes retained.
-  Next inspect actual editor-phase traversal categories before another refactor.
+  (227–250 vs 227–244 ms per 100 walks); this prototype was not retained.
+  Actual editor traversal includes 13815 entries, 4850 scope projections and
+  1005 records per sampled measurement. Further accounting work must use this
+  scope structure, not the earlier single-scope synthetic fixture alone.
   Preserve fresh reads, every provider/collector and full reconciliation.
 - Fresh original/alternate join-route checks found the launch page and the same
   app webclient route. Chrome, Firefox and Safari request identities selected
