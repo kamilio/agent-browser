@@ -35,14 +35,18 @@
   up with zero retained data. The archive was released; no diagnostic remains active.
   Replay preserves response completion order and recorded guest Date reads.
   Freezing Date broke bootstrap; immediate responses changed callback ordering.
-- Replay is not yet a reliable performance gate: the two runs differed by 249
-  steps, 6 reported data units and about 14 execution CPU seconds (35.6 vs 21.5).
-  An empty classic task stayed pending during module execution in both replays;
-  the live capture completed all 13 classics before the cutoff. Next isolate
-  phase-local accounting, background work and JIT/GC costs using the same replay.
-  Keep native deadlines real; do not infer speedups from fixed node counts alone.
-  No runtime change was retained. Preserve fresh observations and full
-  reconciliation, including primitive awaits.
+- Phase-local profiling now matches live/replay work: 9844 steps, 29217 additional
+  data units and 5066 accounting calls, with no other guest scripts executing.
+  Accounting consumes about 94–95% of the interval. The two profiled replays had
+  identical accounting totals but still used 24.2 vs 19.6 CPU seconds; GC was about
+  1% or less. Timing variability remains unresolved; bootstrap totals are not a
+  substitute for phase-local comparisons. An empty classic task stays pending in
+  replay while the live capture completes all 13 classics before the cutoff.
+- Deferred-first and tagged scope-record dispatch showed no repeatable fixture
+  gain and were discarded. No runtime change was retained. Next sample repeated
+  visited-object lookups within one actual Zoom accounting walk. Preserve fresh
+  observations and full reconciliation, including primitive awaits; keep native
+  deadlines real. All diagnostics stopped and kept their artifacts in memory.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
