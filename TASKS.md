@@ -17,42 +17,25 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse working
   builds and /tmp/agent-browser-node24-runtime/bin/node.
-- Latest normal-allowance Zoom line profile passed all 13 classic scripts and
-  prepared seven modules, then hit the 120 s runtime deadline in editor-core
-  (9926 module nodes; offset 32558, line 25). No name field, Join button or
-  join/socket attempt appeared. Cleanup passed with zero retained data.
-  No diagnostic remains active; diagnostics stayed in memory.
-- Startup remains blocked. A completed 1800 s diagnostic reached emoji-reactions
-  data initialization (141444 nodes; offset 49274, line 9) without Join controls.
-  Do not repeat unchanged extended runs.
+- Zoom startup remains blocked: all 13 classic scripts pass, but the normal
+  120 s runtime deadline expires in editor-core before name/Join controls appear.
+  An 1800 s diagnostic reached emoji-reactions initialization without controls;
+  do not repeat unchanged extended runs. No join/socket attempt occurred.
+  Cleanup passed with zero retained data; no diagnostic remains active.
 - Retained SafeJS parser/accounting fixes passed their focused tests, lint,
   maintained builds and built checks; live startup remains unresolved. Latest
   parser commits: aece59d34 and 1c5ce18cb. Latest traversal experiments were
   discarded; source and built visitor were restored and all 11 built checks passed.
-- An in-memory capture and two offline replays reached the same 5000 module-node
-  sequence in React's DOM-property initialization (editor-core offset 32554).
-  Both replays matched all 19 responses, made no HTTP/socket attempts, and cleaned
-  up with zero retained data. The archive was released; no diagnostic remains active.
-  Replay preserves response completion order and recorded guest Date reads.
-  Freezing Date broke bootstrap; immediate responses changed callback ordering.
-- Phase-local profiling now matches live/replay work: 9844 steps, 29217 additional
-  data units and 5066 accounting calls, with no other guest scripts executing.
-  Accounting consumes about 94–95% of the interval. The two profiled replays had
-  identical accounting totals but still used 24.2 vs 19.6 CPU seconds; GC was about
-  1% or less. Timing variability remains unresolved; bootstrap totals are not a
-  substitute for phase-local comparisons. An empty classic task stays pending in
-  replay while the live capture completes all 13 classics before the cutoff.
-- One actual accounting walk observed 11962 objects and 24426 object captures.
-  Its two busiest roots were each captured 5353 times and still needed 1360
-  repeated visited-state lookups. Cache promotion and eight-entry caching did not
-  give repeatable fixture gains, so both were discarded, as were earlier scope
-  dispatch variants. The maintained four-entry cache remains unchanged.
-- A preliminary state-classification guard cost probe showed only a small fixture
-  gain and has incomplete native-hook escape tracking; it is not a safe runtime
-  change. Next investigate larger visitor representation/dispatch costs rather
-  than cache-capacity tuning. Preserve fresh observations and full reconciliation,
-  including primitive awaits; keep native deadlines real. No runtime change was
-  retained; all diagnostics stopped, and their artifacts stayed in memory.
+- In-memory capture/replay isolates accounting as about 94–95% of a matching
+  5000-module-node startup interval. Comparison invariants: 9844 phase steps,
+  29217 additional data units, 5066 accounting calls and equal returned-accounting
+  totals between replays. Preserve response completion order and recorded guest
+  Date reads; keep native deadlines real and replay networking disabled.
+  Timing variability remains unresolved. Diagnostic archives were released.
+- Next investigate visitor representation/dispatch costs. Cache promotion,
+  larger caches and scope-dispatch variants gave no repeatable gain and were
+  discarded. The state-classification guard probe lacked native-hook escape
+  tracking and is unsafe. No runtime optimization was retained from these probes.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
