@@ -29,10 +29,20 @@
   maintained builds and built checks; live startup remains unresolved. Latest
   parser commits: aece59d34 and 1c5ce18cb. Latest traversal experiments were
   discarded; source and built visitor were restored and all 11 built checks passed.
-- Profiling points to retained-data traversal during execution. Next compare a
-  fixed amount of Zoom initialization work, with responses kept in memory.
-  Timed-run node counts and synthetic fixture gains do not prove live speedups.
-  Preserve fresh observations and full reconciliation, including primitive awaits.
+- An in-memory capture and two offline replays reached the same 5000 module-node
+  sequence in React's DOM-property initialization (editor-core offset 32554).
+  Both replays matched all 19 responses, made no HTTP/socket attempts, and cleaned
+  up with zero retained data. The archive was released; no diagnostic remains active.
+  Replay preserves response completion order and recorded guest Date reads.
+  Freezing Date broke bootstrap; immediate responses changed callback ordering.
+- Replay is not yet a reliable performance gate: the two runs differed by 249
+  steps, 6 reported data units and about 14 execution CPU seconds (35.6 vs 21.5).
+  An empty classic task stayed pending during module execution in both replays;
+  the live capture completed all 13 classics before the cutoff. Next isolate
+  phase-local accounting, background work and JIT/GC costs using the same replay.
+  Keep native deadlines real; do not infer speedups from fixed node counts alone.
+  No runtime change was retained. Preserve fresh observations and full
+  reconciliation, including primitive awaits.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
