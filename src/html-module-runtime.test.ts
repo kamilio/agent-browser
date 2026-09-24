@@ -11,6 +11,7 @@ import {
 import type { HtmlModuleRequest } from "./html-module.js";
 import { documentInteractions } from "./interactions.js";
 import type { NetworkResponse } from "./network.js";
+import { pageDomConstructorBootstrapSource } from "./page-dom-constructor-bootstrap.js";
 import { pageEventBootstrapSource } from "./page-event-bootstrap.js";
 import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 import {
@@ -110,7 +111,10 @@ function fakeCore(
 						bridge.bind({});
 					}
 				}
-				if (source === pageEventBootstrapSource) {
+				if (
+					source ===
+					pageEventBootstrapSource + pageDomConstructorBootstrapSource
+				) {
 					expect(evaluation).toEqual({
 						filename: "agent-browser:page-bootstrap",
 					});
@@ -260,7 +264,10 @@ it.each([inlineSource, ""])(
 			}),
 		).resolves.toMatchObject({ ok: true, value: { contract: "fake-sdk" } });
 		expect(test.realm.evaluate.mock.calls).toEqual([
-			[pageEventBootstrapSource, { filename: "agent-browser:page-bootstrap" }],
+			[
+				pageEventBootstrapSource + pageDomConstructorBootstrapSource,
+				{ filename: "agent-browser:page-bootstrap" },
+			],
 			[source, { sourceType: "module", filename: inlineId }],
 		]);
 		expect(test.modules.fetchWithPolicy).not.toHaveBeenCalled();
@@ -434,7 +441,10 @@ it.each(["unregistered", "changed-source", "changed-identity"])(
 			),
 		).rejects.toMatchObject({ code: "invalid-input" });
 		expect(test.realm.evaluate.mock.calls).toEqual([
-			[pageEventBootstrapSource, { filename: "agent-browser:page-bootstrap" }],
+			[
+				pageEventBootstrapSource + pageDomConstructorBootstrapSource,
+				{ filename: "agent-browser:page-bootstrap" },
+			],
 		]);
 	},
 );
@@ -902,7 +912,10 @@ it.each([false, true])(
 		);
 		if (!inline) throw new Error("Missing inline script node");
 		expect(test.realms[0].evaluate.mock.calls).toEqual([
-			[pageEventBootstrapSource, { filename: "agent-browser:page-bootstrap" }],
+			[
+				pageEventBootstrapSource + pageDomConstructorBootstrapSource,
+				{ filename: "agent-browser:page-bootstrap" },
+			],
 			[
 				inlineSource,
 				{
