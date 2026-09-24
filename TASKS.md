@@ -20,11 +20,14 @@
   modules, but expired at the 120 s module deadline without name/Join controls,
   a join attempt or socket attempts. Cleanup retained zero data. The probe uses
   bounded WASM/binary Worker messages and explicit 1 MiB / 30 s page-fetch limits.
-  After direct visited lookups, the final progress sample reached 9033310 steps
-  at 114.9 s; this does not establish an overall startup gain. No diagnostic is active.
+  A subsequent 600 s diagnostic also expired before controls or socket attempts,
+  after 58334 module nodes. Execution advanced through React startup tables and
+  keyboard mapping to DOMPurify allowlist construction in editor-core.min.js
+  (last position: line 237, column 4703). Cleanup retained zero data. No diagnostic
+  is active; do not repeat this unchanged extended run or raise its deadline again.
 - SafeJS now binds visited lookups directly to private registries, preserving fresh
   generations, nested-walk isolation and pinned native operations. The built SDK
-  averaged 871 ms CPU per 200 real-graph walks versus 922 ms for the original,
+  averaged 871 ms CPU per 200 real-graph walks versus 923 ms for the original,
   with identical 6695798-unit charges; individual samples varied substantially.
   Passed 141 focused accounting tests including nine GC checks, lint, maintained
   build, 13 built SDK checks and six actual browser SDK/JSPI checks. Cleanup passed.
@@ -56,7 +59,8 @@
 
 - Initialize within normal allowances, expose Join controls, fill the name before
   requiring enabled Join (#input-for-name), and verify admission/presence. Resolve
-  accounting cost and timing instability without skipping reads or collectors.
+  the cost of reconciling large module scopes during small library initialization
+  loops, without skipping reads or collectors.
   Longer deadlines, fixed-work diagnostics and fixture gains do not prove readiness.
 - Implement and verify every notetaker capability above. Automations references:
   capture-page.js (getDisplayMedia, 16000 Hz AudioWorklet), meeting-page.js
@@ -97,6 +101,7 @@
 - Already rejected without reproducible real-workload gains: visitor splits/guards,
   shared deferred methods, private-field/brand scope routing and visit generations,
   declaration deferral, direct owned getter reads, position/line and balanced-scan
-  caches, dense numeric visited markers, token-cache FIFO ring and an alternate
+  caches, dense numeric visited markers, fresh per-walk Set/WeakSet registries,
+  token-cache FIFO ring and an alternate
   WASM export factory. Require new evidence before revisiting these candidates.
 - Commit completed changes with explicit owned paths. No subagents or pushes.
