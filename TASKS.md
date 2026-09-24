@@ -37,7 +37,14 @@
 - Editor profiling attributed about 71% of CPU samples to data reconciliation
   and 25% to GC; the walker was already V8 optimized. About 12600 graph visits
   and 25000 capture calls occurred per scan. Largest allocation buckets were
-  visit, native descriptors, iterator next and property-name arrays.
+  visit, native descriptors, iterator next and property-name arrays. Fixed read-site
+  helpers attributed about 11% of sampled allocation to own-symbol enumeration;
+  this is diagnostic attribution, not baseline throughput. Loop-wrapping probes
+  added excessive allocation and are unsuitable for judging optimization targets.
+- Reflection arrays occupied only 72 slots across two arrays in a retained live
+  graph. Reusing their descriptors preserved charges and reduced allocation about
+  4%, but CPU timings overlapped. No runtime change is justified by that comparison.
+  All completed probes verified closed runtimes/sockets and zero retained data.
 - Latest operation census found repeated work in Rolldown's export-copy helper
   during two 10 s windows (254 and 292 evaluator entries). This establishes slow
   copy-loop work, not an infinite loop; instrumentation affects timing.
@@ -53,8 +60,11 @@
 - Finish client initialization within normal heap/time/source allowances, then
   verify interactive controls and actual joining/admission/presence. Investigate
   retained-graph traversal and allocation costs around editor initialization and
-  export copying without weakening observations. Fixture improvements and longer
-  diagnostic allowances do not establish live/default-resource acceptance.
+  export copying without weakening observations. Trace the remaining untracked
+  arrays/records behind symbol and descriptor enumeration to their creation sites;
+  any reuse must preserve native mutations and provider observations.
+  Fixture improvements and longer diagnostic allowances do not establish
+  live/default-resource acceptance.
 - Implement and verify every notetaker capability above. Automations reference:
   capture-page.js uses getDisplayMedia and a 16000 Hz AudioWorklet for mixed audio;
   meeting-page.js uses a 48000 Hz AudioContext/MediaStream destination for virtual
