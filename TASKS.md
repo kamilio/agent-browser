@@ -37,6 +37,12 @@
   Date/performance values, with timer delivery differing before module execution.
   Preserve underlying clock observations and real deadlines; disable replay
   networking. Archives were released and all diagnostic processes ended.
+- Sampled walks perform 20–24k visited-object checks and 24–28k capture appends.
+  Each includes 3703 deferred roots plus 3703 separate charge identities. Static
+  module declarations match exactly: loginview 2049, editor-core 1363, i18n 166,
+  lodash 124 and entry 1. Linking installs these before module execution; examine
+  linked-function accounting organization while preserving every collector/read,
+  aliases, cycles and TDZ behavior. Both live sampling and transport cleanup passed.
 - No performance candidate is ready to retain. Direct deferred state, shared
   deferred methods, Proxy helpers, private visit marks, cache promotion/capacity
   and scope-dispatch variants failed to establish useful gains. A shared visitor
@@ -45,6 +51,8 @@
   direct private-array appends showed no substantial gain. No runtime changes
   were retained. The fresh live profile reached its cutoff and verified cleanup;
   no Join controls or socket attempt occurred.
+  Directly bound registry methods, markers limited to deferred roots/identities,
+  and a caller-side positive cache also failed to improve the main fixture.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
