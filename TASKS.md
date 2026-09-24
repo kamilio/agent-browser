@@ -52,8 +52,21 @@
   so failure to optimize is not established as the startup bottleneck.
 - A fresh 10-second editor CPU profile (4133 samples) attributed about 71% of
   sampled time to data reconciliation and 25% to garbage collection, with less
-  than 1% idle. The probe closed cleanly without joining. Inspect allocation
-  sites in the actual editor workload before choosing another optimization.
+  than 1% idle. Allocation sampling attributed about 37% to visit, 20% to native
+  descriptors, 16% to iterator next and 9% to property-name arrays. A descriptor
+  census identified untracked string arrays and class prototypes (including XHR
+  and WebSocket). Two prominent arrays came from reflection; JSON was not a
+  prominent owner. Capture/frame allocation is too small to prioritize pooling.
+- Tracking newly created constructor prototypes passed 441 tests across 18 files,
+  the maintained build and eight import checks. The mixed fixture allocated 22%
+  less with overlapping CPU timings. Live allocation per accounting pass fell
+  only from about 800 KB to 770 KB; a separate repeat used 24.9 ms versus 29.8 ms
+  process CPU per pass. Page state and scheduling varied, so these are not clean
+  speed measurements. The marginal allocation benefit did not justify retaining
+  a possible slowdown: the trial and its test were discarded. The baseline build
+  and all eight imports are restored and verified. No runtime change remains.
+  All probes closed with zero retained data and closed sockets; none
+  established controls or joined. Inspect remaining visitor/iterator allocations.
 - An identity-sharing trial saved 8-15% CPU in an isolated deferred-function
   fixture but retained all 3703 deferred-state objects after materialization;
   the current implementation released all of them. The trial and its tests were
