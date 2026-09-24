@@ -17,7 +17,7 @@
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node.
 - Latest normal Zoom run passed 13 classic scripts, then hit its 120 s deadline
-  in editor-core after 20528 module nodes. No name/Join controls or join/socket
+  in editor-core after 17723 module nodes. No name/Join controls or join/socket
   attempt; shutdown retained zero data. Earlier extended runs also failed to reach
   readiness. No diagnostic is active; do not repeat unchanged extended runs.
 - Accounting remains the startup blocker: 70.58 of 73.83 module seconds, with
@@ -30,8 +30,10 @@
 - A census at module node 4000 measured 1998 closures, 984 ordinary records and
   3703 deferred functions per walk. Closures/records accounted for about 60% of
   instrumented self time, deferred functions about 20%; timers add overhead.
-  Focus next on closure metadata and capture traversal. The live probe passed 13
-  classics, stopped at node 4001 and released all data. No runtime changes retained.
+  Compact private closure captures are retained in SafeJS fe7471392c: matching
+  accounting in fixed-work comparisons, 216 focused tests and 13 built SDK checks
+  passed. The latest normal run reached fewer nodes than the prior 20528-node run;
+  a startup speedup is not established. Focus next on capture traversal costs.
 - Retained fixes cover callback ownership/release (SafeJS f4bb1f080a, browser
   d69cf5d), pending-function arrays (542c1fd4a), reconciliation (e9a8214c3), Proxy
   accounting (9fa4fc3fd) and parser costs (aece59d34, 1c5ce18cb). Callback validation:
