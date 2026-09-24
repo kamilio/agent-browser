@@ -42,11 +42,17 @@
   1% or less. Timing variability remains unresolved; bootstrap totals are not a
   substitute for phase-local comparisons. An empty classic task stays pending in
   replay while the live capture completes all 13 classics before the cutoff.
-- Deferred-first and tagged scope-record dispatch showed no repeatable fixture
-  gain and were discarded. No runtime change was retained. Next sample repeated
-  visited-object lookups within one actual Zoom accounting walk. Preserve fresh
-  observations and full reconciliation, including primitive awaits; keep native
-  deadlines real. All diagnostics stopped and kept their artifacts in memory.
+- One actual accounting walk observed 11962 objects and 24426 object captures.
+  Its two busiest roots were each captured 5353 times and still needed 1360
+  repeated visited-state lookups. Cache promotion and eight-entry caching did not
+  give repeatable fixture gains, so both were discarded, as were earlier scope
+  dispatch variants. The maintained four-entry cache remains unchanged.
+- A preliminary state-classification guard cost probe showed only a small fixture
+  gain and has incomplete native-hook escape tracking; it is not a safe runtime
+  change. Next investigate larger visitor representation/dispatch costs rather
+  than cache-capacity tuning. Preserve fresh observations and full reconciliation,
+  including primitive awaits; keep native deadlines real. No runtime change was
+  retained; all diagnostics stopped, and their artifacts stayed in memory.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
