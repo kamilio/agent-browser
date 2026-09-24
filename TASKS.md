@@ -37,6 +37,13 @@
   Eight 1024-element append/measure fixtures fell from 3.040 s to 0.049 s CPU;
   small nested-array timings showed no clear change. Live startup still fails;
   these fixture gains do not establish a Zoom startup improvement.
+- Completed accounting callbacks now detach their walk target, releasing deferred
+  argument/projection state and options even when a native provider saves the
+  callback. Late appends are inert. Seven new GC regressions failed before the fix;
+  all 92 focused tests across eleven files, scoped lint, the maintained build and
+  all 11 built checks passed. A compiled GC probe also confirmed release. The
+  34269-unit benchmark preserved charges without observed added CPU cost; this is
+  a cleanup fix, not evidence of faster Zoom startup.
 - Retained optimizations: fast scope accounting fields, tracked array projections,
   retained visitor code with independent per-walk state, and private bound-capture
   snapshots preserving replaced/accessor providers. The positive visited cache was
@@ -48,7 +55,11 @@
   found broad accounting-projection coverage; broad new descriptor caching lacks
   supporting evidence. Validate optimizations using the unchanged visitor in
   separate processes without a profiler; duplicated visitor timings misled earlier
-  comparisons. Do not infer startup gains from fixture timings.
+  comparisons. Do not infer startup gains from fixture timings. A fresh live
+  allocation census preserved 6680217 units across 653 roots, with only five new
+  capture buffers and thirteen frames per walk (184 deferred-argument records).
+  Cross-walk buffer/frame pooling is not justified by those counts. Probe cleanup
+  closed runtime/sockets with zero retained data and no socket attempts.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
@@ -65,7 +76,7 @@
   Initialize within normal allowances and verify JavaScript Join controls,
   actual joining, admission and presence.
   Diagnostic limits and fixture improvements do not establish live acceptance.
-- Correct the next join observer to fill the name before requiring enabled Join.
+- Keep filling the name before requiring enabled Join in future diagnostics.
   Zoom's preview uses #input-for-name and disables Join for invalid form data.
   The corrected observer passed simulated immediate/delayed enable, fill-failure
   and single-action checks and was used in the latest normal run. No form appeared,
