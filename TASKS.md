@@ -16,60 +16,19 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node.
-- Latest normal Zoom observation: all 13 classic scripts passed; the 120 s deadline
-  expired in editor-core after 20528 module nodes, before name/Join controls appeared.
-  The client created 49 owned timer wrappers and explicitly released 45. No join
-  or socket attempt occurred; shutdown retained zero data. The maintained rebuild
-  changed the SDK bundle layout, so this is not a controlled speed comparison.
-  An earlier retained runtime exhausted a bounded 1800 s run in i18n-core after
-  123558 module nodes (editor-core: 108155; i18n-core: 10689). Both runs had no
-  name/Join controls or join/socket attempt; cleanup retained zero data. No
-  diagnostic remains active. Do not repeat unchanged extended runs.
-- Retained SafeJS fixes cover late-callback function reconciliation (e9a8214c3),
-  stack-safe Proxy accounting (9fa4fc3fd), and parser costs (aece59d34, 1c5ce18cb).
-- SafeJS f4bb1f080a adds opt-in independent callback ownership. Browser d69cf5d
-  releases timer wrappers after cancellation/completion without revoking another
-  timer or listener using the same guest function. The built integration retained
-  a constant 6847-unit baseline across five timers capturing 1000-element arrays;
-  the shared listener survived and pending-interval shutdown retained zero data.
-  Validation: 142 focused SDK tests, 198 browser tests, both builds and 13 built SDK
-  checks passed. A broader page-bindings test exposed an unrelated non-callable
-  Window.onload failure in existing dirty work; callback tests pass.
-- SafeJS 542c1fd4a replaces pending-function wrapper allocations with separate
-  state/depth arrays, preserving traversal and reconciliation. Recorded Zoom replay
-  used 15–20% less CPU than two baselines with matching accounting and work.
-  Validation: 109 focused source tests, lint, maintained build and 13 built checks
-  on Node 24 passed. The changed build still times out during normal live startup.
-- Accounting consumed 70.58 of 73.83 module seconds in a current 18001-node
-  diagnostic. Early and later samples consistently attribute about 48% to the
-  main visitor and 9–10% to visited lookups; no new steady-state optimizer fallback
-  explained the timing variation. Scope collection and deferred reads add cost.
-  Each walk includes 3703 deferred module functions. Static source confirms long
-  startup loops build React DOM property metadata and DOMPurify allowlists.
-  Type-branch and identity-layout
-  experiments established no reliable Zoom gain; no changes were retained. Even
-  matched replay baselines varied from 16.51 to 32.04 CPU seconds. Require stable
-  timings as well as matching initial state, accounting, clocks and timer delivery.
-  Replay networking stays disabled; its archive was released.
-- Same-process bytecode and verbose V8 frames confirm a cold fallback at the
-  visitor's Proxy target read. A local fixture reproduces both observed fallback
-  reasons with ordinary Proxy state. Exercising that path early prevents both,
-  but improves fixture CPU only 3–6% with identical collector counts; no runtime
-  change is justified yet. Focus next on steady-state traversal and registry
-  lookups, preserving fresh observations. All probes stopped and cleaned up;
-  profiles and traces stayed in memory.
-- Further fixed-work tests found no substantial, reliable gain from visited-state
-  cells, closure-visitor splitting, cold object-branch splitting, scope/object
-  decomposition, single type dispatch, or direct factory getter bodies. A current
-  Zoom graph held at module node 4000 confirmed no decomposition gain: 400 walks
-  took 1.15–1.18 CPU seconds unchanged versus 1.18–1.20 for the split variants,
-  with matching charges and compilation tickets. Fresh measurements used the same
-  retained graph; this was not an interactive-readiness run. No changes were retained.
-  Node 22
-  did not improve the closure-heavy fixture over Node 24. Avoid repeating these
-  candidates without new evidence.
-- The legacy quora.zoom.us/wc/join/7982110526 route currently redirects to the
-  same app.zoom.us/wc/7982110526/join client; no simpler entry route was found.
+- Latest normal Zoom run passed 13 classic scripts, then hit its 120 s deadline
+  in editor-core after 20528 module nodes. No name/Join controls or join/socket
+  attempt; shutdown retained zero data. Earlier extended runs also failed to reach
+  readiness. No diagnostic is active; do not repeat unchanged extended runs.
+- Accounting remains the startup blocker: 70.58 of 73.83 module seconds, with
+  3703 deferred functions per walk. Focus on steady-state traversal/allocation;
+  visitor splitting, identity-layout changes and Node 22 showed no reliable gain.
+  Require stable comparisons with matching accounting, clocks and timer delivery.
+- Retained fixes cover callback ownership/release (SafeJS f4bb1f080a, browser
+  d69cf5d), pending-function arrays (542c1fd4a), reconciliation (e9a8214c3), Proxy
+  accounting (9fa4fc3fd) and parser costs (aece59d34, 1c5ce18cb). Callback validation:
+  142 focused SDK tests, 198 browser tests, both builds and 13 built SDK checks
+  passed. Existing dirty Window.onload work has a non-callable-value test failure.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
