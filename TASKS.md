@@ -17,12 +17,12 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse working
   builds and /tmp/agent-browser-node24-runtime/bin/node.
-- Latest normal Zoom check with the Temporal/Intl helper passed all 13 classic
+- Latest normal Zoom check with the tracked-handler fix passed all 13 classic
   scripts and prepared seven modules, but hit the 120 s runtime deadline during
-  editor-core initialization (11545 module nodes; offset 32711, line 25).
+  editor-core initialization (7809 module nodes; offset 35215, line 25).
   The corrected observer saw no name field or Join button. No join/socket
   attempts occurred; runtime/socket cleanup passed with zero retained data.
-  The run is terminal. The helper has not resolved the startup gate.
+  The run is terminal. The startup gate remains unresolved.
 - The completed 1800 s diagnostic (restored runtime, 512 MiB heap) passed through
   editor-core, localization and Lodash, reaching emoji-reactions data initialization.
   It executed 141444 module nodes, then hit the runtime deadline at emoji-reactions
@@ -30,31 +30,27 @@
   or socket attempt appeared. Runtime/socket cleanup passed with zero retained data.
   No diagnostic remains active. Investigate accounting cost before another long run;
   extending the deadline again without a change does not address normal startup.
-- Scalar-array accounting (39e147ad6) now updates string totals and non-scalar
-  counts on owned indexed writes, avoiding full descriptor snapshots for scalar
-  arrays. For 4000 appends, descriptor reads fell from 8006000 to 16000.
-  This passed its regression tests but did not resolve live startup.
-- Completed accounting callbacks (5ee62fa5e) detach their walk target, releasing deferred
-  argument/projection state and options even when a native provider saves the
-  callback. Late appends are inert. Seven GC regressions and a compiled GC probe
-  confirmed release; this is a cleanup fix, not evidence of faster startup.
-- Temporal/Intl accounting now runs in a smaller helper (bee81e32f), preserving
-  all seventeen checks, fresh state reads and callback order. The 34269-unit
-  fixture took 2.52–2.55 s CPU for 2000 walks versus 2.89–2.91 s before; a mixed
-  array/Temporal/Intl fixture preserved charges without an observed slowdown.
-  Passed 517 focused tests across 25 files, scoped lint, the maintained build and
-  all 11 built checks. Fixture gains do not establish live acceptance.
-- Retained optimizations: fast scope accounting fields, tracked array projections,
-  retained visitor code with independent per-walk state, and private bound-capture
-  snapshots preserving replaced/accessor providers. The positive visited cache was
-  reverted after separate-process measurements failed to confirm a benefit.
-  Preserve foreign uncommitted changes.
+- Tracked property handlers (bace0875c) now have no inherited traps and forward
+  only own descriptor fields. Previously, a native Object.prototype hook could
+  expose the backing, grow a five-character value to 1005 characters and leave
+  its cached charge at 14 instead of 1014. Nine new cases failed before the fixes;
+  all 186 focused tests across 16 files, lint, the maintained build and 11 built
+  checks passed. The compiled probe confirms isolation and correct write charges.
+  Read-heavy timings were mixed; 131072 append/measure steps cost about 0.33 s CPU
+  versus 0.29 s before. This is an accounting fix, not a startup speedup.
+- Retained SafeJS changes: incremental scalar-array accounting (39e147ad6),
+  detached completed measurement callbacks (5ee62fa5e), and the smaller Temporal/
+  Intl helper (bee81e32f). The helper improved a controlled fixture by 12–13%,
+  preserving all checks and state reads, but did not resolve live startup.
+  Keep fast scope fields, tracked projections, retained visitor code with fresh
+  walk state, and private bound-capture snapshots. Preserve foreign changes.
 - The latest live CPU samples still point to accounting traversal; GC was about
   2% of samples. Repeated visitor deoptimization was not observed. An allocation
   census found only five new capture buffers and thirteen frames per walk, so
   cross-walk pooling lacks support. Broad descriptor caching also lacks evidence.
   Compare the actual visitor in separate processes without a profiler; duplicated
-  visitor timings misled earlier comparisons.
+  visitor timings misled earlier comparisons. Further carrier/symbol helper
+  extraction did not improve the fixture; bound deferred callbacks showed no gain.
 - Reject a shared Temporal/Intl membership guard: native hooks can install state
   through an observed private table without registering in the guard. A native
   provider counterexample counted 2 units instead of the correct 4. Preserve
