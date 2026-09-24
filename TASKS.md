@@ -17,33 +17,32 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse working
   builds and /tmp/agent-browser-node24-runtime/bin/node.
-- Latest uninstrumented Zoom check (838ff9c0a) passed all 13 classic scripts and
+- Latest uninstrumented Zoom check (db983eba8) passed all 13 classic scripts and
   prepared seven modules, but the 120 s import deadline revoked the realm before
   settlement. No readiness, admission, presence or socket attempts. Cleanup closed
   runtime/sockets and retained zero data. A 600 s diagnostic also expired.
-- Fresh CPU sampling after d7052a82d attributes 70% to reconciliation and 28% to
-  GC; visitor self time is 35%, visited-object lookup 10%. The diagnostic closed
-  cleanly with zero retained data. Startup remains unverified.
-- Tracked array projections (7a0adb82d) passed focused quota/mutation tests and
-  preserved live accounting totals. Code retention (d7052a82d) keeps an empty
-  visitor active on undefined leaves; real walks retain separate state/callbacks.
-  Validation: 84 focused tests, scoped lint, maintained build and ten built checks
-  passed, including forced-GC optimization and caller-data release on Node 22/24.
-- A controlled live graph comparison preserved 6657339 units on 604 roots and
-  reduced 50-walk CPU from 0.49–0.52 s to 0.31–0.39 s with an empty visitor retained.
-  Sampled allocation barely changed. This does not establish working startup.
-- Private bound-capture snapshots (838ff9c0a) preserve replaced/accessor providers
-  and fresh iteration. All 75 focused tests, scoped lint, maintained build and ten
-  built checks passed. A live comparison preserved accounting totals and reduced
-  sampled allocation from 21.0 MB to 19.3 MB per 50 walks; CPU ranges overlapped.
+- Fast scope accounting fields (db983eba8) retain immutable null-prototype
+  records and pinned construction. A controlled live comparison preserved
+  6656514 units on 597 roots; CPU per 50 walks fell from 0.34–0.39 s to 0.23–0.30 s.
+  Allocation did not improve. Validation: 63 focused tests (including GC-enabled
+  cases), scoped lint, maintained build and eleven built checks passed. The layout
+  regression fails before the fix and passes on Node 22/24. Startup still times out.
+- Earlier validated optimizations remain: tracked array projections (7a0adb82d),
+  retained visitor code with independent per-walk state (d7052a82d), and private
+  bound-capture snapshots preserving replaced/accessor providers (838ff9c0a).
+- Fresh profiling after db983eba8 attributes 73% to reconciliation, 23% to GC,
+  34% visitor self time and 12% visited-object lookups. The largest visitor line
+  counts are primitive dispatch, capture collection and closure metadata reads.
+  The diagnostic closed with zero retained data; it did not attempt joining.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
 
 ## Outstanding gates
 
-- Reduce remaining retained-graph traversal/allocation costs, using the visitor
-  and visited-object hot paths for attribution before choosing another change.
+- Benchmark object-first visitor dispatch against the unchanged path on the same
+  graph; no benefit is established yet. Continue measured traversal/allocation
+  work without repeating the rejected fresh-Set visited-storage approach.
   Preserve per-walk callbacks and avoid retained guest roots.
   Initialize within normal allowances and verify JavaScript Join controls,
   actual joining, admission and presence.
