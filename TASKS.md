@@ -18,9 +18,10 @@
   build and /tmp/agent-browser-node24-runtime/bin/node.
 - Latest normal Zoom observation: all 13 classic scripts passed; the 120 s deadline
   expired in editor-core after 7722 module nodes, before name/Join controls appeared.
-  No join/socket attempt; cleanup retained zero data. A bounded 1800 s run of
-  the retained runtime is now active (session 90953), checking name/Join controls
-  and leaving before cleanup if possible. Poll it before starting another run.
+  The retained runtime also exhausted a bounded 1800 s run in i18n-core after
+  123558 module nodes (editor-core: 108155; i18n-core: 10689). Both runs had no
+  name/Join controls or join/socket attempt; cleanup retained zero data. No
+  diagnostic remains active. Do not repeat unchanged extended runs.
 - Retained SafeJS fixes cover late-callback function reconciliation (e9a8214c3),
   stack-safe Proxy accounting (9fa4fc3fd), and parser costs (aece59d34, 1c5ce18cb).
 - SafeJS 542c1fd4a replaces pending-function wrapper allocations with separate
@@ -30,7 +31,9 @@
   on Node 24 passed. The changed build still times out during normal live startup.
 - The changed-build profile still spends about 95% of module execution in
   accounting, including deferred reads, capture collection and visited checks.
-  Each walk includes 3703 deferred module functions. Type-branch and identity-layout
+  Each walk includes 3703 deferred module functions. Static source confirms long
+  startup loops build React DOM property metadata and DOMPurify allowlists.
+  Type-branch and identity-layout
   experiments established no reliable Zoom gain; no changes were retained. Even
   matched replay baselines varied from 16.51 to 32.04 CPU seconds. Require stable
   timings as well as matching initial state, accounting, clocks and timer delivery.
@@ -42,8 +45,9 @@
 ## Outstanding gates
 
 - Initialize within normal allowances, expose Join controls, fill the name before
-  requiring enabled Join (#input-for-name), and verify admission/presence. Reduce
-  the remaining per-function accounting cost without skipping reads or collectors.
+  requiring enabled Join (#input-for-name), and verify admission/presence. Resolve
+  the remaining accounting cost and timing instability during real module setup,
+  preserving all reads and collectors. Longer deadlines alone do not reach readiness.
   Fixed-work diagnostics and fixture gains do not establish meeting acceptance.
 - Implement and verify every notetaker capability above. Automations references:
   capture-page.js (getDisplayMedia, 16000 Hz AudioWorklet), meeting-page.js
