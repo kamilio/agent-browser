@@ -58,8 +58,13 @@
 - Live origin tracing before 760d57a6b found 44 constructor prototypes with 263
   descriptor reads, 37 reflection results with 148 reads, and 37 untracked arrays
   with 340 reads. Host-bridge records contributed only 16 reads. Both accounting
-  walkers agreed on 6667663 units; cleanup succeeded. Constructor-prototype
-  tracking remains rejected; trace unknown array factories before selecting reuse.
+  walkers agreed on 6667663 units. Follow-up tracing confirms raw record reads fell
+  from 501 to 353. Nine native string-split results contributed 157 of 327 remaining
+  array descriptor reads; rest-parameter and regex-split arrays were absent.
+  Both follow-up walkers agreed on 6656269 units; both probes verified cleanup.
+  No array optimization is implemented. Before reusing split-result storage,
+  account for native Symbol.split overrides and iterator hooks that can expose
+  aliases. Constructor-prototype tracking remains rejected.
 - Omitting deferred collection diagnostically found 14812 already-seen roots and
   about 10% lower average CPU with overlapping timings. This shortcut is unsafe and
   was not retained. Native-record descriptor reuse reduced sampled allocation about
@@ -81,8 +86,8 @@
   retained-graph traversal and allocation costs around editor initialization and
   export copying without weakening observations. The symbol census also identified
   constructor prototypes, mapped arguments and produced records; copied values from
-  copyToSandbox were absent from that branch. Trace remaining untracked arrays and
-  records to their creation sites before considering further reuse; preserve native
+  copyToSandbox were absent from that branch. Investigate the identified native
+  string-split results and trace remaining unknown arrays before reuse; preserve native
   mutations and provider observations.
   Fixture improvements and longer diagnostic allowances do not establish
   live/default-resource acceptance.
