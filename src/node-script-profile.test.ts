@@ -109,6 +109,7 @@ it.each([
 	"large-source-v1",
 	"application-v1",
 	"application-unicode-v1",
+	"application-media-v1",
 ])(
 	"selects %s without enabling scripting or raising any watchdog",
 	async (budgetProfile) => {

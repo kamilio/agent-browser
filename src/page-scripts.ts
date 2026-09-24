@@ -216,12 +216,19 @@ export class PageScripts {
 					: { stringCompilation: this.scriptPolicy.stringCompilation }),
 				...(budgetProfile === "large-source-v1" ||
 				budgetProfile === "application-v1" ||
-				budgetProfile === "application-unicode-v1"
+				budgetProfile === "application-unicode-v1" ||
+				budgetProfile === "application-media-v1"
 					? {
 							regexSourceLength:
-								budgetProfile === "application-unicode-v1" ? 16384 : 8192,
+								budgetProfile === "application-unicode-v1" ||
+								budgetProfile === "application-media-v1"
+									? 16384
+									: 8192,
 							regexCompileAllocations:
-								budgetProfile === "application-unicode-v1" ? 65536 : 32768,
+								budgetProfile === "application-unicode-v1" ||
+								budgetProfile === "application-media-v1"
+									? 65536
+									: 32768,
 						}
 					: {}),
 				...(existingDocumentWebSockets(page.document) ||

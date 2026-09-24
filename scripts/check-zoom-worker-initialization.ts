@@ -72,6 +72,10 @@ function failureDetails(failure: unknown): Record<string, unknown> {
 		if (typeof value === "string" && /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(value))
 			fields[key] = value;
 	}
+	for (const key of ["current", "limit"]) {
+		const value = own(key);
+		if (typeof value === "number" && Number.isFinite(value)) fields[key] = value;
+	}
 	const message = own("message");
 	if (typeof message === "string" && message.length < 512) {
 		const missing =
@@ -179,7 +183,7 @@ const page = new PageScripts(
 	{ document, interactions: documentInteractions(document) },
 	observed,
 	{
-		budgetProfile: "application-unicode-v1",
+		budgetProfile: "application-media-v1",
 		limits: { timeoutMs },
 	},
 );

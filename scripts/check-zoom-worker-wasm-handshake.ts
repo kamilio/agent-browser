@@ -160,15 +160,7 @@ ${glue}`;
 	const diagnosticFactory: PageRuntimeFactory = {
 		...factory,
 		createPageRuntime(options) {
-			runtime = factory.createPageRuntime({
-				...options,
-				limits: {
-					...options.limits,
-					maxArrayLength: 33554432,
-					maxDataSize: 33554432,
-					timeoutMs: 120000,
-				},
-			});
+			runtime = factory.createPageRuntime(options);
 			return runtime;
 		},
 	};
@@ -176,7 +168,7 @@ ${glue}`;
 		{ document: tree, interactions: documentInteractions(tree) },
 		diagnosticFactory,
 		{
-			budgetProfile: "application-unicode-v1",
+			budgetProfile: "application-media-v1",
 			limits: { timeoutMs: 120000 },
 			fetchLimits: { maxResponseBytes: 1048576 },
 			fetch(input) {

@@ -67,11 +67,12 @@ export function scriptProfileFromEnvironment(
 		budgetProfile !== "bounded-v1" &&
 		budgetProfile !== "large-source-v1" &&
 		budgetProfile !== "application-v1" &&
-		budgetProfile !== "application-unicode-v1"
+		budgetProfile !== "application-unicode-v1" &&
+		budgetProfile !== "application-media-v1"
 	)
 		throw new AgentBrowserError(
 			"invalid-input",
-			"AGENT_BROWSER_SCRIPT_BUDGET_PROFILE must be bounded-v1, large-source-v1, application-v1 or application-unicode-v1 when provided",
+			"AGENT_BROWSER_SCRIPT_BUDGET_PROFILE must be bounded-v1, large-source-v1, application-v1, application-unicode-v1 or application-media-v1 when provided",
 		);
 	let commandTimeoutMs: number | undefined;
 	if (timeout !== undefined) {

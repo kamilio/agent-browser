@@ -60,7 +60,8 @@ export type ScriptBudgetProfile =
 	| "bounded-v1"
 	| "large-source-v1"
 	| "application-v1"
-	| "application-unicode-v1";
+	| "application-unicode-v1"
+	| "application-media-v1";
 
 const defaults: ScriptLimits = {
 	maxSourceCodeUnits: 262_144,
@@ -90,6 +91,13 @@ const applicationDefaults: Readonly<ScriptLimits> = Object.freeze({
 	timeoutMs: 120_000,
 });
 
+// Explicit opt-in for bounded WASM media heaps and their typed-array views.
+const mediaDefaults: Readonly<ScriptLimits> = Object.freeze({
+	...applicationDefaults,
+	maxArrayLength: 33_554_432,
+	maxDataSize: 33_554_432,
+});
+
 export function scriptLimits(
 	overrides: Partial<ScriptLimits> = {},
 	profile: ScriptBudgetProfile = "bounded-v1",
@@ -98,25 +106,36 @@ export function scriptLimits(
 		profile !== "bounded-v1" &&
 		profile !== "large-source-v1" &&
 		profile !== "application-v1" &&
-		profile !== "application-unicode-v1"
+		profile !== "application-unicode-v1" &&
+		profile !== "application-media-v1"
 	)
 		throw new AgentBrowserError(
 			"invalid-input",
 			"Invalid script budget profile",
 		);
 	const application =
-		profile === "application-v1" || profile === "application-unicode-v1";
-	const profileDefaults = application
-		? applicationDefaults
-		: profile === "large-source-v1"
-			? largeSourceDefaults
-			: defaults;
+		profile === "application-v1" ||
+		profile === "application-unicode-v1" ||
+		profile === "application-media-v1";
+	const profileDefaults =
+		profile === "application-media-v1"
+			? mediaDefaults
+			: application
+				? applicationDefaults
+				: profile === "large-source-v1"
+					? largeSourceDefaults
+					: defaults;
 	const limits = Object.freeze({
 		...profileDefaults,
 		...overrides,
 	});
 	for (const key of Object.keys(defaults) as (keyof ScriptLimits)[]) {
 		let ceiling = defaults[key] * 16;
+		if (
+			profile === "application-media-v1" &&
+			(key === "maxArrayLength" || key === "maxDataSize")
+		)
+			ceiling = mediaDefaults[key];
 		if (profile !== "bounded-v1" && key === "maxSteps")
 			ceiling = largeSourceDefaults.maxSteps;
 		if (application && key === "timeoutMs")

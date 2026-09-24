@@ -88,16 +88,19 @@ it.each([
 	"large-source-v1",
 	"application-v1",
 	"application-unicode-v1",
+	"application-media-v1",
 ])("keeps every %s ceiling finite and rejects one unit above it", (profile) => {
 	const ceilings: ScriptLimits = {
 		maxSourceCodeUnits: 4_194_304,
 		maxSteps: profile === "bounded-v1" ? 1_600_000 : 16_000_000,
 		maxCallDepth: 1024,
 		maxStringLength: 4_194_304,
-		maxArrayLength: 262_144,
-		maxDataSize: 16_777_216,
+		maxArrayLength: profile === "application-media-v1" ? 33_554_432 : 262_144,
+		maxDataSize: profile === "application-media-v1" ? 33_554_432 : 16_777_216,
 		timeoutMs:
-			profile === "application-v1" || profile === "application-unicode-v1"
+			profile === "application-v1" ||
+			profile === "application-unicode-v1" ||
+			profile === "application-media-v1"
 				? 120_000
 				: 16_000,
 		maxRuns: 2048,
@@ -170,6 +173,7 @@ it.each([
 	{ profile: "large-source-v1", limits: { maxSteps: 3_000_000 } },
 	{ profile: "application-v1", limits: {} },
 	{ profile: "application-unicode-v1", limits: {} },
+	{ profile: "application-media-v1", limits: {} },
 	{
 		profile: "application-unicode-v1",
 		limits: { maxSteps: 3000, timeoutMs: 2000 },
@@ -223,15 +227,22 @@ it.each([
 		if (
 			profile === "large-source-v1" ||
 			profile === "application-v1" ||
-			profile === "application-unicode-v1"
+			profile === "application-unicode-v1" ||
+			profile === "application-media-v1"
 		) {
 			expect(received).toHaveProperty(
 				"regexSourceLength",
-				profile === "application-unicode-v1" ? 16384 : 8192,
+				profile === "application-unicode-v1" ||
+					profile === "application-media-v1"
+					? 16384
+					: 8192,
 			);
 			expect(received).toHaveProperty(
 				"regexCompileAllocations",
-				profile === "application-unicode-v1" ? 65536 : 32768,
+				profile === "application-unicode-v1" ||
+					profile === "application-media-v1"
+					? 65536
+					: 32768,
 			);
 		} else {
 			expect(received).not.toHaveProperty("regexSourceLength");
@@ -349,3 +360,28 @@ it.each([
 		expect(createPageRuntime).not.toHaveBeenCalled();
 	},
 );
+
+it("admits media heap views only through an explicit finite memory profile", () => {
+	const media = select({}, "application-media-v1");
+	expect(media).toEqual({
+		...select({}, "application-unicode-v1"),
+		maxArrayLength: 33_554_432,
+		maxDataSize: 33_554_432,
+	});
+	expect(Object.isFrozen(media)).toBe(true);
+	for (const profile of [
+		"bounded-v1",
+		"large-source-v1",
+		"application-v1",
+		"application-unicode-v1",
+	])
+		expect(() => select({ maxArrayLength: 20_971_520 }, profile)).toThrow(
+			/limit/,
+		);
+	expect(
+		select(
+			{ maxArrayLength: 20_971_520, maxDataSize: 24_000_000 },
+			"application-media-v1",
+		),
+	).toMatchObject({ maxArrayLength: 20_971_520, maxDataSize: 24_000_000 });
+});

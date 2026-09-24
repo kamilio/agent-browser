@@ -497,7 +497,7 @@ const browser = new BrowserSession({
 								htmlEntries: true,
 								fetchWithPolicy: context.fetchModuleWithPolicy,
 							},
-							budgetProfile: "application-unicode-v1",
+							budgetProfile: "application-media-v1",
 							limits: { timeoutMs },
 						},
 					);

@@ -22,27 +22,29 @@
   deadline closed the realm: 12 classic scripts completed, one execution-closed.
   No name/Join controls or socket attempt; shutdown retained zero data.
   No diagnostic is active; do not repeat unchanged extended runs.
-- Earlier profiling attributed 70.58 of 73.83 module seconds to accounting:
-  1998 closures, 984 ordinary records and 3703 deferred functions per walk.
-  Reprofile with media options enabled before comparing startup improvements.
-  Compact private closure captures are retained in SafeJS 0e78d93e69: matching
-  accounting in fixed-work comparisons, 216 focused tests and 13 built SDK checks
-  passed; a live startup speedup is not established.
-- Visitor, registry, capture-cache, absent-value filtering, shared deferred
-  collectors and Node 22 variants showed no reliable gain. Private-body deferral
-  reduced fixture allocations but did not improve the complete Worker's 30 s run;
-  no candidate runtime changes were retained. Preserve fresh scope observations.
-  Use the same walker and equal dispatch overhead for fixed-graph comparisons.
+- Fresh complete-Worker profiling still attributes most startup cost to graph
+  accounting; the visitor is already optimized. Private closure collectors remain
+  in maintained SafeJS (currently 79f0215058); a private-brand routing experiment
+  showed no gain and was discarded. Preserve fresh reads and full reconciliation.
 - Worker WebSockets now reuse the explicit document transport and connection
   quotas, with fetched-response connect-src, inherited Blob policy, initialization
   ordering and termination cleanup. Passed 626 focused native tests and build;
   real SafeJS + loopback sockets verified binary exchange, event receivers, close,
   termination and zero retained data/open peer sockets after cleanup.
-- Zoom still advertises https://st1.zoom.us/web-media/u9n13za/. With Worker sockets
-  enabled, its complete network Worker timed out at 30 s / 909648 steps before
-  source completion or any socket attempt. Cleanup verified zero retained data.
-  The earlier 120 s run's status 131 was not readiness. No diagnostic is active;
-  do not repeat unchanged extended runs.
+- Zoom advertises https://st1.zoom.us/web-media/u9n13za/. Extended Worker startup
+  reached a concrete arrayLength failure at 135 s: its 20 MiB heap exceeds the
+  application profile's 262144-element ceiling. Explicit application-media-v1
+  now permits 33554432 array elements/retained-data units without raising the
+  120 s time limit or granting capabilities. Passed 395 native tests and build.
+  Real SDK Worker check rejects the heap under the old profile, accepts it under
+  media, and releases all data. Isolated Zoom parent fetch/CORS, binary transfer,
+  and unchanged WASM glue initialized the 20 MiB heap in 23.6 s with this profile;
+  donor detached, no guest errors, zero data/pending callbacks after shutdown.
+- Complete Worker startup remains unverified: the latest 180 s diagnostic expired
+  before revisiting the allocation, amid competing CPU work. Status 131 is not
+  readiness. Its diagnostic currently observes messages only; next exercise the
+  actual parent WASM-download handoff in the complete Worker. No diagnostic is
+  active; do not repeat unchanged extended runs.
 - Retained fixes cover callback ownership/release (SafeJS f4bb1f080a, browser
   d69cf5d), pending-function arrays (542c1fd4a), reconciliation (e9a8214c3), Proxy
   accounting (9fa4fc3fd) and parser costs (aece59d34, 1c5ce18cb). Callback validation:

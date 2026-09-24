@@ -68,8 +68,10 @@ Set configuration on the service, not only on a client:
   code units, and 16,777,216 response bytes; default limits are unchanged.
   `application-v1` allows 120 seconds per evaluation; `application-unicode-v1`
   also raises the per-pattern regex-compilation allowance from 32,768 to 65,536
-  units without increasing the page heap or time limits. Neither guarantees
-  successful application startup.
+  units without increasing the page heap or time limits. `application-media-v1`
+  adds explicit ceilings of 33,554,432 array elements and 33,554,432 retained-data
+  units for media heaps, keeping the Unicode and time allowances. Profiles do
+  not grant WASM, Worker, or network capabilities or guarantee application startup.
 - `AGENT_BROWSER_DOCUMENT_PROFILE=reader`: partial static extraction instead of
   normal rendering. Scripts and styles are omitted and forms are inert. This
   mode disables subresource requests and WebSockets while retaining document CSP
