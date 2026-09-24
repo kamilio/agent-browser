@@ -27,10 +27,19 @@
 - Fresh post-download Worker CPU sample: retained-data visitor self time was
   20.1 of 30.6 s; typed-array classification was only 0.15 s. Earlier startup
   profiling also identifies graph accounting; the visitor is already optimized.
-  Maintained SafeJS remains 79f0215058. Private visit-generation record variants
-  preserved the fixture's charge but ran slightly slower (193–201 vs 176–197 ms
-  per 100 walks); discarded without source changes. Private-brand routing also
-  showed no gain. Preserve fresh reads and full reconciliation.
+  Maintained SafeJS remains 79f0215058. Private visit-generation records and
+  private-brand routing showed no gain; discarded without source changes.
+- Splitting the visitor improved a retained-intrinsic fixture, but regressed the
+  actual Zoom page. At the same 6000 module nodes / editor-core offset 32525,
+  baseline took 33.0 s wall / 27.4 s CPU versus 47.2 / 36.2 s for the split.
+  Both diagnostics intentionally stopped there and cleaned up to zero retained
+  data; neither establishes readiness. Discarded the in-memory split.
+- A baseline editor-core profile between module nodes 3000 and 6000 also exposed
+  deferred-function collect/read costs (1.03 / 0.58 s). A shared-method prototype
+  preserved the fixture's 57797-unit charge but showed no clear speedup
+  (227–250 vs 227–244 ms per 100 walks); no SDK source changes retained.
+  Next inspect actual editor-phase traversal categories before another refactor.
+  Preserve fresh reads, every provider/collector and full reconciliation.
 - Fresh original/alternate join-route checks found the launch page and the same
   app webclient route. Chrome, Firefox and Safari request identities selected
   the same current client; no simpler supported join flow was established.
