@@ -56,6 +56,11 @@
   Initialize within normal allowances and verify JavaScript Join controls,
   actual joining, admission and presence.
   Diagnostic limits and fixture improvements do not establish live acceptance.
+- Correct the next join observer to fill the name before requiring enabled Join.
+  Zoom's preview uses #input-for-name and disables Join for invalid form data.
+  The active diagnostic still has the older dependency; an ephemeral corrected
+  observer passed simulated immediate/delayed enable, fill-failure and single-action
+  checks. Apply it after the current run; those checks do not prove live joining.
 - Implement and verify every notetaker capability above. Automations reference:
   capture-page.js uses getDisplayMedia and a 16000 Hz AudioWorklet for mixed audio;
   meeting-page.js uses a 48000 Hz AudioContext/MediaStream destination for virtual
