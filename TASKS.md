@@ -17,10 +17,16 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse working
   builds and /tmp/agent-browser-node24-runtime/bin/node.
-- Latest uninstrumented Zoom check (rejected cache ccb727ac1) passed all 13 classic scripts and
+- Latest uninstrumented Zoom check (restored runtime, Node heap 512 MiB) passed all 13 classic scripts and
   prepared seven modules, but the 120 s import deadline revoked the realm before
   settlement. No readiness, admission, presence or socket attempts. Cleanup closed
   runtime/sockets and retained zero data. A 600 s diagnostic also expired.
+- The 512 MiB heap advanced to 9015061 steps at 115 s, versus 8998346 at 111 s
+  in the recent 256 MiB cache check; this comparison includes backend/timing
+  differences and does not establish a precise speedup. Normal startup still
+  misses its deadline. A 600 s diagnostic with the restored backend and 512 MiB
+  heap is running, observing module positions and attempting Join if actionable
+  controls appear. Its extended deadline is not normal-startup acceptance.
 - Positive visited cache ccb727ac1 was reverted by a7a496449. Its apparent gain
   came from a benchmark with duplicated visitor functions. Separate processes
   using the unchanged visitor did not confirm it: a deterministic 34269-unit
@@ -40,10 +46,18 @@
 - Earlier validated optimizations remain: tracked array projections (7a0adb82d),
   retained visitor code with independent per-walk state (d7052a82d), and private
   bound-capture snapshots preserving replaced/accessor providers (838ff9c0a).
-- Fresh profiling after db983eba8 attributes 73% to reconciliation, 23% to GC,
-  34% visitor self time and 12% visited-object lookups. The largest visitor line
-  counts are primitive dispatch, capture collection and closure metadata reads.
-  The diagnostic closed with zero retained data; it did not attempt joining.
+- Profiling uninterrupted editor-core execution after the cache revert attributes
+  32% to visitor self time, 31% to GC and 11% to visited-object lookups. Enabling
+  profiling invalidated visitor code once; tracing showed no repeated visitor
+  deoptimization during the window. Treat profiler startup effects separately.
+- A descriptor census preserved 6657475 units on 607 roots: 798 records already
+  use accounting projections, most arrays use projections, and only 200 symbol
+  descriptors are captured. Remaining snapshots include arguments and guest/host
+  prototype tables. Broad descriptor caching is not supported by this evidence.
+  Both diagnostics closed with zero retained data and no socket attempts.
+- Pinning native registry methods as own WeakMap properties also showed no gain
+  in separate-process fixtures (0.292–0.314 s baseline versus 0.298–0.315 s per
+  200 walks); no runtime change was made.
 - An object-first dispatch comparison preserved 6657238 units on 616 roots but
   showed overlapping CPU ranges and unchanged allocation; it was not adopted.
 - A corrected live observer reused session queries and found no name input or
