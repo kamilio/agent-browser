@@ -34,12 +34,19 @@
   membership checks. One real graph has 13815 entries, 4850 scope projections,
   3703 deferred roots, 2023 closures and 1005 records. Use that scope structure
   when evaluating performance, not a single-scope synthetic fixture alone.
+- Profiling after externals.min.js and before the first client-module instruction
+  measured 49.0 s: visitor 12.9 s, source-position decoding 4.9 s, AST encoding
+  2.9 s and GC 2.6 s. Seven modules prepared; the intentional stop cleaned up
+  with zero retained data/sockets. Parsing the real 3.49 MB login module made
+  8548753 position requests and allocated 3860297 uncached coordinates.
+  Next: investigate temporary coordinate allocation during token/AST decoding,
+  preserving source locations, mutable span behavior, quotas and cancellation.
 - Worker source nodes 15000–35000 required 21009 complete reconciliations and
   31.5–34.2 s sampled time; the visitor accounted for 16.9–17.9 s. Optimization
   tracing separated 35 warm-up deoptimizations from four in the measured interval;
   repeated steady-state deoptimization is not established as the main cost.
   Fixed-work stop at 35000 nodes verified cleanup, not Worker initialization.
-- SafeJS d5e47d4adb tracks newly owned guest constructor prototypes. The real
+- SafeJS 57717c7ef9 tracks newly owned guest constructor prototypes. The real
   Worker graph now has 97 fallback records versus 142, with the same 1040257-unit
   charge. Focused prototype walks improved from 59 to 39 ms, but fresh unprofiled
   Worker segment CPU was effectively unchanged (32.05 versus 32.00 s), with all
@@ -55,6 +62,10 @@
   deferral did not demonstrate an editor-segment gain (16.2 s, 3107 reconciliations)
   and would require caller/source-reference capture normalization. No SDK changes
   remain from these experiments; preserve every provider/read.
+  Direct owned getter reads also failed a same-graph comparison (roughly
+  135–145 ms per 50 walks, identical charges). Repeated-position/line caches and
+  balanced-group scan reuse did not demonstrate reliable real-module parse gains;
+  all remained in memory and were discarded.
 - The last normal 120 s network Worker check failed before source completion
   or WASM download. A 300 s diagnostic with batched WASM metadata completed
   source evaluation in 181.6 s, downloaded 465602 bytes, detached the donor and
