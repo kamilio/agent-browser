@@ -26,16 +26,21 @@
   maintained builds and built checks; live startup remains unresolved. Latest
   parser commits: aece59d34 and 1c5ce18cb. Latest traversal experiments were
   discarded; source and built visitor were restored and all 11 built checks passed.
-- In-memory capture/replay isolates accounting as about 94–95% of a matching
-  5000-module-node startup interval. Comparison invariants: 9844 phase steps,
+- In-memory capture/replay isolates accounting as about 94–96% of a matching
+  5000-module-node startup interval. Offline replay invariants: 9844 phase steps,
   29217 additional data units, 5066 accounting calls and equal returned-accounting
   totals between replays. Preserve response completion order and recorded guest
   Date reads; keep native deadlines real and replay networking disabled.
-  Timing variability remains unresolved. Diagnostic archives were released.
-- Next investigate visitor representation/dispatch costs. Cache promotion,
-  larger caches and scope-dispatch variants gave no repeatable gain and were
-  discarded. The state-classification guard probe lacked native-hook escape
-  tracking and is unsafe. No runtime optimization was retained from these probes.
+  Live bootstrap scheduling can change the data delta; compare offline runs
+  from the same capture. Diagnostic archives were released.
+- Next inspect visitor optimization/deoptimization during real startup. The
+  fixture visitor reaches TurboFan, but fixture gains did not transfer to Zoom:
+  shared deferred methods took 24.3–25.5 CPU seconds versus 17.2–19.7 for the
+  unchanged visitor, with identical replay accounting and verified cleanup.
+  Private visit marks were also slower in fixtures. These changes were discarded,
+  as were cache-capacity/promotion and scope-dispatch variants. The earlier
+  state-classification guard lacks native-hook escape tracking and is unsafe.
+  No runtime optimization was retained; startup timing variability is unresolved.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
