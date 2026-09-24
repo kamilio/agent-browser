@@ -596,7 +596,7 @@ function fakeOwner() {
 	};
 }
 
-function fixture() {
+function fixture(eventHandlers = false) {
 	const owner = fakeOwner();
 	const windowGlobal = new PageWindowGlobal([
 		...aliases,
@@ -611,12 +611,19 @@ function fixture() {
 	const setAnswer = vi.fn((value: unknown) => {
 		answer = value;
 	});
+	let handler: unknown = null;
+	const setHandler = vi.fn((value: unknown) => {
+		handler = value;
+	});
 	const document = windowGlobal.createHostObject(owner.context, {
 		properties: { defaultView: { get: () => nativeWindow } },
 	});
 	const console = owner.context.createHostObject({});
 	const definition: ReleasedHostDefinition = {
 		properties: {
+			...(eventHandlers
+				? { onload: { get: () => handler, set: setHandler } }
+				: {}),
 			...Object.fromEntries(
 				aliases.map((name) => [name, { get: () => nativeWindow }]),
 			),
@@ -666,8 +673,79 @@ function fixture() {
 		read,
 		write,
 		setAnswer,
+		setHandler,
 	};
 }
+
+it("retains inert Window handler objects and releases each replaced reference", () => {
+	const test = fixture(true);
+	test.bind({});
+	const writeObject = test.bridgeDefinition?.methods?.writeEventObject;
+	if (!writeObject) throw new Error("Missing retained handler operation");
+	expect(test.retainGuestArguments).toHaveBeenCalledWith(writeObject, 1);
+	expect(test.bridgeDefinition?.properties?.eventHandlers.get?.()).toEqual([
+		"onload",
+	]);
+	const first = {};
+	const second = {};
+	writeObject("onload", first);
+	expect(test.read("onload")).toBe(first);
+	expect(test.context.releaseGuestReference).not.toHaveBeenCalled();
+	writeObject("onload", second);
+	expect(test.read("onload")).toBe(second);
+	expect(test.context.releaseGuestReference).toHaveBeenCalledExactlyOnceWith(
+		first,
+	);
+	const callback = () => {};
+	test.write("onload", callback);
+	expect(test.read("onload")).toBe(callback);
+	expect(vi.mocked(test.context.releaseGuestReference).mock.calls).toEqual([
+		[first],
+		[second],
+	]);
+	test.write("onload", null);
+	expect(test.read("onload")).toBeNull();
+	expect(test.context.releaseGuestReference).toHaveBeenCalledTimes(2);
+});
+
+it("releases rejected handler references while preserving the previous handler", async () => {
+	const test = fixture(true);
+	test.bind({});
+	const writeObject = test.bridgeDefinition?.methods?.writeEventObject;
+	if (!writeObject) throw new Error("Missing retained handler operation");
+	const first = {};
+	const rejected = {};
+	writeObject("onload", first);
+	const failure = new Error("setter failed");
+	test.setHandler.mockImplementationOnce(() => {
+		throw failure;
+	});
+	expect(() => writeObject("onload", rejected)).toThrow(failure);
+	expect(test.read("onload")).toBe(first);
+	expect(test.context.releaseGuestReference).toHaveBeenCalledExactlyOnceWith(
+		rejected,
+	);
+	for (const name of ["answer", "readOnly", "__proto__", "onresize", 1]) {
+		const invalid = {};
+		expect(() => writeObject(name, invalid)).toThrow(/Unknown window handler/);
+		expect(test.context.releaseGuestReference).toHaveBeenLastCalledWith(
+			invalid,
+		);
+	}
+	const extra = {};
+	expect(() => writeObject("onload", rejected, extra)).toThrow(
+		/Unknown window handler/,
+	);
+	expect(
+		vi.mocked(test.context.releaseGuestReference).mock.calls.slice(-2),
+	).toEqual([[rejected], [extra]]);
+	expect(test.read("onload")).toBe(first);
+	const released = vi.mocked(test.context.releaseGuestReference).mock.calls
+		.length;
+	await test.close();
+	expect(() => writeObject("onload", {})).toThrow(/closed/);
+	expect(test.context.releaseGuestReference).toHaveBeenCalledTimes(released);
+});
 
 it("replaces alias declarations with one reserved bridge without mutating input", () => {
 	const names = [...aliases, "document", "console"];

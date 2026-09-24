@@ -29,7 +29,12 @@ export class PageWindowGlobal {
 			const descriptor = bridge.methods.includes(name)
 				? { configurable: true, enumerable: true, writable: true, value: nativeWindow[name] }
 				: { configurable: true, enumerable: true, get: bridge.read.bind(undefined, name) };
-			if (bridge.writable.includes(name)) descriptor.set = bridge.write.bind(undefined, name);
+			if (bridge.writable.includes(name)) descriptor.set = bridge.eventHandlers.includes(name)
+				? value => {
+					if (value !== null && typeof value === "object") bridge.writeEventObject(name, value);
+					else bridge.write(name, typeof value === "function" ? value : null);
+				}
+				: bridge.write.bind(undefined, name);
 			Object.defineProperty(globalThis, name, descriptor);
 		}
 		for (const name of bridge.aliases) {
@@ -153,6 +158,45 @@ export class PageWindowGlobal {
 		const writable = Object.entries(definition.properties ?? {})
 			.filter(([, property]) => property.set !== undefined)
 			.map(([name]) => name);
+		const eventHandlers = ["onload", "onresize", "onscroll", "ontoggle"].filter(
+			(name) => writable.includes(name),
+		);
+		const handlerReferences = new Map<string, unknown>();
+		const releaseHandler = (name: string) => {
+			const previous = handlerReferences.get(name);
+			handlerReferences.delete(name);
+			if (previous !== undefined && !owner.signal.aborted)
+				owner.releaseGuestReference(previous);
+		};
+		// Preserve inert EventHandler objects without copying their properties or
+		// invoking handleEvent. Callable values keep the normal callback bridge.
+		const writeEventObject = eventHandlers.length
+			? owner.retainGuestArguments((name, ...references) => {
+					const reference = references[0];
+					let adopted = false;
+					try {
+						if (!this.bound || owner.signal.aborted)
+							throw new AgentBrowserError("closed", "Window handler is closed");
+						if (
+							references.length !== 1 ||
+							typeof name !== "string" ||
+							!eventHandlers.includes(name)
+						)
+							throw new AgentBrowserError(
+								"invalid-input",
+								"Unknown window handler",
+							);
+						definition.properties?.[name].set?.(reference);
+						releaseHandler(name);
+						handlerReferences.set(name, reference);
+						adopted = true;
+					} finally {
+						if (!adopted && !owner.signal.aborted)
+							for (const rejected of references)
+								owner.releaseGuestReference(rejected);
+					}
+				}, 1)
+			: undefined;
 		const bind = owner.retainGuestArguments((reference) => {
 			if (this.bound) {
 				owner.releaseGuestReference(reference);
@@ -180,6 +224,7 @@ export class PageWindowGlobal {
 			? new PageWorkers(owner, blobs, this.workerOptions)
 			: undefined;
 		owner.onCleanup(async () => {
+			handlerReferences.clear();
 			await workers?.close();
 			urls.close();
 			blobs.close();
@@ -203,9 +248,11 @@ export class PageWindowGlobal {
 					names: { get: () => names },
 					aliases: { get: () => aliases },
 					writable: { get: () => writable },
+					eventHandlers: { get: () => eventHandlers },
 					methods: { get: () => Object.keys(definition.methods ?? {}) },
 				},
 				methods: {
+					...(writeEventObject ? { writeEventObject } : {}),
 					createImage: () => {
 						if (!this.bound || owner.signal.aborted)
 							throw new AgentBrowserError(
@@ -238,6 +285,7 @@ export class PageWindowGlobal {
 								"Read-only window property",
 							);
 						definition.properties?.[name].set?.(value);
+						releaseHandler(name);
 					},
 				},
 			}),

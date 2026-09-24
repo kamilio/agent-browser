@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DocumentTree } from "./document.js";
+import { BrowserEvent } from "./events.js";
 import { PageClock } from "./page-performance.js";
 import { DocumentInteractions } from "./interactions.js";
 import {
@@ -80,6 +81,97 @@ afterEach(() => {
 });
 
 describe("runtime-independent page capability setup", () => {
+	it("dispatches Window onload with stable replacement ordering and the Window receiver", async () => {
+		const test = fixture();
+		const bindings = new PageBindings(test.page, test.context, test.lifecycle);
+		const window = bindings.window as {
+			onload: unknown;
+			addEventListener(type: string, callback: unknown): void;
+		};
+		const order: string[] = [];
+		const receiver: unknown[] = [];
+		expect(window.onload).toBeNull();
+		window.addEventListener("load", () => order.push("before"));
+		window.onload = () => order.push("replaced");
+		window.addEventListener("load", () => order.push("after"));
+		const replacement = function (
+			this: unknown,
+			event: { type: string; target: unknown },
+		) {
+			order.push(event.type);
+			receiver.push(this, event.target);
+		};
+		window.onload = replacement;
+		expect(window.onload).toBe(replacement);
+		await test.page.interactions.events.dispatchEventAsync(
+			test.page.interactions.events.windowTarget as number,
+			new BrowserEvent("load"),
+		);
+		expect(order).toEqual(["before", "load", "after"]);
+		expect(receiver).toEqual([window, window]);
+		window.onload = null;
+		expect(window.onload).toBeNull();
+		order.length = 0;
+		await test.page.interactions.events.dispatchEventAsync(
+			test.page.interactions.events.windowTarget as number,
+			new BrowserEvent("load"),
+		);
+		expect(order).toEqual(["before", "after"]);
+		bindings.close();
+		expect(() => window.onload).toThrow(
+			expect.objectContaining({ code: "closed" }),
+		);
+		expect(() => {
+			window.onload = replacement;
+		}).toThrow(expect.objectContaining({ code: "closed" }));
+	});
+	it.each([undefined, null, false, 0, "source", Symbol("handler")])(
+		"clears onload for a non-object value %s",
+		(value) => {
+			const test = fixture();
+			const bindings = new PageBindings(
+				test.page,
+				test.context,
+				test.lifecycle,
+			);
+			const window = bindings.window as { onload: unknown };
+			window.onload = () => {};
+			window.onload = value;
+			expect(window.onload).toBeNull();
+			bindings.close();
+		},
+	);
+	it("retains a non-callable onload object without invoking its handleEvent method", async () => {
+		const test = fixture();
+		const bindings = new PageBindings(test.page, test.context, test.lifecycle);
+		const window = bindings.window as {
+			onload: unknown;
+			addEventListener(type: string, callback: unknown): void;
+		};
+		const order: string[] = [];
+		const handleEvent = vi.fn();
+		const value = { handleEvent };
+		// Web IDL LegacyTreatNonObjectAsNull retains objects as inert callbacks.
+		// https://webidl.spec.whatwg.org/#LegacyTreatNonObjectAsNull
+		window.addEventListener("load", () => order.push("before"));
+		window.onload = value;
+		window.addEventListener("load", () => order.push("after"));
+		expect(window.onload).toBe(value);
+		const dispatch = () =>
+			test.page.interactions.events.dispatchEventAsync(
+				test.page.interactions.events.windowTarget as number,
+				new BrowserEvent("load"),
+			);
+		await dispatch();
+		expect(order).toEqual(["before", "after"]);
+		expect(handleEvent).not.toHaveBeenCalled();
+		order.length = 0;
+		window.onload = () => order.push("replacement");
+		await dispatch();
+		expect(order).toEqual(["before", "replacement", "after"]);
+		expect(bindings.dom.eventBindings?.drainErrors()).toEqual([]);
+		bindings.close();
+	});
 	it("shares the page clock and frame functions between globals and Window", async () => {
 		vi.useFakeTimers();
 		const test = fixture();

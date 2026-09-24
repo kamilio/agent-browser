@@ -512,6 +512,18 @@ export class PageBindings {
 							this.dom.eventBindings?.setHandler(windowTarget, "scroll", value);
 						},
 					},
+					onload: {
+						get: () => {
+							this.ensureOpen();
+							return (
+								this.dom.eventBindings?.getHandler(windowTarget, "load") ?? null
+							);
+						},
+						set: (value) => {
+							this.ensureOpen();
+							this.dom.eventBindings?.setHandler(windowTarget, "load", value);
+						},
+					},
 					performance: {
 						get: () => {
 							this.ensureOpen();

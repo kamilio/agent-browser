@@ -40,7 +40,7 @@
   2.9 s and GC 2.6 s. Seven modules prepared; the intentional stop cleaned up
   with zero retained data/sockets. Parsing the real 3.49 MB login module made
   8548753 position requests and allocated 3860297 uncached coordinates.
-- SafeJS a9d68d5e67 defers coordinates on private compiler tokens; ordinary token
+- Maintained SafeJS defers coordinates on private compiler tokens; ordinary token
   records remain eager. The rebuilt SDK reduced login-module position requests to
   3934203 and allocations to 1984101. Alternating runs used 10.06–10.23 s CPU
   versus 11.67 s for the warmed eager baseline. This is a parsing gain, not proven
@@ -49,7 +49,7 @@
   Execution comparison over nodes 3000–6000 used 18.06 s CPU eager versus 13.57 s
   lazy, both with 3107 complete reconciliations and verified cleanup. No regression
   reproduced; separate page-load timing does not establish a reliable execution gain.
-- SafeJS 71a4da72cf fixes the parser's native stack overflow on long else-if
+- Maintained SafeJS fixes the parser's native stack overflow on long else-if
   ladders. Iterative continuations preserve the 2048-level limit, source spans and
   nearest-else binding; deeper non-ladder grammar remains a separate validation gate.
 - Worker source nodes 15000–35000 required 21009 complete reconciliations and
@@ -57,7 +57,7 @@
   tracing separated 35 warm-up deoptimizations from four in the measured interval;
   repeated steady-state deoptimization is not established as the main cost.
   Fixed-work stop at 35000 nodes verified cleanup, not Worker initialization.
-- SafeJS 57717c7ef9 tracks newly owned guest constructor prototypes. The real
+- Maintained SafeJS tracks newly owned guest constructor prototypes. The real
   Worker graph now has 97 fallback records versus 142, with the same 1040257-unit
   charge. Focused prototype walks improved from 59 to 39 ms, but fresh unprofiled
   Worker segment CPU was effectively unchanged (32.05 versus 32.00 s), with all
@@ -114,7 +114,13 @@
   loopback checks cover binary exchange/receivers/close and zero retained sockets.
 - Original/alternate routes and Chrome/Firefox/Safari identities selected the same
   current app client; no simpler supported join flow was established.
-- Existing dirty Window.onload work has a non-callable-value test failure.
+- Window.onload is exposed with stable listener ordering and Window receivers.
+  Classic-Script Window handler objects retain guest identity without inspecting properties;
+  non-object values clear handlers. The old object-clearing test contradicted
+  Web IDL and is corrected. Replacements/rejections release retained references.
+  Passed 368 native tests (including GC), build and five actual SDK checks using a 32-reference
+  quota, with zero retained data/callbacks after cleanup. This verifies handlers,
+  not Zoom initialization or admission. Offline check: scripts/check-window-load.ts.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
