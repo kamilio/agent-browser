@@ -43,11 +43,16 @@
   cutoff: accounting consumed about 95% of the interval. Visited-object checks
   and deferred-function reads/collectors are substantial costs. Earlier line
   probes targeted unbundled files and never installed their runtime hooks.
-- An uncommitted direct-state deferred-function variant used 27.9 CPU seconds
-  against bundled offline baselines of 38.7 and 41.9, with matching sequence,
-  phase charges and accounting totals; all replays were offline and cleaned up.
-  This comparison predates e9a8214c3. Revalidate against its corrected final
-  reconciliation before retaining the variant; no live speedup is established.
+- The direct-state deferred-function variant is rejected for the corrected
+  runtime: its 24.3 CPU seconds fell between baselines of 26.5 and 23.1, and its
+  phase charges/accounting totals differed despite matching node sequences and
+  guest Date reads. The earlier bundled-build improvement did not carry over.
+  All comparison processes ended and their archives were released.
+- Replay currently records responses and guest Date reads, but leaves page
+  performance readings and timer delivery live. An in-memory PageClock recorder
+  passed an offline check preserving underlying reads, advancing host time and
+  closure checks. Verify these observations during actual Zoom replay before
+  attributing small timing/charge differences to runtime changes.
 - Live and offline traces each found two module-phase visitor deoptimizations at
   the Proxy target read, followed by recompilation. They do not establish that
   deoptimization explains startup timing variability. A separate Proxy helper
