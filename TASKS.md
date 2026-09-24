@@ -24,7 +24,7 @@
   offset 45058. No name/Join controls, join attempt or socket attempt; cleanup
   retained zero data. This advances beyond the earlier 9068-node observation but
   still does not reach readiness. Do not repeat unchanged extended runs.
-- Maintained SafeJS df848a278b uses sixteen per-walk positive capture slots.
+- Maintained SafeJS uses sixteen per-walk positive capture slots.
   Actual editor graph: 337–381 ms per 100 walks versus 451–485 ms with four slots,
   with identical 6690449-unit charges. Full-page time to 6000 nodes was broadly
   similar (31.8 vs 33.0 s); an overall startup gain is not established.
@@ -34,10 +34,18 @@
   membership checks. One real graph has 13815 entries, 4850 scope projections,
   3703 deferred roots, 2023 closures and 1005 records. Use that scope structure
   when evaluating performance, not a single-scope synthetic fixture alone.
+- Worker source nodes 15000–35000 required 21009 complete reconciliations and
+  31.5–34.2 s sampled time; the visitor accounted for 16.9–17.9 s. Optimization
+  tracing found 40 visitor/Temporal-Intl deoptimizations across the full probe;
+  determine which recur after warm-up before attributing steady-state cost to them.
+  Fixed-work stop at 35000 nodes verified cleanup, not Worker initialization.
 - Rejected in-memory candidates: split visitor (slower on the real page), shared
   deferred methods, guarded visitor entry, private-field scope-root storage,
-  private visit-generation records and private-brand routing. No uncommitted SDK
-  implementation remains from these experiments; preserve every provider/read.
+  private visit-generation records and private-brand routing. A narrower special-
+  type visitor split stayed within Worker timing variation. Local declaration
+  deferral did not demonstrate an editor-segment gain (16.2 s, 3107 reconciliations)
+  and would require caller/source-reference capture normalization. No SDK changes
+  remain from these experiments; preserve every provider/read.
 - The last normal 120 s network Worker check failed before source completion
   or WASM download. Latest 300 s diagnostic with batched WASM metadata completed
   source evaluation in 181.6 s, downloaded 465602 bytes, detached the donor and
