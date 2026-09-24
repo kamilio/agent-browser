@@ -26,7 +26,10 @@ import { BrowserSession } from "../src/session.js";
 // Live-network/socket/SafeJS diagnostic, separate from native-tests.json. Run only
 // with authorization for this meeting and its necessary sockets, for example:
 // AGENT_BROWSER_SAFEJS_SOURCE_ROOT=/path/to/safe-js \
-//   node --max-old-space-size=192 dist/scripts/check-zoom-initialization.js
+//   /path/to/node24 --experimental-wasm-jspi --max-old-space-size=512 \
+//     dist/scripts/check-zoom-initialization.js
+// Enables bounded WASM and binary Worker messages for the media client. Neither
+// initialization nor feature availability certifies working meeting media.
 // Set AGENT_BROWSER_ZOOM_USER_AGENT explicitly to compare server-selected client
 // documents; the same identity is published to HTTP requests and navigator.
 // Observe delayed initialization in two windows of 10 s by default, settling
@@ -104,6 +107,8 @@ const { factory } = await loadPageRuntime(
 			classicScriptErrors: "report",
 			callbackScheduling: "after-prefix",
 			domExpandos: "bounded-v1",
+			webAssembly: "bounded-v1",
+			workerBinaryMessages: "bounded-v1",
 		},
 	},
 	{
