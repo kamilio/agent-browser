@@ -30,7 +30,8 @@
 - Retained SafeJS fixes: 9fa4fc3fd makes Proxy accounting stack-safe and preserves
   delayed handler observations; aece59d34 and 1c5ce18cb fix parser costs.
 - Accounting consumes about 95% of the profiled 5000-module-node interval;
-  visited-object checks and deferred-function collectors are substantial costs.
+  a fresh profile of the loaded public build confirms visited-object checks
+  alone account for about 13% of samples; deferred collectors remain costly.
   Matching node sequences do not guarantee identical initial state: unchanged
   offline replays diverged in accounting despite consuming the same recorded
   Date/performance values, with timer delivery differing before module execution.
@@ -39,8 +40,11 @@
 - No performance candidate is ready to retain. Direct deferred state, shared
   deferred methods, Proxy helpers, private visit marks, cache promotion/capacity
   and scope-dispatch variants failed to establish useful gains. A shared visitor
-  with fresh per-walk state completed one in-memory fixture, but lacks a matching
-  baseline and broader validation. No runtime changes were retained.
+  with fresh state tied its baseline; fresh WeakSets were slower. Per-walk visited
+  closures lost their initial gain on repeated, mixed and deeper fixtures, and
+  direct private-array appends showed no substantial gain. No runtime changes
+  were retained. The fresh live profile reached its cutoff and verified cleanup;
+  no Join controls or socket attempt occurred.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
