@@ -17,18 +17,26 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse working
   builds and /tmp/agent-browser-node24-runtime/bin/node.
-- Latest normal-allowance Zoom CPU profile passed all 13 classic scripts and
+- Latest normal-allowance Zoom check passed all 13 classic scripts and
   prepared seven modules, then hit the 120 s runtime deadline in editor-core
-  (11403 module nodes; offset 32667, line 25). No name field, Join button or
+  (12847 module nodes; offset 45046, line 29). No name field, Join button or
   join/socket attempt appeared. Cleanup passed with zero retained data.
-  No diagnostic remains active; the profile stayed in memory.
+  No diagnostic remains active; diagnostics stayed in memory.
 - Startup remains blocked. A completed 1800 s diagnostic reached emoji-reactions
   data initialization (141444 nodes; offset 49274, line 9) without Join controls.
   Do not repeat unchanged extended runs.
-- Phase profile: module preparation took about 47 s and execution about 72 s.
+- Before the position-cache fix, the phase profile measured about 47 s of module
+  preparation and 72 s of execution.
   Position decoding led preparation samples; retained-data traversal dominated
   execution. Preparation overlaps late classic callbacks. Investigate measured
   costs without weakening accounting; node-count variation is not a speedup.
+- Position-cache FIFO eviction (aece59d34) now uses a bounded numeric queue.
+  The built position fixture improved from 0.93 to 0.41 CPU seconds; separate
+  parsing runs improved by 12–13% with identical metering. All 107 focused tests,
+  lint, the maintained build and 11 built checks passed. The live check above
+  still timed out. Applying the same queue to tokens gave mixed fixture results;
+  leave token storage unchanged. Next inspect span validation/packing allocation
+  and retained-data traversal costs without removing fresh observations.
 - Retained SafeJS fixes: tracked handler/descriptor isolation (bace0875c),
   incremental scalar-array accounting (39e147ad6), detached completed measurement
   callbacks (5ee62fa5e), and the Temporal/Intl helper (bee81e32f). Focused tests,
