@@ -17,18 +17,22 @@
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node.
 - Latest normal Zoom observation: all 13 classic scripts passed; the 120 s deadline
-  expired in editor-core before name/Join controls appeared. No join/socket attempt;
+  expired in editor-core after 7722 module nodes, before name/Join controls appeared.
+  No join/socket attempt;
   cleanup retained zero data. An earlier 1800 s diagnostic reached emoji-reactions
   without controls; do not repeat unchanged extended runs.
 - Retained SafeJS fixes cover late-callback function reconciliation (e9a8214c3),
   stack-safe Proxy accounting (9fa4fc3fd), and parser costs (aece59d34, 1c5ce18cb).
-- Pending SafeJS change replaces pending-function wrapper allocations with separate
+- SafeJS 542c1fd4a replaces pending-function wrapper allocations with separate
   state/depth arrays, preserving traversal and reconciliation. Recorded Zoom replay
   used 15–20% less CPU than two baselines with matching accounting and work.
-  Validation: 109 focused source tests, lint, maintained build and its 13 built
-  checks passed. Normal live validation of this change and its commit remain pending.
-- Accounting dominates startup; each walk includes 3703 deferred module functions.
-  Replay comparisons must match initial state, accounting, clocks and timer delivery,
+  Validation: 109 focused source tests, lint, maintained build and 13 built checks
+  on Node 24 passed. The changed build still times out during normal live startup.
+- The changed-build profile still spends about 95% of module execution in
+  accounting, including deferred reads, capture collection and visited checks.
+  Each walk includes 3703 deferred module functions. Profiling cleanup passed;
+  no diagnostic remains active. Replay comparisons must match initial state,
+  accounting, clocks and timer delivery,
   not merely node sequences. Keep replay networking disabled and release archives.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
@@ -37,8 +41,8 @@
 ## Outstanding gates
 
 - Initialize within normal allowances, expose Join controls, fill the name before
-  requiring enabled Join (#input-for-name), and verify admission/presence. Run the
-  pending build checks explicitly on Node 24 and a normal live startup observation.
+  requiring enabled Join (#input-for-name), and verify admission/presence. Reduce
+  the remaining per-function accounting cost without skipping reads or collectors.
   Fixed-work diagnostics and fixture gains do not establish meeting acceptance.
 - Implement and verify every notetaker capability above. Automations references:
   capture-page.js (getDisplayMedia, 16000 Hz AudioWorklet), meeting-page.js
