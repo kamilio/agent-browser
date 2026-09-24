@@ -24,9 +24,13 @@
 - The 512 MiB heap advanced to 9015061 steps at 115 s, versus 8998346 at 111 s
   in the recent 256 MiB cache check; this comparison includes backend/timing
   differences and does not establish a precise speedup. Normal startup still
-  misses its deadline. A 600 s diagnostic with the restored backend and 512 MiB
-  heap is running, observing module positions and attempting Join if actionable
-  controls appear. Its extended deadline is not normal-startup acceptance.
+  misses its deadline. The 600 s diagnostic with the restored backend and 512 MiB
+  heap executed 49993 module nodes (47555 in editor-core), then expired at
+  editor-core offset 697893, line 237, in Wn's method wrapper copying arguments
+  into an array. It passed the earlier React property and event tables. Complete
+  snapshots still had no name input or Join button; no join/socket attempts.
+  Cleanup closed runtime/sockets and retained zero data. This is progress through
+  initialization, not readiness or normal-startup acceptance.
 - Positive visited cache ccb727ac1 was reverted by a7a496449. Its apparent gain
   came from a benchmark with duplicated visitor functions. Separate processes
   using the unchanged visitor did not confirm it: a deterministic 34269-unit
@@ -72,9 +76,11 @@
 
 ## Outstanding gates
 
-- Investigate the measured React DOM attribute-table constructor workload and
-  retained-graph costs, including optimization/deoptimization during uninterrupted
-  interpreter execution. Use the unchanged visitor when comparing backends.
+- Continue initialization beyond editor-core's method wrappers to expose Join
+  controls or a concrete compatibility failure. The extended run is terminal;
+  any further diagnostic needs a new bounded session. Reduce retained-graph
+  reconciliation cost; repeated visitor deoptimization is not supported by the
+  latest trace. Use the unchanged visitor when comparing backends.
   Do not repeat the rejected positive visited cache, object-first dispatch or
   fresh-Set visited-storage approaches without new evidence.
   Preserve per-walk callbacks and avoid retained guest roots.
