@@ -22,11 +22,13 @@
   diagnostic reached editor-core's argument-copying wrapper at offset 697893
   (49993 module nodes), but exposed no name field or Join button. No join or
   socket attempts occurred; cleanup closed runtime/sockets with zero retained data.
-- A bounded 1800 s diagnostic is running against the restored maintained runtime
-  with a 512 MiB Node heap. It watches for name/Join controls and can attempt one
-  Join action, followed by Leave if available. It has not verified admission or
-  presence. Extended limits do not satisfy the normal-startup gate. Reuse this
-  active session; finish it and verify cleanup before changing the runtime.
+- The completed 1800 s diagnostic (restored runtime, 512 MiB heap) passed through
+  editor-core, localization and Lodash, reaching emoji-reactions data initialization.
+  It executed 141444 module nodes, then hit the runtime deadline at emoji-reactions
+  offset 49274, line 9, a numeric literal. No name field, Join button, join attempt
+  or socket attempt appeared. Runtime/socket cleanup passed with zero retained data.
+  No diagnostic remains active. Investigate accounting cost before another long run;
+  extending the deadline again without a change does not address normal startup.
 - Retained optimizations: fast scope accounting fields, tracked array projections,
   retained visitor code with independent per-walk state, and private bound-capture
   snapshots preserving replaced/accessor providers. The positive visited cache was
@@ -45,9 +47,8 @@
 
 ## Outstanding gates
 
-- Continue initialization beyond editor-core's method wrappers to expose Join
-  controls or a concrete compatibility failure. Observe the active bounded
-  diagnostic through settlement or deadline and verify cleanup. Reduce retained-graph
+- Continue initialization beyond emoji-reactions data to expose Join controls or a
+  concrete compatibility failure. Reduce retained-graph
   reconciliation cost; repeated visitor deoptimization is not supported by the
   latest trace. Use the unchanged visitor when comparing backends.
   Do not repeat the rejected positive visited cache, object-first dispatch,
@@ -58,9 +59,9 @@
   Diagnostic limits and fixture improvements do not establish live acceptance.
 - Correct the next join observer to fill the name before requiring enabled Join.
   Zoom's preview uses #input-for-name and disables Join for invalid form data.
-  The active diagnostic still has the older dependency; an ephemeral corrected
-  observer passed simulated immediate/delayed enable, fill-failure and single-action
-  checks. Apply it after the current run; those checks do not prove live joining.
+  An ephemeral corrected observer passed simulated immediate/delayed enable,
+  fill-failure and single-action checks. Use it in the next diagnostic; those checks
+  do not prove live joining.
 - Implement and verify every notetaker capability above. Automations reference:
   capture-page.js uses getDisplayMedia and a 16000 Hz AudioWorklet for mixed audio;
   meeting-page.js uses a 48000 Hz AudioContext/MediaStream destination for virtual
