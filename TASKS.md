@@ -17,9 +17,9 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse working
   builds and /tmp/agent-browser-node24-runtime/bin/node.
-- Latest normal-allowance Zoom check passed all 13 classic scripts and
+- Latest normal-allowance Zoom line profile passed all 13 classic scripts and
   prepared seven modules, then hit the 120 s runtime deadline in editor-core
-  (11633 module nodes; offset 35655, line 25). No name field, Join button or
+  (9926 module nodes; offset 32558, line 25). No name field, Join button or
   join/socket attempt appeared. Cleanup passed with zero retained data.
   No diagnostic remains active; diagnostics stayed in memory.
 - Startup remains blocked. A completed 1800 s diagnostic reached emoji-reactions
@@ -38,10 +38,16 @@
   checks passed. Endpoint mutation, ownership, getter order and rebased spans
   remain covered. The live check above still timed out. Token FIFO changes gave
   mixed results and remain discarded.
-- Next obtain source-line CPU samples inside the retained-data visitor. A local
-  inspector probe confirmed positionTicks are available; the prepared live
-  diagnostic aggregates them in memory. Preserve fresh observations and full
-  reconciliation; parser improvements have not resolved runtime execution cost.
+- Line profiling confirms distributed costs in visited-object lookup, capture
+  callbacks, classification and property reads. Some inlined ticks name lines
+  outside their attributed file; do not treat those as exact source attribution.
+  Moving capture state into its callback was about 40% slower; prototype guards
+  showed no gain. A shortcut for unchanged native property getters looked mildly
+  faster initially, but compiled comparisons were mixed. All three are discarded;
+  source and built visitor were restored exactly and all 11 built checks passed.
+  Next compare a fixed amount of Zoom initialization work, with responses kept
+  in memory, to evaluate traversal changes against the real workload. Preserve
+  fresh observations and full reconciliation, including primitive-node awaits.
 - Retained SafeJS fixes: tracked handler/descriptor isolation (bace0875c),
   incremental scalar-array accounting (39e147ad6), detached completed measurement
   callbacks (5ee62fa5e), and the Temporal/Intl helper (bee81e32f). Focused tests,
