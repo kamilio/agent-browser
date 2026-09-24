@@ -18,9 +18,9 @@
   build and /tmp/agent-browser-node24-runtime/bin/node.
 - Latest normal Zoom observation: all 13 classic scripts passed; the 120 s deadline
   expired in editor-core after 7722 module nodes, before name/Join controls appeared.
-  No join/socket attempt;
-  cleanup retained zero data. An earlier 1800 s diagnostic reached emoji-reactions
-  without controls; do not repeat unchanged extended runs.
+  No join/socket attempt; cleanup retained zero data. A bounded 1800 s run of
+  the retained runtime is now active (session 90953), checking name/Join controls
+  and leaving before cleanup if possible. Poll it before starting another run.
 - Retained SafeJS fixes cover late-callback function reconciliation (e9a8214c3),
   stack-safe Proxy accounting (9fa4fc3fd), and parser costs (aece59d34, 1c5ce18cb).
 - SafeJS 542c1fd4a replaces pending-function wrapper allocations with separate
@@ -30,10 +30,11 @@
   on Node 24 passed. The changed build still times out during normal live startup.
 - The changed-build profile still spends about 95% of module execution in
   accounting, including deferred reads, capture collection and visited checks.
-  Each walk includes 3703 deferred module functions. Profiling cleanup passed;
-  no diagnostic remains active. Replay comparisons must match initial state,
-  accounting, clocks and timer delivery,
-  not merely node sequences. Keep replay networking disabled and release archives.
+  Each walk includes 3703 deferred module functions. Type-branch and identity-layout
+  experiments established no reliable Zoom gain; no changes were retained. Even
+  matched replay baselines varied from 16.51 to 32.04 CPU seconds. Require stable
+  timings as well as matching initial state, accounting, clocks and timer delivery.
+  Replay networking stays disabled; its archive was released.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
