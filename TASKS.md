@@ -33,13 +33,13 @@
   graph: 601 roots, nine eligible tables and 79 accessors. Allocation fell about
   1.8% (25.96 MB to 25.49 MB per 50 walks); CPU timings overlapped. No startup
   speedup is established.
-- Latest uninstrumented Zoom check of 61d1873e4: 256 MiB heap, 120 s script limit;
-  nine scripts passed, then externals.min.js hit the execution deadline at 120.4 s
-  wall time (54.8 s process CPU). This was a classic-script timeout, not an import
-  observation timeout. Host CPU pressure was high; no causal regression is proved.
-  No readiness, admission, presence or socket attempts. Cleanup verified closed
-  runtime/sockets and zero retained data. The prior build passed 13 classic scripts
-  but still expired its import observation during editor evaluation.
+- Latest maintained-build Zoom diagnostic: 256 MiB heap and extended 600 s
+  script/import allowances. All 13 classic scripts passed; externals.min.js used
+  52.8 s wall / 51.9 s CPU. Seven modules prepared but never settled before the
+  actual import execution deadline revoked the realm. No readiness, admission,
+  presence or socket attempts. Cleanup verified closed runtime/sockets and zero
+  retained data. This does not pass normal limits; the last 120 s script-limit run
+  timed out in externals.min.js under host CPU pressure.
 - Editor profiling attributed about 71% of CPU samples to reconciliation and 25%
   to GC; the walker was already optimized. About 12600 graph visits and 25000 capture
   calls occurred per scan. The operation census found slow Rolldown export-copy
