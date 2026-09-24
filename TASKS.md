@@ -50,6 +50,10 @@
   Each scan made about 25000 capture calls. The graph walker was already V8
   optimized in all 20 live samples (status 81, matching an optimized control),
   so failure to optimize is not established as the startup bottleneck.
+- A fresh 10-second editor CPU profile (4133 samples) attributed about 71% of
+  sampled time to data reconciliation and 25% to garbage collection, with less
+  than 1% idle. The probe closed cleanly without joining. Inspect allocation
+  sites in the actual editor workload before choosing another optimization.
 - An identity-sharing trial saved 8-15% CPU in an isolated deferred-function
   fixture but retained all 3703 deferred-state objects after materialization;
   the current implementation released all of them. The trial and its tests were
