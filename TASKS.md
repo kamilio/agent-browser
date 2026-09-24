@@ -19,7 +19,7 @@
   builds and /tmp/agent-browser-node24-runtime/bin/node.
 - Latest normal-allowance Zoom check passed all 13 classic scripts and
   prepared seven modules, then hit the 120 s runtime deadline in editor-core
-  (12847 module nodes; offset 45046, line 29). No name field, Join button or
+  (11633 module nodes; offset 35655, line 25). No name field, Join button or
   join/socket attempt appeared. Cleanup passed with zero retained data.
   No diagnostic remains active; diagnostics stayed in memory.
 - Startup remains blocked. A completed 1800 s diagnostic reached emoji-reactions
@@ -30,13 +30,18 @@
   Position decoding led preparation samples; retained-data traversal dominated
   execution. Preparation overlaps late classic callbacks. Investigate measured
   costs without weakening accounting; node-count variation is not a speedup.
-- Position-cache FIFO eviction (aece59d34) now uses a bounded numeric queue.
-  The built position fixture improved from 0.93 to 0.41 CPU seconds; separate
-  parsing runs improved by 12–13% with identical metering. All 107 focused tests,
-  lint, the maintained build and 11 built checks passed. The live check above
-  still timed out. Applying the same queue to tokens gave mixed fixture results;
-  leave token storage unchanged. Next inspect span validation/packing allocation
-  and retained-data traversal costs without removing fresh observations.
+- Parser improvements: bounded position-cache FIFO eviction (aece59d34), then
+  coordinate comparison without allocating packed-span positions (1c5ce18cb).
+  Separate built parsing fixtures improved by 12–13%, then another 7–9% on
+  minified input, with identical metering. Multiline timings improved but varied.
+  All 115 focused tests across nine files, lint, the maintained build and 11 built
+  checks passed. Endpoint mutation, ownership, getter order and rebased spans
+  remain covered. The live check above still timed out. Token FIFO changes gave
+  mixed results and remain discarded.
+- Next obtain source-line CPU samples inside the retained-data visitor. A local
+  inspector probe confirmed positionTicks are available; the prepared live
+  diagnostic aggregates them in memory. Preserve fresh observations and full
+  reconciliation; parser improvements have not resolved runtime execution cost.
 - Retained SafeJS fixes: tracked handler/descriptor isolation (bace0875c),
   incremental scalar-array accounting (39e147ad6), detached completed measurement
   callbacks (5ee62fa5e), and the Temporal/Intl helper (bee81e32f). Focused tests,
