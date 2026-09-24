@@ -36,9 +36,18 @@
   when evaluating performance, not a single-scope synthetic fixture alone.
 - Worker source nodes 15000–35000 required 21009 complete reconciliations and
   31.5–34.2 s sampled time; the visitor accounted for 16.9–17.9 s. Optimization
-  tracing found 40 visitor/Temporal-Intl deoptimizations across the full probe;
-  determine which recur after warm-up before attributing steady-state cost to them.
+  tracing separated 35 warm-up deoptimizations from four in the measured interval;
+  repeated steady-state deoptimization is not established as the main cost.
   Fixed-work stop at 35000 nodes verified cleanup, not Worker initialization.
+- SafeJS d5e47d4adb tracks newly owned guest constructor prototypes. The real
+  Worker graph now has 97 fallback records versus 142, with the same 1040257-unit
+  charge. Focused prototype walks improved from 59 to 39 ms, but fresh unprofiled
+  Worker segment CPU was effectively unchanged (32.05 versus 32.00 s), with all
+  21009 reconciliations and zero retained resources after close. Earlier apparent
+  gains did not survive the fresh comparison. Passed 104 focused tests, lint,
+  maintained build, 13 built SDK checks and six browser SDK/JSPI checks.
+  Remaining fallback records include host metadata that requires fresh reads;
+  these counts do not imply every fallback recaptures descriptors.
 - Rejected in-memory candidates: split visitor (slower on the real page), shared
   deferred methods, guarded visitor entry, private-field scope-root storage,
   private visit-generation records and private-brand routing. A narrower special-
@@ -47,12 +56,15 @@
   and would require caller/source-reference capture normalization. No SDK changes
   remain from these experiments; preserve every provider/read.
 - The last normal 120 s network Worker check failed before source completion
-  or WASM download. Latest 300 s diagnostic with batched WASM metadata completed
+  or WASM download. A 300 s diagnostic with batched WASM metadata completed
   source evaluation in 181.6 s, downloaded 465602 bytes, detached the donor and
   completed export-wrapper setup (31.6 s), but expired before Zoom's original WASM
-  initialization callback. No socket attempts; cleanup verified zero retained
-  data/callbacks/sockets. Earlier source execution spends substantial time deriving
-  CryptoJS SHA constants. Source timings vary; metadata batching acts afterward.
+  initialization callback. The subsequent rebuilt-SDK diagnostic took 265.1 s
+  for source evaluation and downloaded the same WASM, but expired before donor
+  transfer or export setup. Both cleaned up with zero retained data/callbacks/
+  sockets and no socket attempts. Startup remains unverified; shared-host timing
+  varies substantially. Earlier source execution spends substantial time deriving
+  CryptoJS SHA constants; metadata batching acts afterward.
 - PageWasm now supplies fresh function name/length descriptors for one captured
   Object.defineProperties call per export. Isolated real Zoom WASM export setup
   took 0.70–0.86 s versus the 1.15 s baseline (CPU 664–678 versus 797 ms), with
