@@ -36,13 +36,13 @@
   47 tables and preserved 6656677 units on 606 roots. Sampled allocation fell from
   24.90 MB to 24.37 MB per 50 walks; CPU timings overlapped. The focused 179-function
   fixture showed a much larger allocation reduction; no startup speedup is proved.
-- Latest completed Zoom startup diagnostic before these commits: 256 MiB heap
-  and extended 600 s script/import allowances. All 13 classic scripts passed; externals.min.js used
-  52.8 s wall / 51.9 s CPU. Seven modules prepared but never settled before the
-  actual import execution deadline revoked the realm. No readiness, admission,
-  presence or socket attempts. Cleanup verified closed runtime/sockets and zero
-  retained data. This does not pass normal limits; the last 120 s script-limit run
-  timed out in externals.min.js under host CPU pressure.
+- Latest Zoom check of 73e115d99: 256 MiB heap, 120 s script/import limits.
+  All 13 classic scripts passed; externals.min.js used 50.6 s wall / 50.2 s CPU.
+  Seven modules prepared but did not settle before the actual import deadline
+  revoked the realm. No readiness, admission, presence or socket attempts. Cleanup
+  verified closed runtime/sockets and zero retained data. The earlier 600 s
+  diagnostic also expired during module execution; longer waits alone do not
+  establish working startup.
 - Editor profiling attributed about 71% of CPU samples to reconciliation and 25%
   to GC; the walker was already optimized. About 12600 graph visits and 25000 capture
   calls occurred per scan. The operation census found slow Rolldown export-copy
