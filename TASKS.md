@@ -17,14 +17,23 @@
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
 - The normal Zoom probe enables bounded WASM/binary Worker messages and explicit
-  1 MiB / 30 s page-fetch limits. Last main-page run (before these allowances)
-  reached 11518 module nodes in editor-core before its 120 s deadline closed the
-  realm: 12 classic scripts completed, one execution-closed. No name/Join controls
-  or socket attempt; shutdown retained zero data. Do not repeat unchanged runs.
-- Fresh complete-Worker profiling still attributes most startup cost to graph
-  accounting; the visitor is already optimized. Private closure collectors remain
-  in maintained SafeJS (currently 79f0215058); a private-brand routing experiment
-  showed no gain and was discarded. Preserve fresh reads and full reconciliation.
+  1 MiB / 30 s page-fetch limits. Fresh full-page check with those settings:
+  all 13 classic scripts completed; seven modules were admitted. The 120 s module
+  deadline closed the realm at 9068 module nodes (7517 in editor-core), while
+  constructing React's DOM-property table near offset 35228. No name/Join controls,
+  join attempt or socket attempt; cleanup retained zero data. This is ordinary
+  React setup, not an identified missing-method/polyfill issue. Do not repeat
+  unchanged extended runs.
+- Fresh post-download Worker CPU sample: retained-data visitor self time was
+  20.1 of 30.6 s; typed-array classification was only 0.15 s. Earlier startup
+  profiling also identifies graph accounting; the visitor is already optimized.
+  Maintained SafeJS remains 79f0215058. Private visit-generation record variants
+  preserved the fixture's charge but ran slightly slower (193–201 vs 176–197 ms
+  per 100 walks); discarded without source changes. Private-brand routing also
+  showed no gain. Preserve fresh reads and full reconciliation.
+- Fresh original/alternate join-route checks found the launch page and the same
+  app webclient route. Chrome, Firefox and Safari request identities selected
+  the same current client; no simpler supported join flow was established.
 - Worker WebSockets now reuse the explicit document transport and connection
   quotas, with fetched-response connect-src, inherited Blob policy, initialization
   ordering and termination cleanup. Passed 626 focused native tests and build;
@@ -37,8 +46,9 @@
   120 s time limit or granting capabilities. Passed 395 native tests and build.
   Real SDK Worker check rejects the heap under the old profile, accepts it under
   media, and releases all data. Isolated Zoom parent fetch/CORS, binary transfer,
-  and unchanged WASM glue initialized the 20 MiB heap in 17.0 s with the final profile/fetch limits;
-  donor detached, no guest errors, zero data/pending callbacks after shutdown.
+  and unchanged WASM glue initialized the 20 MiB heap in 17.0 s with the final
+  profile/fetch limits; donor detached, no guest errors, zero data/pending
+  callbacks after shutdown.
 - Complete network Worker source now finishes: 152–166 s with a temporary 300 s
   diagnostic runtime allowance. Parent WASM download took 6.1 s, exceeding the
   five-second fetch default. PageFetch now accepts explicit deadlines up to 30 s
