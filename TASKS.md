@@ -24,45 +24,23 @@
   do not repeat unchanged extended runs. No join/socket attempt occurred.
   Cleanup passed with zero retained data; no diagnostic remains active.
 - SafeJS e9a8214c3 reconciles functions materialized by later native callbacks,
-  including descendant captures, chained materialization, weak entries and final
-  primitive conversions. The reproduced payload was charged as 2 instead of 1011
-  units; same-walk charging and ordinary/held quota enforcement now pass.
-  Validation: 71 unique focused source tests, lint, maintained build, all 13 built
-  checks on Node 24 and a cold built reproduction. Normal Zoom still times out;
-  cleanup passes. This correctness fix has no established performance gain.
+  closing a same-walk quota bypass. Validation: 71 focused source tests, lint,
+  maintained build, 13 built checks on Node 24 and a cold built reproduction.
+  No established performance gain; normal Zoom still times out.
 - Retained SafeJS fixes: 9fa4fc3fd makes Proxy accounting stack-safe and preserves
   delayed handler observations; aece59d34 and 1c5ce18cb fix parser costs.
-- In-memory capture/replay isolates accounting as about 94–96% of a matching
-  5000-module-node startup interval. Offline replay invariants: 9844 phase steps,
-  29217 additional data units, 5066 accounting calls and equal returned-accounting
-  totals between replays. Preserve response completion order and recorded guest
-  Date reads; keep native deadlines real and replay networking disabled.
-  Live bootstrap scheduling can change the data delta; compare offline runs
-  from the same capture. Diagnostic archives were released.
-- A verified profile of the bundled public SDK reached the matching 5000-node
-  cutoff: accounting consumed about 95% of the interval. Visited-object checks
-  and deferred-function reads/collectors are substantial costs. Earlier line
-  probes targeted unbundled files and never installed their runtime hooks.
-- The direct-state deferred-function variant is rejected for the corrected
-  runtime: its 24.3 CPU seconds fell between baselines of 26.5 and 23.1, and its
-  phase charges/accounting totals differed despite matching node sequences and
-  guest Date reads. The earlier bundled-build improvement did not carry over.
-  All comparison processes ended and their archives were released.
-- Replay currently records responses and guest Date reads, but leaves page
-  performance readings and timer delivery live. An in-memory PageClock recorder
-  passed an offline check preserving underlying reads, advancing host time and
-  closure checks. Verify these observations during actual Zoom replay before
-  attributing small timing/charge differences to runtime changes.
-- Live and offline traces each found two module-phase visitor deoptimizations at
-  the Proxy target read, followed by recompilation. They do not establish that
-  deoptimization explains startup timing variability. A separate Proxy helper
-  gave negligible fixture gains and was discarded; the retained continuation
-  change fixes stack safety, with no controlled live speedup established.
-- Continue investigating steady-state traversal costs. Shared deferred methods
-  were slower in actual replay despite fixture gains; private visit marks,
-  cache-capacity/promotion and scope-dispatch variants were also discarded.
-  The earlier state-classification guard lacks native-hook escape tracking and
-  is unsafe. Preserve fresh observations and full reconciliation.
+- Accounting consumes about 95% of the profiled 5000-module-node interval;
+  visited-object checks and deferred-function collectors are substantial costs.
+  Matching node sequences do not guarantee identical initial state: unchanged
+  offline replays diverged in accounting despite consuming the same recorded
+  Date/performance values, with timer delivery differing before module execution.
+  Preserve underlying clock observations and real deadlines; disable replay
+  networking. Archives were released and all diagnostic processes ended.
+- No performance candidate is ready to retain. Direct deferred state, shared
+  deferred methods, Proxy helpers, private visit marks, cache promotion/capacity
+  and scope-dispatch variants failed to establish useful gains. A shared visitor
+  with fresh per-walk state completed one in-memory fixture, but lacks a matching
+  baseline and broader validation. No runtime changes were retained.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
