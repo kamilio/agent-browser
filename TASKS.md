@@ -25,35 +25,14 @@
 - Startup remains blocked. A completed 1800 s diagnostic reached emoji-reactions
   data initialization (141444 nodes; offset 49274, line 9) without Join controls.
   Do not repeat unchanged extended runs.
-- Before the position-cache fix, the phase profile measured about 47 s of module
-  preparation and 72 s of execution.
-  Position decoding led preparation samples; retained-data traversal dominated
-  execution. Preparation overlaps late classic callbacks. Investigate measured
-  costs without weakening accounting; node-count variation is not a speedup.
-- Parser improvements: bounded position-cache FIFO eviction (aece59d34), then
-  coordinate comparison without allocating packed-span positions (1c5ce18cb).
-  Separate built parsing fixtures improved by 12–13%, then another 7–9% on
-  minified input, with identical metering. Multiline timings improved but varied.
-  All 115 focused tests across nine files, lint, the maintained build and 11 built
-  checks passed. Endpoint mutation, ownership, getter order and rebased spans
-  remain covered. The live check above still timed out. Token FIFO changes gave
-  mixed results and remain discarded.
-- Line profiling confirms distributed costs in visited-object lookup, capture
-  callbacks, classification and property reads. Some inlined ticks name lines
-  outside their attributed file; do not treat those as exact source attribution.
-  Moving capture state into its callback was about 40% slower; prototype guards
-  showed no gain. A shortcut for unchanged native property getters looked mildly
-  faster initially, but compiled comparisons were mixed. All three are discarded;
-  source and built visitor were restored exactly and all 11 built checks passed.
-  Next compare a fixed amount of Zoom initialization work, with responses kept
-  in memory, to evaluate traversal changes against the real workload. Preserve
-  fresh observations and full reconciliation, including primitive-node awaits.
-- Retained SafeJS fixes: tracked handler/descriptor isolation (bace0875c),
-  incremental scalar-array accounting (39e147ad6), detached completed measurement
-  callbacks (5ee62fa5e), and the Temporal/Intl helper (bee81e32f). Focused tests,
-  lint, maintained builds and built checks passed; live startup remains unresolved.
-  Handler isolation fixes stale quota charges but adds some write overhead.
-  The helper improved a controlled fixture by 12–13%, preserving fresh checks.
+- Retained SafeJS parser/accounting fixes passed their focused tests, lint,
+  maintained builds and built checks; live startup remains unresolved. Latest
+  parser commits: aece59d34 and 1c5ce18cb. Latest traversal experiments were
+  discarded; source and built visitor were restored and all 11 built checks passed.
+- Profiling points to retained-data traversal during execution. Next compare a
+  fixed amount of Zoom initialization work, with responses kept in memory.
+  Timed-run node counts and synthetic fixture gains do not prove live speedups.
+  Preserve fresh observations and full reconciliation, including primitive awaits.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
@@ -92,15 +71,9 @@
   Public run() results must remain natively structured-cloneable. Capture pools
   stay bounded at 64 physical slots. Pending imports retain deadlines; TLA expiry
   revokes the realm. Cooperative checks do not bound parsing/synchronous host calls.
-- Keep rejected shortcuts discarded: whole measurement-worker reuse leaks saved
-  callbacks; shared Temporal/Intl guards miss native-installed state (2 units
-  instead of 4). Mutable foreign-record descriptor caches, constructor prototype
-  tracking, deferred-collector skipping, shared mutable visit state, local-function
-  deferral, strict-arguments tracking and broader capture caches remain unproven.
-  Positive visited caches, object-first dispatch, own-property WeakMap methods,
-  fresh-Set storage, rotating visited tables, carrier/symbol helpers and bound
-  deferred callbacks showed no gain. Repeated visitor deoptimization and capture
-  pooling lack supporting evidence. Avoid per-loop allocation instrumentation.
+- Do not revive unsafe measurement-worker reuse, saved-callback leaks, stale
+  Temporal/Intl membership guards, mutable descriptor caches or skipped collectors.
+  Require measured gains and preserved accounting before retaining optimizations.
 - Native, SafeJS, live-network, sockets and real TTY/PTY gates remain separate.
   Native membership is native-tests.json. SafeJS, live Zoom and necessary sockets
   are already authorized; native passes prove none of those gates.
