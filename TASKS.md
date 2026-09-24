@@ -77,6 +77,10 @@
   135–145 ms per 50 walks, identical charges). Repeated-position/line caches and
   balanced-group scan reuse did not demonstrate reliable real-module parse gains;
   all remained in memory and were discarded.
+  Dense numeric visited markers also failed a same-editor-graph comparison:
+  381–511 ms CPU versus 349–453 ms per 80 walks, with equal 6695783-unit charges.
+  The fixed-work probe cleaned up with zero retained data and no socket attempts;
+  no SDK changes remain from it.
 - The last normal 120 s network Worker check failed before source completion
   or WASM download. A 300 s diagnostic with batched WASM metadata completed
   source evaluation in 181.6 s, downloaded 465602 bytes, detached the donor and
