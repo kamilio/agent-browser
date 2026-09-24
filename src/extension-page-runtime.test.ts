@@ -161,7 +161,11 @@ function fakeCore(
 				return value;
 			},
 			startCallback: state.startCallback,
-			releaseCallback() {},
+			releaseCallback: vi.fn(),
+			retainCallbackArguments: vi.fn((operation) => {
+				if (!settingUp) throw new Error("Late callback retention registration");
+				return operation;
+			}),
 			retainGuestArguments: vi.fn((operation, _from) => {
 				if (!settingUp) throw new Error("Late retention registration");
 				return operation;
@@ -1117,10 +1121,15 @@ it("forwards native callback receivers and arguments without collapsing completi
 	prefix();
 	expect(await next).toMatchObject({ ok: true });
 	expect(test.scripts.metrics().pendingCallbacks).toBe(1);
+	expect(test.state.context.releaseCallback).not.toHaveBeenCalled();
 	result();
 	await vi.advanceTimersByTimeAsync(0);
 	expect(test.scripts.metrics().pendingCallbacks).toBe(0);
 	expect(test.state.context.releaseGuestReference).toHaveBeenCalledWith(token);
+	expect(test.state.context.retainCallbackArguments).toHaveBeenCalledTimes(2);
+	expect(test.state.context.releaseCallback).toHaveBeenCalledExactlyOnceWith(
+		callback,
+	);
 });
 
 it("releases timer bookkeeping without calling release on already revoked SDK references", async () => {
@@ -1138,7 +1147,25 @@ it("releases timer bookkeeping without calling release on already revoked SDK re
 	await test.state.close();
 	await test.scripts.close();
 	expect(test.state.context.releaseGuestReference).not.toHaveBeenCalled();
+	expect(test.state.context.releaseCallback).not.toHaveBeenCalled();
 	expect(test.scripts.metrics().timers?.active).toBe(0);
+});
+
+it("keeps shared callback ownership with an SDK that lacks per-call retention", async () => {
+	vi.useFakeTimers();
+	const test = fixture();
+	delete test.state.context.retainCallbackArguments;
+	await test.scripts.evaluate("initialize");
+	const window = test.scripts.window as {
+		setTimeout(callback: () => void, delay: number): number;
+		clearTimeout(id: number): void;
+	};
+	const callback = () => {};
+	window.clearTimeout(window.setTimeout(callback, 1));
+	window.setTimeout(callback, 1);
+	await vi.advanceTimersByTimeAsync(1);
+	expect(test.state.startCallback).toHaveBeenCalledOnce();
+	expect(test.state.context.releaseCallback).not.toHaveBeenCalled();
 });
 
 it("cancels an in-flight public evaluation through the realm lifetime signal", async () => {

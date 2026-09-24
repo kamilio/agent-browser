@@ -66,6 +66,10 @@ export interface PageBindingContext extends ScriptHostObjectFactory {
 		Operation extends (...args: readonly unknown[]) => unknown,
 	>(operation: Operation, from: number): Operation;
 	releaseGuestReference(value: unknown): unknown;
+	retainCallbackArguments?<
+		Operation extends (...args: readonly unknown[]) => unknown,
+	>(operation: Operation): Operation;
+	releaseCallback?(value: unknown): unknown;
 }
 
 export interface PageBindingOptions {
@@ -335,6 +339,14 @@ export class PageBindings {
 						this.network,
 					);
 			}
+			const timerCallbacks =
+				typeof context.retainCallbackArguments === "function" &&
+				typeof context.releaseCallback === "function"
+					? {
+							retain: context.retainCallbackArguments.bind(context),
+							release: context.releaseCallback.bind(context),
+						}
+					: undefined;
 			this.timers = new PageTimers(
 				{
 					isClosed: () => this.closed,
@@ -346,6 +358,7 @@ export class PageBindings {
 				(error) => lifecycle.fail(error),
 				options.timerLimits,
 				(value) => context.releaseGuestReference(value),
+				timerCallbacks?.release,
 			);
 			const timerMethods = {
 				...this.timers.methods,
@@ -358,6 +371,14 @@ export class PageBindings {
 					2,
 				),
 			};
+			if (timerCallbacks) {
+				timerMethods.setTimeout = timerCallbacks.retain(
+					timerMethods.setTimeout,
+				);
+				timerMethods.setInterval = timerCallbacks.retain(
+					timerMethods.setInterval,
+				);
+			}
 			const getComputedStyle = (element: unknown, pseudo?: unknown) => {
 				this.ensureOpen();
 				return this.dom.getComputedStyle(element, pseudo);

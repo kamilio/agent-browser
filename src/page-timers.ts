@@ -53,6 +53,7 @@ export class PageTimers {
 		limits: Partial<TimerLimits> = {},
 		private readonly releaseArgument: (value: unknown) => unknown = () =>
 			undefined,
+		private readonly releaseCallback?: (value: unknown) => unknown,
 	) {
 		this.limits = Object.freeze({ ...defaults, ...limits });
 		for (const key of Object.keys(defaults) as (keyof TimerLimits)[])
@@ -254,7 +255,9 @@ export class PageTimers {
 			return;
 		for (const argument of record.args) this.releaseArgument(argument);
 		record.args = [];
+		const callback = record.callback;
 		record.callback = undefined;
+		if (callback !== undefined) this.releaseCallback?.(callback);
 	}
 
 	private ensureOpen() {

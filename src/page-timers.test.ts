@@ -39,6 +39,76 @@ function deferred() {
 	return { promise, resolve, reject };
 }
 
+it("releases owned callbacks once on completion, cancellation and close", async () => {
+	const test = fixture();
+	const release = vi.fn();
+	const timers = new PageTimers(
+		test.runtime,
+		() => test.window,
+		test.fail,
+		{},
+		undefined,
+		release,
+	);
+	const completed = () => {};
+	const canceled = () => {};
+	const recurring = () => {};
+	timers.methods.setTimeout(completed, 1);
+	const id = timers.methods.setTimeout(canceled, 10);
+	timers.methods.setInterval(recurring, 1);
+	timers.methods.clearTimeout(id);
+	await vi.advanceTimersByTimeAsync(3);
+	expect(release.mock.calls).toEqual([[canceled], [completed]]);
+	timers.close();
+	timers.close();
+	expect(release.mock.calls).toEqual([[canceled], [completed], [recurring]]);
+	test.timers.close();
+});
+
+it.each([false, true])(
+	"keeps an owned interval callback until overlapping invocations settle (close=%s)",
+	async (close) => {
+		const test = fixture();
+		const release = vi.fn();
+		const first = deferred();
+		const second = deferred();
+		vi.mocked(test.runtime.startCallback)
+			.mockReturnValueOnce({
+				synchronous: Promise.resolve(),
+				result: first.promise,
+			})
+			.mockReturnValueOnce({
+				synchronous: Promise.resolve(),
+				result: second.promise,
+			});
+		const timers = new PageTimers(
+			test.runtime,
+			() => test.window,
+			test.fail,
+			{},
+			undefined,
+			release,
+		);
+		const callback = () => {};
+		const id = timers.methods.setInterval(callback, 5);
+		await vi.advanceTimersByTimeAsync(10);
+		timers.methods.clearInterval(id);
+		expect(release).not.toHaveBeenCalled();
+		first.resolve();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(release).not.toHaveBeenCalled();
+		if (close) {
+			timers.close();
+			expect(release).toHaveBeenCalledExactlyOnceWith(callback);
+		}
+		second.resolve();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(release).toHaveBeenCalledExactlyOnceWith(callback);
+		timers.close();
+		test.timers.close();
+	},
+);
+
 it("keeps due timers queued while a source task is busy and resumes on a later task", async () => {
 	const test = fixture();
 	let busy = true;

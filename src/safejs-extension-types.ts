@@ -66,6 +66,9 @@ export interface ReleasedContext {
 		options?: { thisValue?: unknown; args?: readonly unknown[] },
 	): ReleasedInvocation;
 	releaseCallback(callback: unknown): void;
+	retainCallbackArguments?<
+		Operation extends (...args: readonly unknown[]) => unknown,
+	>(operation: Operation): Operation;
 	retainGuestArguments<
 		Operation extends (...args: readonly unknown[]) => unknown,
 	>(operation: Operation, from: number): Operation;

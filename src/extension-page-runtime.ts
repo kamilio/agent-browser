@@ -425,6 +425,10 @@ export function extensionPageRuntime(
 						notifyClosed();
 						ensureOpen();
 					}
+					const retainCallbacks =
+						typeof owner.retainCallbackArguments === "function"
+							? owner.retainCallbackArguments.bind(owner)
+							: undefined;
 					const pageContext: Parameters<typeof options.setup>[0] = {
 						...(typeof owner.setHostObjectPrototype === "function"
 							? {
@@ -469,6 +473,21 @@ export function extensionPageRuntime(
 						releaseGuestReference: (reference) => {
 							if (!closed) owner.releaseGuestReference(reference);
 						},
+						...(retainCallbacks
+							? {
+									retainCallbackArguments: <
+										Operation extends (...args: readonly unknown[]) => unknown,
+									>(
+										operation: Operation,
+									): Operation => {
+										ensureOpen();
+										return retainCallbacks(operation);
+									},
+									releaseCallback: (callback: unknown) => {
+										if (!closed) owner.releaseCallback(callback);
+									},
+								}
+							: {}),
 					};
 					if (domExpandos)
 						Object.defineProperty(pageContext, "domExpandos", {
