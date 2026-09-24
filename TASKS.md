@@ -17,13 +17,24 @@
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node.
 - Latest normal Zoom observation: all 13 classic scripts passed; the 120 s deadline
-  expired in editor-core after 7722 module nodes, before name/Join controls appeared.
-  The retained runtime also exhausted a bounded 1800 s run in i18n-core after
+  expired in editor-core after 20528 module nodes, before name/Join controls appeared.
+  The client created 49 owned timer wrappers and explicitly released 45. No join
+  or socket attempt occurred; shutdown retained zero data. The maintained rebuild
+  changed the SDK bundle layout, so this is not a controlled speed comparison.
+  An earlier retained runtime exhausted a bounded 1800 s run in i18n-core after
   123558 module nodes (editor-core: 108155; i18n-core: 10689). Both runs had no
   name/Join controls or join/socket attempt; cleanup retained zero data. No
   diagnostic remains active. Do not repeat unchanged extended runs.
 - Retained SafeJS fixes cover late-callback function reconciliation (e9a8214c3),
   stack-safe Proxy accounting (9fa4fc3fd), and parser costs (aece59d34, 1c5ce18cb).
+- SafeJS f4bb1f080a adds opt-in independent callback ownership. Browser d69cf5d
+  releases timer wrappers after cancellation/completion without revoking another
+  timer or listener using the same guest function. The built integration retained
+  a constant 6847-unit baseline across five timers capturing 1000-element arrays;
+  the shared listener survived and pending-interval shutdown retained zero data.
+  Validation: 142 focused SDK tests, 198 browser tests, both builds and 13 built SDK
+  checks passed. A broader page-bindings test exposed an unrelated non-callable
+  Window.onload failure in existing dirty work; callback tests pass.
 - SafeJS 542c1fd4a replaces pending-function wrapper allocations with separate
   state/depth arrays, preserving traversal and reconciliation. Recorded Zoom replay
   used 15–20% less CPU than two baselines with matching accounting and work.
@@ -47,8 +58,9 @@
   lookups, preserving fresh observations. All probes stopped and cleaned up;
   profiles and traces stayed in memory.
 - Further fixed-work tests found no substantial, reliable gain from visited-state
-  cells, closure-visitor splitting, single type dispatch, or direct factory getter
-  bodies. Collector counts and charges matched; no changes were retained. Node 22
+  cells, closure-visitor splitting, cold object-branch splitting, single type
+  dispatch, or direct factory getter bodies. Collector counts and charges matched;
+  no changes were retained. Node 22
   did not improve the closure-heavy fixture over Node 24. Avoid repeating these
   candidates without new evidence.
 - The legacy quora.zoom.us/wc/join/7982110526 route currently redirects to the
