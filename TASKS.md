@@ -17,10 +17,20 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse working
   builds and /tmp/agent-browser-node24-runtime/bin/node.
-- Latest uninstrumented Zoom check (db983eba8) passed all 13 classic scripts and
+- Latest uninstrumented Zoom check (rejected cache ccb727ac1) passed all 13 classic scripts and
   prepared seven modules, but the 120 s import deadline revoked the realm before
   settlement. No readiness, admission, presence or socket attempts. Cleanup closed
   runtime/sockets and retained zero data. A 600 s diagnostic also expired.
+- Positive visited cache ccb727ac1 was reverted by a7a496449. Its apparent gain
+  came from a benchmark with duplicated visitor functions. Separate processes
+  using the unchanged visitor did not confirm it: a deterministic 34269-unit
+  fixture took 0.291–0.293 s baseline versus 0.294–0.313 s cached per 200 walks.
+  Live graphs of about 6.657 million units took 0.226–0.344 s baseline versus
+  0.337–0.474 s cached per 50 walks. These live graphs differed slightly and wall
+  times showed contention; neither supports a startup-speedup claim. Both probes
+  closed runtime/sockets with zero retained data. The maintained runtime is back
+  to the implementation before the cache; 58 focused accounting tests, the
+  maintained build and all 11 built checks pass. Do not reuse split-visitor timings.
 - Fast scope accounting fields (db983eba8) retain immutable null-prototype
   records and pinned construction. A controlled live comparison preserved
   6656514 units on 597 roots; CPU per 50 walks fell from 0.34–0.39 s to 0.23–0.30 s.
@@ -49,7 +59,9 @@
 ## Outstanding gates
 
 - Investigate the measured React DOM attribute-table constructor workload and
-  retained-graph costs. Do not repeat the rejected object-first dispatch or
+  retained-graph costs, including optimization/deoptimization during uninterrupted
+  interpreter execution. Use the unchanged visitor when comparing backends.
+  Do not repeat the rejected positive visited cache, object-first dispatch or
   fresh-Set visited-storage approaches without new evidence.
   Preserve per-walk callbacks and avoid retained guest roots.
   Initialize within normal allowances and verify JavaScript Join controls,
