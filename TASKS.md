@@ -24,67 +24,45 @@
   offset 45058. No name/Join controls, join attempt or socket attempt; cleanup
   retained zero data. This advances beyond the earlier 9068-node observation but
   still does not reach readiness. Do not repeat unchanged extended runs.
-- Fresh post-download Worker CPU sample: retained-data visitor self time was
-  20.1 of 30.6 s; typed-array classification was only 0.15 s. Earlier startup
-  profiling also identifies graph accounting; the visitor is already optimized.
-  Private visit-generation records and
-  private-brand routing showed no gain; discarded without source changes.
-- Maintained SafeJS df848a278b extends the per-walk positive capture cache from
-  four to sixteen slots, preserving fresh providers, quotas and reconciliation.
-  One actual editor measurement had 3703 deferred roots, 2023 closures, and 7662
-  extra positive registry lookups with four slots. On the same retained graph,
-  sixteen slots took 337–381 ms per 100 walks versus 451–485 ms, with identical
-  6690449-unit charges. Full-page time to 6000 module nodes was broadly similar
-  (31.8 vs 33.0 s); a clear overall startup gain is not established.
-  Passed 200 focused accounting tests, including the previously failing
-  sixteen-root lookup bound and success/failure GC cleanup, 13 built SDK checks,
-  the selected workspace build and focused lint. No runtime deadline increase.
-- Splitting the visitor improved a retained-intrinsic fixture, but regressed the
-  actual Zoom page. At the same 6000 module nodes / editor-core offset 32525,
-  baseline took 33.0 s wall / 27.4 s CPU versus 47.2 / 36.2 s for the split.
-  Both diagnostics intentionally stopped there and cleaned up to zero retained
-  data; neither establishes readiness. Discarded the in-memory split.
-- A baseline editor-core profile between module nodes 3000 and 6000 also exposed
-  deferred-function collect/read costs (1.03 / 0.58 s). A shared-method prototype
-  preserved the fixture's 57797-unit charge but showed no clear speedup
-  (227–250 vs 227–244 ms per 100 walks); this prototype was not retained.
-  Actual editor traversal includes 13815 entries, 4850 scope projections and
-  1005 records per sampled measurement. Further accounting work must use this
-  scope structure, not the earlier single-scope synthetic fixture alone.
-  Preserve fresh reads, every provider/collector and full reconciliation.
-- Fresh original/alternate join-route checks found the launch page and the same
-  app webclient route. Chrome, Firefox and Safari request identities selected
-  the same current client; no simpler supported join flow was established.
-- Worker WebSockets now reuse the explicit document transport and connection
-  quotas, with fetched-response connect-src, inherited Blob policy, initialization
-  ordering and termination cleanup. Passed 626 focused native tests and build;
-  real SafeJS + loopback sockets verified binary exchange, event receivers, close,
-  termination and zero retained data/open peer sockets after cleanup.
-- Zoom advertises https://st1.zoom.us/web-media/u9n13za/. Extended Worker startup
-  reached a concrete arrayLength failure at 135 s: its 20 MiB heap exceeds the
-  application profile's 262144-element ceiling. Explicit application-media-v1
-  now permits 33554432 array elements/retained-data units without raising the
-  120 s time limit or granting capabilities. Passed 395 native tests and build.
-  Real SDK Worker check rejects the heap under the old profile, accepts it under
-  media, and releases all data. Isolated Zoom parent fetch/CORS, binary transfer,
-  and unchanged WASM glue initialized the 20 MiB heap in 17.0 s with the final
-  profile/fetch limits; donor detached, no guest errors, zero data/pending
-  callbacks after shutdown.
-- Complete network Worker source now finishes: 152–166 s with a temporary 300 s
-  diagnostic runtime allowance. Parent WASM download took 6.1 s, exceeding the
-  five-second fetch default. PageFetch now accepts explicit deadlines up to 30 s
-  while keeping the default; 426 focused native tests and build passed.
-  The complete Worker downloaded all 465602 bytes and detached the transfer donor,
-  then reached actual WASM startup environment/stringToUTF8Array imports. Overall
-  initialization exceeded 300 s; no initialized signal or socket attempt. Data
-  stayed near 25.3 million units and cleanup verified zero data/callbacks/sockets.
-  Full startup within normal 120 s limits and meeting admission remain unverified.
-  No diagnostic is active; do not repeat unchanged extended runs.
-- Retained fixes cover callback ownership/release (SafeJS f4bb1f080a, browser
-  d69cf5d), pending-function arrays (542c1fd4a), reconciliation (e9a8214c3), Proxy
-  accounting (9fa4fc3fd) and parser costs (aece59d34, 1c5ce18cb). Callback validation:
-  142 focused SDK tests, 198 browser tests, both builds and 13 built SDK checks
-  passed. Existing dirty Window.onload work has a non-callable-value test failure.
+- Maintained SafeJS df848a278b uses sixteen per-walk positive capture slots.
+  Actual editor graph: 337–381 ms per 100 walks versus 451–485 ms with four slots,
+  with identical 6690449-unit charges. Full-page time to 6000 nodes was broadly
+  similar (31.8 vs 33.0 s); an overall startup gain is not established.
+  Passed 200 focused accounting tests, 13 built SDK checks, build and focused lint.
+- Fresh editor profile on that SDK: 3107 complete reconciliations during module
+  nodes 3000–6000; 14.9 s sampled, including 7.3 s in visit and 1.3 s in visited
+  membership checks. One real graph has 13815 entries, 4850 scope projections,
+  3703 deferred roots, 2023 closures and 1005 records. Use that scope structure
+  when evaluating performance, not a single-scope synthetic fixture alone.
+- Rejected in-memory candidates: split visitor (slower on the real page), shared
+  deferred methods, guarded visitor entry, private-field scope-root storage,
+  private visit-generation records and private-brand routing. No uncommitted SDK
+  implementation remains from these experiments; preserve every provider/read.
+- Full network Worker still fails the normal 120 s limit before source completion
+  or WASM download. One 300 s diagnostic after df848a278b completed its source in
+  201.2 s, downloaded 465602 bytes and detached the donor, but did not finish WASM
+  initialization. No socket attempts; cleanup verified zero data/callbacks/sockets.
+  The final sampled location matches the combined Worker bootstrap at line 458,
+  offset 28189: defining WASM export function name/length metadata. Earlier source
+  execution also spends substantial time deriving CryptoJS SHA constants.
+- Next target: shared page-wasm-bootstrap.ts export-wrapper construction. Assess
+  batching/precomputing metadata through the existing PageWasm bridge before
+  extending the SDK API; its public extension context currently exposes host
+  objects/methods, not a standalone native-callable factory. Preserve function
+  name/length descriptors, argument coercion, error identity, callback ownership,
+  revocation and quotas. Measure this phase before another complete Worker run.
+- Media root: https://st1.zoom.us/web-media/u9n13za/. application-media-v1 permits
+  33554432 array elements/data units, without changing the 120 s deadline or
+  granting capabilities. PageFetch defaults to 5 s and allows explicit 30 s.
+  Isolated real WASM glue previously initialized the 20 MiB heap in 17.0 s with
+  download/transfer and zero retained data after close. This does not prove full
+  Worker readiness. No diagnostic is active; do not repeat unchanged extended runs.
+- Worker sockets preserve explicit transport/connection quotas, response connect-src,
+  Blob policy, ordering and termination. Prior 626 native tests and real SDK plus
+  loopback checks cover binary exchange/receivers/close and zero retained sockets.
+- Original/alternate routes and Chrome/Firefox/Safari identities selected the same
+  current app client; no simpler supported join flow was established.
+- Existing dirty Window.onload work has a non-callable-value test failure.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
