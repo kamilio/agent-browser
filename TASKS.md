@@ -54,6 +54,10 @@
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
+- Discarded the local-function deferral trial: both controlled live variants
+  created 450 declarations and retained about 108 MB after externals.min.js.
+  CPU varied across runs without a consistent gain. Both probes verified cleanup;
+  the maintained eager local-declaration path is restored.
 
 ## Outstanding gates
 
