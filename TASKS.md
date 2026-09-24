@@ -23,19 +23,27 @@
   runtime/sockets and retained zero data. A 600 s diagnostic also expired.
 - CPU samples identify reconciliation and garbage collection as the main startup
   costs. Fixture allocation reductions have not established live startup success.
-- Pending SafeJS array-element projection change passed 120 focused tests,
+- SafeJS array-element projection change (7a0adb82d) passed 120 focused tests,
   scoped lint, maintained build and eight built-import checks. The final adjusted
   test file passed all 10 tests. The live comparison preserved equal accounting
-  and verified cleanup; normal startup validation remains pending. These checks
-  do not complete the full native/SafeJS gates.
+  and verified cleanup. Normal startup still expired at the 120 s import deadline
+  after all 13 classic scripts passed; cleanup passed with zero retained data.
+- V8 traces show the visitor optimizes but recompiles after garbage collection.
+  A local forced-GC fixture retained equal charges and reduced later 100-walk CPU
+  from about 85 ms to 45 ms by retaining one empty visitor. Real walks still used
+  separate state/callbacks. Its live normal-limit probe also expired during module
+  execution, after all classic scripts passed; cleanup closed runtime/sockets with
+  zero retained data. No production code change or live speedup is established.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   MediaStream/mediaDevices capture, RTCPeerConnection, Web Audio/AudioWorklet and
   a live PCM producer remain unimplemented.
 
 ## Outstanding gates
 
-- Rerun normal Zoom startup with the array change. Initialize within normal
-  heap/time/source allowances
+- Compare empty-visitor retention against the baseline on the same live graph,
+  including GC/recompilation costs, before adopting it. Normal startup still fails;
+  preserve per-walk callbacks and avoid retained guest roots. Initialize within
+  normal allowances
   and verify JavaScript Join controls, actual joining, admission and presence.
   Diagnostic limits and fixture improvements do not establish live acceptance.
 - Implement and verify every notetaker capability above. Automations reference:
