@@ -50,10 +50,21 @@
   passed. Remaining array reads include reflection results (72), Array constructor
   results (60), and other arrays (47). Constructor prototypes contribute 263 of
   the raw record reads; their tracking trial remains rejected.
-- Earlier editor sampling attributed about 71% of CPU to reconciliation and 25%
-  to GC, with about 12600 graph visits and 25000 capture calls per scan. The
-  operation census found slow Rolldown export copying, not a proven infinite loop.
-  Allocation savings have not established working startup.
+- Two fresh 30 s editor CPU samples on the maintained build attributed 68–72%
+  to reconciliation and 26–30% to GC. The visitor itself accounted for 33–34%,
+  and visited-object lookup for 9–10%; line samples span dispatch, deferred roots,
+  closure collectors and symbol traversal. Both probes closed intentionally after
+  sampling, before import settlement or sockets; cleanup verified zero retained
+  data. These are diagnostics, not new uninstrumented startup passes.
+  Earlier counts were about 12600 graph visits and 25000 capture calls per scan;
+  the operation census found slow Rolldown export copying, not a proven infinite
+  loop. Allocation savings have not established working startup.
+- Reusing a whole measurement worker is rejected: isolated warmed fixtures with
+  4200 deferred functions preserved 10750 units and 4.2 million collector calls
+  per 1000 walks, but CPU ranges overlapped (baseline 0.69–0.72 s, trial
+  0.70–0.71 s). A saved native collector callback also contaminated the trial's
+  next walk (1 → 1007 units; baseline stayed 1). Keep each walk's callback state
+  isolated. A preliminary fresh-Set visited-storage trial showed no benefit.
 - Discarded trials remain discarded: deferred-collector skipping, mutable foreign
   record descriptor reuse, constructor-prototype tracking, visit-marker/shared
   deferred identities, and local-function deferral. The eager local-declaration
@@ -72,6 +83,9 @@
   copyToSandbox were absent from that branch. Measure remaining array/record and
   reconciliation costs before selecting more reuse; preserve native mutations,
   provider observations and native-cloneable public results.
+  Next compare timing on a fixed live retained graph with the warmed synthetic
+  fixture before another storage change; whole-worker reuse did not explain the
+  remaining cost and must not be revived without callback isolation.
   Fixture improvements and longer diagnostic allowances do not establish
   live/default-resource acceptance.
 - Implement and verify every notetaker capability above. Automations reference:
