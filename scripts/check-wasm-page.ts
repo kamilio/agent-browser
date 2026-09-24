@@ -187,6 +187,29 @@ try {
 		peakCallDepth: budget.peakCallDepth,
 		retainedDataSize: budget.currentDataSize,
 	});
+	const metadata = await realm.evaluate(`
+		return (()=>{
+		const helper=instance.exports.helper;
+		const length=Object.getOwnPropertyDescriptor(helper,'length');
+		const name=Object.getOwnPropertyDescriptor(helper,'name');
+		const binding=Object.getOwnPropertyDescriptor(instance.exports,'helper');
+		let reads=0;const thrown={};let same=false;
+		const value=helper({valueOf(){reads++;return '41'}},{valueOf(){throw 'unused'}});
+		try{helper({valueOf(){throw thrown}})}catch(error){same=error===thrown}
+		return [instance.exports.run.length,instance.exports.run.name,
+		length.value,length.writable,length.enumerable,length.configurable,
+		name.value,name.writable,name.enumerable,name.configurable,
+		binding.value===helper,binding.writable,binding.enumerable,binding.configurable,
+		value,reads,same];
+		})();
+	`);
+	check(
+		metadata.ok &&
+			JSON.stringify(metadata.returnValue) ===
+				'[0,"1",1,false,false,true,"2",false,false,true,true,false,true,false,42,1,true]',
+		"Guest export metadata/coercion/error identity failed",
+	);
+	reports.push({ case: "export-metadata-and-coercion", passed: true });
 	const asynchronous = await realm.evaluate(
 		"return await(async()=>{const m=await WebAssembly.compile(fixture.plain);const i=await WebAssembly.instantiate(m);const pair=await WebAssembly.instantiate(fixture.plain);return [i.exports.run(41),pair.instance.exports.run(41),i instanceof WebAssembly.Instance,pair.module instanceof WebAssembly.Module];})();",
 	);
@@ -321,7 +344,7 @@ try {
 			scope: "Offline actual SafeJS/JSPI guest WebAssembly API",
 			node: process.version,
 			callbackScheduling: callbackScheduling ?? "exclusive",
-			passed: reports.length === 5,
+			passed: reports.length === 6,
 			reports,
 			cleanup: { ...metrics, currentDataSize: budget.currentDataSize },
 		}),

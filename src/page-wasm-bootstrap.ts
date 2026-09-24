@@ -1,7 +1,7 @@
 // Shared guest implementation; the owning installer supplies an admitted bridge.
 export const pageWasmBootstrapSource = `(() => {
  const api=__agentBrowserWasm;
- const apply=Reflect.apply, define=Object.defineProperty, create=Object.create;
+ const apply=Reflect.apply, define=Object.defineProperty, defineProperties=Object.defineProperties, create=Object.create;
  const get=WeakMap.prototype.get,set=WeakMap.prototype.set,push=Array.prototype.push;
  const modules=new WeakMap(),instances=new WeakMap(),memories=new WeakMap(),memoryWrappers=new WeakMap();
  const NativeUint8Array=Uint8Array, NativeString=String, NativeBoolean=Boolean, NativeBigInt=BigInt;
@@ -77,7 +77,7 @@ export const pageWasmBootstrapSource = `(() => {
      for(let index=0;index<parameters.length;index++){const argument=args[index];if(parameters[index]===126){if(typeof argument==='number')throw new TypeError('WASM i64 requires BigInt');apply(push,converted,[NativeBigInt(argument)]);}else apply(push,converted,[+argument]);}
      try{return api.call(port,entry.name,converted);}catch(error){if(error&&error.name==='RuntimeError')translate(error,RuntimeError);throw error;}
     };
-    define(value,'length',{value:entry.signature.parameters.length,configurable:true});define(value,'name',{value:NativeString(entry.index),configurable:true});
+    defineProperties(value,entry.functionMetadata);
    }else throw new LinkError('Unsupported WASM export kind');
    define(result,entry.name,{value,enumerable:true});
   }

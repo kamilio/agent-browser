@@ -38,24 +38,30 @@
   deferred methods, guarded visitor entry, private-field scope-root storage,
   private visit-generation records and private-brand routing. No uncommitted SDK
   implementation remains from these experiments; preserve every provider/read.
-- Full network Worker still fails the normal 120 s limit before source completion
-  or WASM download. One 300 s diagnostic after df848a278b completed its source in
-  201.2 s, downloaded 465602 bytes and detached the donor, but did not finish WASM
-  initialization. No socket attempts; cleanup verified zero data/callbacks/sockets.
-  The final sampled location matches the combined Worker bootstrap at line 458,
-  offset 28189: defining WASM export function name/length metadata. Earlier source
-  execution also spends substantial time deriving CryptoJS SHA constants.
-- Next target: shared page-wasm-bootstrap.ts export-wrapper construction. Assess
-  batching/precomputing metadata through the existing PageWasm bridge before
-  extending the SDK API; its public extension context currently exposes host
-  objects/methods, not a standalone native-callable factory. Preserve function
-  name/length descriptors, argument coercion, error identity, callback ownership,
-  revocation and quotas. Measure this phase before another complete Worker run.
+- The last normal 120 s network Worker check failed before source completion
+  or WASM download. Latest 300 s diagnostic with batched WASM metadata completed
+  source evaluation in 181.6 s, downloaded 465602 bytes, detached the donor and
+  completed export-wrapper setup (31.6 s), but expired before Zoom's original WASM
+  initialization callback. No socket attempts; cleanup verified zero retained
+  data/callbacks/sockets. Earlier source execution spends substantial time deriving
+  CryptoJS SHA constants. Source timings vary; metadata batching acts afterward.
+- PageWasm now supplies fresh function name/length descriptors for one captured
+  Object.defineProperties call per export. Isolated real Zoom WASM export setup
+  took 0.70–0.86 s versus the 1.15 s baseline (CPU 664–678 versus 797 ms), with
+  2937 additional accounted data units. This does not establish normal startup.
+  Build, 114 native WASM tests and all six actual SDK guest API checks pass,
+  including descriptors, coercion/error identity, callbacks, reentry and cleanup.
+- Next: reduce remaining source/setup cost and observe the complete original WASM
+  callback. A separate export factory reduced retained data but increased isolated
+  export setup CPU to 1.03 s; discarded. Keep every fresh read, collector, quota
+  and ownership check. The SDK exposes
+  host objects/methods, not a standalone native-callable factory. Do not repeat
+  unchanged extended diagnostics or treat isolated initialization as Worker success.
 - Media root: https://st1.zoom.us/web-media/u9n13za/. application-media-v1 permits
   33554432 array elements/data units, without changing the 120 s deadline or
   granting capabilities. PageFetch defaults to 5 s and allows explicit 30 s.
-  Isolated real WASM glue previously initialized the 20 MiB heap in 17.0 s with
-  download/transfer and zero retained data after close. This does not prove full
+  Final built isolated real WASM glue initialized the 20 MiB heap in 6.7 s with
+  download and zero retained data after close. This does not prove full
   Worker readiness. No diagnostic is active; do not repeat unchanged extended runs.
 - Worker sockets preserve explicit transport/connection quotas, response connect-src,
   Blob policy, ordering and termination. Prior 626 native tests and real SDK plus

@@ -95,6 +95,58 @@ it("preserves memory wrapper identity when exporting an imported memory", async 
 	).toEqual([true, true, 1, 131072]);
 	await f.owner.close();
 });
+it("preserves configurable export metadata and immutable export bindings", async () => {
+	const f = fixture();
+	expect(
+		f.evaluate(`
+			Object.defineProperties=()=>{throw new Error('replaced intrinsic')};
+			var i=new WebAssembly.Instance(new WebAssembly.Module(bytes));
+			[Object.getOwnPropertyDescriptor(i.exports.run,'length'),
+			Object.getOwnPropertyDescriptor(i.exports.run,'name'),
+			Object.getOwnPropertyDescriptor(i.exports,'run')]
+		`),
+	).toEqual([
+		{ value: 1, writable: false, enumerable: false, configurable: true },
+		{ value: "0", writable: false, enumerable: false, configurable: true },
+		{
+			value: expect.any(Function),
+			writable: false,
+			enumerable: true,
+			configurable: false,
+		},
+	]);
+	expect(
+		f.evaluate(`
+			Object.defineProperty(i.exports.run,'name',{value:'renamed'});
+			Object.defineProperty(i.exports.run,'length',{value:7});
+			[i.exports.run.name,i.exports.run.length]
+		`),
+	).toEqual(["renamed", 7]);
+	expect(await f.evaluate("i.exports.run(41)")).toBe(42);
+	await f.owner.close();
+	expect(f.credits.size).toBe(0);
+});
+it("coerces export arguments once, preserves thrown values and revokes retained exports", async () => {
+	const f = fixture();
+	expect(
+		await f.evaluate(`
+			var run=new WebAssembly.Instance(new WebAssembly.Module(bytes)).exports.run;
+			var reads=0;
+			run({valueOf(){reads++;return '41'}}, {valueOf(){throw 'unused'}})
+		`),
+	).toBe(42);
+	expect(f.evaluate("reads")).toBe(1);
+	expect(
+		f.evaluate(`
+			var thrown={};var same=false;
+			try{run({valueOf(){throw thrown}})}catch(error){same=error===thrown}
+			same
+		`),
+	).toBe(true);
+	await f.owner.close();
+	expect(() => f.evaluate("run(41)")).toThrow(/closed/);
+	expect(f.credits.size).toBe(0);
+});
 it("supports async compilation and both instantiate overloads", async () => {
 	const f = fixture();
 	expect(

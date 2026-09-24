@@ -155,7 +155,26 @@ export class PageWasm {
 				exports: {
 					get: () => {
 						this.assertActive();
-						return record.declarations.exports;
+						// Construct descriptor data at the bridge, avoiding interpreted
+						// object literals for each export. Each read stays fresh and the
+						// SDK accounts for the returned graph under the guest's limits.
+						return record.declarations.exports.map((entry) => {
+							if (entry.kind !== "function") return entry;
+							if (!entry.signature)
+								throw new WebAssembly.LinkError(
+									"Missing WASM export signature",
+								);
+							return {
+								...entry,
+								functionMetadata: {
+									length: {
+										value: entry.signature.parameters.length,
+										configurable: true,
+									},
+									name: { value: String(entry.index), configurable: true },
+								},
+							};
+						});
 					},
 				},
 			},
