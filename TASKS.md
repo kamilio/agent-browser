@@ -27,10 +27,16 @@
 - Allocation, registry and capture-cache variants showed no reliable gain. A
   shared visitor with separate per-walk state, with or without shared helpers,
   was slower in the representative fixture; accounting and collector counts matched.
+- Skipping absent private captures showed no gain on the retained Zoom graph:
+  seven alternating 400-walk rows through one walker took 1.30–1.35 CPU seconds,
+  with identical charges and seven compilation tickets. An earlier asymmetric
+  comparison added candidate-only registry overhead; use equal dispatch overhead
+  for future comparisons. Filtering absent values at the collector boundary also
+  showed no fixture gain. Neither variant retained changes; live cleanup was zero.
 - A census at module node 4000 measured 1998 closures, 984 ordinary records and
   3703 deferred functions per walk. Closures/records accounted for about 60% of
   instrumented self time, deferred functions about 20%; timers add overhead.
-  Compact private closure captures are retained in SafeJS fe7471392c: matching
+  Compact private closure captures are retained in SafeJS 0e78d93e69: matching
   accounting in fixed-work comparisons, 216 focused tests and 13 built SDK checks
   passed. The latest normal run reached fewer nodes than the prior 20528-node run;
   a startup speedup is not established. Focus next on capture traversal costs.
