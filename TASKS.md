@@ -19,16 +19,19 @@
   builds and /tmp/agent-browser-node24-runtime/bin/node.
 - Zoom startup remains blocked: all 13 classic scripts pass, but the normal
   120 s runtime deadline expires in editor-core before name/Join controls appear
-  (latest run: 23296 module nodes, offset 31460, line 25).
+  (latest run: 8656 module nodes, offset 32711, line 25).
   An 1800 s diagnostic reached emoji-reactions initialization without controls;
   do not repeat unchanged extended runs. No join/socket attempt occurred.
   Cleanup passed with zero retained data; no diagnostic remains active.
-- SafeJS 9fa4fc3fd removes native recursion from Proxy accounting while delaying
-  handler reads until target traversal finishes. Cold built chains previously
-  overflowed inside the permitted depth; they now pass and excessive depth raises
-  dataDepth. Validation: 111 focused source tests, lint, maintained build and all
-  13 built checks on Node 24. Normal Zoom cleanup passed; startup remains blocked.
-  Retained parser fixes: aece59d34 and 1c5ce18cb.
+- SafeJS e9a8214c3 reconciles functions materialized by later native callbacks,
+  including descendant captures, chained materialization, weak entries and final
+  primitive conversions. The reproduced payload was charged as 2 instead of 1011
+  units; same-walk charging and ordinary/held quota enforcement now pass.
+  Validation: 71 unique focused source tests, lint, maintained build, all 13 built
+  checks on Node 24 and a cold built reproduction. Normal Zoom still times out;
+  cleanup passes. This correctness fix has no established performance gain.
+- Retained SafeJS fixes: 9fa4fc3fd makes Proxy accounting stack-safe and preserves
+  delayed handler observations; aece59d34 and 1c5ce18cb fix parser costs.
 - In-memory capture/replay isolates accounting as about 94–96% of a matching
   5000-module-node startup interval. Offline replay invariants: 9844 phase steps,
   29217 additional data units, 5066 accounting calls and equal returned-accounting
@@ -36,6 +39,15 @@
   Date reads; keep native deadlines real and replay networking disabled.
   Live bootstrap scheduling can change the data delta; compare offline runs
   from the same capture. Diagnostic archives were released.
+- A verified profile of the bundled public SDK reached the matching 5000-node
+  cutoff: accounting consumed about 95% of the interval. Visited-object checks
+  and deferred-function reads/collectors are substantial costs. Earlier line
+  probes targeted unbundled files and never installed their runtime hooks.
+- An uncommitted direct-state deferred-function variant used 27.9 CPU seconds
+  against bundled offline baselines of 38.7 and 41.9, with matching sequence,
+  phase charges and accounting totals; all replays were offline and cleaned up.
+  This comparison predates e9a8214c3. Revalidate against its corrected final
+  reconciliation before retaining the variant; no live speedup is established.
 - Live and offline traces each found two module-phase visitor deoptimizations at
   the Proxy target read, followed by recompilation. They do not establish that
   deoptimization explains startup timing variability. A separate Proxy helper
@@ -97,4 +109,6 @@
 - Keep artifacts ephemeral; remove owned logs/reports/redundant builds after
   processes terminate. Keep status here; no diaries or findings inventories.
 - Use TDD for SafeJS changes and serialize CPU-heavy tests/builds/probes.
+- Verify diagnostic hooks offline against the loaded public SDK, which may use
+  bundled chunks instead of the separate compiled source modules.
 - Commit focused completed changes with explicit paths; do not push.
