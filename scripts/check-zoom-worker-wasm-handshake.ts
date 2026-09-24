@@ -170,7 +170,7 @@ ${glue}`;
 		{
 			budgetProfile: "application-media-v1",
 			limits: { timeoutMs: 120000 },
-			fetchLimits: { maxResponseBytes: 1048576 },
+			fetchLimits: { maxResponseBytes: 1048576, timeoutMs: 30000 },
 			fetch(input) {
 				check(
 					input.url === wasmUrl && input.method === "GET",

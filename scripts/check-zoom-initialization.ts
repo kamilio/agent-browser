@@ -498,6 +498,7 @@ const browser = new BrowserSession({
 								fetchWithPolicy: context.fetchModuleWithPolicy,
 							},
 							budgetProfile: "application-media-v1",
+							fetchLimits: { maxResponseBytes: 1_048_576, timeoutMs: 30000 },
 							limits: { timeoutMs },
 						},
 					);

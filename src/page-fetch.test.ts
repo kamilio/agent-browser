@@ -336,11 +336,36 @@ it("preserves string bodies on 307 redirects and does not treat HEAD as a consum
 	expect(head.bodyUsed).toBe(false);
 });
 
+it.each([
+	{ timeoutMs: undefined, deadline: 5000 },
+	{ timeoutMs: 30000, deadline: 30000 },
+])(
+	"enforces the selected finite fetch deadline $deadline",
+	async ({ timeoutMs, deadline }) => {
+		vi.useFakeTimers();
+		const { fetch, owner, request } = fixture(
+			async () => new Promise<NetworkResponse>(() => {}),
+			timeoutMs === undefined ? {} : { limits: { timeoutMs } },
+		);
+		const pending = fetch("/slow-wasm");
+		const rejected = expect(pending).rejects.toThrow("deadline");
+		await vi.advanceTimersByTimeAsync(deadline - 1);
+		expect(owner.metrics().active).toBe(1);
+		expect(request.mock.calls[0][0].signal?.aborted).toBe(false);
+		await vi.advanceTimersByTimeAsync(1);
+		await rejected;
+		expect(owner.metrics().active).toBe(0);
+		expect(request.mock.calls[0][0].signal?.aborted).toBe(true);
+	},
+);
+
 it("validates limit overrides before registering document resources", () => {
 	for (const limits of [
 		{ maxRequests: 0 },
 		{ maxPending: 9 },
 		{ timeoutMs: Number.NaN },
+		{ timeoutMs: 30001 },
+		{ timeoutMs: Number.POSITIVE_INFINITY },
 		{ maxRetainedBytes: 1_048_577 },
 	])
 		expect(() => fixture(undefined, { limits })).toThrow(

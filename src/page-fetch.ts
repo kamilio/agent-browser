@@ -65,6 +65,7 @@ export interface PageFetchLimits {
 	maxTotalBytes: number;
 	maxResponses: number;
 	maxRedirects: number;
+	/** Defaults to 5 seconds; explicit overrides admit at most 30 seconds. */
 	timeoutMs: number;
 }
 
@@ -309,7 +310,12 @@ export class PageFetch {
 			);
 		const limits = { ...defaults, ...options.limits };
 		for (const [name, defaultMaximum] of Object.entries(defaults)) {
-			const maximum = name === "maxResponseBytes" ? 1_048_576 : defaultMaximum;
+			const maximum =
+				name === "maxResponseBytes"
+					? 1_048_576
+					: name === "timeoutMs"
+						? 30_000
+						: defaultMaximum;
 			const value = limits[name as keyof PageFetchLimits];
 			if (!Number.isSafeInteger(value) || value < 1 || value > maximum)
 				throw new AgentBrowserError(
