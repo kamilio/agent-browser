@@ -24,17 +24,20 @@
   records/arrays, import/export indexes, deferred module functions and unread
   unmapped arguments, and metered import deadlines. Fresh descendant/native
   observations, aliases, ordinary/held quotas and reentry remain required.
-- SafeJS 61d1873e4 reuses immutable tracked accessor projections, preserving fresh
-  getter/setter captures, ordering, aliases and quotas. It fixes a reproduced native
-  iterator-hook undercount (1008 units became 7). Validation: 441 tests passed across
-  18 files, two existing skips, scoped lint, test formatting, maintained build and
-  eight built-import checks. Earlier sealed-symbol optimization 0e0b1a35a remains.
-- The accessor comparison preserved 6656190 units across every pass on one live
-  graph: 601 roots, nine eligible tables and 79 accessors. Allocation fell about
-  1.8% (25.96 MB to 25.49 MB per 50 walks); CPU timings overlapped. No startup
-  speedup is established.
-- Latest maintained-build Zoom diagnostic: 256 MiB heap and extended 600 s
-  script/import allowances. All 13 classic scripts passed; externals.min.js used
+- SafeJS 257e9b508 fixes a reproduced quota undercount when a native metadata
+  reader grows a later function property. Invalidated descriptors are refreshed
+  in the original key order, including under held quotas. Earlier accessor-root
+  fix 61d1873e4 and sealed-symbol optimization 0e0b1a35a remain.
+- SafeJS 73e115d99 uses existing tracked tables for copied host-function properties.
+  Combined validation: 150 tests across nine files, scoped lint, test formatting,
+  maintained build and eight built-import checks. Native edits, metadata baselines,
+  aliases, snapshots and reentrant callbacks remain observable.
+- A live graph comparison of fresh versus cached metadata descriptors covered
+  47 tables and preserved 6656677 units on 606 roots. Sampled allocation fell from
+  24.90 MB to 24.37 MB per 50 walks; CPU timings overlapped. The focused 179-function
+  fixture showed a much larger allocation reduction; no startup speedup is proved.
+- Latest completed Zoom startup diagnostic before these commits: 256 MiB heap
+  and extended 600 s script/import allowances. All 13 classic scripts passed; externals.min.js used
   52.8 s wall / 51.9 s CPU. Seven modules prepared but never settled before the
   actual import execution deadline revoked the realm. No readiness, admission,
   presence or socket attempts. Cleanup verified closed runtime/sockets and zero
