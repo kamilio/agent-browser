@@ -16,12 +16,11 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
-- The normal Zoom probe now enables bounded WASM and binary Worker messages.
-  Its configuration passed 200 focused native tests and the browser build.
-  Latest live run reached 11518 module nodes in editor-core before its 120 s
-  deadline closed the realm: 12 classic scripts completed, one execution-closed.
-  No name/Join controls or socket attempt; shutdown retained zero data.
-  No diagnostic is active; do not repeat unchanged extended runs.
+- The normal Zoom probe enables bounded WASM/binary Worker messages and explicit
+  1 MiB / 30 s page-fetch limits. Last main-page run (before these allowances)
+  reached 11518 module nodes in editor-core before its 120 s deadline closed the
+  realm: 12 classic scripts completed, one execution-closed. No name/Join controls
+  or socket attempt; shutdown retained zero data. Do not repeat unchanged runs.
 - Fresh complete-Worker profiling still attributes most startup cost to graph
   accounting; the visitor is already optimized. Private closure collectors remain
   in maintained SafeJS (currently 79f0215058); a private-brand routing experiment
@@ -38,13 +37,18 @@
   120 s time limit or granting capabilities. Passed 395 native tests and build.
   Real SDK Worker check rejects the heap under the old profile, accepts it under
   media, and releases all data. Isolated Zoom parent fetch/CORS, binary transfer,
-  and unchanged WASM glue initialized the 20 MiB heap in 23.6 s with this profile;
+  and unchanged WASM glue initialized the 20 MiB heap in 17.0 s with the final profile/fetch limits;
   donor detached, no guest errors, zero data/pending callbacks after shutdown.
-- Complete Worker startup remains unverified: the latest 180 s diagnostic expired
-  before revisiting the allocation, amid competing CPU work. Status 131 is not
-  readiness. Its diagnostic currently observes messages only; next exercise the
-  actual parent WASM-download handoff in the complete Worker. No diagnostic is
-  active; do not repeat unchanged extended runs.
+- Complete network Worker source now finishes: 152–166 s with a temporary 300 s
+  diagnostic runtime allowance. Parent WASM download took 6.1 s, exceeding the
+  five-second fetch default. PageFetch now accepts explicit deadlines up to 30 s
+  while keeping the default; 426 focused native tests and build passed.
+  The complete Worker downloaded all 465602 bytes and detached the transfer donor,
+  then reached actual WASM startup environment/stringToUTF8Array imports. Overall
+  initialization exceeded 300 s; no initialized signal or socket attempt. Data
+  stayed near 25.3 million units and cleanup verified zero data/callbacks/sockets.
+  Full startup within normal 120 s limits and meeting admission remain unverified.
+  No diagnostic is active; do not repeat unchanged extended runs.
 - Retained fixes cover callback ownership/release (SafeJS f4bb1f080a, browser
   d69cf5d), pending-function arrays (542c1fd4a), reconciliation (e9a8214c3), Proxy
   accounting (9fa4fc3fd) and parser costs (aece59d34, 1c5ce18cb). Callback validation:

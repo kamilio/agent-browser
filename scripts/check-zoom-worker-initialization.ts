@@ -1,5 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises";
 import { types } from "node:util";
+import { CookieJar } from "../src/cookies.js";
 import { parseHtmlDocument } from "../src/html-parser.js";
 import { documentInteractions } from "../src/interactions.js";
 import { loadPageRuntime } from "../src/node-page-core.js";
@@ -24,7 +25,10 @@ import { decodeWorkerImportedScript } from "../src/worker-fetch.js";
 //     dist/scripts/check-zoom-worker-initialization.js
 // The default initialization deadline is 30 s. Explicit diagnostic allowances up
 // to 120 s do not clear that gate. This fixture loads no meeting/client and
-// enables bounded Worker sockets. Source completion does not establish readiness.
+// enables bounded Worker sockets and services the parent WASM-download protocol.
+// Source completion and the completed original onRuntimeInitialized callback are
+// separate observations; neither establishes meeting or media readiness.
+// Parent WASM fetch uses an explicit 30 s deadline and 1 MiB decoded-byte bound.
 const packageRoot = process.env.AGENT_BROWSER_SAFEJS_SOURCE_ROOT;
 const mediaRootInput = process.env.AGENT_BROWSER_ZOOM_MEDIA_ROOT;
 if (!packageRoot || !mediaRootInput)
@@ -49,16 +53,23 @@ const timeoutMs = Number(
 if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 120000)
 	throw new Error("Worker timeout must be between 1000 and 120000 ms");
 
-const completionSource =
-	"\n;postMessage({agentBrowserWorkerSourceComplete:true});";
+const completionSource = `
+;const originalRuntimeInitialized=Module.onRuntimeInitialized;
+Module.onRuntimeInitialized=function(){
+ const result=originalRuntimeInitialized.apply(this,arguments);
+ postMessage({agentBrowserWorkerWasmInitialized:true,memoryBytes:Module.HEAPU8.length});
+ return result;
+};
+postMessage({agentBrowserWorkerSourceComplete:true});`;
 const evaluations = new Set<Promise<unknown>>();
 let childReport:
 	| { ok: boolean; elapsedMs: number; error?: unknown }
 	| undefined;
 let runtime: PageRuntime | undefined;
 let parentRuntimeError: Record<string, unknown> | undefined;
+let parentNetworkError: Record<string, unknown> | undefined;
 
-// Report bounded own-data error identifiers, never arbitrary source excerpts.
+// Public-source diagnostic: report bounded own-data errors, never whole sources.
 function failureDetails(failure: unknown): Record<string, unknown> {
 	const own = (key: string): unknown => {
 		if (!failure || typeof failure !== "object" || types.isProxy(failure))
@@ -69,14 +80,20 @@ function failureDetails(failure: unknown): Record<string, unknown> {
 	const fields: Record<string, unknown> = {};
 	for (const key of ["name", "code", "budget"]) {
 		const value = own(key);
-		if (typeof value === "string" && /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(value))
+		if (
+			typeof value === "string" &&
+			/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(value)
+		)
 			fields[key] = value;
 	}
 	for (const key of ["current", "limit"]) {
 		const value = own(key);
-		if (typeof value === "number" && Number.isFinite(value)) fields[key] = value;
+		if (typeof value === "number" && Number.isFinite(value))
+			fields[key] = value;
 	}
 	const message = own("message");
+	if (typeof message === "string" && message.length <= 256)
+		fields.message = message;
 	if (typeof message === "string" && message.length < 512) {
 		const missing =
 			/^Identifier '([A-Za-z_$][A-Za-z0-9_$]{0,63})' is not defined\.$/.exec(
@@ -98,6 +115,7 @@ const { factory } = await loadPageRuntime(
 			classicScriptErrors: "report",
 			callbackScheduling: "after-prefix",
 			webAssembly: "bounded-v1",
+			workerBinaryMessages: "bounded-v1",
 			domExpandos: "bounded-v1",
 		},
 	},
@@ -159,9 +177,12 @@ const observed: PageRuntimeFactory = {
 		return runtime;
 	},
 };
+const wasmUrl = new URL("net.wasm", mediaRoot).href;
+const cookieJar = new CookieJar();
 const transport = new NodeNetworkTransport({
+	cookieJar,
 	allowedOrigins: [mediaRoot.origin],
-	limits: { maxResponseBytes: 1_048_576, timeoutMs: 15000 },
+	limits: { maxResponseBytes: 1_048_576, timeoutMs: 30000 },
 });
 const document = parseHtmlDocument(
 	"<html><body></body></html>",
@@ -185,11 +206,25 @@ const page = new PageScripts(
 	{
 		budgetProfile: "application-media-v1",
 		limits: { timeoutMs },
+		fetchLimits: { maxResponseBytes: 1_048_576, timeoutMs: 30000 },
+		fetch(input) {
+			if (input.url !== wasmUrl || input.method !== "GET")
+				throw new Error("Unexpected parent network request");
+			return transport
+				.request({ ...input, redirect: "error" })
+				.catch((error) => {
+					parentNetworkError = failureDetails(error);
+					throw error;
+				});
+		},
 	},
 );
 let assetUnits: number | undefined;
 let configuredUnits: number | undefined;
 let sourceComplete = false;
+let wasmInitialized = false;
+let downloadedBytes = 0;
+let donorDetached = false;
 let statuses: unknown = [];
 let parentOk = false;
 let wallTimedOut = false;
@@ -214,7 +249,7 @@ try {
 		);
 	const configured = source.replace(
 		marker,
-		`wasmUrl = ${JSON.stringify(new URL("net.wasm", mediaRoot).href)}, isZoomWasm32Bit = false, shouldLimitWasmMemoryWithoutSAB = false, zoomWasmMaxPages = 4096, nonsabVB = false, self.__wasmCodeDataEndFlag = 1$1`,
+		`wasmUrl = ${JSON.stringify(wasmUrl)}, isZoomWasm32Bit = false, shouldLimitWasmMemoryWithoutSAB = false, zoomWasmMaxPages = 4096, nonsabVB = false, self.__wasmCodeDataEndFlag = 1$1`,
 	);
 	configuredUnits = configured.length;
 	const result = await page.evaluate(
@@ -223,12 +258,27 @@ const statuses=[];
 const url=URL.createObjectURL(new Blob([${JSON.stringify(configured + completionSource)}]));
 const worker=new Worker(url);
 URL.revokeObjectURL(url);
-worker.onmessage=e=>{
- if(e.data && e.data.agentBrowserWorkerSourceComplete===true) document.body.setAttribute('data-source-complete','true');
+worker.onmessage=async e=>{
+ if(e.data && e.data.agentBrowserWorkerWasmInitialized===true) document.body.setAttribute('data-wasm-memory',String(e.data.memoryBytes));
+ else if(e.data && e.data.agentBrowserWorkerSourceComplete===true) document.body.setAttribute('data-source-complete','true');
  else if(e.data && typeof e.data.status==='number' && statuses.length<16) {
   statuses.push({status:e.data.status,data:typeof e.data.data==='boolean'?e.data.data:null});
   document.body.setAttribute('data-statuses',JSON.stringify(statuses));
  }
+ if(e.data && e.data.status===30){
+  try {
+   if(e.data.url!==${JSON.stringify(wasmUrl)} || e.data.isEx!==false || document.body.getAttribute('data-wasm-request'))throw new Error('Unexpected WASM request');
+   document.body.setAttribute('data-wasm-request','true');
+   const response=await fetch(e.data.url);if(!response.ok)throw new Error('WASM download failed');
+   const donor=await response.arrayBuffer();document.body.setAttribute('data-downloaded',String(donor.byteLength));
+   worker.postMessage({command:'DOWNLOAD_WASM_FROM_MAIN_THREAD_OK',data:donor},[donor]);
+   document.body.setAttribute('data-donor',String(donor.byteLength));
+  }catch(error){
+   document.body.setAttribute('data-parent-error','true');
+   worker.postMessage({command:'DOWNLOAD_WASM_FROM_MAIN_THREAD_FAILED'});
+  }
+ }
+ if(e.data && (e.data.status===63 || e.data.status===-7))document.body.setAttribute('data-initialization-error',String(e.data.status));
 };
 worker.onerror=()=>document.body.setAttribute('data-worker-error','true');
 `,
@@ -241,10 +291,20 @@ worker.onerror=()=>document.body.setAttribute('data-worker-error','true');
 		const attributes = document.get(body).attributes;
 		sourceComplete = attributes["data-source-complete"] === "true";
 		statuses = JSON.parse(attributes["data-statuses"] ?? "[]");
+		wasmInitialized = attributes["data-wasm-memory"] === "20971520";
+		downloadedBytes = Number(attributes["data-downloaded"] ?? 0);
+		donorDetached = attributes["data-donor"] === "0";
 		// Early status 131 is not source completion. Require both the explicit EOF
-		// message and a successful child evaluate result before claiming completion.
-		if (childReport && (!childReport.ok || sourceComplete)) break;
-		if (attributes["data-worker-error"] === "true" || page.closed) break;
+		// message, child evaluation and original WASM callback completion.
+		if (childReport && (!childReport.ok || (sourceComplete && wasmInitialized)))
+			break;
+		if (
+			attributes["data-worker-error"] === "true" ||
+			attributes["data-parent-error"] === "true" ||
+			attributes["data-initialization-error"] !== undefined ||
+			page.closed
+		)
+			break;
 		if (performance.now() >= deadline) {
 			wallTimedOut = true;
 			break;
@@ -257,6 +317,7 @@ worker.onerror=()=>document.body.setAttribute('data-worker-error','true');
 	const closes = await Promise.allSettled([page.close()]);
 	await Promise.allSettled([...evaluations]);
 	transport.close();
+	cookieJar.close();
 	await socketTransport.close();
 	const metrics = page.metrics();
 	const currentDataSize = (
@@ -278,19 +339,28 @@ worker.onerror=()=>document.body.setAttribute('data-worker-error','true');
 		parentOk &&
 		childReport?.ok === true &&
 		sourceComplete &&
+		wasmInitialized &&
+		downloadedBytes > 0 &&
+		donorDetached &&
+		parentRuntimeError === undefined &&
 		!wallTimedOut &&
 		failure === undefined;
 	console.log(
 		JSON.stringify({
-			scope: "Configured public network Worker source completion only",
+			scope:
+				"Complete configured public Worker with parent WASM download and original initialization callback",
 			mediaRoot: mediaRoot.href,
 			timeoutMs,
 			assetUnits,
 			configuredUnits,
 			parentOk,
 			parentRuntimeError,
+			parentNetworkError,
 			childReport,
 			sourceComplete,
+			wasmInitialized,
+			downloadedBytes,
+			donorDetached,
 			statuses,
 			wallTimedOut,
 			failure,
@@ -300,6 +370,7 @@ worker.onerror=()=>document.body.setAttribute('data-worker-error','true');
 				verified: cleanupVerified,
 				currentDataSize,
 				pendingCallbacks: metrics.pendingCallbacks,
+				fetch: metrics.fetch,
 				network,
 				webSockets,
 			},
