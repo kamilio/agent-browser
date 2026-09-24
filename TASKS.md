@@ -24,14 +24,18 @@
   records/arrays, import/export indexes, deferred module functions and unread
   unmapped arguments, and metered import deadlines. Fresh descendant/native
   observations, aliases, ordinary/held quotas and reentry remain required.
-- Latest retained optimization: SafeJS 03068ccf9 avoids fallback iterators for
-  closures without retained-value providers. Selected regressions passed 70 tests
-  across 12 files; scoped lint, build and eight imports passed. Comparing walkers
-  on the same live graph preserved charges and reduced sampled allocation about
-  3%; no CPU or complete startup improvement was established.
-- Latest uninstrumented Zoom check: 256 MiB heap, 120 s script/import observation
-  bounds, 13 classic scripts passed, seven modules prepared. Import observation
-  expired while editor evaluation remained pending. No readiness, admission,
+- SafeJS 0e0b1a35a reuses symbol keys of SDK-owned frozen Promise/Map/Set
+  carriers and sealed RegExp carriers. Pinned native finalization protects this
+  invariant; descriptors, internal-symbol membership, guest properties and mutable
+  descendants remain fresh. Selected validation passed 192 tests across 19 files,
+  scoped lint, new-test formatting, the maintained build and eight built imports.
+- Alternating old/new walkers on one live graph preserved 6657402 units on every
+  pass. It contained 94 eligible carriers (81 Promises). Sampled allocation fell
+  about 5% (29.9 MB to 28.4 MB per 50 walks); CPU timings overlapped. No complete
+  startup speedup is established.
+- Latest uninstrumented Zoom check of that build: 256 MiB heap, 120 s script/import
+  observation bounds, 13 classic scripts passed, seven modules prepared. Import
+  observation expired while editor evaluation remained pending. No readiness, admission,
   presence or socket attempts. Cleanup closed the runtime and sockets and cleared
   retained data. Longer diagnostics have also failed to establish readiness.
 - Editor profiling attributed about 71% of CPU samples to data reconciliation
@@ -60,9 +64,11 @@
 - Finish client initialization within normal heap/time/source allowances, then
   verify interactive controls and actual joining/admission/presence. Investigate
   retained-graph traversal and allocation costs around editor initialization and
-  export copying without weakening observations. Trace the remaining untracked
-  arrays/records behind symbol and descriptor enumeration to their creation sites;
-  any reuse must preserve native mutations and provider observations.
+  export copying without weakening observations. The symbol census also identified
+  constructor prototypes, mapped arguments and produced records; copied values from
+  copyToSandbox were absent from that branch. Trace remaining untracked arrays and
+  records to their creation sites before considering further reuse; preserve native
+  mutations and provider observations.
   Fixture improvements and longer diagnostic allowances do not establish
   live/default-resource acceptance.
 - Implement and verify every notetaker capability above. Automations reference:
