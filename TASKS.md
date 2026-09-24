@@ -17,11 +17,11 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse working
   builds and /tmp/agent-browser-node24-runtime/bin/node.
-- Normal Zoom startup still exceeds the 120 s import deadline after all 13
-  classic scripts pass and seven modules are prepared. A completed 600 s
-  diagnostic reached editor-core's argument-copying wrapper at offset 697893
-  (49993 module nodes), but exposed no name field or Join button. No join or
-  socket attempts occurred; cleanup closed runtime/sockets with zero retained data.
+- Latest normal Zoom check with the scalar-array fix passed all 13 classic
+  scripts and prepared seven modules, but hit the 120 s runtime deadline during
+  editor-core initialization (10056 module nodes; offset 32558, line 25).
+  The corrected observer saw no name field or Join button. No join/socket
+  attempts occurred; runtime/socket cleanup passed with zero retained data.
 - The completed 1800 s diagnostic (restored runtime, 512 MiB heap) passed through
   editor-core, localization and Lodash, reaching emoji-reactions data initialization.
   It executed 141444 module nodes, then hit the runtime deadline at emoji-reactions
@@ -29,6 +29,14 @@
   or socket attempt appeared. Runtime/socket cleanup passed with zero retained data.
   No diagnostic remains active. Investigate accounting cost before another long run;
   extending the deadline again without a change does not address normal startup.
+- Scalar-array accounting (39e147ad6) now updates string totals and non-scalar
+  counts on owned indexed writes, avoiding full descriptor snapshots for scalar
+  arrays. The failing linear-work regression now passes; 79 tests across nine
+  files, scoped lint, the maintained build and all 11 built checks passed.
+  For 4000 append/projection steps, descriptor reads fell from 8006000 to 16000.
+  Eight 1024-element append/measure fixtures fell from 3.040 s to 0.049 s CPU;
+  small nested-array timings showed no clear change. Live startup still fails;
+  these fixture gains do not establish a Zoom startup improvement.
 - Retained optimizations: fast scope accounting fields, tracked array projections,
   retained visitor code with independent per-walk state, and private bound-capture
   snapshots preserving replaced/accessor providers. The positive visited cache was
@@ -59,9 +67,9 @@
   Diagnostic limits and fixture improvements do not establish live acceptance.
 - Correct the next join observer to fill the name before requiring enabled Join.
   Zoom's preview uses #input-for-name and disables Join for invalid form data.
-  An ephemeral corrected observer passed simulated immediate/delayed enable,
-  fill-failure and single-action checks. Use it in the next diagnostic; those checks
-  do not prove live joining.
+  The corrected observer passed simulated immediate/delayed enable, fill-failure
+  and single-action checks and was used in the latest normal run. No form appeared,
+  so its live fill/click behavior remains unverified.
 - Implement and verify every notetaker capability above. Automations reference:
   capture-page.js uses getDisplayMedia and a 16000 Hz AudioWorklet for mixed audio;
   meeting-page.js uses a 48000 Hz AudioContext/MediaStream destination for virtual
