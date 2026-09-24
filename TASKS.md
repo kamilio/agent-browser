@@ -20,11 +20,15 @@
   modules, but expired at the 120 s module deadline without name/Join controls,
   a join attempt or socket attempts. Cleanup retained zero data. The probe uses
   bounded WASM/binary Worker messages and explicit 1 MiB / 30 s page-fetch limits.
-- No diagnostic is active. The final in-memory accounting profile completed
-  1000 walks over a fixed real Zoom graph with identical 6696205-unit charges,
-  taking 3.43 s CPU. It stopped intentionally and verified zero retained data
-  and no socket attempts. Full graph reconciliation remains the main startup cost;
-  visitor dispatch and visited-membership checks dominate the profile.
+  After direct visited lookups, the final progress sample reached 9033310 steps
+  at 114.9 s; this does not establish an overall startup gain. No diagnostic is active.
+- SafeJS now binds visited lookups directly to private registries, preserving fresh
+  generations, nested-walk isolation and pinned native operations. The built SDK
+  averaged 871 ms CPU per 200 real-graph walks versus 922 ms for the original,
+  with identical 6695798-unit charges; individual samples varied substantially.
+  Passed 141 focused accounting tests including nine GC checks, lint, maintained
+  build, 13 built SDK checks and six actual browser SDK/JSPI checks. Cleanup passed.
+  Full graph reconciliation remains the main unresolved startup cost.
 - Retained SafeJS improvements: sixteen per-walk positive capture slots, lazy
   private-token coordinates, numeric compiler-token reads, iterative else-if
   parsing with the existing 2048-level limit, and owned constructor prototypes.
