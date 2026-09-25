@@ -48,6 +48,14 @@
   observations and collector replacement during reentry, but used 4.6% more CPU.
   Neither approach established a safe startup gain. Zoom statically imports
   editor-core; its early evaluation is not an accidental preload execution.
+- Live V8 tracing found repeated visitor deoptimizations at regex compilation
+  ticket reads; 1000 unchanged-graph walks still took 3.079 s without visitor
+  deoptimizations. Extracting regex accounting removed the recurring visitor
+  deoptimizations but increased CPU to module node 12000 by 21.0% (49.323 s to 59.692 s),
+  with elapsed time rising from 47.569 s to 63.283 s. Discarded without SDK edits.
+  These diagnostics deliberately stopped at node 12000, with no Join controls;
+  helper-run cleanup left zero data/sockets. Isolated editor-core parsing took 2.054 s;
+  deoptimization counts alone do not establish a useful startup optimization.
 - Fresh descriptor tracing counted 638 reads across 336 owners; only four arrays
   came from the Array constructor (64 reads), none from array-method allocation.
   Those factories are not a substantial target at this point. Diagnostics stopped
