@@ -50,10 +50,17 @@
 - An earlier 600 s diagnostic also expired before controls/socket attempts,
   after 58334 module nodes at DOMPurify allowlist construction in editor-core.
   Do not repeat that unchanged extended run or increase its deadline.
-- Visitor splits, object-first dispatch, alternate visited sets, combined private
-  lookup storage, bound URL/function readers and Window/Event metadata experiments
-  did not reliably improve initialization. They were discarded. Scope pruning
+- Visitor splits (including symbol accounting), object-first dispatch, alternate
+  visited sets, combined private lookup storage, bound URL/function readers and
+  Window/Event metadata experiments did not reliably improve initialization.
+  They were discarded. Scope pruning
   changes quota semantics; reconsider discarded approaches only with new evidence.
+- Direct reads from experimental pending-function state cells gave modest gains
+  in the six-module fixture, but the full-page comparison was mixed: two of four
+  pairs improved, two regressed, and aggregate CPU improved less than 1% with
+  identical 6664954-unit charges. No state-cell machinery was retained.
+  The sampled diagnostic later reached its 120 s lifetime deadline; no controls
+  or sockets appeared, and terminal cleanup verified zero data/sockets.
 - Native DOM constructors and the optional host-prototype bridge are installed.
   Older isolated 37-check DOM passes excluded Window/URL/Blob/Worker/Event setup;
   later isolated checks also timed out. They do not prove current full DOM
