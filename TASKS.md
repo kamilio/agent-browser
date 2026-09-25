@@ -28,12 +28,17 @@
   typechecks, lint, builds and 16 built checks passed for the recent fixes;
   no meaningful startup speedup was established. Preserve recovered contributions;
   baseline 029820ce86 is tree-identical to d3ec60d811.
-- Current live-graph profiling at module node 12000 measured 500 full walks in
-  1.866 s under sampling; costs span traversal, metadata lookups and captures.
-  A combined dynamic-source lookup preserved 6733430 units across 1000 comparison
-  walks but used 23.9% more aggregate CPU, with inconsistent batches. Discarded
-  without SDK source/build changes. Both diagnostics stopped deliberately at
-  node 12000 with no Join controls and zero retained data/sockets.
+- At module node 12000, execution was in React property-table construction (144
+  constructor calls), without evidence of a loop bug. One full accounting walk
+  visited 8703 distinct objects, including 3703 deferred functions and 2156 closures.
+  The live visitor was V8-optimized; allocation sampling over 500 full walks
+  estimated 259 MB of temporary allocations in 1.969 s, preserving 6733398 units.
+  Trace the largest allocations to specific object types next. Both diagnostics
+  stopped deliberately with no Join controls and zero retained data/sockets.
+- Rejected performance experiments remain unapplied: combined dynamic-source
+  lookup used 23.9% more aggregate CPU; compact pending-depth storage saved only
+  about 5% CPU in an isolated 3700-function case, without a full-graph gain proven.
+  SDK source and working builds are unchanged by these experiments.
 - Full default DOM initialization still fails the 1000 ms cold-start allowance.
   A warmed 37-check pass does not clear this gate.
 - Supplied-audio support includes PCM resampling/recording, shared-source readers,
