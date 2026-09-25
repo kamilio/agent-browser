@@ -16,6 +16,15 @@
 
 - SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working build and
   /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
+- SDK fix 4d1d492bc7 replaces recursive scope capture with bounded iterative
+  traversal, preserving fresh metadata/foreign reads and parent-first ordering.
+  A 32768-scope regression reproduced native stack overflow before the fix.
+  All 221 focused tests, strict test typecheck, lint, maintained build and 16
+  built checks passed, including reentry, cyclic ancestry and GC cleanup.
+  The final live-graph comparison preserved 6729562 units across 1000 walks;
+  CPU improved 1.1% and wall time worsened 0.6%. No meaningful startup speedup
+  established. The earlier unbounded candidate's 6.9% CPU gain did not persist.
+  The diagnostic stopped at module node 12000 with zero retained data/sockets.
 - SDK fix 3200a1957f protects source-retention snapshots from native flatMap,
   array-species and Map iterator hooks. Five regressions reproduced private record
   exposure and a 20000-unit payload bypassing a 10000-unit limit (held/unheld).
@@ -40,12 +49,12 @@
   Existing safeguards cover owned accounting metadata/defaults, late deferred
   materialization, bounded closure-property recursion, class-method reservations,
   sixteen positive capture slots and fresh host-prototype links after expandos.
-- Latest default-runtime live retry with PCM buffer playback and protected regex
-  records completed 13 classic scripts and prepared seven modules, then expired
+- Latest default-runtime live retry with iterative scope capture and protected
+  accounting completed 13 classic scripts and prepared seven modules, then expired
   at the unchanged 120 s module deadline. HTTP 200; no controls, name fill, join or
-  socket attempt. Last sample: 9061185 steps, 7105361 data units at 111.423 s;
-  external-library execution took 44.523 s. Cleanup verified zero data/sockets.
-  The audio bootstrap did not resolve the startup gate.
+  socket attempt. Last sample: 9049639 steps, 6970494 data units at 111.821 s;
+  external-library execution took 47.189 s. Cleanup verified zero data/sockets.
+  Iterative scope capture did not resolve the startup gate.
 - Node 24 with --no-maglev also completed 13 classic scripts and prepared seven
   modules, then expired at the unchanged 120 s deadline without controls or a
   socket attempt. External-library execution took 44.313 s versus 42.677 s in the
