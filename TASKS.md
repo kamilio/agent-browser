@@ -65,8 +65,14 @@
   verified cleanup. An empty-symbol/null-prototype brand shortcut qualified for
   7736/10292 calls but neither fresh nor tracked prototype checks improved CPU;
   both were discarded. Inherited proxy observations must remain live.
-  Next, measure storage layout of owned property backings; any construction
-  change must preserve initial proxy observations and subsequent mutations.
+  Fast owned-property backing construction did not reproduce its initial 2.5%
+  gain: confirmation favored dictionary storage in all four pairs. Removed that
+  experiment and its tests; the restored SDK build and all 14 built checks passed.
+  Per-object visited-generation cells were also slower: median CPU rose 5.4%,
+  or 12.4% with a last-lookup cache. Neither diagnostic changed source. Both kept
+  exact within-graph charges and cleaned up to zero data/callbacks.
+  Full reconciliation still runs after each awaited AST node. Investigate graph
+  traversal cost without skipping these checks or fresh collector/provider reads.
 - Retained SafeJS improvements: sixteen per-walk positive capture slots, lazy
   private-token coordinates, numeric compiler-token reads, iterative else-if
   parsing with the existing 2048-level limit, and owned constructor prototypes.
@@ -143,6 +149,8 @@
   a combined private accounting metadata/visited registry,
   bounded deferred-vector pooling and moving visited-object checks earlier,
   empty-symbol/null-prototype brand shortcuts with fresh or tracked prototypes,
+  fast owned-property backing construction, per-object visited-generation cells
+  with or without a last-lookup cache,
   token-cache FIFO ring and an alternate
   WASM export factory. Require new evidence before revisiting these candidates.
 - Commit completed changes with explicit owned paths. No subagents or pushes.
