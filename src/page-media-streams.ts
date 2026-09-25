@@ -157,6 +157,67 @@ export class PageMediaStreams {
 		source: AudioRecordingSource,
 		settings: PageAudioSourceSettings,
 	): Promise<unknown> {
+		this.checkCapacity(1, 1);
+		const { family, selected } = this.createAudioFamily(source, settings);
+		try {
+			const track = this.createTrack(selected, family);
+			const stream = this.createStream([track]);
+			const invocation = this.lifecycle.startCallback(
+				this.wrapStream,
+				[stream.port],
+				{ thisValue: undefined },
+			);
+			// Observe both phases even if one rejects.
+			await Promise.all([invocation.synchronous, invocation.result]);
+			this.ensureOpen();
+			if (!stream.receiver)
+				throw new TypeError("Media stream factory did not bind its facade");
+			return stream.receiver;
+		} catch (error) {
+			for (const track of family.tracks) this.stopTrack(track);
+			try {
+				await family.hub.close();
+			} catch (cleanup) {
+				if (cleanup !== error)
+					throw new AggregateError(
+						[error, cleanup],
+						"Media construction and source cleanup failed",
+					);
+			}
+			throw error;
+		}
+	}
+
+	/** Adds a native producer to an existing empty stream without reentering guest code. */
+	attachAudioSource(
+		id: string,
+		source: AudioRecordingSource,
+		settings: PageAudioSourceSettings,
+	): { close(): Promise<void> } {
+		this.ensureOpen();
+		const stream = [...this.streams].find((stream) => stream.id === id);
+		if (!stream || !stream.receiver || stream.tracks.length)
+			throw new TypeError("Audio destination requires an owned empty stream");
+		this.checkCapacity(1, 0);
+		const { family, selected } = this.createAudioFamily(source, settings);
+		try {
+			stream.tracks = [this.createTrack(selected, family)];
+		} catch (error) {
+			this.observeCleanup(family.hub.close());
+			throw error;
+		}
+		return {
+			close: () => {
+				this.sourceEnded(family);
+				return family.hub.close();
+			},
+		};
+	}
+
+	private createAudioFamily(
+		source: AudioRecordingSource,
+		settings: PageAudioSourceSettings,
+	) {
 		this.ensureOpen();
 		if (
 			!source ||
@@ -176,14 +237,12 @@ export class PageMediaStreams {
 				(typeof settings.label !== "string" || settings.label.length > 256))
 		)
 			throw new TypeError("Invalid audio source settings");
-		this.checkCapacity(1, 1);
 		if (this.families.size >= limits.sources) throw this.limit();
 		const selected = Object.freeze({
 			sampleRate: settings.sampleRate,
 			channels: settings.channels,
 			label: settings.label ?? "",
 		});
-		let family: Family | undefined;
 		let sourceEnded = false;
 		const hub = new AudioSourceHub(
 			{
@@ -201,7 +260,7 @@ export class PageMediaStreams {
 					try {
 						await source.close();
 					} finally {
-						if (sourceEnded && family) this.sourceEnded(family);
+						if (sourceEnded) this.sourceEnded(family);
 					}
 				},
 			},
@@ -214,35 +273,9 @@ export class PageMediaStreams {
 				maxQueuedFrames: 8192,
 			},
 		);
-		family = { hub, hold: hub.retain(), tracks: new Set() };
+		const family: Family = { hub, hold: hub.retain(), tracks: new Set() };
 		this.families.add(family);
-		try {
-			const track = this.createTrack(selected, family);
-			const stream = this.createStream([track]);
-			const invocation = this.lifecycle.startCallback(
-				this.wrapStream,
-				[stream.port],
-				{ thisValue: undefined },
-			);
-			// Observe both phases even if one rejects.
-			await Promise.all([invocation.synchronous, invocation.result]);
-			this.ensureOpen();
-			if (!stream.receiver)
-				throw new TypeError("Media stream factory did not bind its facade");
-			return stream.receiver;
-		} catch (error) {
-			for (const track of family.tracks) this.stopTrack(track);
-			try {
-				await hub.close();
-			} catch (cleanup) {
-				if (cleanup !== error)
-					throw new AggregateError(
-						[error, cleanup],
-						"Media construction and source cleanup failed",
-					);
-			}
-			throw error;
-		}
+		return { family, selected };
 	}
 
 	/** Opens a recorder subscription to a track owned by this document. */

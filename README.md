@@ -41,6 +41,16 @@ cloning, independent enable/stop controls, settings and source-ended events.
 Device acquisition, Web Audio, video, WebRTC, constraints and full EventTarget
 behavior remain incomplete.
 
+Page `AudioContext` supports sine oscillators, gain, step parameter scheduling,
+and `createMediaStreamDestination()` for the notetaker's virtual microphone graph.
+Destination tracks provide clocked 128-frame stereo packets through the same
+recording readers. Contexts support suspend/resume/close; delayed readers receive
+the latest completed packet with frame gaps. Limits are four contexts per page,
+128 nodes and 256 connections per context, 16 active outputs, 512 automation
+events per parameter, and one hour of source frames at 8–96 kHz. Hardware media,
+WebRTC, AudioWorklet, buffer playback, feedback graphs and other oscillator types
+remain unsupported. This graph does not establish working Zoom microphone audio.
+
 ## Development
 
 ```bash

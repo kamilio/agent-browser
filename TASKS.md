@@ -40,11 +40,12 @@
   Existing safeguards cover owned accounting metadata/defaults, late deferred
   materialization, bounded closure-property recursion, class-method reservations,
   sixteen positive capture slots and fresh host-prototype links after expandos.
-- Latest default-runtime live retry with protected regex compilation records (686d60f56b)
-  completed 13 classic scripts and prepared seven modules, then expired at the
-  unchanged 120 s module deadline. HTTP 200; no controls, name fill, join or socket
-  attempt. Last sample: 9050931 steps, 7090182 data units at 112.359 s. Cleanup
-  verified zero data/sockets. The accounting fix did not resolve the startup gate.
+- Latest default-runtime live retry with page Web Audio and protected regex
+  records completed 13 classic scripts and prepared seven modules, then expired
+  at the unchanged 120 s module deadline. HTTP 200; no controls, name fill, join or
+  socket attempt. Last sample: 9053539 steps, 7095293 data units at 112.050 s;
+  external-library execution took 44.619 s. Cleanup verified zero data/sockets.
+  The audio bootstrap did not resolve the startup gate.
 - Node 24 with --no-maglev also completed 13 classic scripts and prepared seven
   modules, then expired at the unchanged 120 s deadline without controls or a
   socket attempt. External-library execution took 44.313 s versus 42.677 s in the
@@ -83,7 +84,7 @@
   preserving signal level and releasing all buffers. This is supplied-audio
   processing only; PcmCapture does not acquire audio. PageMedia is CSS matchMedia.
   Supplied-audio MediaStream/MediaStreamTrack support is now partial; mediaDevices,
-  Web Audio/AudioWorklet, RTCPeerConnection and a live PCM producer remain open.
+  full Web Audio/AudioWorklet, RTCPeerConnection and meeting PCM remain open.
   The unchanged Automations capture worklet
   produces correct synthetic PCM, clock and stop output in an isolated SDK realm
   with supplied processor/port globals; this proves neither capture nor transfer.
@@ -112,7 +113,17 @@
   passed seven checks under the explicit 16 s application allowance, including
   audio samples, clone stopping, EOF events and zero retained data/references.
   This does not clear the default 1000 ms cold-start gate. Device acquisition,
-  Web Audio, video/WebRTC, constraints and full EventTarget behavior remain open.
+  full Web Audio, video/WebRTC, constraints and full EventTarget behavior remain open.
+- Page Web Audio now renders the reference 48000 Hz sine/gain virtual microphone
+  graph into clocked stereo MediaStream destinations. Suspend/resume, cloned
+  tracks and source-ended events pass through maintained SafeJS under the same
+  explicit 16 s application allowance, with zero retained data/references and
+  graph resources after cleanup. All 525 focused native tests, build, strict audio
+  test typechecks and owned-file lint pass. Delayed readers skip elapsed quanta;
+  nodes, connections, outputs, automation and duration are bounded (README.md).
+  Hardware mediaDevices, buffer playback, AudioWorklet and WebRTC remain open;
+  the reference microphone wrapper still requires mediaDevices. No live audio or
+  default cold-start acceptance follows from this offline graph check.
 - Post-prototype tracking, two worklet blocks made 16716696 intrinsic collector
   calls, all cache hits. An in-memory dispatch experiment saved only 1.0% CPU
   and 1.8% wall time and was discarded. Instrumented counters inflated profile

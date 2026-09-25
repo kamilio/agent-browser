@@ -14,6 +14,7 @@ import type { NetworkResponse } from "./network.js";
 import { pageDomConstructorBootstrapSource } from "./page-dom-constructor-bootstrap.js";
 import { pageEventBootstrapSource } from "./page-event-bootstrap.js";
 import { pageMediaStreamBootstrapSource } from "./page-media-stream-bootstrap.js";
+import { pageWebAudioBootstrapSource } from "./page-web-audio-bootstrap.js";
 import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 import {
 	type PageRuntimeFactory,
@@ -116,7 +117,8 @@ function fakeCore(
 					source ===
 					pageEventBootstrapSource +
 						pageDomConstructorBootstrapSource +
-						pageMediaStreamBootstrapSource
+						pageMediaStreamBootstrapSource +
+						pageWebAudioBootstrapSource
 				) {
 					expect(evaluation).toEqual({
 						filename: "agent-browser:page-bootstrap",
@@ -270,7 +272,8 @@ it.each([inlineSource, ""])(
 			[
 				pageEventBootstrapSource +
 					pageDomConstructorBootstrapSource +
-					pageMediaStreamBootstrapSource,
+					pageMediaStreamBootstrapSource +
+					pageWebAudioBootstrapSource,
 				{ filename: "agent-browser:page-bootstrap" },
 			],
 			[source, { sourceType: "module", filename: inlineId }],
@@ -449,7 +452,8 @@ it.each(["unregistered", "changed-source", "changed-identity"])(
 			[
 				pageEventBootstrapSource +
 					pageDomConstructorBootstrapSource +
-					pageMediaStreamBootstrapSource,
+					pageMediaStreamBootstrapSource +
+					pageWebAudioBootstrapSource,
 				{ filename: "agent-browser:page-bootstrap" },
 			],
 		]);
@@ -922,7 +926,8 @@ it.each([false, true])(
 			[
 				pageEventBootstrapSource +
 					pageDomConstructorBootstrapSource +
-					pageMediaStreamBootstrapSource,
+					pageMediaStreamBootstrapSource +
+					pageWebAudioBootstrapSource,
 				{ filename: "agent-browser:page-bootstrap" },
 			],
 			[

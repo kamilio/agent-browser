@@ -47,6 +47,11 @@ import {
 import { PageClock, createPagePerformance } from "./page-performance.js";
 import { PageMedia } from "./page-media.js";
 import { PageMediaStreams } from "./page-media-streams.js";
+import {
+	PageWebAudio,
+	pageAudioConstructorNames,
+	pageWebAudioBootstrapGlobal,
+} from "./page-web-audio.js";
 import { pageMediaStreamBootstrapGlobal } from "./page-media-stream-bootstrap.js";
 import { nativeHeadlessDisplay } from "./native-headless-display.js";
 import { createPageScreen } from "./page-screen.js";
@@ -105,7 +110,9 @@ export function pageBindingGlobalNames(
 ): readonly string[] {
 	return Object.freeze([
 		...(enableEventConstructors ? [pageEventBootstrapGlobal] : []),
-		...(enableEventConstructors ? [pageMediaStreamBootstrapGlobal] : []),
+		...(enableEventConstructors
+			? [pageMediaStreamBootstrapGlobal, pageWebAudioBootstrapGlobal]
+			: []),
 		...(enableEventConstructors ? [pageDomConstructorBootstrapGlobal] : []),
 		...(enableEventConstructors ? [pageDomParserBootstrapGlobal] : []),
 		...(enableEventConstructors ? [pageDomMethodsBootstrapGlobal] : []),
@@ -160,6 +167,7 @@ export class PageBindings {
 	readonly css: object;
 	readonly media: PageMedia;
 	readonly mediaStreams?: PageMediaStreams;
+	readonly webAudio?: PageWebAudio;
 	readonly scrolling: PageScroll;
 	readonly focus: PageFocus;
 	readonly network?: PageFetch;
@@ -408,6 +416,19 @@ export class PageBindings {
 			);
 			this.window = context.createHostObject({
 				properties: {
+					...(enableEventConstructors
+						? Object.fromEntries(
+								pageAudioConstructorNames.map((name) => [
+									name,
+									{
+										get: () => {
+											this.ensureOpen();
+											return this.webAudio?.constructorValue(name);
+										},
+									},
+								]),
+							)
+						: {}),
 					...(enableEventConstructors
 						? Object.fromEntries(
 								(["MediaStream", "MediaStreamTrack"] as const).map((name) => [
@@ -706,7 +727,12 @@ export class PageBindings {
 					events,
 					this.dom.eventBindings,
 				);
+			if (this.mediaStreams)
+				this.webAudio = new PageWebAudio(context, lifecycle, this.mediaStreams);
 			this.globals = {
+				...(this.webAudio
+					? { [pageWebAudioBootstrapGlobal]: this.webAudio.bootstrap }
+					: {}),
 				...(this.mediaStreams
 					? { [pageMediaStreamBootstrapGlobal]: this.mediaStreams.bootstrap }
 					: {}),
@@ -776,6 +802,7 @@ export class PageBindings {
 	close() {
 		if (this.closedValue) return;
 		this.closedValue = true;
+		void this.webAudio?.close().catch(() => {});
 		void this.mediaStreams?.close().catch(() => {});
 		this.eventConstructors?.close();
 		this.domMethods?.close();

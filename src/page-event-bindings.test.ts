@@ -16,6 +16,7 @@ import {
 	pageEventBootstrapSource,
 } from "./page-event-bootstrap.js";
 import { pageMediaStreamBootstrapSource } from "./page-media-stream-bootstrap.js";
+import { pageWebAudioBootstrapSource } from "./page-web-audio-bootstrap.js";
 import type {
 	PageRuntime,
 	PageRuntimeFactory,
@@ -199,7 +200,8 @@ it("enables initialization and event setup without a fetch transport", async () 
 	expect(input?.initializationSource).toBe(
 		pageEventBootstrapSource +
 			pageDomConstructorBootstrapSource +
-			pageMediaStreamBootstrapSource,
+			pageMediaStreamBootstrapSource +
+			pageWebAudioBootstrapSource,
 	);
 	expect(input?.globals).toContain(pageDomConstructorBootstrapGlobal);
 	expect(globals?.[pageDomConstructorBootstrapGlobal]).toBeTypeOf("function");

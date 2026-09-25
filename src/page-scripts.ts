@@ -31,6 +31,7 @@ import {
 	type PageScriptCore,
 	legacyPageRuntime,
 } from "./page-runtime.js";
+import { pageWebAudioBootstrapSource } from "./page-web-audio-bootstrap.js";
 import { pageWebSocketBootstrapSource } from "./page-websocket-bootstrap.js";
 import { pageXmlHttpRequestBootstrapSource } from "./page-xml-http-request-bootstrap.js";
 import {
@@ -243,7 +244,9 @@ export class PageScripts {
 							initializationSource:
 								(eventConstructors ? pageEventBootstrapSource : "") +
 								(eventConstructors ? pageDomConstructorBootstrapSource : "") +
-								(eventConstructors ? pageMediaStreamBootstrapSource : "") +
+								(eventConstructors
+									? pageMediaStreamBootstrapSource + pageWebAudioBootstrapSource
+									: "") +
 								(existingDocumentWebSockets(page.document)
 									? pageWebSocketBootstrapSource
 									: "") +
@@ -579,6 +582,7 @@ export class PageScripts {
 				const results = await Promise.allSettled([
 					this.runtime?.close(),
 					this.bindings?.mediaStreams?.close(),
+					this.bindings?.webAudio?.close(),
 				]);
 				const errors = results.flatMap((result) =>
 					result.status === "rejected" ? [result.reason] : [],
@@ -743,6 +747,7 @@ export class PageScripts {
 						animationFrames: this.bindings.animationFrames.metrics(),
 						idleCallbacks: this.bindings.idleCallbacks.metrics(),
 						media: this.bindings.media.metrics(),
+						webAudio: this.bindings.webAudio?.metrics(),
 						...(this.bindings.mediaStreams
 							? { mediaStreams: this.bindings.mediaStreams.metrics() }
 							: {}),

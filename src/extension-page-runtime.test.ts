@@ -22,6 +22,8 @@ import {
 	pageMediaStreamBootstrapGlobal,
 	pageMediaStreamBootstrapSource,
 } from "./page-media-stream-bootstrap.js";
+import { pageWebAudioBootstrapGlobal } from "./page-web-audio.js";
+import { pageWebAudioBootstrapSource } from "./page-web-audio-bootstrap.js";
 import type { PageRuntime, PageRuntimeOptions } from "./page-runtime.js";
 import { type PageScriptOptions, PageScripts } from "./page-scripts.js";
 import { bindPageStorage } from "./page-storage.js";
@@ -869,6 +871,7 @@ it("declares owned console, retention, and focus await-result grants before lazy
 		globals: [
 			pageEventBootstrapGlobal,
 			pageMediaStreamBootstrapGlobal,
+			pageWebAudioBootstrapGlobal,
 			pageDomConstructorBootstrapGlobal,
 			pageDomParserBootstrapGlobal,
 			pageDomMethodsBootstrapGlobal,
@@ -897,7 +900,8 @@ it("bootstraps once, shares owned aliases and forwards only supported public eva
 	expect(test.state.evaluate.mock.calls.map(([source]) => source)).toEqual([
 		pageEventBootstrapSource +
 			pageDomConstructorBootstrapSource +
-			pageMediaStreamBootstrapSource,
+			pageMediaStreamBootstrapSource +
+			pageWebAudioBootstrapSource,
 		"first",
 		"second",
 	]);
@@ -910,7 +914,7 @@ it("bootstraps once, shares owned aliases and forwards only supported public eva
 	);
 	expect(test.state.globals?.self).toBe(test.state.globals?.window);
 	expect(test.state.globals?.document).toBe(test.scripts.dom.document);
-	const retainedArgumentStarts = [4, 0, 0, 0, 1, 2, 2, 0, 1];
+	const retainedArgumentStarts = [4, 0, 0, 0, 1, 2, 2, 0, 1, 0];
 	expect(test.state.context.retainGuestArguments).toHaveBeenCalledTimes(
 		retainedArgumentStarts.length,
 	);
@@ -1379,7 +1383,8 @@ it("fails closed if a selected core ignores extension setup", async () => {
 	expect(test.state.evaluate.mock.calls.map(([source]) => source)).toEqual([
 		pageEventBootstrapSource +
 			pageDomConstructorBootstrapSource +
-			pageMediaStreamBootstrapSource,
+			pageMediaStreamBootstrapSource +
+			pageWebAudioBootstrapSource,
 	]);
 	expect(test.state.evaluate.mock.calls[0][1]).toEqual({
 		filename: "agent-browser:page-bootstrap",
