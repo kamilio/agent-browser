@@ -31,13 +31,17 @@
 - At module node 12000, execution was in React property-table construction (144
   constructor calls), without evidence of a loop bug. One full accounting walk
   visited 8703 distinct objects, including 3703 deferred functions and 2156 closures.
-  The live visitor was V8-optimized; allocation sampling over 500 full walks
-  estimated 259 MB of temporary allocations in 1.969 s, preserving 6733398 units.
-  Two pending-function vectors accounted for 103 MB. Bounded, cleared vector reuse
-  reduced sampled allocation by 41%, but ABBA timing stayed about 1.50 s per 500
-  walks (0.3% more CPU); left unapplied. All 6733390 units were preserved and the
-  reusable buffers retained zero function references. Focus on traversal execution
-  cost next; allocation reduction did not establish a startup gain.
+  A later origin census attributed 275 of 2136 closures to page bootstrap, 1435
+  to Zoom scripts/modules, 399 to native/generated functions and 27 to unlabeled
+  source. Bootstrap closures alone do not dominate this graph.
+- CPU sampling of 1000 full walks took 3.046 s with unchanged 6733390 units:
+  52% of samples were in the visitor, 6% in scope traversal and 6% in visited-state
+  lookup. Metadata access is distributed across several registries. A diagnostic
+  mirror combining nine registries reduced aggregate CPU by 9.6% across eight
+  alternating batches, but failed native mutation checks: an update charged 7
+  instead of 1007 units; deletion charged 7 instead of 1. Discarded, with no SDK
+  edits. Any future consolidation must use authoritative state and preserve
+  native registry observations, updates and deletions, including during callbacks.
 - Fresh descriptor tracing counted 638 reads across 336 owners; only four arrays
   came from the Array constructor (64 reads), none from array-method allocation.
   Those factories are not a substantial target at this point. Diagnostics stopped
@@ -45,7 +49,9 @@
 - Rejected performance experiments remain unapplied: combined dynamic-source
   lookup used 23.9% more aggregate CPU; compact pending-depth storage saved only
   about 5% CPU in an isolated 3700-function case, without a full-graph gain proven.
-  SDK source and working builds are unchanged by these experiments.
+  Bounded vector reuse reduced allocations by 41% without reducing CPU. A private
+  property-lookup cache showed no steady-state gain. SDK source and working builds
+  are unchanged by these experiments.
 - Full default DOM initialization still fails the 1000 ms cold-start allowance.
   A warmed 37-check pass does not clear this gate.
 - Supplied-audio support includes PCM resampling/recording, shared-source readers,
