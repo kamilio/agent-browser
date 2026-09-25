@@ -25,6 +25,15 @@ try {
 		const svg = document.querySelector("#svg");
 		const math = document.querySelector("#math");
 		const text = document.createTextNode("detached");
+		const fragment = document.createDocumentFragment();
+		const capturedFocus = html.focus;
+		const focusIdentity = capturedFocus === HTMLElement.prototype.focus;
+		HTMLElement.prototype.focus = function() { return this.id; };
+		const inheritedFocus = html.focus() === "html";
+		const late = document.createElement("button");
+		late.id = "late";
+		const lateFocus = late.focus() === "late";
+		HTMLElement.prototype.focus = capturedFocus;
 		let illegal = false;
 		try { new SVGElement(); } catch (error) { illegal = error instanceof TypeError; }
 		class SubElement extends HTMLElement {}
@@ -34,13 +43,22 @@ try {
 			svg instanceof SVGElement, !(svg instanceof HTMLElement), math instanceof Element,
 			!(math instanceof HTMLElement), !(math instanceof SVGElement), document instanceof Document,
 			text instanceof Text, text instanceof CharacterData, !(text instanceof Element),
-			document.createDocumentFragment() instanceof DocumentFragment,
+			fragment instanceof DocumentFragment,
 			!({nodeType: 1, namespaceURI: "http://www.w3.org/2000/svg"} instanceof SVGElement),
 			!(Object.create(SVGElement.prototype) instanceof SVGElement),
 			!(html instanceof SubElement), window.SVGElement === SVGElement,
 			SVGElement.prototype.constructor === SVGElement, Node.ELEMENT_NODE === 1, illegal,
 			document.createElementNS("http://www.w3.org/2000/svg", "linearGradient") instanceof SVGElement,
-			document.createElementNS("http://www.w3.org/1999/xhtml", "MiXeD").localName === "MiXeD"
+			document.createElementNS("http://www.w3.org/1999/xhtml", "MiXeD").localName === "MiXeD",
+			Object.getPrototypeOf(html) === HTMLElement.prototype,
+			Object.getPrototypeOf(svg) === SVGElement.prototype,
+			Object.getPrototypeOf(document) === Document.prototype,
+			Object.getPrototypeOf(text) === Text.prototype,
+			Object.getPrototypeOf(fragment) === DocumentFragment.prototype,
+			Reflect.getPrototypeOf(late) === HTMLElement.prototype,
+			focusIdentity, inheritedFocus, lateFocus, html.focus === capturedFocus,
+			Node.prototype.cloneNode.call(html, false) instanceof HTMLElement,
+			html.constructor === HTMLElement
 		];
 		})()
 	`);
@@ -51,7 +69,7 @@ try {
 				"Actual SafeJS DOM constructor brands in an in-memory native document; no network, media or meeting join",
 			ok:
 				result.ok &&
-				checks.length === 25 &&
+				checks.length === 37 &&
 				checks.every((value) => value === true),
 			checks: checks.length,
 			metrics: result.metrics,
@@ -60,7 +78,7 @@ try {
 	);
 	if (
 		!result.ok ||
-		checks.length !== 25 ||
+		checks.length !== 37 ||
 		!checks.every((value) => value === true)
 	)
 		process.exitCode = 1;
