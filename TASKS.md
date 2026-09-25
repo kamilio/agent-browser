@@ -59,8 +59,11 @@
   module lifetime deadline before the import observation expired. No name/Join
   controls, fill, join or socket attempt. Last sample: 9028713 steps and 7052506
   units at 114.073 s. Cleanup verified zero data/sockets; that probe is terminal.
-  The separate full default DOM probe still times out at 1000 ms; its finally
-  runs, but it prints no cleanup metrics, so zero-data cleanup is unverified.
+  Fresh-process full default DOM probes still time out at 1000 ms. With an
+  in-memory budget observation hook, current cold and warm attempts closed with
+  zero data; a warmed unchanged run passed all 37 checks. This does not clear the
+  cold-start gate. Moving URL/Blob/Worker setup outside the Window closure also
+  timed out cold, so that in-memory experiment was discarded.
 - Full-page profiling on 43082cd48d attributed 93% of sampled CPU to accounting,
   almost all through post-node reconciliation: 1606 measurements and 1876 steps
   took 10.09 s wall/9.99 s CPU. The warmed graph charged 6682693 units; 200 walks
@@ -68,6 +71,14 @@
   and function-property readers remain costs. Inlined code can affect line
   attribution. The diagnostic deliberately stopped at its sample and cleaned up;
   it did not establish module startup or admission.
+- A fresh f12485a557 Zoom profile deliberately stopped at 1500 module nodes,
+  still in rolldown-runtime.min.js, after about 5.20 sampled seconds. The walker
+  accounts for 49.1% of sampled CPU directly; visited membership, scope-root
+  collection and property-brand checks add substantial cost. Inlined source
+  positions are not independent operation timings. All 13 classic scripts ran,
+  seven modules were prepared, no controls/join/socket attempt occurred, and
+  cleanup verified zero data/sockets. Its synthetic deadline error is the chosen
+  diagnostic stop, not another expiry of the normal 120 s allowance.
 - The six-module fixture preserves the real import cycle but omits earlier page
   scripts. At module node 30001 it charged 6116470 units with about 3700 deferred
   functions. A fresh path count found 17069 scope visits and 26333 capture appends,
@@ -112,8 +123,12 @@
   four-block profile attributes 55.8% of sampled time to data accounting.
   Before c529ce093b, two blocks triggered 16835680 calls across 560 intrinsic
   retention groups; 16653450 hit caches. Array, Symbol/BigInt and
-  String/Number/Boolean prototypes are now tracked. No post-change call-count
-  profile has been measured yet. Live worklet throughput remains a separate gate.
+  String/Number/Boolean prototypes are now tracked. A post-change two-block probe
+  made 16716696 intrinsic collector calls, all cache hits. A four-realm in-memory
+  empty-collector dispatch experiment preserved PCM, steps and zero-data cleanup,
+  but saved only 1.0% CPU and 1.8% wall time across eight warmed blocks per mode;
+  it was discarded. Counter instrumentation inflated its own profile cost.
+  Live worklet throughput remains a separate gate.
 
 ## Outstanding gates
 
