@@ -32,6 +32,19 @@
   Passed 141 focused accounting tests including nine GC checks, lint, maintained
   build, 13 built SDK checks and six actual browser SDK/JSPI checks. Cleanup passed.
   Full graph reconciliation remains the main unresolved startup cost.
+- Module-only Zoom accounting fixture preserves the six-module import cycle and
+  reaches 30000 nodes within the normal deadline. Between 6000 and 30000 nodes,
+  it performed about 1.04 measurements per node; unvisited object entries grew
+  from 5588 to 7609 and CPU per 200 fixed-graph walks from 440 to 801 ms.
+  Capture-cache sampling found 92/18240 early and 296/22911 later object calls
+  missed the positive cache but were already visited; most missed identities
+  appeared only once. This does not support expanding the sixteen capture slots.
+  Both samples retained zero data/callbacks after intentional diagnostic stops;
+  neither proves module completion or meeting readiness.
+  An in-memory CPU profile of 1500 later-graph walks kept each charge identical
+  within the run and completed in 4.8 s. Cost was spread across the generic
+  visitor, metadata/type checks and visited lookups. Cleanup passed; no profile
+  file remains. No runtime change is justified by these cache measurements.
 - Retained SafeJS improvements: sixteen per-walk positive capture slots, lazy
   private-token coordinates, numeric compiler-token reads, iterative else-if
   parsing with the existing 2048-level limit, and owned constructor prototypes.
@@ -102,6 +115,7 @@
   shared deferred methods, private-field/brand scope routing and visit generations,
   declaration deferral, direct owned getter reads, position/line and balanced-scan
   caches, dense numeric visited markers, fresh per-walk Set/WeakSet registries,
+  a combined private accounting metadata/visited registry,
   token-cache FIFO ring and an alternate
   WASM export factory. Require new evidence before revisiting these candidates.
 - Commit completed changes with explicit owned paths. No subagents or pushes.
