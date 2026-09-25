@@ -30,10 +30,17 @@
   startup readiness. Passed 466 unit tests, lint, the maintained build, 13 built
   SDK checks and five actual browser/JSPI checks. All probe cleanup retained zero
   data/callbacks; no diagnostic artifact files were created.
-- Latest normal Zoom check with the copy fix and property-brand SDK completed all 13 classic
+- Deferred function identities retain fast native storage while remaining empty,
+  frozen and null-prototype (SafeJS 3f8b5c8fc7). On the same graph of 3702 roots,
+  four alternating 600-walk pairs kept identical 6116416-unit charges; median CPU
+  fell from 1.535 s to 1.480 s (3.6%), with every pair favoring fast storage.
+  Passed 73 unit tests including 12 GC checks, lint, the maintained build and
+  14 built SDK checks, the layout/privacy regression under Node 22 and 24, and
+  five browser/JSPI checks with zero retained data. Startup readiness is unproven.
+- Latest normal Zoom check with the fast deferred-identity SDK completed all 13 classic
   scripts and prepared seven modules, but expired at the 120 s module deadline
   without name/Join controls, a join attempt or socket attempts. The last progress
-  sample was 9037037 steps at 112.138 s. Cleanup retained zero data. The probe uses
+  sample was 9039692 steps at 115.434 s. Cleanup retained zero data. The probe uses
   bounded WASM/binary Worker messages and explicit 1 MiB / 30 s page-fetch limits.
   An earlier 600 s diagnostic also expired before controls or socket attempts,
   after 58334 module nodes. Execution advanced through React startup tables and
@@ -55,8 +62,11 @@
   Bounded deferred-vector reuse and an earlier visited-object guard each won only
   two of four alternating pairs; median CPU was respectively 0.4% and 3.6% worse.
   Both were discarded without source changes. Checks kept identical charges and
-  verified cleanup. Investigate owned backing prototype distribution before
-  considering cheaper brand queries; inherited proxy observations must remain live.
+  verified cleanup. An empty-symbol/null-prototype brand shortcut qualified for
+  7736/10292 calls but neither fresh nor tracked prototype checks improved CPU;
+  both were discarded. Inherited proxy observations must remain live.
+  Next, measure storage layout of owned property backings; any construction
+  change must preserve initial proxy observations and subsequent mutations.
 - Retained SafeJS improvements: sixteen per-walk positive capture slots, lazy
   private-token coordinates, numeric compiler-token reads, iterative else-if
   parsing with the existing 2048-level limit, and owned constructor prototypes.
@@ -132,6 +142,7 @@
   caches, dense numeric visited markers, fresh per-walk Set/WeakSet registries,
   a combined private accounting metadata/visited registry,
   bounded deferred-vector pooling and moving visited-object checks earlier,
+  empty-symbol/null-prototype brand shortcuts with fresh or tracked prototypes,
   token-cache FIFO ring and an alternate
   WASM export factory. Require new evidence before revisiting these candidates.
 - Commit completed changes with explicit owned paths. No subagents or pushes.
