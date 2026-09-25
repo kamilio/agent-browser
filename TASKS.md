@@ -16,6 +16,14 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
+- SafeJS 84b31e2875 fixes a quota gap found during startup research: a later
+  pending reader could materialize an already-checked function, arguments object
+  or method table without charging its new data. Successful materialization now
+  triggers another reconciliation pass; nested walks cannot consume the signal.
+  All 16 new cases failed before the fix and pass after it; 168 distinct focused
+  checks, lint, the maintained build and 14 built SDK checks passed. The built
+  quota probe passed 16 cases; the isolated DOM probe passed 37 checks and closed
+  with zero retained data. Full Zoom startup and admission remain unverified.
 - SafeJS 3e064c2e37 defers class-method name/length tables while reserving their
   full charge. Reflection materializes ordinary tables; late materialization,
   native double reads, aliases, metadata, depth, quotas, snapshots and GC are
