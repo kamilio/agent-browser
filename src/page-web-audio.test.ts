@@ -16,6 +16,7 @@ const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
 	for (const close of cleanups.splice(0)) await close();
 	vi.restoreAllMocks();
+	vi.useRealTimers();
 });
 function fixture() {
 	const document = new DocumentTree("https://example.test/");
@@ -68,6 +69,7 @@ function fixture() {
 	);
 	const audio = new PageWebAudio(context, lifecycle, owner);
 	const vm = createContext({
+		Float32Array,
 		__agentBrowserWebAudioBootstrap: audio.bootstrap,
 		__agentBrowserMediaStreamBootstrap: owner.bootstrap,
 	});
@@ -131,6 +133,40 @@ it("runs the notetaker virtual microphone graph with real silent audio and clone
 	await test.close();
 	expect(test.owner.metrics().cleanupVerified).toBe(true);
 });
+it("plays the notetaker PCM buffer pattern and delivers ended with its receiver", async () => {
+	vi.useFakeTimers();
+	vi.spyOn(performance, "now").mockImplementation(() => Date.now());
+	const test = fixture();
+	const id: string = test.evaluate(
+		"var context=new AudioContext({sampleRate:48000}); var destination=context.createMediaStreamDestination();var gain=context.createGain();gain.gain.value=0.5;gain.connect(destination);var buffer=context.createBuffer(1,128,48000);buffer.getChannelData(0).fill(0.75);var chunk=context.createBufferSource();chunk.buffer=buffer;chunk.connect(gain);var ended=[];chunk.onended=function(event){ended.push(this===chunk,event.type,event.target===chunk);chunk.disconnect();};chunk.start(0.001);buffer.getChannelData(0).fill(0);destination.stream.getTracks()[0].id",
+	);
+	const reader = test.owner.openAudioReader(id);
+	const reading = reader.read(new AbortController().signal);
+	await vi.advanceTimersByTimeAsync(3);
+	const packet = await reading;
+	expect(packet?.channels[0][0]).toBe(0);
+	expect(packet?.channels[0][96]).toBe(0.375);
+	await vi.advanceTimersByTimeAsync(4);
+	expect(test.evaluate("ended")).toEqual([true, "ended", true]);
+	expect(test.audio.metrics().graphs[0].bufferBytes).toBe(0);
+	expect(() => test.evaluate("chunk.start()")).toThrow(/started/);
+	expect(() => test.evaluate("context.createBuffer(3,1,48000)")).toThrow();
+	await test.close();
+	expect(vi.getTimerCount()).toBe(0);
+});
+it("closing the page cancels scheduled buffer completion without firing ended", async () => {
+	const test = fixture();
+	test.evaluate(
+		"var context=new AudioContext();var chunk=context.createBufferSource();chunk.buffer=context.createBuffer(1,48000,48000);var ended=0;chunk.onended=()=>{ended++};chunk.start(context.currentTime+1)",
+	);
+	await test.close();
+	expect(test.evaluate("ended")).toBe(0);
+	expect(test.audio.metrics().graphs[0]).toMatchObject({
+		bufferBytes: 0,
+		scheduledSources: 0,
+		timers: 0,
+	});
+});
 it("produces audible samples when gain is nonzero and rejects foreign connections", async () => {
 	const test = fixture();
 	const id: string = test.evaluate(
@@ -156,7 +192,7 @@ it("produces audible samples when gain is nonzero and rejects foreign connection
 it("releases guest constructors synchronously before runtime teardown", async () => {
 	const test = fixture();
 	const closing = test.audio.close();
-	expect(test.released).toHaveBeenCalledTimes(6);
+	expect(test.released).toHaveBeenCalledTimes(8);
 	expect(test.audio.metrics().guestReferences).toBe(0);
 	await closing;
 });

@@ -67,13 +67,18 @@ export class AudioValue {
 }
 export interface NativeAudioNode {
 	readonly id: number;
-	readonly kind: "oscillator" | "gain" | "destination";
+	readonly kind: "oscillator" | "buffer" | "gain" | "destination";
 	readonly parameter?: AudioValue;
 }
 interface Node extends NativeAudioNode {
 	inputs: Set<Node>;
 	started?: number;
 	stopped: number;
+	buffer?: { channels: Float32Array[]; sampleRate: number };
+	offset?: number;
+	naturalEnd?: number;
+	ended?: boolean;
+	onended?: () => void;
 }
 interface PendingRead {
 	resolve(value: AudioInputPacket | null): void;
@@ -86,15 +91,20 @@ interface Output {
 	closed: boolean;
 	pending?: PendingRead;
 	timer?: ReturnType<typeof setTimeout>;
+	cached?: AudioInputPacket;
 }
 
-/** Headless oscillator/gain rendering into real, clocked audio sources.
+/** Headless oscillator, PCM and gain rendering into clocked audio sources.
  * It does not open a hardware device, provide WebRTC, or execute AudioWorklets.
  */
 export class NativeAudioContext {
 	readonly sampleRate: number;
 	private readonly nodes = new Map<number, Node>();
 	private readonly outputs = new Set<Output>();
+	private readonly ownedNodes = new WeakSet<object>();
+	private createdNodes = 0;
+	private bufferBytes = 0;
+	private endTimer?: ReturnType<typeof setTimeout>;
 	private mode: "running" | "suspended" | "closed" = "running";
 	private anchor: number;
 	private elapsed = 0;
@@ -142,6 +152,56 @@ export class NativeAudioContext {
 			maximumFloat,
 		) as NativeAudioNode & { readonly parameter: AudioValue };
 	}
+	createBufferSource(onended?: () => void): NativeAudioNode {
+		const node = this.create("buffer");
+		node.onended = onended;
+		return node;
+	}
+	/** Copies PCM into bounded native storage; page buffers call this at start. */
+	setBuffer(
+		source: NativeAudioNode,
+		channels: readonly Float32Array[],
+		sampleRate: number,
+	): void {
+		this.ensureOpen();
+		const node = this.owned(source);
+		if (node.kind !== "buffer" || node.started !== undefined)
+			throw new DOMException(
+				"Cannot change a started audio source",
+				"InvalidStateError",
+			);
+		if (
+			!Number.isInteger(sampleRate) ||
+			sampleRate < 8000 ||
+			sampleRate > 96000 ||
+			channels.length < 1 ||
+			channels.length > 2 ||
+			!channels.every(
+				(channel) =>
+					channel instanceof Float32Array &&
+					channel.length === channels[0].length,
+			) ||
+			channels[0].length < 1 ||
+			channels[0].length > sampleRate * 300
+		)
+			throw new TypeError("Invalid audio buffer");
+		const bytes = channels[0].length * channels.length * 4;
+		const oldBytes =
+			node.buffer?.channels.reduce(
+				(total, channel) => total + channel.byteLength,
+				0,
+			) ?? 0;
+		if (this.bufferBytes - oldBytes + bytes > 33554432)
+			throw limit("Audio buffer memory limit exceeded");
+		const copies = channels.map((channel) => {
+			const copy = new Float32Array(channel);
+			if (!copy.every(Number.isFinite))
+				throw new TypeError("Audio samples must be finite");
+			return copy;
+		});
+		node.buffer = { channels: copies, sampleRate };
+		this.bufferBytes += bytes - oldBytes;
+	}
 	createDestination(): { node: NativeAudioNode; source: AudioRecordingSource } {
 		this.ensureOpen();
 		if (this.outputs.size >= 16)
@@ -166,7 +226,11 @@ export class NativeAudioContext {
 		this.ensureOpen();
 		const from = this.owned(source);
 		const to = this.owned(destination);
-		if (from.kind === "destination" || to.kind === "oscillator")
+		if (
+			from.kind === "destination" ||
+			to.kind === "oscillator" ||
+			to.kind === "buffer"
+		)
 			throw new TypeError("Audio node has no matching input or output");
 		if (to.inputs.has(from)) return;
 		if (this.edges >= 256) throw limit("Audio connection limit exceeded");
@@ -191,26 +255,56 @@ export class NativeAudioContext {
 			for (const node of this.nodes.values())
 				if (node.inputs.delete(from)) this.edges--;
 	}
-	start(source: NativeAudioNode, when = 0): void {
+	start(
+		source: NativeAudioNode,
+		when = 0,
+		offset = 0,
+		duration?: number,
+	): void {
 		this.ensureOpen();
 		nonnegative(when);
+		nonnegative(offset);
+		if (duration !== undefined) nonnegative(duration);
 		const node = this.owned(source);
-		if (node.kind !== "oscillator" || node.started !== undefined)
+		if (
+			(node.kind !== "oscillator" && node.kind !== "buffer") ||
+			node.started !== undefined
+		)
 			throw new DOMException(
-				"Oscillator already started or invalid source",
+				"Audio source already started or invalid source",
 				"InvalidStateError",
 			);
-		node.started = Math.max(this.currentTime, when);
+		const started = Math.max(this.currentTime, when);
+		if (node.kind === "buffer") {
+			const length = node.buffer
+				? node.buffer.channels[0].length / node.buffer.sampleRate
+				: 0;
+			const selectedOffset = Math.min(offset, length);
+			const end =
+				started + Math.min(duration ?? length, length - selectedOffset);
+			if (end > 3600) throw limit("Audio context duration limit exceeded");
+			node.offset = selectedOffset;
+			node.naturalEnd = end;
+			node.started = started;
+			this.scheduleEnds();
+		} else node.started = started;
 	}
 	stop(source: NativeAudioNode, when = 0): void {
 		this.ensureOpen();
 		nonnegative(when);
 		const node = this.owned(source);
-		if (node.kind !== "oscillator" || node.started === undefined)
-			throw new DOMException("Oscillator has not started", "InvalidStateError");
+		if (
+			(node.kind !== "oscillator" && node.kind !== "buffer") ||
+			node.started === undefined
+		)
+			throw new DOMException(
+				"Audio source has not started",
+				"InvalidStateError",
+			);
 		const now = this.currentTime;
 		if (now >= node.stopped) return;
 		node.stopped = Math.max(now, when);
+		this.scheduleEnds();
 	}
 	suspend(): void {
 		this.ensureOpen();
@@ -218,6 +312,7 @@ export class NativeAudioContext {
 		this.elapsed = this.currentTime;
 		this.mode = "suspended";
 		for (const output of this.outputs) this.clearTimer(output);
+		this.clearEndTimer();
 	}
 	resume(): void {
 		this.ensureOpen();
@@ -226,18 +321,23 @@ export class NativeAudioContext {
 		this.anchor = this.lastClock;
 		this.mode = "running";
 		for (const output of this.outputs) this.pump(output);
+		this.scheduleEnds();
 	}
 	close(): void {
 		if (this.mode === "closed") return;
 		this.elapsed = this.currentTime;
 		this.mode = "closed";
+		this.clearEndTimer();
 		for (const output of [...this.outputs]) this.closeOutput(output);
 		for (const node of this.nodes.values()) {
 			node.inputs.clear();
 			node.parameter?.release(this.elapsed);
+			node.buffer = undefined;
+			node.onended = undefined;
 		}
 		this.nodes.clear();
 		this.edges = 0;
+		this.bufferBytes = 0;
 	}
 	metrics() {
 		return {
@@ -245,16 +345,22 @@ export class NativeAudioContext {
 			nodes: this.nodes.size,
 			connections: this.edges,
 			sources: this.outputs.size,
+			bufferBytes: this.bufferBytes,
+			scheduledSources: [...this.nodes.values()].filter(
+				(node) => node.naturalEnd !== undefined && !node.ended,
+			).length,
 			pendingReads: [...this.outputs].filter((output) => output.pending).length,
-			timers: [...this.outputs].filter((output) => output.timer !== undefined)
-				.length,
+			timers:
+				[...this.outputs].filter((output) => output.timer !== undefined)
+					.length + (this.endTimer === undefined ? 0 : 1),
 		};
 	}
 	private create(kind: Node["kind"], initial?: number, min = 0, max = 0): Node {
 		this.ensureOpen();
-		if (this.nodes.size >= maxNodes) throw limit("Audio node limit exceeded");
+		if (this.nodes.size >= maxNodes || this.createdNodes >= 4096)
+			throw limit("Audio node limit exceeded");
 		const node: Node = {
-			id: this.nodes.size + 1,
+			id: ++this.createdNodes,
 			kind,
 			inputs: new Set(),
 			stopped: Number.POSITIVE_INFINITY,
@@ -267,10 +373,11 @@ export class NativeAudioContext {
 					}),
 		};
 		this.nodes.set(node.id, node);
+		this.ownedNodes.add(node);
 		return node;
 	}
 	private owned(node: NativeAudioNode): Node {
-		if (!node || this.nodes.get(node.id) !== node)
+		if (!node || !this.ownedNodes.has(node))
 			throw new TypeError("Audio node belongs to another context");
 		return node as Node;
 	}
@@ -305,11 +412,15 @@ export class NativeAudioContext {
 			const latest = Math.floor(frame / quantum) * quantum - quantum;
 			if (latest >= output.frame) {
 				const start = Math.max(latest, output.frame);
-				const channel = this.render(output.node, start, new Map());
+				const channels =
+					output.cached?.startFrame === start
+						? output.cached.channels
+						: this.render(output.node, start, new Map());
+				output.cached = undefined;
 				output.frame = start + quantum;
 				this.settle(output, {
 					startFrame: start,
-					channels: [channel, new Float32Array(channel)],
+					channels,
 				});
 			} else
 				output.timer = setTimeout(
@@ -329,14 +440,15 @@ export class NativeAudioContext {
 	private render(
 		node: Node,
 		start: number,
-		rendered: Map<Node, Float32Array>,
-	): Float32Array {
+		rendered: Map<Node, Float32Array[]>,
+	): Float32Array[] {
 		const cached = rendered.get(node);
 		if (cached) return cached;
-		const samples = new Float32Array(quantum);
-		rendered.set(node, samples);
+		const channels = [new Float32Array(quantum), new Float32Array(quantum)];
+		const samples = channels[0];
+		rendered.set(node, channels);
 		if (node.kind === "oscillator") {
-			if (node.started === undefined) return samples;
+			if (node.started === undefined) return channels;
 			const parameter = node.parameter;
 			if (!parameter) throw new Error("Missing oscillator frequency");
 			const phase = parameter.integral(node.started);
@@ -347,19 +459,115 @@ export class NativeAudioContext {
 						2 * Math.PI * (parameter.integral(time) - phase),
 					);
 			}
+			channels[1].set(samples);
+		} else if (node.kind === "buffer") {
+			if (!node.buffer || node.started === undefined) return channels;
+			const end = Math.min(
+				node.stopped,
+				node.naturalEnd ?? Number.POSITIVE_INFINITY,
+			);
+			for (let channel = 0; channel < 2; channel++) {
+				const data = node.buffer.channels[channel] ?? node.buffer.channels[0];
+				for (let i = 0; i < quantum; i++) {
+					const time = (start + i) / this.sampleRate;
+					if (time < node.started || time >= end) continue;
+					const position =
+						(time - node.started + (node.offset ?? 0)) * node.buffer.sampleRate;
+					const index = Math.floor(position);
+					if (index >= data.length) continue;
+					const first = data[index];
+					channels[channel][i] =
+						first + ((data[index + 1] ?? first) - first) * (position - index);
+				}
+			}
 		} else {
 			const inputs = [...node.inputs].map((input) =>
 				this.render(input, start, rendered),
 			);
-			for (let i = 0; i < quantum; i++) {
-				let value = 0;
-				for (const input of inputs) value += input[i];
-				if (node.kind === "gain")
-					value *= node.parameter?.at((start + i) / this.sampleRate) ?? 1;
-				samples[i] = Math.max(-maximumFloat, Math.min(maximumFloat, value));
-			}
+			for (let channel = 0; channel < 2; channel++)
+				for (let i = 0; i < quantum; i++) {
+					let value = 0;
+					for (const input of inputs) value += input[channel][i];
+					if (node.kind === "gain")
+						value *= node.parameter?.at((start + i) / this.sampleRate) ?? 1;
+					channels[channel][i] = Math.max(
+						-maximumFloat,
+						Math.min(maximumFloat, value),
+					);
+				}
 		}
-		return samples;
+		return channels;
+	}
+	private clearEndTimer(): void {
+		if (this.endTimer !== undefined) clearTimeout(this.endTimer);
+		this.endTimer = undefined;
+	}
+	private scheduleEnds(): void {
+		this.clearEndTimer();
+		if (this.mode !== "running") return;
+		let deadline = Number.POSITIVE_INFINITY;
+		for (const node of this.nodes.values())
+			if (node.naturalEnd !== undefined && !node.ended)
+				deadline = Math.min(
+					deadline,
+					(Math.ceil(
+						(Math.min(node.stopped, node.naturalEnd) * this.sampleRate) /
+							quantum,
+					) *
+						quantum) /
+						this.sampleRate,
+				);
+		if (!Number.isFinite(deadline)) return;
+		this.endTimer = setTimeout(
+			() => {
+				this.endTimer = undefined;
+				const now = this.currentTime;
+				const finished = [...this.nodes.values()].filter(
+					(node) =>
+						node.naturalEnd !== undefined &&
+						!node.ended &&
+						(Math.ceil(
+							(Math.min(node.stopped, node.naturalEnd) * this.sampleRate) /
+								quantum,
+						) *
+							quantum) /
+							this.sampleRate <=
+							now,
+				);
+				const notifications: (() => void)[] = [];
+				if (finished.length) {
+					// Cache the completed block before onended handlers disconnect nodes.
+					// An idle destination retains at most one stereo quantum.
+					const startFrame =
+						Math.floor((now * this.sampleRate) / quantum) * quantum - quantum;
+					for (const output of this.outputs)
+						if (startFrame >= output.frame) {
+							output.cached = {
+								startFrame,
+								channels: this.render(output.node, startFrame, new Map()),
+							};
+							this.pump(output);
+						}
+					for (const node of finished) {
+						node.ended = true;
+						this.disconnect(node);
+						this.bufferBytes -=
+							node.buffer?.channels.reduce(
+								(total, channel) => total + channel.byteLength,
+								0,
+							) ?? 0;
+						node.buffer = undefined;
+						this.nodes.delete(node.id);
+						const notify = node.onended;
+						node.onended = undefined;
+						if (notify) notifications.push(notify);
+					}
+				}
+				this.scheduleEnds();
+				for (const notify of notifications) notify();
+			},
+			Math.max(1, (deadline - this.currentTime) * 1000),
+		);
 	}
 	private settle(
 		output: Output,
@@ -381,6 +589,7 @@ export class NativeAudioContext {
 	private closeOutput(output: Output): void {
 		if (output.closed) return;
 		output.closed = true;
+		output.cached = undefined;
 		this.settle(output, null);
 		this.outputs.delete(output);
 	}

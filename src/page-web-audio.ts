@@ -17,6 +17,8 @@ export const pageAudioConstructorNames = [
 	"OscillatorNode",
 	"GainNode",
 	"MediaStreamAudioDestinationNode",
+	"AudioBuffer",
+	"AudioBufferSourceNode",
 ] as const;
 export const pageWebAudioBootstrapGlobal = "__agentBrowserWebAudioBootstrap";
 interface Owner {
@@ -27,6 +29,7 @@ interface Owner {
 interface NodeRecord {
 	owner: Owner;
 	node: NativeAudioNode;
+	completion?: { promise: Promise<boolean>; resolve(ended: boolean): void };
 }
 export class PageWebAudio {
 	readonly bootstrap: () => object;
@@ -107,6 +110,18 @@ export class PageWebAudio {
 					},
 				},
 				methods: {
+					bufferSource: () => {
+						let resolve!: (ended: boolean) => void;
+						const promise = new Promise<boolean>((done) => {
+							resolve = done;
+						});
+						const node = graph.createBufferSource(() => {
+							for (const [id, record] of this.nodes)
+								if (record.node === node) this.nodes.delete(id);
+							resolve(true);
+						});
+						return this.node(owner, node, { promise, resolve });
+					},
 					oscillator: () => this.node(owner, graph.createOscillator()),
 					gain: () => this.node(owner, graph.createGain()),
 					destination: (id) => {
@@ -150,10 +165,14 @@ export class PageWebAudio {
 			throw error;
 		}
 	}
-	private node(owner: Owner, node: NativeAudioNode): object {
+	private node(
+		owner: Owner,
+		node: NativeAudioNode,
+		completion?: NodeRecord["completion"],
+	): object {
 		this.ensureOpen();
 		const id = crypto.randomUUID();
-		this.nodes.set(id, { owner, node });
+		this.nodes.set(id, { owner, node, completion });
 		const graph = owner.graph;
 		const param =
 			node.parameter === undefined
@@ -165,6 +184,29 @@ export class PageWebAudio {
 				parameter: { get: () => param },
 			},
 			methods: {
+				finished: () => completion?.promise ?? Promise.resolve(false),
+				startBuffer: (channels, rate, when, offset, duration) => {
+					this.ensureOpen();
+					const selectedTime = time(when);
+					const selectedOffset = time(offset);
+					const selectedDuration =
+						duration === undefined ? undefined : time(duration);
+					if (
+						selectedTime < 0 ||
+						selectedOffset < 0 ||
+						(selectedDuration !== undefined && selectedDuration < 0)
+					)
+						throw new RangeError("Audio time must not be negative");
+					if (channels !== null) {
+						if (
+							!Array.isArray(channels) ||
+							channels.some((channel) => !(channel instanceof Float32Array))
+						)
+							throw new TypeError("Invalid PCM channels");
+						graph.setBuffer(node, channels, number(rate));
+					}
+					graph.start(node, selectedTime, selectedOffset, selectedDuration);
+				},
 				connect: (target, input, output) => {
 					this.ensureOpen();
 					ports(input, output);
@@ -226,7 +268,10 @@ export class PageWebAudio {
 		if (owner.closing) return owner.closing;
 		owner.graph.close();
 		for (const [id, record] of this.nodes)
-			if (record.owner === owner) this.nodes.delete(id);
+			if (record.owner === owner) {
+				record.completion?.resolve(false);
+				this.nodes.delete(id);
+			}
 		owner.closing = Promise.allSettled(
 			owner.sources.splice(0).map((source) => source.close()),
 		).then((results) => {
@@ -250,6 +295,7 @@ export class PageWebAudio {
 				errors.push(error);
 			}
 		}
+		for (const record of this.nodes.values()) record.completion?.resolve(false);
 		this.nodes.clear();
 		this.closing = Promise.resolve().then(async () => {
 			const results = await Promise.allSettled(

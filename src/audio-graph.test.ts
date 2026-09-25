@@ -18,6 +18,114 @@ function fixture() {
 	context.start(oscillator, 0);
 	return { context, oscillator, gain, destination };
 }
+it("schedules stereo PCM at its source rate and preserves the final quantum before ended cleanup", async () => {
+	vi.useFakeTimers();
+	const context = new NativeAudioContext(48000, () => Date.now());
+	contexts.push(context);
+	const destination = context.createDestination();
+	const ended = vi.fn();
+	const source = context.createBufferSource(ended);
+	context.setBuffer(
+		source,
+		[new Float32Array(64).fill(0.25), new Float32Array(64).fill(-0.5)],
+		24000,
+	);
+	context.connect(source, destination.node);
+	context.start(source, 0);
+	await vi.advanceTimersByTimeAsync(3);
+	expect(ended).toHaveBeenCalledTimes(1);
+	const packet = await destination.source.read(new AbortController().signal);
+	expect(packet?.channels[0][12]).toBe(0.25);
+	expect(packet?.channels[1][12]).toBe(-0.5);
+	expect(context.metrics().bufferBytes).toBe(0);
+	expect(context.metrics().nodes).toBe(1);
+});
+it("snapshots PCM at start and supports scheduled offset, duration and independent suspension", async () => {
+	vi.useFakeTimers();
+	const context = new NativeAudioContext(48000, () => Date.now());
+	contexts.push(context);
+	const destination = context.createDestination();
+	const ended = vi.fn();
+	const source = context.createBufferSource(ended);
+	const pcm = new Float32Array(256).fill(0.75);
+	pcm.fill(0, 0, 48);
+	context.setBuffer(source, [pcm], 48000);
+	context.connect(source, destination.node);
+	context.start(source, 0.001, 0.001, 0.001);
+	pcm.fill(0);
+	context.suspend();
+	await vi.advanceTimersByTimeAsync(100);
+	expect(ended).not.toHaveBeenCalled();
+	context.resume();
+	await vi.advanceTimersByTimeAsync(3);
+	const packet = await destination.source.read(new AbortController().signal);
+	expect(packet?.channels[0][0]).toBe(0);
+	expect(packet?.channels[0][60]).toBe(0.75);
+	expect(packet?.channels[0][110]).toBe(0);
+	expect(ended).toHaveBeenCalledTimes(1);
+	expect(() => context.start(source)).toThrow();
+});
+it("reclaims finished chunks so a PCM stream can play beyond the active node limit", async () => {
+	vi.useFakeTimers();
+	const context = new NativeAudioContext(48000, () => Date.now());
+	contexts.push(context);
+	const destination = context.createDestination();
+	for (let i = 0; i < 140; i++) {
+		const source = context.createBufferSource();
+		context.setBuffer(source, [new Float32Array(48)], 48000);
+		context.connect(source, destination.node);
+		context.start(source);
+		await vi.advanceTimersByTimeAsync(4);
+	}
+	expect(context.metrics()).toMatchObject({
+		nodes: 1,
+		bufferBytes: 0,
+		connections: 0,
+		scheduledSources: 0,
+	});
+	context.close();
+	expect(vi.getTimerCount()).toBe(0);
+});
+it("bounds PCM storage and scheduling and releases a stopped source once", async () => {
+	vi.useFakeTimers();
+	const context = new NativeAudioContext(48000, () => Date.now());
+	contexts.push(context);
+	const ended = vi.fn();
+	const source = context.createBufferSource(ended);
+	expect(() =>
+		context.setBuffer(source, [new Float32Array([Number.NaN])], 48000),
+	).toThrow(/finite/);
+	expect(() =>
+		context.setBuffer(
+			source,
+			[new Float32Array(64), new Float32Array(32)],
+			48000,
+		),
+	).toThrow(/buffer/);
+	context.setBuffer(source, [new Float32Array(48000)], 48000);
+	expect(() => context.start(source, 1e12)).toThrow(/duration/);
+	context.start(source);
+	context.stop(source, 0.001);
+	await vi.advanceTimersByTimeAsync(3);
+	context.stop(source, 1);
+	await vi.advanceTimersByTimeAsync(10);
+	expect(ended).toHaveBeenCalledTimes(1);
+	expect(context.metrics()).toMatchObject({
+		bufferBytes: 0,
+		nodes: 0,
+		scheduledSources: 0,
+		timers: 0,
+	});
+});
+it("retains source limits after an oversized buffer is rejected", () => {
+	const { context } = fixture();
+	const source = context.createBufferSource();
+	const channel = new Float32Array(4_194_305);
+	expect(() => context.setBuffer(source, [channel, channel], 48000)).toThrow(
+		/memory limit/,
+	);
+	expect(context.metrics().bufferBytes).toBe(0);
+});
 it("produces clocked stereo sine audio and applies gain", async () => {
 	const { context, oscillator, gain, destination } = fixture();
 	oscillator.parameter.set(1000, 0);
