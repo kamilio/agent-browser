@@ -63,6 +63,13 @@
   time; discarded without source changes. Both diagnostics stopped deliberately
   at node 12000, with no Join controls and zero retained data/sockets. Profile
   overhead and inlined positions are not independent operation timings.
+- Function-origin attribution at module node 12000 found 3703 deferred functions:
+  2049 in loginview, 1363 in editor-core, 166 in i18n-core, 124 in lodash and one
+  in webclient. Ordinary closures included 687/218 from two page classic scripts,
+  427 from editor-core and 268 from the browser bootstrap; 302 were unattributed.
+  The unchanged graph charged 6729564 units. These counts direct investigation
+  toward source-module accounting, but do not establish per-origin CPU cost.
+  The diagnostic stopped deliberately, with no Join controls and zero data/sockets.
 - A call trace through 12000 module nodes counted 12381 accounting walks;
   368/386 sampled paths were AST-node completion and 18 were function completion.
   No sampled native-binding hotspot emerged. Omitting the final deferred-function
