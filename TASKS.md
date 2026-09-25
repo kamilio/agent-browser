@@ -56,17 +56,20 @@
   after 58334 module nodes, at DOMPurify allowlist construction in editor-core.
   Do not repeat that unchanged extended run or increase its deadline.
 - Full graph reconciliation remains the main unresolved startup cost. A bounded
-  six-module fixture preserves the real import cycle. The latest object-first
-  visitor comparison preserved 6116435-unit charges but improved median CPU only
-  about 1%; discarded without source changes. Scope pruning would change quota
-  semantics and was not implemented. Collector/provider reads must remain fresh.
-- New CPU samples still show work spread through the accounting visitor. A
-  one-measurement property-storage cache hit 14439/15933 lookups but improved
-  median CPU less than 1%; discarded. Capturing Window metadata in Sets reduced
-  Window+DOM setup from 38835 to 38065 steps, with inconsistent CPU gains.
-  That comparison excluded Event setup; full initialization still timed out.
-  Neither experiment changed runtime source. All probes are terminal and closed
-  with zero retained data; no reports or profiles were written to disk.
+  six-module fixture preserves the real import cycle. At module node 30001 the
+  current graph charges 6116470 units across 7650 entries, including 3699 deferred
+  functions. Collectors append 26333 times; only 403 values need buffering, so
+  the existing positive-membership cache already removes most duplicate work.
+  Fresh CPU samples still distribute cost across traversal, visited membership
+  and scope collection. Collector/provider reads must remain fresh.
+- Combining private scope/closure lookup storage produced no reliable gain.
+  A fresh Set per walk was about 21% slower than the existing weak registry on
+  the same 6048518-unit graph. Both experiments were discarded without runtime
+  source changes. Earlier object-first and property-storage-cache comparisons
+  improved median CPU about 1% or less; Window metadata snapshots also failed
+  to clear full initialization. Scope pruning would change quota semantics.
+  All probes are terminal and closed with zero retained data; no reports or
+  profiles were written to disk.
 - Retained accounting improvements include private ownership queries, fast
   deferred-function records, sixteen positive capture slots, explicit traversal
   continuations and shared deferred-function charges. Numeric compiler-token
