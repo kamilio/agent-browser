@@ -21,6 +21,10 @@
   No controls, name fill, join or socket attempt. Last sample: 9052742 steps /
   6974314 data units at 118.741 s; external libraries took 48.175 s. Cleanup left
   zero data/sockets.
+- Node 26 comparison also expired at the unchanged module deadline without Join
+  controls or a socket attempt; cleanup left zero data/sockets. The explicit 16 s
+  SDK probe passed 20 checks, but default cold DOM initialization still failed.
+  No admission improvement was established; removed the temporary Node 26 runtime.
 - Accounting remains the main measured startup cost. Retain SDK fixes for bounded
   iterative scope capture (4d1d492bc7), protected source-retention snapshots
   (3200a1957f; equivalent 6ee9d8263b), protected regex records (686d60f56b), tracked
