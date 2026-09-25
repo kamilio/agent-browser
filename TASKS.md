@@ -56,12 +56,13 @@
   unchanged run passed all 37 checks; it does not clear the cold-start gate.
   In-memory budget observations verified zero-data cleanup in cold and warm runs.
   Moving URL/Blob/Worker setup outside the Window closure also failed cold.
-- A fresh Zoom CPU profile deliberately stopped at 1500 module nodes in
-  rolldown-runtime.min.js after about 5.20 sampled seconds. The walker accounts
-  for 49.1% of CPU directly, with further scope, membership and brand-check costs.
-  No Join controls appeared; cleanup verified zero data/sockets. The diagnostic
-  injected an early stop, not another normal deadline expiry. Inlined source
-  positions are not independent operation timings.
+- A later Zoom profile at module node 12000 still identifies the graph visitor
+  as the main accounting cost (250 profiled walks, 6725597 units, 1.44 s).
+  A separate comparison of prototype membership prechecks preserved 6725554
+  units across 1000 alternating walks but used 2.5% more CPU and 1.8% more wall
+  time; discarded without source changes. Both diagnostics stopped deliberately
+  at node 12000, with no Join controls and zero retained data/sockets. Profile
+  overhead and inlined positions are not independent operation timings.
 - A fresh live graph at module node 1500 contained 3703 deferred functions,
   1649 closures and 37 host objects. Extracting deferred capture collection into
   a separate helper preserved 6666886 units across 1000 comparison walks, but
@@ -188,7 +189,8 @@
   object-first dispatch, alternate visited sets or combined lookup registries,
   bound URL/function readers, Window/Event metadata, bulk Event descriptors,
   scope pruning/tags, visited-generation cells, WeakSet/ownership caches, capture
-  pooling/order changes, property-layout/string-position caches or WASM factories.
+  pooling/order changes, prototype visit prechecks, property-layout/string-position
+  caches or WASM factories.
   Direct pending-function reads gave less than 1% full-page improvement; an
   isolated capture collector was about 6% slower. Scope pruning changes quotas.
 - Do not revive unsafe measurement-worker reuse, saved-callback leaks, stale
