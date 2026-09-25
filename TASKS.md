@@ -76,6 +76,11 @@
   median CPU); discarded without source changes. Charges stayed identical and
   cleanup retained zero data/callbacks. Numeric loop updates already preserve
   cached scope groups; no unnecessary invalidation was found in that path.
+  A workload sample visited 7606 new entries, including 3699 deferred functions.
+  Capture filtering buffered only 415 of 26510 inputs. Native deferred-reader
+  revision guards did not justify added state: WeakSet ownership checks were
+  2.6% slower; ownership stored in snapshots reduced median CPU by only 0.9%.
+  Both were discarded, with exact charges and zero retained data/callbacks.
   Full reconciliation still runs after each awaited AST node. Investigate graph
   traversal cost without skipping these checks or fresh collector/provider reads.
 - Retained SafeJS improvements: sixteen per-walk positive capture slots, lazy
@@ -111,6 +116,14 @@
 - The DOM constructor probe times out under its default 1000 ms profile with both
   the original and identity-sharing SDK. Application-profile checks do not clear
   this separate default-profile limit.
+  Reproduction now locates the timeout in initialization, before its 25 assertions;
+  all three attempts in one process also timed out. Bulk descriptor setup, cached
+  Window metadata and scalar metadata flags did not clear it. The isolated warmed
+  Window flag comparison reduced steps from 4975 to 3840 but gave no useful CPU
+  gain (two of four wins; 0.4% lower median); no source changes were retained.
+  Investigate native constructor installation: the maintained extension context
+  exposes createHostObject but no constructor factory. The recovered host-constructor
+  patch targets the old SDK interface and must not be applied unchanged.
 - Implement and verify every notetaker capability above. Automations references:
   capture-page.js (getDisplayMedia, 16000 Hz AudioWorklet), meeting-page.js
   (48000 Hz AudioContext/MediaStream microphone/playback), track-audio-page.js
