@@ -66,6 +66,13 @@
   produces correct synthetic PCM, clock and stop output in an isolated SDK realm
   with supplied processor/port globals; this proves neither capture nor transfer.
   Earlier warmed 128-frame/8 ms blocks took 829–893 ms.
+- AudioRecording owns an existing asynchronous source through conversion and
+  recording, pause, graceful stop and owner cancellation. Shutdown waits for
+  pending reads and source-close acknowledgement. All 236 audio tests, build,
+  lint and strict test typecheck passed. The built SDK scheduled-source check
+  converted 4800 frames at 48000 Hz into 1600 frames at 16000 Hz; normal and abort
+  paths closed the source once with no retained buffers, reads or timers.
+  This is synthetic-source evidence; actual device/meeting capture remains open.
 - Post-prototype tracking, two worklet blocks made 16716696 intrinsic collector
   calls, all cache hits. An in-memory dispatch experiment saved only 1.0% CPU
   and 1.8% wall time and was discarded. Instrumented counters inflated profile

@@ -1,3 +1,9 @@
+export {
+	AudioRecording,
+	type AudioInputPacket,
+	type AudioRecordingOptions,
+	type AudioRecordingSource,
+} from "./audio-recording.js";
 export { PcmResampler, type PcmResamplerOptions } from "./pcm-resampler.js";
 export {
 	PcmCapture,

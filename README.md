@@ -22,6 +22,11 @@ offsets. Its synchronous sink can feed `PcmCapture.push`. Call `reset()` when
 discarding pending audio for a pause, and finish the resampler before finishing
 the recording. Device capture, Web Audio and meeting transport remain incomplete.
 
+`AudioRecording` connects an existing asynchronous audio source to the converter
+and recorder. It supports an owner abort signal and pause controls; `stop()` flushes
+accepted audio, while `close()` discards pending audio. Completion waits for both
+the pending read and source cleanup to settle.
+
 ## Development
 
 ```bash
