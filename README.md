@@ -1,15 +1,24 @@
 # Agent browser
 
-An in-progress, standalone TypeScript browser for agents. The native engine is
-independent of Chromium, Firefox and remote browsers. SafeJS is the only approved
-page runtime.
+An in-progress, standalone browser for agents, migrating to Rust with embedded
+QuickJS-NG through `rquickjs`. The native engine is independent of Chromium,
+Firefox and remote browsers. The existing TypeScript/SafeJS browser remains the
+behavior reference during the port.
 
-The browser provides structured navigation, document snapshots, element references,
+The Rust workspace currently provides isolated classic-script execution, Promise
+job checkpoints, engine memory/stack limits, deadlines and cancellation. It does
+not yet provide a browser CLI, DOM, networking, modules, workers, WebAssembly or
+media. Unhandled Promise rejection events and process isolation remain open;
+engine limits do not account for Rust-owned browser data. Run its offline checks
+with `cargo test --workspace --locked` and
+`cargo clippy --workspace --all-targets --locked -- -D warnings`.
+
+The TypeScript browser provides structured navigation, document snapshots, element references,
 extraction, forms and shared sessions. Browser compatibility and scripting remain
 partial. Zoom initialization currently times out; joining, audio and notetaking
 are not yet working.
 
-The extension page runtime can opt into bounded WebAssembly with
+The TypeScript extension page runtime can opt into bounded WebAssembly with
 `runtimeOptions.webAssembly: "bounded-v1"`. Pages and classic Workers share
 metered execution and memory limits, and enforce WASM compilation CSP separately
 from string eval. This currently requires Node24 with modern JSPI explicitly

@@ -1,0 +1,9 @@
+[package]
+name = "agent-browser-page-runtime"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+rquickjs.workspace = true

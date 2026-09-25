@@ -1,0 +1,10 @@
+[workspace]
+members = ["crates/page-runtime"]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.87"
+
+[workspace.dependencies]
+rquickjs = { version = "=0.14.0", default-features = false, features = ["std"] }
