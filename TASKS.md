@@ -16,47 +16,41 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
-- Latest normal Zoom check with the identity-sharing SDK completed all 13 classic
+- Core data copying now uses an explicit operation stack (SafeJS bc3d0c9ebf).
+  Built SDK checks on Node 22 and 24 round-trip 1000-level objects and report
+  dataDepth at 1025 for deep imports/exports, replacing native stack overflows.
+  Passed 530 unit tests (seven host-Temporal cases skipped), lint, the maintained
+  build and 13 built SDK checks. Deep realm bridges and asynchronous structured
+  cloning remain separate acceptance gates.
+- Owned property-brand queries use private backing storage while preserving
+  fresh mutations, inherited/foreign proxy traps and replaced native hooks
+  (SafeJS 36a052a14b). Four alternating comparisons on the same Zoom graph at
+  29945 nodes kept identical 6116415-unit charges; median CPU per 200 walks fell
+  from 550 ms to 517 ms (5.9%). Every pair favored the change; this does not prove
+  startup readiness. Passed 466 unit tests, lint, the maintained build, 13 built
+  SDK checks and five actual browser/JSPI checks. All probe cleanup retained zero
+  data/callbacks; no diagnostic artifact files were created.
+- Latest normal Zoom check with the copy fix and property-brand SDK completed all 13 classic
   scripts and prepared seven modules, but expired at the 120 s module deadline
-  without name/Join controls,
-  a join attempt or socket attempts. Cleanup retained zero data. The probe uses
+  without name/Join controls, a join attempt or socket attempts. The last progress
+  sample was 9037037 steps at 112.138 s. Cleanup retained zero data. The probe uses
   bounded WASM/binary Worker messages and explicit 1 MiB / 30 s page-fetch limits.
   An earlier 600 s diagnostic also expired before controls or socket attempts,
   after 58334 module nodes. Execution advanced through React startup tables and
   keyboard mapping to DOMPurify allowlist construction in editor-core.min.js
   (last position: line 237, column 4703). Cleanup retained zero data. No diagnostic
   is active; do not repeat this unchanged extended run or raise its deadline again.
-- SafeJS now binds visited lookups directly to private registries, preserving fresh
-  generations, nested-walk isolation and pinned native operations. The built SDK
-  averaged 871 ms CPU per 200 real-graph walks versus 923 ms for the original,
-  with identical 6695798-unit charges; individual samples varied substantially.
-  Passed 141 focused accounting tests including nine GC checks, lint, maintained
-  build, 13 built SDK checks and six actual browser SDK/JSPI checks. Cleanup passed.
+- Retained accounting changes include private visited-registry bindings and
+  shared deferred-function root/charge identities. Unit, GC, built SDK and browser
+  checks passed; repeated same-graph measurements preserved exact charges.
   Full graph reconciliation remains the main unresolved startup cost.
-- Deferred functions now share their root and charge identity (SafeJS commit
-  a4684addae), removing one private identity per pending declaration. On the same
-  later Zoom graph, four alternating pairs kept identical 6116416-unit charges;
-  median CPU per 200 walks was 510 ms versus 527 ms with separate identities
-  (3.3% lower). Every pair favored the change; startup improvement is unproven.
-  Passed 61 focused tests including 12 GC checks, lint, maintained build, 13 built
-  SDK checks and five browser/JSPI checks with cleanup verified.
-- Module-only Zoom accounting fixture preserves the six-module import cycle and
-  reaches 30000 nodes within the normal deadline. Between 6000 and 30000 nodes,
-  it performed about 1.04 measurements per node; unvisited object entries grew
-  from 5588 to 7609 and CPU per 200 fixed-graph walks from 440 to 801 ms.
-  Capture-cache sampling found 92/18240 early and 296/22911 later object calls
-  missed the positive cache but were already visited; most missed identities
-  appeared only once. This does not support expanding the sixteen capture slots.
-  Both samples retained zero data/callbacks after intentional diagnostic stops;
-  neither proves module completion or meeting readiness.
-  An in-memory CPU profile of 1500 later-graph walks kept each charge identical
-  within the run and completed in 4.8 s. Cost was spread across the generic
-  visitor, metadata/type checks and visited lookups. Cleanup passed; no profile
-  file remains. No runtime change is justified by these cache measurements.
-  Actual module-only call tracing found 47 retained tagged call scopes after
-  1028 completed calls, versus 30 after 143 completions earlier. It does not show
-  a retained scope per completed call; untagged scopes and other lifetimes remain
-  outside that check.
+- The module-only fixture preserves the six-module import cycle and samples near
+  30000 nodes within normal allowances. Profiling found costs spread across the
+  visitor, metadata/type checks and visited lookups. Capture-cache measurements
+  do not justify expanding the sixteen slots. Call tracing found 47 retained
+  tagged scopes after 1028 completed calls, not a retained scope per completed
+  call; untagged scopes and other lifetimes remain outside that check. Intentional
+  diagnostic stops verified cleanup, not module completion or meeting readiness.
 - Retained SafeJS improvements: sixteen per-walk positive capture slots, lazy
   private-token coordinates, numeric compiler-token reads, iterative else-if
   parsing with the existing 2048-level limit, and owned constructor prototypes.
