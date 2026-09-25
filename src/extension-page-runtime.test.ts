@@ -19,14 +19,18 @@ import {
 } from "./page-event-bootstrap.js";
 import { bindPageHistory } from "./page-history.js";
 import {
+	pageMediaDevicesBootstrapGlobal,
+	pageMediaDevicesBootstrapSource,
+} from "./page-media-devices-bootstrap.js";
+import {
 	pageMediaStreamBootstrapGlobal,
 	pageMediaStreamBootstrapSource,
 } from "./page-media-stream-bootstrap.js";
-import { pageWebAudioBootstrapGlobal } from "./page-web-audio.js";
-import { pageWebAudioBootstrapSource } from "./page-web-audio-bootstrap.js";
 import type { PageRuntime, PageRuntimeOptions } from "./page-runtime.js";
 import { type PageScriptOptions, PageScripts } from "./page-scripts.js";
 import { bindPageStorage } from "./page-storage.js";
+import { pageWebAudioBootstrapSource } from "./page-web-audio-bootstrap.js";
+import { pageWebAudioBootstrapGlobal } from "./page-web-audio.js";
 import type {
 	ReleasedContext,
 	ReleasedCore,
@@ -870,6 +874,7 @@ it("declares owned console, retention, and focus await-result grants before lazy
 		name: "agent-browser-page",
 		globals: [
 			pageEventBootstrapGlobal,
+			pageMediaDevicesBootstrapGlobal,
 			pageMediaStreamBootstrapGlobal,
 			pageWebAudioBootstrapGlobal,
 			pageDomConstructorBootstrapGlobal,
@@ -901,7 +906,8 @@ it("bootstraps once, shares owned aliases and forwards only supported public eva
 		pageEventBootstrapSource +
 			pageDomConstructorBootstrapSource +
 			pageMediaStreamBootstrapSource +
-			pageWebAudioBootstrapSource,
+			pageWebAudioBootstrapSource +
+			pageMediaDevicesBootstrapSource,
 		"first",
 		"second",
 	]);
@@ -914,7 +920,7 @@ it("bootstraps once, shares owned aliases and forwards only supported public eva
 	);
 	expect(test.state.globals?.self).toBe(test.state.globals?.window);
 	expect(test.state.globals?.document).toBe(test.scripts.dom.document);
-	const retainedArgumentStarts = [4, 0, 0, 0, 1, 2, 2, 0, 1, 0];
+	const retainedArgumentStarts = [4, 0, 0, 0, 1, 2, 2, 0, 1, 0, 0];
 	expect(test.state.context.retainGuestArguments).toHaveBeenCalledTimes(
 		retainedArgumentStarts.length,
 	);
@@ -1215,7 +1221,7 @@ it("releases timer bookkeeping without calling release on already revoked SDK re
 it("keeps shared callback ownership with an SDK that lacks per-call retention", async () => {
 	vi.useFakeTimers();
 	const test = fixture();
-	delete test.state.context.retainCallbackArguments;
+	Reflect.deleteProperty(test.state.context, "retainCallbackArguments");
 	await test.scripts.evaluate("initialize");
 	const window = test.scripts.window as {
 		setTimeout(callback: () => void, delay: number): number;
@@ -1384,7 +1390,8 @@ it("fails closed if a selected core ignores extension setup", async () => {
 		pageEventBootstrapSource +
 			pageDomConstructorBootstrapSource +
 			pageMediaStreamBootstrapSource +
-			pageWebAudioBootstrapSource,
+			pageWebAudioBootstrapSource +
+			pageMediaDevicesBootstrapSource,
 	]);
 	expect(test.state.evaluate.mock.calls[0][1]).toEqual({
 		filename: "agent-browser:page-bootstrap",
