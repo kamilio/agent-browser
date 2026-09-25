@@ -63,6 +63,13 @@
   time; discarded without source changes. Both diagnostics stopped deliberately
   at node 12000, with no Join controls and zero retained data/sockets. Profile
   overhead and inlined positions are not independent operation timings.
+- A call trace through 12000 module nodes counted 12381 accounting walks;
+  368/386 sampled paths were AST-node completion and 18 were function completion.
+  No sampled native-binding hotspot emerged. Omitting the final deferred-function
+  recheck in a diagnostic-only walker preserved 6725520 units on one stable graph
+  but used 7.4% more CPU across 1000 alternating walks. No change retained;
+  callbacks still require fresh materialization checks. Both probes stopped
+  deliberately at node 12000 with no Join controls and zero data/sockets.
 - A fresh live graph at module node 1500 contained 3703 deferred functions,
   1649 closures and 37 host objects. Extracting deferred capture collection into
   a separate helper preserved 6666886 units across 1000 comparison walks, but
@@ -190,7 +197,7 @@
   bound URL/function readers, Window/Event metadata, bulk Event descriptors,
   scope pruning/tags, visited-generation cells, WeakSet/ownership caches, capture
   pooling/order changes, prototype visit prechecks, property-layout/string-position
-  caches or WASM factories.
+  caches, deferred-function final-scan omission or WASM factories.
   Direct pending-function reads gave less than 1% full-page improvement; an
   isolated capture collector was about 6% slower. Scope pruning changes quotas.
 - Do not revive unsafe measurement-worker reuse, saved-callback leaks, stale
