@@ -4,6 +4,8 @@
   future replacement for the working Automations Zoom notetaker. Preserve
   Automations and independence from Chromium, Firefox and remote browsers.
   SafeJS is the only approved page-runtime dependency.
+- Use real browser workloads to find SafeJS bugs and fix them in the maintained
+  SDK; track consumer workarounds and upstream delivery in hey-boss poe-code.
 - Test meeting: https://quora.zoom.us/j/7982110526. Approved diagnostic route:
   https://app.zoom.us/wc/7982110526/join. **No meeting has been joined.**
 - Acceptance requires controls, admission and verified presence, roster/chat,
@@ -14,6 +16,13 @@
 
 ## Current status
 
+- SafeJS findings are tracked in hey-boss poe-code: #1546 (deep traversal), #1547
+  (private accounting metadata), #1548 (deferred accounting/replay) are draft
+  delivery follow-ups for local fixes; #1549 tracks unresolved startup performance.
+  The audit passed 99 regressions in 11 files, including GC checks. Local commits
+  are absent from remote main 26581cb7458 as checked on 2026-09-25; publication is
+  unverified. Earlier Automations reports #589/#704/#705/#706 are closed; consumer
+  workaround removal still requires checking the deployed SDK version.
 - Reuse /home/kjopek/project/poe-code/packages/safe-js and its working build with
   /tmp/agent-browser-node24-runtime/bin/node --experimental-wasm-jspi.
 - Latest normal Zoom retry with document lookup prototypes: HTTP 200, 13 classic scripts and
@@ -26,8 +35,8 @@
   SDK probe passed 20 checks, but default cold DOM initialization still failed.
   No admission improvement was established; removed the temporary Node 26 runtime.
 - Accounting remains the main measured startup cost. Retain SDK fixes for bounded
-  iterative scope capture (4d1d492bc7), protected source-retention snapshots
-  (3200a1957f; equivalent 6ee9d8263b), protected regex records (686d60f56b), tracked
+  iterative scope capture (fae35ae4e3), protected source-retention snapshots
+  (e85806b7a3), protected regex records (b1bcd4d632), tracked
   primitive prototypes and recovered accounting safeguards. Focused tests,
   typechecks, lint, builds and 16 built checks passed for the recent fixes;
   no meaningful startup speedup was established. Preserve recovered contributions;
