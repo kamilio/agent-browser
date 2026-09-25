@@ -60,8 +60,15 @@
   current graph charges 6116470 units across 7650 entries, including 3699 deferred
   functions. Collectors append 26333 times; only 403 values need buffering, so
   the existing positive-membership cache already removes most duplicate work.
-  Fresh CPU samples still distribute cost across traversal, visited membership
-  and scope collection. Collector/provider reads must remain fresh.
+  Comparing nodes 6004 and 30001 shows materialized closures growing from 921
+  to 1795 and closure collectors from 650 to 1521, while deferred functions stay
+  near 3700. Of the 874 added closures, 592 are editor-core method functions;
+  declarations add only 45. Next investigate method creation/retained state,
+  preserving identity, homeObject, private fields and fresh collector reads.
+  JIT tracing observed at least 46 walker deoptimizations. Splitting cold cases
+  or object dispatch gave no useful startup gain; disabling Maglev also failed
+  all three full DOM attempts at the unchanged 1000 ms limit. These experiments
+  remain in memory only; no runtime changes or flags were retained.
 - Native URL getter/method experiment was discarded. Explicit private receiver
   binding preserved ordinary URL reflection, freezing, subclasses and quotas in
   focused tests and an actual-SDK probe. Warm URL read loops used less CPU, but
