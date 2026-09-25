@@ -40,11 +40,17 @@
   Existing safeguards cover owned accounting metadata/defaults, late deferred
   materialization, bounded closure-property recursion, class-method reservations,
   sixteen positive capture slots and fresh host-prototype links after expandos.
-- Latest normal live retry with protected regex compilation records (686d60f56b)
+- Latest default-runtime live retry with protected regex compilation records (686d60f56b)
   completed 13 classic scripts and prepared seven modules, then expired at the
   unchanged 120 s module deadline. HTTP 200; no controls, name fill, join or socket
   attempt. Last sample: 9050931 steps, 7090182 data units at 112.359 s. Cleanup
   verified zero data/sockets. The accounting fix did not resolve the startup gate.
+- Node 24 with --no-maglev also completed 13 classic scripts and prepared seven
+  modules, then expired at the unchanged 120 s deadline without controls or a
+  socket attempt. External-library execution took 44.313 s versus 42.677 s in the
+  preceding default run. Last sample: 9045557 steps / 6962150 units at 111.635 s;
+  cleanup verified zero data/sockets. No useful improvement; retain default Node
+  settings and do not repeat this variant without new evidence.
 - Fresh-process full default DOM probes still time out at 1000 ms. A warmed
   unchanged run passed all 37 checks; it does not clear the cold-start gate.
   In-memory budget observations verified zero-data cleanup in cold and warm runs.
