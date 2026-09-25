@@ -16,6 +16,19 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
+- SafeJS 3e064c2e37 defers class-method name/length tables while reserving their
+  full charge. Reflection materializes ordinary tables; late materialization,
+  native double reads, aliases, metadata, depth, quotas, snapshots and GC are
+  covered. Matching browser graphs charged 54118 units; sampled 200-walk CPU
+  cost fell from about 68 ms eager to 59–60 ms deferred. Two warm full DOM runs
+  passed all 37 assertions at 46328 steps within the unchanged 1000 ms limit;
+  other runs timed out, so reliable full initialization remains outstanding.
+  Focused tests, lint, maintained build and 14 built SDK checks passed.
+  Follow-up 8c654edc09 preserves guest-state classification before reflection,
+  including rejection of capability-only replay; 55 focused checks passed.
+- SafeJS 8aa116e371 fixes the extra host-type lookup introduced by prototype
+  linking. The existing owned-closure regression and 28 host-prototype/replay
+  checks pass; host ownership and publisher guards remain enforced.
 - SafeJS 69576b7714 adds owned live-host prototype links. Inherited reads, setters,
   reflection, for-in, proxy traps and borrowed array methods preserve host identity,
   ownership, publisher guards and quotas. Prototype accounting reads links after
@@ -28,16 +41,17 @@
   prototype identity, captured methods, overrides, late nodes and cloned nodes.
   It used 11669 steps and closed with zero retained data. Window/URL/Blob/Worker
   and Event setup were excluded from that diagnostic. Browser build, lint and
-  247 selected native tests passed. The full default 1000 ms initialization
-  still times out before the assertions; the isolated fixture does not clear it.
+  247 selected native tests passed. That isolated fixture does not prove full
+  default initialization; newer full-run comparisons are summarized above.
 - Native DOM interface constructors are installed through SafeJS c2307c51ca and
   browser 5bf1dfc, with fallback for older SDKs. Construction retains ownership,
   revocation, argument retention, reentry and serializable-result restrictions.
-- Latest normal live Zoom retry with prototype links completed all 13 classic
+- Latest normal live Zoom retry with deferred method tables completed all 13 classic
   scripts and prepared seven modules, then reached the 120 s module deadline.
   Name/Join controls never appeared; no name fill, join or socket attempt occurred.
-  The last sample was 9033265 steps at 106.148 s. Cleanup retained zero data;
-  the probe is terminal. Prototype support did not clear the startup bottleneck.
+  The last sample was 9008266 steps at 97.248 s of import observation. Cleanup
+  retained zero data and sockets; the probe is terminal. The new optimization
+  did not clear Zoom's module-startup bottleneck.
 - An earlier 600 s diagnostic also expired before controls or socket attempts,
   after 58334 module nodes, at DOMPurify allowlist construction in editor-core.
   Do not repeat that unchanged extended run or increase its deadline.
