@@ -16,6 +16,12 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
+- SafeJS 9e95bf1097 makes intrinsic descriptor-cache slots own fields from
+  construction. Inherited host metadata previously reduced a 1009-unit value
+  to 1 unit, and inherited setters received private cache state. All three
+  regressions failed before the fix; 95 focused tests, lint, the maintained build,
+  16 built SDK checks and four compiled quota cases pass. All three full DOM
+  attempts still timed out at 1000 ms and closed with zero data.
 - SafeJS 43082cd48d gives private scope accounting records a uniform layout,
   preserving public snapshots and fresh readers, collectors and reconciliation.
   The full-page comparison preserved 6664737 units; four paired 300-walk samples
@@ -41,17 +47,22 @@
 - SafeJS 84b31e2875 rechecks deferred materializations caused by later readers,
   including across nested measurements. All 16 quota regressions and 168 focused
   checks passed. Both fixes preserve fresh readers, collectors and cleanup.
-- Full-page profiling on 09db17fdb4 shows accounting dominates module execution:
-  a 10.14 s window used 9.32 CPU seconds for 1558 measurements and 2021 steps.
-  A separate warmed walker measured 6670404 units across 7440 graph entries;
-  200 walks used 1.09 CPU seconds. It retained 3703 deferred roots and 1664
-  closures; 1275 function-table observations were absent, 260 materialized and
-  128 deferred. Most observed functions therefore do not have eager tables
-  to defer. Counting used a separate walker to avoid distorting timing.
+- Full-page profiling on 43082cd48d attributes 93% of sampled CPU to accounting,
+  almost all through post-node reconciliation. A 10.09 s window used 9.99 CPU
+  seconds for 1606 measurements and 1876 steps. The warmed graph charged 6682693
+  units; 200 walks used 1.19 CPU seconds. Symbol loops, metadata/brand lookups,
+  scope collection and function-property readers remain costs. Line samples can
+  include inlined code; individual source lines are not standalone cost proofs.
+  The earlier graph profile found 1275 absent function tables, 260 materialized
+  and 128 deferred, so extending table deferral is not an established shortcut.
   All 13 classic scripts completed and seven modules were prepared, then the
   diagnostic deliberately aborted at its sample. No controls or socket attempts;
   cleanup verified zero data/sockets. This does not establish normal startup.
   Preserve fresh reads, collector order and full reconciliation.
+- An in-memory property-reader experiment replaced Reflect.apply for known SDK
+  getters and bound foreign getters once. It preserved 6116470 units, but was
+  slower in three of four paired 300-walk samples. Discarded without a runtime
+  change; the fixture stopped at its sample and closed with zero data/callbacks.
 - SafeJS 3e064c2e37 defers class-method name/length tables while reserving their
   full charge. Reflection materializes ordinary tables; late materialization,
   native double reads, aliases, metadata, depth, quotas, snapshots and GC are
