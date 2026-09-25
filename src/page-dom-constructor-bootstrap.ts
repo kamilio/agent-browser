@@ -118,7 +118,7 @@ if (typeof __agentBrowserDomHasInstance === "function") {
 				Object.defineProperty(HTMLElement.prototype, name, {value: method, writable:true, configurable:true});
 			}
 		}
-		for (const [Interface, name] of [[Document, "getElementsByTagName"], [Element, "getElementsByTagName"], [Document, "createNodeIterator"], [Document, "createDocumentFragment"], [Document, "importNode"], [Node, "cloneNode"]]) {
+		for (const [Interface, name] of [[Document, "getElementById"], [Document, "querySelector"], [Document, "getElementsByTagName"], [Element, "getElementsByTagName"], [Document, "createNodeIterator"], [Document, "createDocumentFragment"], [Document, "importNode"], [Node, "cloneNode"]]) {
 			const key = Interface.name + "." + name;
 			const method = function(...args) { return invoke(this, key, ...args); };
 			port.publish(key, method);

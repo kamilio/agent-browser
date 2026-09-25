@@ -144,7 +144,7 @@ it("forwards captured HTMLElement focus and blur to the borrowed receiver", asyn
 	await evaluate("HTMLElement.prototype.blur.call(b)");
 	expect(evaluate("document.activeElement===document.body")).toBe(true);
 	tree.close();
-	expect(release).toHaveBeenCalledTimes(11);
+	expect(release).toHaveBeenCalledTimes(13);
 });
 
 it("preserves a node focus method captured before its prototype is replaced", async () => {
@@ -194,7 +194,7 @@ it("links existing and lazy node interfaces and keeps non-HTML focus guarded", a
 	await expect(method.call(svg)).rejects.toThrow("HTMLElement");
 	tree.close();
 	await expect(method.call(other)).rejects.toThrow("closed");
-	expect(release).toHaveBeenCalledTimes(22);
+	expect(release).toHaveBeenCalledTimes(24);
 });
 
 it("rejects forged, foreign and non-HTML captured focus receivers and revokes saved methods", async () => {
@@ -277,7 +277,7 @@ it("waits for controlled focus listeners and rejects a suspended captured call a
 	test.tree.close();
 	resume();
 	await expect(pending).rejects.toThrow(/closed|abort/i);
-	expect(test.release).toHaveBeenCalledTimes(11);
+	expect(test.release).toHaveBeenCalledTimes(13);
 });
 
 it("rejects focus registration that replaces the operation identity", async () => {
@@ -456,7 +456,7 @@ it("revokes saved methods and releases each retained function once", () => {
 	tree.close();
 	bridge.close();
 	expect(() => method.call(receiver)).toThrow("closed");
-	expect(release).toHaveBeenCalledTimes(9);
+	expect(release).toHaveBeenCalledTimes(11);
 });
 
 it("retains publication readiness through reentrant host-object creation", () => {
@@ -495,6 +495,93 @@ it("keeps receiver forwarding after guest prototype methods are replaced", () =>
 			'var other=new DOMParser().parseFromString("<b>hello</b>","text/html");Document.prototype.getElementsByTagName=function(){throw new Error("replacement");};document.getElementsByTagName.call(other,"b")[0].textContent',
 		),
 	).toBe("hello");
+});
+
+it.each([false, true])(
+	"shares document lookup methods and forwards borrowed receivers (prototypes: %s)",
+	(prototypes) => {
+		const { evaluate, tree } = fixture(hostObject, false, prototypes);
+		evaluate(
+			'var other=new DOMParser().parseFromString("<p id=found>auxiliary</p>","text/html")',
+		);
+		for (const [name, argument] of [
+			["getElementById", "found"],
+			["querySelector", "#found"],
+		]) {
+			expect(
+				evaluate(
+					`typeof Document.prototype.${name} === "function" && document.${name} === Document.prototype.${name} && other.${name} === document.${name}`,
+				),
+			).toBe(true);
+			expect(
+				evaluate(
+					`Document.prototype.${name}.call(other, ${JSON.stringify(argument)}).textContent`,
+				),
+			).toBe("auxiliary");
+			expect(
+				evaluate(`document.${name}(${JSON.stringify(argument)})`),
+			).toBeNull();
+			for (const receiver of [
+				"document.body",
+				"Object.create(Document.prototype)",
+			])
+				expect(() =>
+					evaluate(`Document.prototype.${name}.call(${receiver}, "found")`),
+				).toThrow("registered receiver");
+			if (prototypes)
+				expect(
+					evaluate(`Object.hasOwn(document, ${JSON.stringify(name)})`),
+				).toBe(false);
+		}
+		const lookup = evaluate("Document.prototype.getElementById") as (
+			this: object,
+			id: string,
+		) => unknown;
+		const document = evaluate("document");
+		tree.close();
+		expect(() => lookup.call(document, "found")).toThrow();
+	},
+);
+
+it("supports Zoom's saved document lookups and prototype overrides", () => {
+	const { evaluate } = fixture(hostObject, false, true);
+
+	// Zoom's picture-in-picture integration saves both original methods on the
+	// prototype before redirecting ordinary document queries to another document.
+	evaluate(`
+		var other = new DOMParser().parseFromString('<p id="found">auxiliary</p>', 'text/html');
+		var capturedId = document.getElementById;
+		var capturedQuery = document.querySelector;
+		Document.prototype.originalGetElementById = Document.prototype.getElementById;
+		Document.prototype.originalQuerySelector = Document.prototype.querySelector;
+		var lookupCalls = 0;
+		Document.prototype.getElementById = function(id) {
+			lookupCalls++;
+			return document.originalGetElementById(id) || capturedId.call(other, id);
+		};
+		Document.prototype.querySelector = function(selector) {
+			lookupCalls++;
+			return document.originalQuerySelector(selector) || capturedQuery.call(other, selector);
+		};
+	`);
+	expect(evaluate('document.getElementById("found").textContent')).toBe(
+		"auxiliary",
+	);
+	expect(evaluate('document.querySelector("#found").textContent')).toBe(
+		"auxiliary",
+	);
+	expect(evaluate("lookupCalls")).toBe(2);
+	expect(evaluate('capturedId.call(document, "found")')).toBeNull();
+	expect(evaluate('capturedQuery.call(document, "#found")')).toBeNull();
+	evaluate(`
+		Document.prototype.getElementById = Document.prototype.originalGetElementById;
+		Document.prototype.querySelector = Document.prototype.originalQuerySelector;
+		Document.prototype.originalGetElementById = null;
+		Document.prototype.originalQuerySelector = null;
+	`);
+	expect(evaluate('document.getElementById("found")')).toBeNull();
+	expect(evaluate('document.querySelector("#found")')).toBeNull();
+	expect(evaluate("lookupCalls")).toBe(2);
 });
 
 it("guards one-time bootstrap and finite method publication", () => {

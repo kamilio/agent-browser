@@ -5,7 +5,12 @@ import type { PageBindingContext } from "./page-bindings.js";
 import type { ScriptHostObjectFactory } from "./script-dom.js";
 
 export const pageDomMethodsBootstrapGlobal = "__agentBrowserDomMethods";
+const documentLookupNames = new Set([
+	"Document.getElementById",
+	"Document.querySelector",
+]);
 const methodNames = new Set([
+	...documentLookupNames,
 	"Document.getElementsByTagName",
 	"Element.getElementsByTagName",
 	"Document.createNodeIterator",
@@ -262,6 +267,10 @@ export class PageDomMethods {
 							continue;
 						registered[key] = methods[name];
 						delete methods[name];
+						// Zoom replaces these prototype methods while retaining the
+						// originals. An own getter would hide those replacements.
+						if (context.setHostObjectPrototype && documentLookupNames.has(key))
+							continue;
 						properties[name] = {
 							get: () => {
 								definition.properties?.nodeType?.get(); // Publication readiness and document lifecycle guard.

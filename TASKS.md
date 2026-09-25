@@ -16,10 +16,10 @@
 
 - Reuse /home/kjopek/project/poe-code/packages/safe-js and its working build with
   /tmp/agent-browser-node24-runtime/bin/node --experimental-wasm-jspi.
-- Latest normal Zoom retry with mediaDevices: HTTP 200, 13 classic scripts and
+- Latest normal Zoom retry with document lookup prototypes: HTTP 200, 13 classic scripts and
   seven prepared modules; expired at the unchanged 120 s module deadline.
-  No controls, name fill, join or socket attempt. Last sample: 9039068 steps /
-  6956021 data units at 110.380 s; external libraries took 60.022 s. Cleanup left
+  No controls, name fill, join or socket attempt. Last sample: 9052742 steps /
+  6974314 data units at 118.741 s; external libraries took 48.175 s. Cleanup left
   zero data/sockets.
 - Accounting remains the main measured startup cost. Retain SDK fixes for bounded
   iterative scope capture (4d1d492bc7), protected source-retention snapshots
@@ -40,8 +40,10 @@
   mirror combining nine registries reduced aggregate CPU by 9.6% across eight
   alternating batches, but failed native mutation checks: an update charged 7
   instead of 1007 units; deletion charged 7 instead of 1. Discarded, with no SDK
-  edits. Any future consolidation must use authoritative state and preserve
-  native registry observations, updates and deletions, including during callbacks.
+  edits. A narrower private-metadata variant preserved those updates, getter
+  observations and collector replacement during reentry, but used 4.6% more CPU.
+  Neither approach established a safe startup gain. Zoom statically imports
+  editor-core; its early evaluation is not an accidental preload execution.
 - Fresh descriptor tracing counted 638 reads across 336 owners; only four arrays
   came from the Array constructor (64 reads), none from array-method allocation.
   Those factories are not a substantial target at this point. Diagnostics stopped
@@ -54,6 +56,12 @@
   are unchanged by these experiments.
 - Full default DOM initialization still fails the 1000 ms cold-start allowance.
   A warmed 37-check pass does not clear this gate.
+- Document.prototype.getElementById/querySelector now support captured originals,
+  borrowed same-owner documents and ordinary calls through prototype overrides,
+  as used by Zoom's picture-in-picture code. Focused native checks passed 233
+  tests; a maintained SDK probe passed 20 checks under the existing explicit 16 s
+  application allowance and closed with zero data. This does not establish actual
+  picture-in-picture operation, default cold startup or meeting admission.
 - Supplied-audio support includes PCM resampling/recording, shared-source readers,
   MediaStream/MediaStreamTrack, a clocked oscillator/gain microphone graph and
   scheduled AudioBuffer playback. Latest playback validation: 532 focused native
@@ -72,8 +80,9 @@
   scheduling/transfer, decoding, video/WebRTC and actual meeting transport remain
   open. Resume startup work; offline media support does not clear admission.
 - Existing validation limitations: the module fixture has two optional-ID type
-  errors; the runtime fixture has a noDelete lint failure. Built Node 22/24 copying
-  checks round-trip 1000-level objects and report dataDepth at 1025. Offline Window
+  errors. Runtime fixture expectations now include mediaDevices and its lint
+  failure is fixed. Built Node 22/24 copying checks round-trip 1000-level objects
+  and report dataDepth at 1025. Offline Window
   load and Worker socket checks do not establish complete Zoom operation.
 
 ## Outstanding gates
