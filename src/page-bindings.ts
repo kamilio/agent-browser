@@ -46,6 +46,8 @@ import {
 } from "./page-animation-frames.js";
 import { PageClock, createPagePerformance } from "./page-performance.js";
 import { PageMedia } from "./page-media.js";
+import { PageMediaStreams } from "./page-media-streams.js";
+import { pageMediaStreamBootstrapGlobal } from "./page-media-stream-bootstrap.js";
 import { nativeHeadlessDisplay } from "./native-headless-display.js";
 import { createPageScreen } from "./page-screen.js";
 import { documentStyles } from "./styles.js";
@@ -103,6 +105,7 @@ export function pageBindingGlobalNames(
 ): readonly string[] {
 	return Object.freeze([
 		...(enableEventConstructors ? [pageEventBootstrapGlobal] : []),
+		...(enableEventConstructors ? [pageMediaStreamBootstrapGlobal] : []),
 		...(enableEventConstructors ? [pageDomConstructorBootstrapGlobal] : []),
 		...(enableEventConstructors ? [pageDomParserBootstrapGlobal] : []),
 		...(enableEventConstructors ? [pageDomMethodsBootstrapGlobal] : []),
@@ -156,6 +159,7 @@ export class PageBindings {
 	readonly performance: object;
 	readonly css: object;
 	readonly media: PageMedia;
+	readonly mediaStreams?: PageMediaStreams;
 	readonly scrolling: PageScroll;
 	readonly focus: PageFocus;
 	readonly network?: PageFetch;
@@ -404,6 +408,19 @@ export class PageBindings {
 			);
 			this.window = context.createHostObject({
 				properties: {
+					...(enableEventConstructors
+						? Object.fromEntries(
+								(["MediaStream", "MediaStreamTrack"] as const).map((name) => [
+									name,
+									{
+										get: () => {
+											this.ensureOpen();
+											return this.mediaStreams?.constructorValue(name);
+										},
+									},
+								]),
+							)
+						: {}),
 					...(this.xmlHttpRequests
 						? {
 								XMLHttpRequest: {
@@ -681,7 +698,18 @@ export class PageBindings {
 				this.dom.eventBindings,
 				(error) => lifecycle.fail(error),
 			);
+			if (enableEventConstructors)
+				this.mediaStreams = new PageMediaStreams(
+					page.document,
+					context,
+					lifecycle,
+					events,
+					this.dom.eventBindings,
+				);
 			this.globals = {
+				...(this.mediaStreams
+					? { [pageMediaStreamBootstrapGlobal]: this.mediaStreams.bootstrap }
+					: {}),
 				...(enableEventConstructors
 					? {
 							[pageDomParserBootstrapGlobal]: (
@@ -748,6 +776,7 @@ export class PageBindings {
 	close() {
 		if (this.closedValue) return;
 		this.closedValue = true;
+		void this.mediaStreams?.close().catch(() => {});
 		this.eventConstructors?.close();
 		this.domMethods?.close();
 		this.webSockets?.close();

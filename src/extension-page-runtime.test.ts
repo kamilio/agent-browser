@@ -18,6 +18,10 @@ import {
 	pageEventBootstrapSource,
 } from "./page-event-bootstrap.js";
 import { bindPageHistory } from "./page-history.js";
+import {
+	pageMediaStreamBootstrapGlobal,
+	pageMediaStreamBootstrapSource,
+} from "./page-media-stream-bootstrap.js";
 import type { PageRuntime, PageRuntimeOptions } from "./page-runtime.js";
 import { type PageScriptOptions, PageScripts } from "./page-scripts.js";
 import { bindPageStorage } from "./page-storage.js";
@@ -864,6 +868,7 @@ it("declares owned console, retention, and focus await-result grants before lazy
 		name: "agent-browser-page",
 		globals: [
 			pageEventBootstrapGlobal,
+			pageMediaStreamBootstrapGlobal,
 			pageDomConstructorBootstrapGlobal,
 			pageDomParserBootstrapGlobal,
 			pageDomMethodsBootstrapGlobal,
@@ -890,7 +895,9 @@ it("bootstraps once, shares owned aliases and forwards only supported public eva
 	).toMatchObject({ ok: true, value: { answer: 42 } });
 	await test.scripts.evaluate("second");
 	expect(test.state.evaluate.mock.calls.map(([source]) => source)).toEqual([
-		pageEventBootstrapSource + pageDomConstructorBootstrapSource,
+		pageEventBootstrapSource +
+			pageDomConstructorBootstrapSource +
+			pageMediaStreamBootstrapSource,
 		"first",
 		"second",
 	]);
@@ -903,7 +910,7 @@ it("bootstraps once, shares owned aliases and forwards only supported public eva
 	);
 	expect(test.state.globals?.self).toBe(test.state.globals?.window);
 	expect(test.state.globals?.document).toBe(test.scripts.dom.document);
-	const retainedArgumentStarts = [4, 0, 0, 0, 1, 2, 2];
+	const retainedArgumentStarts = [4, 0, 0, 0, 1, 2, 2, 0, 1];
 	expect(test.state.context.retainGuestArguments).toHaveBeenCalledTimes(
 		retainedArgumentStarts.length,
 	);
@@ -1176,7 +1183,7 @@ it("forwards native callback receivers and arguments without collapsing completi
 	await vi.advanceTimersByTimeAsync(0);
 	expect(test.scripts.metrics().pendingCallbacks).toBe(0);
 	expect(test.state.context.releaseGuestReference).toHaveBeenCalledWith(token);
-	expect(test.state.context.retainCallbackArguments).toHaveBeenCalledTimes(2);
+	expect(test.state.context.retainCallbackArguments).toHaveBeenCalledTimes(3);
 	expect(test.state.context.releaseCallback).toHaveBeenCalledExactlyOnceWith(
 		callback,
 	);
@@ -1370,7 +1377,9 @@ it("fails closed if a selected core ignores extension setup", async () => {
 	});
 	expect(test.scripts.closed).toBe(true);
 	expect(test.state.evaluate.mock.calls.map(([source]) => source)).toEqual([
-		pageEventBootstrapSource + pageDomConstructorBootstrapSource,
+		pageEventBootstrapSource +
+			pageDomConstructorBootstrapSource +
+			pageMediaStreamBootstrapSource,
 	]);
 	expect(test.state.evaluate.mock.calls[0][1]).toEqual({
 		filename: "agent-browser:page-bootstrap",

@@ -8,19 +8,20 @@ import {
 	pageBindingGlobalNames,
 } from "./page-bindings.js";
 import {
+	pageDomConstructorBootstrapGlobal,
+	pageDomConstructorBootstrapSource,
+} from "./page-dom-constructor-bootstrap.js";
+import {
 	pageEventBootstrapGlobal,
 	pageEventBootstrapSource,
 } from "./page-event-bootstrap.js";
+import { pageMediaStreamBootstrapSource } from "./page-media-stream-bootstrap.js";
 import type {
 	PageRuntime,
 	PageRuntimeFactory,
 	PageRuntimeOptions,
 } from "./page-runtime.js";
 import { PageScripts } from "./page-scripts.js";
-import {
-	pageDomConstructorBootstrapGlobal,
-	pageDomConstructorBootstrapSource,
-} from "./page-dom-constructor-bootstrap.js";
 
 const documents: DocumentTree[] = [];
 type Operation = (...args: readonly unknown[]) => unknown;
@@ -196,7 +197,9 @@ it("enables initialization and event setup without a fetch transport", async () 
 	};
 	const scripts = new PageScripts(test.page, factory);
 	expect(input?.initializationSource).toBe(
-		pageEventBootstrapSource + pageDomConstructorBootstrapSource,
+		pageEventBootstrapSource +
+			pageDomConstructorBootstrapSource +
+			pageMediaStreamBootstrapSource,
 	);
 	expect(input?.globals).toContain(pageDomConstructorBootstrapGlobal);
 	expect(globals?.[pageDomConstructorBootstrapGlobal]).toBeTypeOf("function");

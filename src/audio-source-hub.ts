@@ -46,6 +46,8 @@ const bufferLength = intrinsicGetter(ArrayBuffer.prototype, "byteLength");
 export class AudioSourceHub {
 	private readonly limits: Readonly<AudioSourceHubLimits>;
 	private readonly readers = new Set<Reader>();
+	private readonly holds = new Set<object>();
+	private createdHolds = 0;
 	private readonly controller = new AbortController();
 	private created = 0;
 	private sourceFrames = 0;
@@ -128,9 +130,39 @@ export class AudioSourceHub {
 			read: (signal: AbortSignal) => this.read(reader, signal),
 			close: () => {
 				this.retire(reader);
-				return this.readers.size === 0 ? this.close() : Promise.resolve();
+				return this.closeIfUnused();
 			},
 		});
+	}
+
+	/** Keeps an idle source available for a live track without buffering audio.
+	 * Explicit hub/owner shutdown still revokes every hold.
+	 */
+	retain(): { close(): Promise<void> } {
+		if (this.halted) throw this.invalid("Shared audio source has ended");
+		if (
+			this.holds.size >= this.limits.maxReaders ||
+			this.createdHolds >= this.limits.maxCreatedReaders
+		)
+			throw new AgentBrowserError(
+				"resource-limit",
+				"Shared audio owner limit exceeded",
+			);
+		const token = {};
+		this.holds.add(token);
+		this.createdHolds++;
+		return Object.freeze({
+			close: () => {
+				this.holds.delete(token);
+				return this.closeIfUnused();
+			},
+		});
+	}
+
+	private closeIfUnused(): Promise<void> {
+		return this.readers.size === 0 && this.holds.size === 0
+			? this.close()
+			: Promise.resolve();
 	}
 
 	/** Discards every reader's queue. Completion waits for upstream read settlement
@@ -144,6 +176,7 @@ export class AudioSourceHub {
 		let queuedFrames = 0;
 		for (const reader of this.readers) queuedFrames += reader.frames;
 		return Object.freeze({
+			holds: this.holds.size,
 			readers: this.readers.size,
 			createdReaders: this.created,
 			queuedFrames,
@@ -225,8 +258,7 @@ export class AudioSourceHub {
 		reader.frames = 0;
 		this.readers.delete(reader);
 		this.settle(reader, null, error);
-		if (!this.halted && this.readers.size === 0)
-			void this.close().catch(() => {});
+		if (!this.halted) void this.closeIfUnused().catch(() => {});
 	}
 
 	private hasDemand(): boolean {
@@ -311,6 +343,7 @@ export class AudioSourceHub {
 
 	private shutdown(discard: boolean): Promise<void> {
 		this.halted = true;
+		this.holds.clear();
 		for (const reader of this.readers) {
 			if (discard) {
 				reader.queue = [];

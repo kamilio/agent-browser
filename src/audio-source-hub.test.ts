@@ -24,6 +24,31 @@ function deferred<T>() {
 	return { promise, resolve, reject };
 }
 const signal = () => new AbortController().signal;
+
+it("keeps a source alive between reader sessions while its track owner holds it", async () => {
+	let frame = 0;
+	const source = {
+		read: async () => {
+			const p = packet(frame);
+			frame += 160;
+			return p;
+		},
+		close: vi.fn(),
+	};
+	const hub = new AudioSourceHub(source, limits);
+	const lifetime = hub.retain();
+	const first = hub.open();
+	await first.read(signal());
+	await first.close();
+	expect(source.close).not.toHaveBeenCalled();
+	const second = hub.open();
+	expect((await second.read(signal()))?.startFrame).toBe(160);
+	await second.close();
+	await lifetime.close();
+	await lifetime.close();
+	expect(source.close).toHaveBeenCalledOnce();
+	expect(hub.metrics().cleanupVerified).toBe(true);
+});
 async function turn() {
 	for (let i = 0; i < 12; i++) await Promise.resolve();
 }

@@ -29,8 +29,17 @@ the pending read and source cleanup to settle.
 
 `AudioSourceHub` shares an existing source among independent recording readers.
 Each `open()` starts at the next packet with its own audio buffers. A slow reader
-fails at its queue limit; closing the last reader releases the source. This is
-native audio plumbing, not device acquisition or a page `MediaStream` API.
+fails at its queue limit. Closing the last reader releases the source unless a
+`retain()` hold keeps it available for an idle live track. Explicit owner shutdown
+always releases the source.
+
+Pages with initialization support expose audio `MediaStream` and
+`MediaStreamTrack` objects. After initializing a `PageScripts` instance, its
+`mediaStreams` owner can adopt an existing audio source with `createAudioStream`
+and open recording readers by track ID with `openAudioReader`. Tracks support
+cloning, independent enable/stop controls, settings and source-ended events.
+Device acquisition, Web Audio, video, WebRTC, constraints and full EventTarget
+behavior remain incomplete.
 
 ## Development
 

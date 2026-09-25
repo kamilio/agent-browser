@@ -32,10 +32,12 @@
   Existing safeguards cover owned accounting metadata/defaults, late deferred
   materialization, bounded closure-property recursion, class-method reservations,
   sixteen positive capture slots and fresh host-prototype links after expandos.
-- Latest normal live retry with 3200a1957f completed 13 classic scripts and
-  prepared seven modules, then expired at the unchanged 120 s module deadline.
-  No controls, name fill, join or socket attempt. Last sample: 9033009 steps,
-  6940513 data units at 113.972 s. Cleanup verified zero data/sockets.
+- Latest normal live retry with supplied-audio stream support completed 13 classic
+  scripts and prepared seven modules, then expired at the unchanged 120 s module
+  deadline. HTTP 200; no controls, name fill, join or socket attempt. Last sample:
+  9053500 steps, 7092085 data units at 112.595 s. Cleanup verified zero data/sockets.
+  The maintained SDK revision 6ee9d8263b preserves the source changes from
+  pre-rebase 3200a1957f; stream support did not resolve the startup gate.
 - Fresh-process full default DOM probes still time out at 1000 ms. A warmed
   unchanged run passed all 37 checks; it does not clear the cold-start gate.
   In-memory budget observations verified zero-data cleanup in cold and warm runs.
@@ -67,8 +69,9 @@
   fed ten seconds of 48000 Hz audio to PcmCapture as exactly ten 16000 Hz chunks,
   preserving signal level and releasing all buffers. This is supplied-audio
   processing only; PcmCapture does not acquire audio. PageMedia is CSS matchMedia.
-  MediaStream, mediaDevices, Web Audio/AudioWorklet, RTCPeerConnection and a live
-  PCM producer remain unimplemented. The unchanged Automations capture worklet
+  Supplied-audio MediaStream/MediaStreamTrack support is now partial; mediaDevices,
+  Web Audio/AudioWorklet, RTCPeerConnection and a live PCM producer remain open.
+  The unchanged Automations capture worklet
   produces correct synthetic PCM, clock and stop output in an isolated SDK realm
   with supplied processor/port globals; this proves neither capture nor transfer.
   Earlier warmed 128-frame/8 ms blocks took 829–893 ms.
@@ -80,12 +83,23 @@
   paths closed the source once with no retained buffers, reads or timers.
   This is synthetic-source evidence; actual device/meeting capture remains open.
 - AudioSourceHub gives recordings independent readers over one existing source.
-  Cancellation and queue overflow retire one reader; the last reader closes the
-  source, waiting for its pending read and close acknowledgement. All 253 audio
-  tests, build, lint and strict test typecheck passed. The built SDK scheduled
+  Cancellation and queue overflow retire one reader; the last reader/idle-track
+  hold closes the source, waiting for pending reads and close acknowledgement.
+  The earlier 253 audio tests, build, lint and strict test typecheck passed. The built SDK scheduled
   source check stopped one reader after five chunks while its sibling saved all
   twenty; the source closed once with zero readers, queues, pending reads/timers.
-  This supplies shared-source ownership, not page MediaStream or real capture.
+  This supplies shared-source ownership; actual meeting capture remains open.
+- PageMediaStreams exposes supplied-audio MediaStream/MediaStreamTrack through
+  PageScripts: stable track identity, stream copies/clones, independent enabled
+  and stopped state, settings, EOF events and acknowledged source cleanup. Idle
+  track families retain sources without buffering. All 534 focused native tests
+  and the build pass. Strict media/runtime test typechecks and media lint pass;
+  the module fixture retains two existing optional-ID type errors, and the
+  runtime fixture retains an existing noDelete lint failure. The maintained SDK check
+  passed seven checks under the explicit 16 s application allowance, including
+  audio samples, clone stopping, EOF events and zero retained data/references.
+  This does not clear the default 1000 ms cold-start gate. Device acquisition,
+  Web Audio, video/WebRTC, constraints and full EventTarget behavior remain open.
 - Post-prototype tracking, two worklet blocks made 16716696 intrinsic collector
   calls, all cache hits. An in-memory dispatch experiment saved only 1.0% CPU
   and 1.8% wall time and was discarded. Instrumented counters inflated profile

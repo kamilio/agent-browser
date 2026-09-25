@@ -47,6 +47,7 @@
 	"src/pcm-resampler.test.ts",
 	"src/audio-recording.test.ts",
 	"src/audio-source-hub.test.ts",
+	"src/page-media-streams.test.ts",
 	"src/markdown-source-links-escaped.test.ts",
 	"src/page-fetch-binary.test.ts",
 	"src/document-websocket-owner.test.ts",

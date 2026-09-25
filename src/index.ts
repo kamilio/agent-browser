@@ -1,5 +1,9 @@
 export { AudioSourceHub, type AudioSourceHubLimits } from "./audio-source-hub.js";
 export {
+	PageMediaStreams,
+	type PageAudioSourceSettings,
+} from "./page-media-streams.js";
+export {
 	AudioRecording,
 	type AudioInputPacket,
 	type AudioRecordingOptions,

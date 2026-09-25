@@ -1,3 +1,4 @@
+import { documentIdentity } from "./document-identity.js";
 import { documentResourceCsp } from "./document-resource-csp.js";
 import {
 	type DocumentScriptCsp,
@@ -5,7 +6,6 @@ import {
 } from "./document-script-csp.js";
 import { existingDocumentWebSockets } from "./document-websocket-owner.js";
 import type { DocumentTree } from "./document.js";
-import { documentIdentity } from "./document-identity.js";
 import { AgentBrowserError } from "./errors.js";
 import {
 	type HtmlClassicScriptRequest,
@@ -20,6 +20,8 @@ import {
 } from "./page-bindings.js";
 import { pageDomConstructorBootstrapSource } from "./page-dom-constructor-bootstrap.js";
 import { pageEventBootstrapSource } from "./page-event-bootstrap.js";
+import { pageMediaStreamBootstrapSource } from "./page-media-stream-bootstrap.js";
+import type { PageMediaStreams } from "./page-media-streams.js";
 import type { PageNetworkModuleOptions } from "./page-network-modules.js";
 import { PageClock } from "./page-performance.js";
 import {
@@ -206,7 +208,10 @@ export class PageScripts {
 					const resource = documentResourceCsp(page.document);
 					if (resource) resource.check("worker", url, redirects);
 					else if (this.scriptPolicy?.enforced)
-						throw new AgentBrowserError("policy-denied", "Worker CSP is unavailable");
+						throw new AgentBrowserError(
+							"policy-denied",
+							"Worker CSP is unavailable",
+						);
 				},
 				...(this.scriptPolicy?.wasmCompilation === undefined
 					? {}
@@ -238,6 +243,7 @@ export class PageScripts {
 							initializationSource:
 								(eventConstructors ? pageEventBootstrapSource : "") +
 								(eventConstructors ? pageDomConstructorBootstrapSource : "") +
+								(eventConstructors ? pageMediaStreamBootstrapSource : "") +
 								(existingDocumentWebSockets(page.document)
 									? pageWebSocketBootstrapSource
 									: "") +
@@ -555,12 +561,34 @@ export class PageScripts {
 		});
 	}
 
+	get mediaStreams(): PageMediaStreams {
+		const streams = this.requireBindings().mediaStreams;
+		if (!streams)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Page media constructors are unavailable",
+			);
+		return streams;
+	}
+
 	close(): Promise<void> {
 		if (this.closing) return this.closing;
 		this.closedValue = true;
 		this.closing = Promise.resolve().then(async () => {
 			try {
-				await this.runtime?.close();
+				const results = await Promise.allSettled([
+					this.runtime?.close(),
+					this.bindings?.mediaStreams?.close(),
+				]);
+				const errors = results.flatMap((result) =>
+					result.status === "rejected" ? [result.reason] : [],
+				);
+				if (errors.length === 1) throw errors[0];
+				if (errors.length > 1)
+					throw new AggregateError(
+						errors,
+						"Page runtime and media cleanup failed",
+					);
 			} finally {
 				this.pending.clear();
 				this.prefixes.clear();
@@ -715,6 +743,9 @@ export class PageScripts {
 						animationFrames: this.bindings.animationFrames.metrics(),
 						idleCallbacks: this.bindings.idleCallbacks.metrics(),
 						media: this.bindings.media.metrics(),
+						...(this.bindings.mediaStreams
+							? { mediaStreams: this.bindings.mediaStreams.metrics() }
+							: {}),
 						scrolling: this.bindings.scrolling.metrics(),
 					}
 				: {}),
