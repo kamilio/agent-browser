@@ -24,6 +24,13 @@
   checks, lint, the maintained build and 14 built SDK checks passed. The built
   quota probe passed 16 cases; the isolated DOM probe passed 37 checks and closed
   with zero retained data. Full Zoom startup and admission remain unverified.
+- Current built SDK profiling at editor node 30001 measured 6116463 data units;
+  1000 full walks used 2.73 CPU seconds. The main costs remain graph traversal,
+  metadata lookups and recursive closure-property visits. Final pending scans
+  are a smaller cost. Next investigate closure-property traversal continuations
+  while preserving fresh reads, collector order and full reconciliation. The
+  bounded fixture stopped at its sample and closed with zero data/callbacks;
+  it did not attempt admission or prove module startup completion.
 - SafeJS 3e064c2e37 defers class-method name/length tables while reserving their
   full charge. Reflection materializes ordinary tables; late materialization,
   native double reads, aliases, metadata, depth, quotas, snapshots and GC are
