@@ -48,7 +48,9 @@
   it did not establish module startup or admission.
 - The six-module fixture preserves the real import cycle but omits earlier page
   scripts. At module node 30001 it charged 6116470 units with about 3700 deferred
-  functions. Most appended captures were already visited. The earlier full-page
+  functions. A fresh path count found 17069 scope visits and 26333 capture appends,
+  with only 403 values buffered; 511 of 617 ordinary records used projections.
+  Most appended captures were already visited. The earlier full-page
   graph had 1275 absent function tables, 260 materialized and 128 deferred;
   extending table deferral is not an established shortcut.
 - An earlier 600 s diagnostic also expired before controls/socket attempts,
@@ -65,6 +67,11 @@
   identical 6664954-unit charges. No state-cell machinery was retained.
   The sampled diagnostic later reached its 120 s lifetime deadline; no controls
   or sockets appeared, and terminal cleanup verified zero data/sockets.
+- Moving capture filtering into an isolated, detachable collector passed the
+  nested/late-append and GC probes, but was about 6% slower across four full-page
+  pairs at identical 6667553-unit charges. Discarded without source changes.
+  That corrected diagnostic stopped at its sample and verified cleanup; it did
+  not establish startup or admission.
 - Native DOM constructors and the optional host-prototype bridge are installed.
   Older isolated 37-check DOM passes excluded Window/URL/Blob/Worker/Event setup;
   later isolated checks also timed out. They do not prove current full DOM
