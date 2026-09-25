@@ -51,6 +51,12 @@
   a separate helper preserved 6666886 units across 1000 comparison walks, but
   increased aggregate CPU by 1.7% and wall time by 2.8%; discarded. Both probes
   stopped deliberately and verified zero data/sockets. No Join controls appeared.
+- V8 startup tracing found repeated walker deoptimization at regex compiled-ticket
+  reads. Moving regex accounting into a nested helper reduced walker deoptimization
+  but was inconclusive for startup. On one live graph, 1000 alternating walks
+  preserved 6667169 units; the helper used 4.9% more CPU and 2.4% more wall time,
+  so it was discarded. All three probes deliberately stopped at module node 1500
+  with no Join controls and verified zero retained data/sockets.
 - Earlier full-page profiling attributed 93% CPU to accounting. The six-module
   fixture omits prior page scripts: at node 30001 it charged 6116470 units with
   about 3700 deferred functions. One walk visited 17069 scopes and appended 26333
