@@ -1,12 +1,72 @@
 export const pageDomConstructorBootstrapGlobal = "__agentBrowserDomHasInstance";
 export const pageDomParserBootstrapGlobal = "__agentBrowserParseHtmlDocument";
 
+export const pageDomInterfaces: Readonly<
+	Record<
+		string,
+		{
+			parent?: string;
+			constants?: Readonly<Record<string, number>>;
+		}
+	>
+> = {
+	Node: {
+		constants: {
+			ELEMENT_NODE: 1,
+			TEXT_NODE: 3,
+			COMMENT_NODE: 8,
+			DOCUMENT_NODE: 9,
+			DOCUMENT_TYPE_NODE: 10,
+			DOCUMENT_FRAGMENT_NODE: 11,
+		},
+	},
+	Element: { parent: "Node" },
+	HTMLElement: { parent: "Element" },
+	HTMLFormElement: { parent: "HTMLElement" },
+	NamedNodeMap: {},
+	SVGElement: { parent: "Element" },
+	Document: { parent: "Node" },
+	DocumentFragment: { parent: "Node" },
+	DocumentType: { parent: "Node" },
+	NodeIterator: {},
+	NodeFilter: {
+		constants: {
+			FILTER_ACCEPT: 1,
+			FILTER_REJECT: 2,
+			FILTER_SKIP: 3,
+			SHOW_ALL: 4294967295,
+			SHOW_ELEMENT: 1,
+			SHOW_ATTRIBUTE: 2,
+			SHOW_TEXT: 4,
+			SHOW_CDATA_SECTION: 8,
+			SHOW_ENTITY_REFERENCE: 16,
+			SHOW_ENTITY: 32,
+			SHOW_PROCESSING_INSTRUCTION: 64,
+			SHOW_COMMENT: 128,
+			SHOW_DOCUMENT: 256,
+			SHOW_DOCUMENT_TYPE: 512,
+			SHOW_DOCUMENT_FRAGMENT: 1024,
+			SHOW_NOTATION: 2048,
+		},
+	},
+	CharacterData: { parent: "Node" },
+	Text: { parent: "CharacterData" },
+	Comment: { parent: "CharacterData" },
+};
+
 // Host-backed nodes retain their capability identity. These constructors provide
 // interface branding and selected methods; full prototype tables remain incomplete.
 export const pageDomConstructorBootstrapSource = `
 if (typeof __agentBrowserDomHasInstance === "function") {
 	const hasInstance = __agentBrowserDomHasInstance;
+	const nativeConstructor = hasInstance.createConstructor;
 	function install(name, Parent) {
+		if (typeof nativeConstructor === "function") {
+			const Interface = nativeConstructor(name);
+			Object.defineProperty(Interface, "prototype", {writable: false});
+			Object.defineProperty(globalThis, name, {value: Interface, writable: true, configurable: true});
+			return Interface;
+		}
 		const Interface = Parent === null
 			? class { constructor() { throw new TypeError("Illegal constructor"); } }
 			: class extends Parent {};
@@ -36,7 +96,7 @@ if (typeof __agentBrowserDomHasInstance === "function") {
 	install("DocumentType", Node);
 	install("NodeIterator", null);
 	const NodeFilter = install("NodeFilter", null);
-	for (const [name, value] of [["FILTER_ACCEPT",1],["FILTER_REJECT",2],["FILTER_SKIP",3],["SHOW_ALL",4294967295],["SHOW_ELEMENT",1],["SHOW_ATTRIBUTE",2],["SHOW_TEXT",4],["SHOW_CDATA_SECTION",8],["SHOW_ENTITY_REFERENCE",16],["SHOW_ENTITY",32],["SHOW_PROCESSING_INSTRUCTION",64],["SHOW_COMMENT",128],["SHOW_DOCUMENT",256],["SHOW_DOCUMENT_TYPE",512],["SHOW_DOCUMENT_FRAGMENT",1024],["SHOW_NOTATION",2048]]) {
+	if (typeof nativeConstructor !== "function") for (const [name, value] of ${JSON.stringify(Object.entries(pageDomInterfaces.NodeFilter.constants ?? {}))}) {
 		Object.defineProperty(NodeFilter, name, {value, enumerable:true});
 		Object.defineProperty(NodeFilter.prototype, name, {value, enumerable:true});
 	}
@@ -71,7 +131,7 @@ if (typeof __agentBrowserDomHasInstance === "function") {
 			Object.defineProperty(Node.prototype, name, {get: getter, enumerable:true, configurable:true});
 		}
 	}
-	for (const [name, value] of [["ELEMENT_NODE", 1], ["TEXT_NODE", 3], ["COMMENT_NODE", 8], ["DOCUMENT_NODE", 9], ["DOCUMENT_TYPE_NODE", 10], ["DOCUMENT_FRAGMENT_NODE", 11]]) {
+	if (typeof nativeConstructor !== "function") for (const [name, value] of ${JSON.stringify(Object.entries(pageDomInterfaces.Node.constants ?? {}))}) {
 		Object.defineProperty(Node, name, {value, enumerable: true});
 		Object.defineProperty(Node.prototype, name, {value, enumerable: true});
 	}

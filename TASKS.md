@@ -16,6 +16,16 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
+- Maintained SafeJS now has realm-owned native interface constructors (c2307c51ca).
+  Browser DOM interfaces use native inheritance, constants and brand checks, with
+  a fallback for older SDKs. Argument retention, ownership, revocation, quotas,
+  reentry rejection and serializable one-shot results remain enforced. Passed
+  430 focused SDK tests, lint, the maintained build and 14 built SDK checks;
+  browser build and 311 native tests passed (one skipped). An isolated actual-SDK
+  DOM fixture passed all 25 assertions with both paths: native setup used 10212
+  steps versus 13423 for the fallback. Both closed with zero retained data.
+  This fixture excludes Window/URL/Blob/Worker/Event setup and does not clear the
+  full default initialization or live Zoom gates.
 - Core data copying now uses an explicit operation stack (SafeJS bc3d0c9ebf).
   Built SDK checks on Node 22 and 24 round-trip 1000-level objects and report
   dataDepth at 1025 for deep imports/exports, replacing native stack overflows.
@@ -37,10 +47,10 @@
   Passed 73 unit tests including 12 GC checks, lint, the maintained build and
   14 built SDK checks, the layout/privacy regression under Node 22 and 24, and
   five browser/JSPI checks with zero retained data. Startup readiness is unproven.
-- Latest normal Zoom check with the fast deferred-identity SDK completed all 13 classic
+- Latest normal Zoom check with native DOM interfaces completed all 13 classic
   scripts and prepared seven modules, but expired at the 120 s module deadline
   without name/Join controls, a join attempt or socket attempts. The last progress
-  sample was 9039692 steps at 115.434 s. Cleanup retained zero data. The probe uses
+  sample was 9033228 steps at 107.845 s. Cleanup retained zero data. The probe uses
   bounded WASM/binary Worker messages and explicit 1 MiB / 30 s page-fetch limits.
   An earlier 600 s diagnostic also expired before controls or socket attempts,
   after 58334 module nodes. Execution advanced through React startup tables and
@@ -113,17 +123,14 @@
   the cost of reconciling large module scopes during small library initialization
   loops, without skipping reads or collectors.
   Longer deadlines, fixed-work diagnostics and fixture gains do not prove readiness.
-- The DOM constructor probe times out under its default 1000 ms profile with both
-  the original and identity-sharing SDK. Application-profile checks do not clear
-  this separate default-profile limit.
-  Reproduction now locates the timeout in initialization, before its 25 assertions;
-  all three attempts in one process also timed out. Bulk descriptor setup, cached
-  Window metadata and scalar metadata flags did not clear it. The isolated warmed
-  Window flag comparison reduced steps from 4975 to 3840 but gave no useful CPU
-  gain (two of four wins; 0.4% lower median); no source changes were retained.
-  Investigate native constructor installation: the maintained extension context
-  exposes createHostObject but no constructor factory. The recovered host-constructor
-  patch targets the old SDK interface and must not be applied unchanged.
+- The full DOM constructor probe still times out during initialization under its
+  default 1000 ms profile, before its 25 assertions. The latest baseline trace
+  stopped at Event prototype descriptor installation. Native DOM installation
+  passes the isolated fixture above, but the full setup still fails. An in-memory
+  bulk Event descriptor installation combined with native DOM interfaces also
+  timed out; no Event source change was retained. Reduce the remaining Window
+  and Event setup cost without increasing the allowance. Full prototype linking
+  for live host objects remains a separate capability gap.
 - Implement and verify every notetaker capability above. Automations references:
   capture-page.js (getDisplayMedia, 16000 Hz AudioWorklet), meeting-page.js
   (48000 Hz AudioContext/MediaStream microphone/playback), track-audio-page.js

@@ -3,6 +3,7 @@ import type {
 	HtmlClassicScriptRequest,
 	HtmlModuleRequest,
 } from "./html-module.js";
+import { nativeDomConstructorBindings } from "./page-native-dom-constructors.js";
 import {
 	type PageNetworkModuleOptions,
 	PageNetworkModuleRegistry,
@@ -495,7 +496,10 @@ export function extensionPageRuntime(
 							value: domExpandos,
 							enumerable: true,
 						});
-					const globals = options.setup(pageContext);
+					const globals = nativeDomConstructorBindings(
+						owner,
+						options.setup(pageContext),
+					);
 					const installed: Record<string, unknown> =
 						windowGlobal?.install(owner, globals) ?? globals;
 					if (webAssembly) {

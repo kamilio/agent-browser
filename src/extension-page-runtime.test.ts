@@ -673,6 +673,43 @@ it("opts into classic Scripts and fails closed if the SDK skips the window boots
 	expect(test.state.disposals).toBe(1);
 });
 
+it("uses optional native DOM constructors with owned parent handles and live brands", async () => {
+	const test = fixture();
+	const create = vi.fn<NonNullable<ReleasedContext["createHostConstructor"]>>(
+		() => Object.freeze({}),
+	);
+	test.state.context.createHostConstructor = create;
+	await test.scripts.evaluate("initialize");
+	const port = test.state.globals?.[pageDomConstructorBootstrapGlobal] as {
+		createConstructor(name: unknown): object;
+	};
+	expect(() => port.createConstructor("Element")).toThrow("parent interface");
+	const node = port.createConstructor("Node");
+	const element = port.createConstructor("Element");
+	expect(port.createConstructor("Node")).toBe(node);
+	expect(element).not.toBe(node);
+	expect(create).toHaveBeenCalledTimes(2);
+	expect(create.mock.calls[0][2]?.constants?.ELEMENT_NODE).toBe(1);
+	expect(create.mock.calls[1][2]?.parent).toBe(node);
+	expect(
+		create.mock.calls[0][2]?.hasInstance?.(
+			test.state.globals?.document as object,
+		),
+	).toBe(true);
+	expect(
+		create.mock.calls[1][2]?.hasInstance?.(
+			test.state.globals?.document as object,
+		),
+	).toBe(false);
+	expect(() => create.mock.calls[0][1]()).toThrow("Illegal constructor");
+	expect(() => port.createConstructor("toString")).toThrow(
+		"Unknown DOM interface",
+	);
+	expect(() => port.createConstructor({})).toThrow("Unknown DOM interface");
+	await test.scripts.close();
+	expect(() => port.createConstructor("Node")).toThrow();
+});
+
 it("counts its native window bootstrap against the configured source limit", () => {
 	const shared = fakeCore();
 	const tree = new DocumentTree("https://example.com/");
