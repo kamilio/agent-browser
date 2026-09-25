@@ -16,7 +16,14 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
-- Current SDK change: c529ce093b uses owned tracked storage for Array.prototype,
+- Current SDK change: cc5df51ba3 also tracks Symbol.prototype and BigInt.prototype.
+  These are ordinary objects, not native boxes. Regressions reproduced seven
+  and six repeated descriptor reads; both now reuse captures while preserving
+  mutations. All 216 focused tests, lint, the maintained build and 16 built
+  checks pass. Four isolated worklet realms preserve PCM, steps, data charges
+  and zero-data cleanup. Timing is mixed (1.1% less CPU, 2.2% more wall time);
+  no throughput improvement is established.
+- c529ce093b uses owned tracked storage for Array.prototype,
   removing 43 repeated descriptor reads while preserving native mutations,
   nested growth and partially rejected length shrinks. The failing regression
   now passes; 140 focused tests, lint, the maintained build and 16 built checks
@@ -41,11 +48,11 @@
   late deferred-materialization reconciliation, bounded closure-property
   recursion, class-method table reservations, sixteen positive capture slots,
   and fresh host-prototype links after expando traversal. Preserve these.
-- Latest completed normal live Zoom retry, with c529ce093b, completed all 13
+- Latest completed normal live Zoom retry, with cc5df51ba3, completed all 13
   classic scripts and prepared seven modules, then reached the unchanged 120 s
   module lifetime deadline before the import observation expired. No name/Join
-  controls, fill, join or socket attempt. Last sample: 9030997 steps and 7053553
-  units at 114.714 s. The full default DOM probe still times out at 1000 ms.
+  controls, fill, join or socket attempt. Last sample: 9027981 steps and 6939806
+  units at 105.155 s. The full default DOM probe still times out at 1000 ms.
   Cleanup verified zero data/sockets; that probe is terminal.
 - Full-page profiling on 43082cd48d attributed 93% of sampled CPU to accounting,
   almost all through post-node reconciliation: 1606 measurements and 1876 steps
@@ -97,10 +104,11 @@
   After the first block, each 128-frame/8 ms block takes 829–893 ms. A separate
   four-block profile attributes 55.8% of sampled time to data accounting.
   Before c529ce093b, two blocks triggered 16835680 calls across 560 intrinsic
-  retention groups; 16653450 hit caches. String/Number/Boolean/Symbol/BigInt
-  groups still contain untracked native boxes and rescan on each pass. Their
-  native primitive slots prevent simply wrapping them like arrays. Live worklet
-  throughput remains a separate gate.
+  retention groups; 16653450 hit caches. String/Number/Boolean groups still
+  contain untracked native boxes and rescan on each pass. Their native primitive
+  slots require separate handling before property tracking can be introduced.
+  Symbol/BigInt prototypes are now tracked. Live worklet throughput remains a
+  separate gate.
 
 ## Outstanding gates
 
