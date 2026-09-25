@@ -71,6 +71,11 @@
   Per-object visited-generation cells were also slower: median CPU rose 5.4%,
   or 12.4% with a last-lookup cache. Neither diagnostic changed source. Both kept
   exact within-graph charges and cleaned up to zero data/callbacks.
+  Uniform tagged scope records also lacked a repeatable gain. After warming both
+  visitors to V8 optimized state, tags won only one of four pairs (1.9% lower
+  median CPU); discarded without source changes. Charges stayed identical and
+  cleanup retained zero data/callbacks. Numeric loop updates already preserve
+  cached scope groups; no unnecessary invalidation was found in that path.
   Full reconciliation still runs after each awaited AST node. Investigate graph
   traversal cost without skipping these checks or fresh collector/provider reads.
 - Retained SafeJS improvements: sixteen per-walk positive capture slots, lazy
@@ -150,7 +155,7 @@
   bounded deferred-vector pooling and moving visited-object checks earlier,
   empty-symbol/null-prototype brand shortcuts with fresh or tracked prototypes,
   fast owned-property backing construction, per-object visited-generation cells
-  with or without a last-lookup cache,
+  with or without a last-lookup cache, uniform tagged scope records,
   token-cache FIFO ring and an alternate
   WASM export factory. Require new evidence before revisiting these candidates.
 - Commit completed changes with explicit owned paths. No subagents or pushes.
