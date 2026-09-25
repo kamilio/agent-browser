@@ -22,6 +22,14 @@
   Final validation: 188 targeted tests, strict test typecheck, lint, maintained
   build and 16 built checks passed. Record snapshots remain stable while foreign
   scope readers and custom iterators remain fresh. No startup speedup established.
+- SDK fix 686d60f56b protects regex compilation records from later native WeakMap
+  hooks and inherited ticket fields. Four regressions reproduced record exposure,
+  changed charges and a data-limit bypass. All 384 focused tests, strict test
+  typecheck, lint, the maintained build and 16 built checks passed. A live graph
+  comparison preserved 6675662 units across 1000 walks; protected records used
+  2.5% more aggregate CPU and 3.4% more wall time. No speedup established; retain
+  the fix for accounting integrity. The diagnostic stopped deliberately at module
+  node 1500 with no controls and verified zero retained data/sockets.
 - Prototype update f12485a557 tracks String/Number/Boolean prototypes with private
   boxed values and captured native operations. All 339 focused tests, lint, the
   maintained build and 16 built checks passed. Array (c529ce093b) and Symbol/BigInt
@@ -32,12 +40,11 @@
   Existing safeguards cover owned accounting metadata/defaults, late deferred
   materialization, bounded closure-property recursion, class-method reservations,
   sixteen positive capture slots and fresh host-prototype links after expandos.
-- Latest normal live retry with supplied-audio stream support completed 13 classic
-  scripts and prepared seven modules, then expired at the unchanged 120 s module
-  deadline. HTTP 200; no controls, name fill, join or socket attempt. Last sample:
-  9053500 steps, 7092085 data units at 112.595 s. Cleanup verified zero data/sockets.
-  The maintained SDK revision 6ee9d8263b preserves the source changes from
-  pre-rebase 3200a1957f; stream support did not resolve the startup gate.
+- Latest normal live retry with protected regex compilation records (686d60f56b)
+  completed 13 classic scripts and prepared seven modules, then expired at the
+  unchanged 120 s module deadline. HTTP 200; no controls, name fill, join or socket
+  attempt. Last sample: 9050931 steps, 7090182 data units at 112.359 s. Cleanup
+  verified zero data/sockets. The accounting fix did not resolve the startup gate.
 - Fresh-process full default DOM probes still time out at 1000 ms. A warmed
   unchanged run passed all 37 checks; it does not clear the cold-start gate.
   In-memory budget observations verified zero-data cleanup in cold and warm runs.
