@@ -79,6 +79,14 @@
   The unchanged graph charged 6729564 units. These counts direct investigation
   toward source-module accounting, but do not establish per-origin CPU cost.
   The diagnostic stopped deliberately, with no Join controls and zero data/sockets.
+- A full walk at module node 12000 had 14494 entries: 3703 deferred roots,
+  2123 closures, 979 tracked/89 untracked ordinary records and 261 arrays.
+  Shared brand-check callbacks preserved fresh prototype/proxy observations and
+  passed 485 focused tests, strict typecheck, lint and the maintained build.
+  An initial comparison saved 3% CPU, but the final built comparison preserved
+  6729517 units across 1000 walks while using 4.5% more CPU and 4.7% more wall time.
+  Discarded; source and working build restored. All diagnostics deliberately
+  stopped at node 12000 with no Join controls and zero retained data/sockets.
 - A call trace through 12000 module nodes counted 12381 accounting walks;
   368/386 sampled paths were AST-node completion and 18 were function completion.
   No sampled native-binding hotspot emerged. Omitting the final deferred-function
@@ -222,7 +230,8 @@
   object-first dispatch, alternate visited sets or combined lookup registries,
   bound URL/function readers, Window/Event metadata, bulk Event descriptors,
   scope pruning/tags, visited-generation cells, WeakSet/ownership caches, capture
-  pooling/order changes, prototype visit prechecks, property-layout/string-position
+  pooling/order changes, prototype visit prechecks, cached brand-check callbacks,
+  property-layout/string-position
   caches, deferred-function final-scan omission or WASM factories.
   Direct pending-function reads gave less than 1% full-page improvement; an
   isolated capture collector was about 6% slower. Scope pruning changes quotas.
