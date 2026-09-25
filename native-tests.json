@@ -44,6 +44,7 @@
 	"src/research-loader-limit-admission.test.ts",
 	"src/research-loader-limit-replay.test.ts",
 	"src/pcm-capture.test.ts",
+	"src/pcm-resampler.test.ts",
 	"src/markdown-source-links-escaped.test.ts",
 	"src/page-fetch-binary.test.ts",
 	"src/document-websocket-owner.test.ts",

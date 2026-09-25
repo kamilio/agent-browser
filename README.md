@@ -16,6 +16,12 @@ from string eval. This currently requires Node24 with modern JSPI explicitly
 enabled; the default Node22 runtime reports unsupported. Streaming, Table/Global
 wrappers and full Zoom/media compatibility remain incomplete.
 
+The SDK's `PcmResampler` converts supplied planar Float32 audio into bounded
+PCM16 packets, with sample-rate conversion, mono/stereo mixing and source-frame
+offsets. Its synchronous sink can feed `PcmCapture.push`. Call `reset()` when
+discarding pending audio for a pause, and finish the resampler before finishing
+the recording. Device capture, Web Audio and meeting transport remain incomplete.
+
 ## Development
 
 ```bash

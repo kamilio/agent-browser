@@ -1,3 +1,4 @@
+export { PcmResampler, type PcmResamplerOptions } from "./pcm-resampler.js";
 export {
 	PcmCapture,
 	type PcmCaptureOptions,

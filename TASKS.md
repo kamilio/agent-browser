@@ -56,7 +56,11 @@
   about 3700 deferred functions. One walk visited 17069 scopes and appended 26333
   captures, buffering only 403 values. Most captures were already visited.
   Capture-cache hits were about 96%; alternative ordering increased comparisons.
-- PcmCapture accepts supplied PCM16; PageMedia implements CSS matchMedia.
+- PcmResampler converts supplied planar Float32 audio to PCM16 with bounded
+  filtering, mono/stereo mixing and source-frame timing. Its built SDK pipeline
+  fed ten seconds of 48000 Hz audio to PcmCapture as exactly ten 16000 Hz chunks,
+  preserving signal level and releasing all buffers. This is supplied-audio
+  processing only; PcmCapture does not acquire audio. PageMedia is CSS matchMedia.
   MediaStream, mediaDevices, Web Audio/AudioWorklet, RTCPeerConnection and a live
   PCM producer remain unimplemented. The unchanged Automations capture worklet
   produces correct synthetic PCM, clock and stop output in an isolated SDK realm
