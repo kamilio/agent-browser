@@ -18,8 +18,9 @@
   /tmp/agent-browser-node24-runtime/bin/node --experimental-wasm-jspi.
 - Latest normal Zoom retry with mediaDevices: HTTP 200, 13 classic scripts and
   seven prepared modules; expired at the unchanged 120 s module deadline.
-  No controls, name fill, join or socket attempt. Last sample: 9039068 steps / 6956021 data units at
-  110.380 s; external libraries took 60.022 s. Cleanup left zero data/sockets.
+  No controls, name fill, join or socket attempt. Last sample: 9039068 steps /
+  6956021 data units at 110.380 s; external libraries took 60.022 s. Cleanup left
+  zero data/sockets.
 - Accounting remains the main measured startup cost. Retain SDK fixes for bounded
   iterative scope capture (4d1d492bc7), protected source-retention snapshots
   (3200a1957f; equivalent 6ee9d8263b), protected regex records (686d60f56b), tracked
@@ -27,6 +28,12 @@
   typechecks, lint, builds and 16 built checks passed for the recent fixes;
   no meaningful startup speedup was established. Preserve recovered contributions;
   baseline 029820ce86 is tree-identical to d3ec60d811.
+- Current live-graph profiling at module node 12000 measured 500 full walks in
+  1.866 s under sampling; costs span traversal, metadata lookups and captures.
+  A combined dynamic-source lookup preserved 6733430 units across 1000 comparison
+  walks but used 23.9% more aggregate CPU, with inconsistent batches. Discarded
+  without SDK source/build changes. Both diagnostics stopped deliberately at
+  node 12000 with no Join controls and zero retained data/sockets.
 - Full default DOM initialization still fails the 1000 ms cold-start allowance.
   A warmed 37-check pass does not clear this gate.
 - Supplied-audio support includes PCM resampling/recording, shared-source readers,
