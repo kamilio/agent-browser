@@ -61,17 +61,14 @@
   Window/Event metadata experiments did not reliably improve initialization.
   They were discarded. Scope pruning changes quota semantics; reconsider
   discarded approaches only with new evidence.
-- Direct reads from experimental pending-function state cells gave modest gains
-  in the six-module fixture, but the full-page comparison was mixed: two of four
-  pairs improved, two regressed, and aggregate CPU improved less than 1% with
-  identical 6664954-unit charges. No state-cell machinery was retained.
-  The sampled diagnostic later reached its 120 s lifetime deadline; no controls
-  or sockets appeared, and terminal cleanup verified zero data/sockets.
-- Moving capture filtering into an isolated, detachable collector passed the
-  nested/late-append and GC probes, but was about 6% slower across four full-page
-  pairs at identical 6667553-unit charges. Discarded without source changes.
-  That corrected diagnostic stopped at its sample and verified cleanup; it did
-  not establish startup or admission.
+- Direct pending-function state reads gave less than 1% aggregate full-page gain;
+  an isolated capture collector was about 6% slower despite passing GC probes.
+  Both were discarded. Corrected diagnostics verified cleanup, not admission.
+- Full-page capture-cache profiling found 21296 hits among 22190 object appends
+  (about 96%). Existing order used 110416 comparisons; reversed order would use
+  280224. Moving hits to the front or one slot forward also increased comparisons
+  and writes. No cache policy change is warranted by this trace. The sampled
+  6667468-unit graph closed with zero data/sockets; no Join controls appeared.
 - Native DOM constructors and the optional host-prototype bridge are installed.
   Older isolated 37-check DOM passes excluded Window/URL/Blob/Worker/Event setup;
   later isolated checks also timed out. They do not prove current full DOM
