@@ -16,133 +16,52 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
-- SafeJS 9e95bf1097 makes intrinsic descriptor-cache slots own fields from
-  construction. Inherited host metadata previously reduced a 1009-unit value
-  to 1 unit, and inherited setters received private cache state. All three
-  regressions failed before the fix; 95 focused tests, lint, the maintained build,
+- SafeJS d3ec60d811 gives SDK-created measurement options explicit owned defaults.
+  Inherited host flags previously reduced closure/prototype charges from 1001 or
+  1010 units to 1, bypassed held/unheld quotas, and exposed compile tickets to an
+  inherited collector. Ten regressions failed before the fix. All 111 focused
+  tests (including GC and live caller getters), lint, the maintained build,
   16 built SDK checks and four compiled quota cases pass. All three full DOM
   attempts still timed out at 1000 ms and closed with zero data.
-- SafeJS 43082cd48d gives private scope accounting records a uniform layout,
-  preserving public snapshots and fresh readers, collectors and reconciliation.
-  The full-page comparison preserved 6664737 units; four paired 300-walk samples
-  used about 3–37% less CPU. The initial smaller fixture was mixed; reversing
-  comparison roles after the build preserved 6116470 units and used about
-  0.5–16% less CPU in four pairs. Sampled gains do not establish a startup speedup.
-  All 163 focused tests (including GC), lint,
-  the maintained build and 16 built SDK checks pass. All three full DOM attempts
-  still timed out at 1000 ms and closed with zero data.
-- SafeJS 09db17fdb4 gives frozen closure metadata explicit own fields and one
-  layout. Host Object.prototype properties previously replaced private metadata,
-  reducing a 1010-unit payload to 2 units or breaking deferred initialization.
-  Four regressions failed before the fix; 107 focused tests, lint, the maintained
-  build, 16 built SDK checks and four built quota cases pass. The in-memory
-  layout comparison preserved 6116470 units and reduced sampled CPU cost 10–26%;
-  all three full DOM attempts still timed out at 1000 ms. Isolated DOM checks
-  also timed out, including both matched checks with the prior metadata code;
-  initialization remains unresolved. Every probe closed with zero data.
-  Live outcome is below.
-- SafeJS 984d2e1c28 bounds closure-property recursion: valid deep chains work on
-  cold Node 22/24 stacks; excessive chains report dataDepth. Validated 127 focused
-  tests and 16 built checks. Cost is comparable; fully iterative traversal was slower.
-- SafeJS 84b31e2875 rechecks deferred materializations caused by later readers,
-  including across nested measurements. All 16 quota regressions and 168 focused
-  checks passed. Both fixes preserve fresh readers, collectors and cleanup.
-- Full-page profiling on 43082cd48d attributes 93% of sampled CPU to accounting,
-  almost all through post-node reconciliation. A 10.09 s window used 9.99 CPU
-  seconds for 1606 measurements and 1876 steps. The warmed graph charged 6682693
-  units; 200 walks used 1.19 CPU seconds. Symbol loops, metadata/brand lookups,
-  scope collection and function-property readers remain costs. Line samples can
-  include inlined code; individual source lines are not standalone cost proofs.
-  The earlier graph profile found 1275 absent function tables, 260 materialized
-  and 128 deferred, so extending table deferral is not an established shortcut.
-  All 13 classic scripts completed and seven modules were prepared, then the
-  diagnostic deliberately aborted at its sample. No controls or socket attempts;
-  cleanup verified zero data/sockets. This does not establish normal startup.
-  Preserve fresh reads, collector order and full reconciliation.
-- An in-memory property-reader experiment replaced Reflect.apply for known SDK
-  getters and bound foreign getters once. It preserved 6116470 units, but was
-  slower in three of four paired 300-walk samples. Discarded without a runtime
-  change; the fixture stopped at its sample and closed with zero data/callbacks.
-- SafeJS 3e064c2e37 defers class-method name/length tables while reserving their
-  full charge. Reflection materializes ordinary tables; late materialization,
-  native double reads, aliases, metadata, depth, quotas, snapshots and GC are
-  covered. Matching browser graphs charged 54118 units; sampled 200-walk CPU
-  cost fell from about 68 ms eager to 59–60 ms deferred. Two warm full DOM runs
-  passed all 37 assertions at 46328 steps within the unchanged 1000 ms limit;
-  other runs timed out, so reliable full initialization remains outstanding.
-  Focused tests, lint, maintained build and 14 built SDK checks passed.
-  Follow-up 8c654edc09 preserves guest-state classification before reflection,
-  including rejection of capability-only replay; 55 focused checks passed.
-- SafeJS 8aa116e371 fixes the extra host-type lookup introduced by prototype
-  linking. The existing owned-closure regression and 28 host-prototype/replay
-  checks pass; host ownership and publisher guards remain enforced.
-- SafeJS 69576b7714 adds owned live-host prototype links. Inherited reads, setters,
-  reflection, for-in, proxy traps and borrowed array methods preserve host identity,
-  ownership, publisher guards and quotas. Prototype accounting reads links after
-  expando collectors and keeps full reconciliation, deep traversal and existing
-  Proxy read ordering. Held host-result allocations avoid recharging owned
-  prototypes; mutable primary graphs remain fully charged. Validated 384 focused
-  tests, lint, the maintained SDK build and 14 built SDK checks.
-- Browser's existing optional prototype bridge now activates with that SDK.
-  The expanded actual-SDK DOM fixture passed 37 assertions: constructor brands,
-  prototype identity, captured methods, overrides, late nodes and cloned nodes.
-  It used 11669 steps and closed with zero retained data. Window/URL/Blob/Worker
-  and Event setup were excluded from that diagnostic. Browser build, lint and
-  247 selected native tests passed. That isolated fixture does not prove full
-  default initialization; newer full-run comparisons are summarized above.
-- Native DOM interface constructors are installed through SafeJS c2307c51ca and
-  browser 5bf1dfc, with fallback for older SDKs. Construction retains ownership,
-  revocation, argument retention, reentry and serializable-result restrictions.
-- Latest normal live Zoom retry with 43082cd48d completed all 13 classic scripts
-  and prepared seven modules, then reached the unchanged 120 s deadline.
-  The import observation also expired. Name/Join controls never appeared; no name
-  fill, join or socket attempt occurred. The last sample was 9008567 steps and
-  6918712 data units at 113.049 s. Cleanup verified zero data and sockets; the
-  probe is terminal. The accounting optimization did not clear live module startup.
-- An earlier 600 s diagnostic also expired before controls or socket attempts,
-  after 58334 module nodes, at DOMPurify allowlist construction in editor-core.
+- The option-layout comparison preserved 6116470 units using the same walker,
+  but timing was mixed. Do not claim a startup speedup. Caller-owned option
+  getters and inherited settings remain live; only SDK-created defaults changed.
+- Existing safeguards include owned scope/closure/descriptor-cache metadata,
+  late deferred-materialization reconciliation, bounded closure-property
+  recursion, class-method table reservations, sixteen positive capture slots,
+  and fresh host-prototype links after expando traversal. Preserve these.
+- Latest completed normal live Zoom retry, with d3ec60d811, completed all 13
+  classic scripts and prepared seven modules, then reached the unchanged 120 s
+  deadline. Import observation also expired. No name/Join controls, fill, join
+  or socket attempt. Last sample: 9021496 steps and 6748982 units at 112.884 s.
+  Cleanup verified zero data/sockets; that probe is terminal.
+- Full-page profiling on 43082cd48d attributed 93% of sampled CPU to accounting,
+  almost all through post-node reconciliation: 1606 measurements and 1876 steps
+  took 10.09 s wall/9.99 s CPU. The warmed graph charged 6682693 units; 200 walks
+  used 1.19 CPU seconds. Symbol loops, metadata/brand lookups, scope collection
+  and function-property readers remain costs. Inlined code can affect line
+  attribution. The diagnostic deliberately stopped at its sample and cleaned up;
+  it did not establish module startup or admission.
+- The six-module fixture preserves the real import cycle but omits earlier page
+  scripts. At module node 30001 it charged 6116470 units with about 3700 deferred
+  functions. Most appended captures were already visited. The earlier full-page
+  graph had 1275 absent function tables, 260 materialized and 128 deferred;
+  extending table deferral is not an established shortcut.
+- An earlier 600 s diagnostic also expired before controls/socket attempts,
+  after 58334 module nodes at DOMPurify allowlist construction in editor-core.
   Do not repeat that unchanged extended run or increase its deadline.
-- Full graph reconciliation remains the main unresolved startup cost. A bounded
-  six-module fixture preserves the real import cycle. At module node 30001 the
-  current graph charges 6116470 units across 7650 entries, including 3699 deferred
-  functions. Collectors append 26333 times; only 403 values need buffering, so
-  the existing positive-membership cache already removes most duplicate work.
-  Comparing nodes 6004 and 30001 shows materialized closures growing from 921
-  to 1795 and closure collectors from 650 to 1521, while deferred functions stay
-  near 3700. Of the 874 added closures, 592 are editor-core method functions;
-  declarations add only 45. Full-page profiling above also includes earlier-script
-  functions missing here. Preserve identity, homeObject, private fields and fresh
-  collector reads.
-  JIT tracing observed at least 46 walker deoptimizations. Splitting cold cases
-  or object dispatch gave no useful startup gain; disabling Maglev also failed
-  all three full DOM attempts at the unchanged 1000 ms limit. These experiments
-  remain in memory only; no runtime changes or flags were retained.
-- Native URL getter/method experiment was discarded. Explicit private receiver
-  binding preserved ordinary URL reflection, freezing, subclasses and quotas in
-  focused tests and an actual-SDK probe. Warm URL read loops used less CPU, but
-  URL initialization was slower and both modes timed out in all three full DOM
-  attempts at the unchanged 1000 ms limit. No new SDK API or browser runtime
-  change remains; all six full probes cleaned up to zero retained data. This
-  does not justify another unchanged live Zoom retry. Continue with the large
-  module graph cost rather than URL getter dispatch.
-- Combining private scope/closure lookup storage produced no reliable gain.
-  A fresh Set per walk was about 21% slower than the existing weak registry on
-  the same 6048518-unit graph. Both experiments were discarded without runtime
-  source changes. Earlier object-first and property-storage-cache comparisons
-  improved median CPU about 1% or less; Window metadata snapshots also failed
-  to clear full initialization. Scope pruning would change quota semantics.
-  All probes are terminal and closed with zero retained data; no reports or
-  profiles were written to disk.
-- Retained accounting improvements include private ownership queries, fast
-  deferred-function records, sixteen positive capture slots, explicit traversal
-  continuations and shared deferred-function charges. Numeric compiler-token
-  reads reduced login-module parsing CPU about 16% with identical results.
-  These focused gains do not prove complete startup readiness.
-- Core copying uses an explicit stack (SafeJS bc3d0c9ebf): built Node 22/24 checks
-  round-trip 1000-level objects and report dataDepth at 1025. Deep realm bridges
-  and asynchronous structured cloning remain separate acceptance gates.
-- Window load handlers preserve order, Window receivers, guest identity and
-  reference cleanup. Offline actual-SDK check: scripts/check-window-load.ts.
+- Visitor splits, object-first dispatch, alternate visited sets, combined private
+  lookup storage, bound URL/function readers and Window/Event metadata experiments
+  did not reliably improve initialization. They were discarded. Scope pruning
+  changes quota semantics; reconsider discarded approaches only with new evidence.
+- Native DOM constructors and the optional host-prototype bridge are installed.
+  Older isolated 37-check DOM passes excluded Window/URL/Blob/Worker/Event setup;
+  later isolated checks also timed out. They do not prove current full DOM
+  compatibility. Latest full-default failures are recorded above.
+- Core copying uses an explicit stack: built Node 22/24 checks round-trip
+  1000-level objects and report dataDepth at 1025. Deep realm bridges and async
+  structured cloning remain separate gates. Window load handlers preserve order,
+  receivers, identity and cleanup; offline SDK check: scripts/check-window-load.ts.
 - Worker sockets cover quotas, connect-src, Blob policy, ordering and termination
   in native, SDK and loopback checks. Actual Zoom socket exchange is unverified.
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
