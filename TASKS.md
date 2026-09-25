@@ -16,6 +16,15 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
+- SafeJS 984d2e1c28 bounds closure-property recursion. Fresh Node 22/24 processes
+  previously threw native RangeError on valid 512-function chains and excessive
+  chains; valid chains now measure correctly and excessive ones report dataDepth.
+  Shallow properties retain bounded recursion; deeper properties use continuations
+  with fresh collectors and cleanup. All 127 focused tests, lint, the maintained
+  build and 16 built SDK checks passed; the isolated DOM probe passed 37 checks
+  and closed with zero data. The editor graph still charges 6116470 units. Paired
+  200-walk CPU samples were 466–519 ms versus 449–571 ms before the fix; no startup
+  speedup is established. The fully iterative variant was slower and discarded.
 - SafeJS 84b31e2875 fixes a quota gap found during startup research: a later
   pending reader could materialize an already-checked function, arguments object
   or method table without charging its new data. Successful materialization now
@@ -27,7 +36,8 @@
 - Current built SDK profiling at editor node 30001 measured 6116463 data units;
   1000 full walks used 2.73 CPU seconds. The main costs remain graph traversal,
   metadata lookups and recursive closure-property visits. Final pending scans
-  are a smaller cost. Next investigate closure-property traversal continuations
+  are a smaller cost. Bounding closure-property recursion fixed cold-stack
+  failures without clearing startup; investigate remaining metadata lookup cost
   while preserving fresh reads, collector order and full reconciliation. The
   bounded fixture stopped at its sample and closed with zero data/callbacks;
   it did not attempt admission or prove module startup completion.
