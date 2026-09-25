@@ -51,6 +51,12 @@
   tagged scopes after 1028 completed calls, not a retained scope per completed
   call; untagged scopes and other lifetimes remain outside that check. Intentional
   diagnostic stops verified cleanup, not module completion or meeting readiness.
+- Updated same-graph CPU profiling still places most cost in the main visitor.
+  Bounded deferred-vector reuse and an earlier visited-object guard each won only
+  two of four alternating pairs; median CPU was respectively 0.4% and 3.6% worse.
+  Both were discarded without source changes. Checks kept identical charges and
+  verified cleanup. Investigate owned backing prototype distribution before
+  considering cheaper brand queries; inherited proxy observations must remain live.
 - Retained SafeJS improvements: sixteen per-walk positive capture slots, lazy
   private-token coordinates, numeric compiler-token reads, iterative else-if
   parsing with the existing 2048-level limit, and owned constructor prototypes.
@@ -125,6 +131,7 @@
   declaration deferral, direct owned getter reads, position/line and balanced-scan
   caches, dense numeric visited markers, fresh per-walk Set/WeakSet registries,
   a combined private accounting metadata/visited registry,
+  bounded deferred-vector pooling and moving visited-object checks earlier,
   token-cache FIFO ring and an alternate
   WASM export factory. Require new evidence before revisiting these candidates.
 - Commit completed changes with explicit owned paths. No subagents or pushes.
