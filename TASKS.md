@@ -16,29 +16,29 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
-- SafeJS 984d2e1c28 bounds closure-property recursion. Fresh Node 22/24 processes
-  previously threw native RangeError on valid 512-function chains and excessive
-  chains; valid chains now measure correctly and excessive ones report dataDepth.
-  Shallow properties retain bounded recursion; deeper properties use continuations
-  with fresh collectors and cleanup. All 127 focused tests, lint, the maintained
-  build and 16 built SDK checks passed; the isolated DOM probe passed 37 checks
-  and closed with zero data. The editor graph still charges 6116470 units. Paired
-  200-walk CPU samples were 466–519 ms versus 449–571 ms before the fix; no startup
-  speedup is established. The fully iterative variant was slower and discarded.
-- SafeJS 84b31e2875 fixes a quota gap found during startup research: a later
-  pending reader could materialize an already-checked function, arguments object
-  or method table without charging its new data. Successful materialization now
-  triggers another reconciliation pass; nested walks cannot consume the signal.
-  All 16 new cases failed before the fix and pass after it; 168 distinct focused
-  checks, lint, the maintained build and 14 built SDK checks passed. The built
-  quota probe passed 16 cases; the isolated DOM probe passed 37 checks and closed
-  with zero retained data. Full Zoom startup and admission remain unverified.
+- SafeJS 09db17fdb4 gives frozen closure metadata explicit own fields and one
+  layout. Host Object.prototype properties previously replaced private metadata,
+  reducing a 1010-unit payload to 2 units or breaking deferred initialization.
+  Four regressions failed before the fix; 107 focused tests, lint, the maintained
+  build, 16 built SDK checks and four built quota cases pass. The in-memory
+  layout comparison preserved 6116470 units and reduced sampled CPU cost 10–26%;
+  all three full DOM attempts still timed out at 1000 ms. Isolated DOM checks
+  also timed out, including both matched checks with the prior metadata code;
+  initialization remains unresolved. Every probe closed with zero data.
+  Live outcome is below.
+- SafeJS 984d2e1c28 bounds closure-property recursion: valid deep chains work on
+  cold Node 22/24 stacks; excessive chains report dataDepth. Validated 127 focused
+  tests and 16 built checks. Cost is comparable; fully iterative traversal was slower.
+- SafeJS 84b31e2875 rechecks deferred materializations caused by later readers,
+  including across nested measurements. All 16 quota regressions and 168 focused
+  checks passed. Both fixes preserve fresh readers, collectors and cleanup.
 - Current built SDK profiling at editor node 30001 measured 6116463 data units;
   1000 full walks used 2.73 CPU seconds. The main costs remain graph traversal,
   metadata lookups and recursive closure-property visits. Final pending scans
   are a smaller cost. Bounding closure-property recursion fixed cold-stack
-  failures without clearing startup; investigate remaining metadata lookup cost
-  while preserving fresh reads, collector order and full reconciliation. The
+  failures without clearing startup. Next profile the full live page graph after
+  classic-script initialization: the smaller fixture omits those retained roots.
+  Preserve fresh reads, collector order and full reconciliation. The
   bounded fixture stopped at its sample and closed with zero data/callbacks;
   it did not attempt admission or prove module startup completion.
 - SafeJS 3e064c2e37 defers class-method name/length tables while reserving their
@@ -71,12 +71,12 @@
 - Native DOM interface constructors are installed through SafeJS c2307c51ca and
   browser 5bf1dfc, with fallback for older SDKs. Construction retains ownership,
   revocation, argument retention, reentry and serializable-result restrictions.
-- Latest normal live Zoom retry with deferred method tables completed all 13 classic
-  scripts and prepared seven modules, then reached the 120 s module deadline.
-  Name/Join controls never appeared; no name fill, join or socket attempt occurred.
-  The last sample was 9008266 steps at 97.248 s of import observation. Cleanup
-  retained zero data and sockets; the probe is terminal. The new optimization
-  did not clear Zoom's module-startup bottleneck.
+- Latest normal live Zoom retry with 09db17fdb4 recorded 12 successful scripts
+  out of 13 and prepared seven modules, then reached the unchanged 120 s deadline.
+  The import observation also expired. Name/Join controls never appeared; no name
+  fill, join or socket attempt occurred. The last sample was 9006120 steps and
+  7043518 data units at 114.025 s. Cleanup verified zero data and sockets; the
+  probe is terminal. The fixture improvement did not clear live module startup.
 - An earlier 600 s diagnostic also expired before controls or socket attempts,
   after 58334 module nodes, at DOMPurify allowlist construction in editor-core.
   Do not repeat that unchanged extended run or increase its deadline.
@@ -88,8 +88,8 @@
   Comparing nodes 6004 and 30001 shows materialized closures growing from 921
   to 1795 and closure collectors from 650 to 1521, while deferred functions stay
   near 3700. Of the 874 added closures, 592 are editor-core method functions;
-  declarations add only 45. Next investigate method creation/retained state,
-  preserving identity, homeObject, private fields and fresh collector reads.
+  declarations add only 45. Compare this with the full live page graph, preserving
+  identity, homeObject, private fields and fresh collector reads.
   JIT tracing observed at least 46 walker deoptimizations. Splitting cold cases
   or object dispatch gave no useful startup gain; disabling Maglev also failed
   all three full DOM attempts at the unchanged 1000 ms limit. These experiments
