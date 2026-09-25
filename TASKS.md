@@ -82,6 +82,15 @@
 - PcmCapture accepts supplied PCM16 only; PageMedia implements CSS matchMedia.
   Actual media capture, WebRTC, Web Audio/AudioWorklet and a live PCM producer
   remain unimplemented.
+- The unchanged Automations capture-worklet.js produces correct participant-only
+  and mixed PCM in an isolated maintained-SDK realm: all 1280 samples, the 80 ms
+  clock and stop output verified; cleanup leaves zero tracked data. The probe
+  supplies processor/port globals and synthetic input, not media or transfer.
+  After the first block, each 128-frame/8 ms block takes 829–893 ms. A separate
+  four-block profile attributes 55.8% of sampled time to data accounting.
+  Two blocks trigger 16835680 calls across 560 intrinsic-retention groups;
+  16653450 hit caches. Array/String/Number/Boolean/Symbol/BigInt groups remain
+  untracked and rescan on each pass. Live worklet throughput is a separate gate.
 
 ## Outstanding gates
 
@@ -96,6 +105,10 @@
   capture-page.js (getDisplayMedia, 16000 Hz AudioWorklet), meeting-page.js
   (48000 Hz AudioContext/MediaStream microphone/playback), track-audio-page.js
   (incoming WebRTC). Native support needs actual media sources and transport.
+- Address recurring intrinsic-retention collection and worklet execution cost
+  before treating AudioWorklet bindings as a viable live capture path. Preserve
+  fresh untracked observations, collection order and full quota reconciliation;
+  the PCM math probe does not establish scheduling, transfer or live throughput.
 - Verify complete network Worker startup, its original WASM initialization
   callback, download/initialization protocol and actual Zoom socket exchange.
   Extracted glue initializes a 20 MiB heap; the full Worker run still expired
