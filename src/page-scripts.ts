@@ -20,6 +20,11 @@ import {
 } from "./page-bindings.js";
 import { pageDomConstructorBootstrapSource } from "./page-dom-constructor-bootstrap.js";
 import { pageEventBootstrapSource } from "./page-event-bootstrap.js";
+import { pageMediaDevicesBootstrapSource } from "./page-media-devices-bootstrap.js";
+import {
+	type PageMediaDevices,
+	supportsPageMediaDevices,
+} from "./page-media-devices.js";
 import { pageMediaStreamBootstrapSource } from "./page-media-stream-bootstrap.js";
 import type { PageMediaStreams } from "./page-media-streams.js";
 import type { PageNetworkModuleOptions } from "./page-network-modules.js";
@@ -245,7 +250,11 @@ export class PageScripts {
 								(eventConstructors ? pageEventBootstrapSource : "") +
 								(eventConstructors ? pageDomConstructorBootstrapSource : "") +
 								(eventConstructors
-									? pageMediaStreamBootstrapSource + pageWebAudioBootstrapSource
+									? pageMediaStreamBootstrapSource +
+										pageWebAudioBootstrapSource +
+										(supportsPageMediaDevices(page.document.url)
+											? pageMediaDevicesBootstrapSource
+											: "")
 									: "") +
 								(existingDocumentWebSockets(page.document)
 									? pageWebSocketBootstrapSource
@@ -564,6 +573,16 @@ export class PageScripts {
 		});
 	}
 
+	get mediaDevices(): PageMediaDevices {
+		const devices = this.requireBindings().mediaDevices;
+		if (!devices)
+			throw new AgentBrowserError(
+				"unsupported",
+				"Page media devices are unavailable",
+			);
+		return devices;
+	}
+
 	get mediaStreams(): PageMediaStreams {
 		const streams = this.requireBindings().mediaStreams;
 		if (!streams)
@@ -581,6 +600,7 @@ export class PageScripts {
 			try {
 				const results = await Promise.allSettled([
 					this.runtime?.close(),
+					this.bindings?.mediaDevices?.close(),
 					this.bindings?.mediaStreams?.close(),
 					this.bindings?.webAudio?.close(),
 				]);
@@ -748,6 +768,7 @@ export class PageScripts {
 						idleCallbacks: this.bindings.idleCallbacks.metrics(),
 						media: this.bindings.media.metrics(),
 						webAudio: this.bindings.webAudio?.metrics(),
+						mediaDevices: this.bindings.mediaDevices?.metrics(),
 						...(this.bindings.mediaStreams
 							? { mediaStreams: this.bindings.mediaStreams.metrics() }
 							: {}),

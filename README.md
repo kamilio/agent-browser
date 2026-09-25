@@ -38,8 +38,36 @@ Pages with initialization support expose audio `MediaStream` and
 `mediaStreams` owner can adopt an existing audio source with `createAudioStream`
 and open recording readers by track ID with `openAudioReader`. Tracks support
 cloning, independent enable/stop controls, settings and source-ended events.
-Device acquisition, Web Audio, video, WebRTC, constraints and full EventTarget
-behavior remain incomplete.
+Video, WebRTC, full constraints and full EventTarget behavior remain incomplete.
+
+HTTPS and loopback HTTP pages also expose a partial `navigator.mediaDevices`.
+After page initialization, `page.mediaDevices.registerAudioInput(...)` grants that
+page access to an explicitly supplied input:
+
+```ts
+const registration = page.mediaDevices.registerAudioInput({
+  deviceId: "supplied-microphone", groupId: "supplied-audio", label: "Audio input",
+  sampleRate: 48000, channels: 1,
+  open: async (signal) => openSuppliedAudioSource(signal),
+});
+```
+
+The factory returns an `AudioRecordingSource` and must settle when its signal is
+aborted. `getUserMedia` opens a source for each successful audio request, and
+`enumerateDevices` lists registered inputs. Basic exact/ideal device and group IDs,
+sample rates and channel counts are supported, including numeric min/max bounds.
+Track settings and clones preserve device identity. Unconfigured audio and video
+requests fail with `NotFoundError`; unsatisfied required constraints reject with
+`OverconstrainedError`. Advanced constraint sets, `devicechange`, display capture,
+physical-device discovery and full MediaDeviceInfo/EventTarget facades remain
+unsupported. Registration does not automatically access a physical microphone.
+
+There are at most 16 registered inputs and eight pending acquisitions per page.
+Opening and attaching a source share a 10 s deadline. Timed-out factories continue
+to occupy their slot until they settle; late sources are closed. Page shutdown
+waits for source cleanup acknowledgement. `registration.unregister()` removes the
+input and cancels pending acquisitions; already acquired tracks keep their source
+until stopped or the page closes. Existing stream and source lifetime limits apply.
 
 Page `AudioContext` supports sine oscillators, gain, step parameter scheduling,
 `createBuffer`, `createBufferSource`, and `createMediaStreamDestination()` for the

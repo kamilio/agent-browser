@@ -16,10 +16,10 @@
 
 - Reuse /home/kjopek/project/poe-code/packages/safe-js and its working build with
   /tmp/agent-browser-node24-runtime/bin/node --experimental-wasm-jspi.
-- Latest normal Zoom retry: HTTP 200, 13 classic scripts and seven prepared
-  modules; expired at the unchanged 120 s module deadline. No controls, name fill,
-  join or socket attempt. Last sample: 9049639 steps / 6970494 data units at
-  111.821 s; external libraries took 47.189 s. Cleanup left zero data/sockets.
+- Latest normal Zoom retry with mediaDevices: HTTP 200, 13 classic scripts and
+  seven prepared modules; expired at the unchanged 120 s module deadline.
+  No controls, name fill, join or socket attempt. Last sample: 9039068 steps / 6956021 data units at
+  110.380 s; external libraries took 60.022 s. Cleanup left zero data/sockets.
 - Accounting remains the main measured startup cost. Retain SDK fixes for bounded
   iterative scope capture (4d1d492bc7), protected source-retention snapshots
   (3200a1957f; equivalent 6ee9d8263b), protected regex records (686d60f56b), tracked
@@ -37,10 +37,15 @@
   allowance with zero retained data/references/buffers/nodes/timers after close.
   These checks establish neither device/meeting capture nor default cold startup.
   Audio limits and delayed-reader behavior are documented in README.md.
-- Next media step: implement navigator.mediaDevices backed by explicitly registered
-  audio sources and exercise the unchanged Automations microphone wrapper.
-  Device acquisition, AudioWorklet scheduling/transfer, compressed decoding,
-  video/WebRTC and actual meeting transport remain open.
+- navigator.mediaDevices now acquires explicitly registered audio sources with
+  bounded requests, basic constraints and acknowledged cancellation. Native audio/
+  page validation passed 429 tests (one GC-dependent test skipped). Maintained SDK
+  probes verified supplied samples, the unchanged Automations microphone wrapper,
+  independently stopped virtual streams and cleanup of late acquisitions under
+  the same 16 s allowance, with zero retained data/references/timers after close.
+  Hardware/display capture, devicechange, advanced constraints, AudioWorklet
+  scheduling/transfer, decoding, video/WebRTC and actual meeting transport remain
+  open. Resume startup work; offline media support does not clear admission.
 - Existing validation limitations: the module fixture has two optional-ID type
   errors; the runtime fixture has a noDelete lint failure. Built Node 22/24 copying
   checks round-trip 1000-level objects and report dataDepth at 1025. Offline Window

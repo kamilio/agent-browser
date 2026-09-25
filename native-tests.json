@@ -50,6 +50,7 @@
 	"src/audio-graph.test.ts",
 	"src/page-web-audio.test.ts",
 	"src/page-media-streams.test.ts",
+	"src/page-media-devices.test.ts",
 	"src/markdown-source-links-escaped.test.ts",
 	"src/page-fetch-binary.test.ts",
 	"src/document-websocket-owner.test.ts",

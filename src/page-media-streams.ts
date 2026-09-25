@@ -14,6 +14,8 @@ export interface PageAudioSourceSettings {
 	sampleRate: number;
 	channels: 1 | 2;
 	label?: string;
+	deviceId?: string;
+	groupId?: string;
 }
 interface Target {
 	id: string;
@@ -233,6 +235,11 @@ export class PageMediaStreams {
 			settings.sampleRate < 8000 ||
 			settings.sampleRate > 96000 ||
 			(settings.channels !== 1 && settings.channels !== 2) ||
+			[settings.deviceId, settings.groupId].some(
+				(value) =>
+					value !== undefined &&
+					(typeof value !== "string" || value.length > 256),
+			) ||
 			(settings.label !== undefined &&
 				(typeof settings.label !== "string" || settings.label.length > 256))
 		)
@@ -242,6 +249,10 @@ export class PageMediaStreams {
 			sampleRate: settings.sampleRate,
 			channels: settings.channels,
 			label: settings.label ?? "",
+			...(settings.deviceId !== undefined
+				? { deviceId: settings.deviceId }
+				: {}),
+			...(settings.groupId !== undefined ? { groupId: settings.groupId } : {}),
 		});
 		let sourceEnded = false;
 		const hub = new AudioSourceHub(
@@ -453,6 +464,12 @@ export class PageMediaStreams {
 					settings: () => {
 						this.ensureOpen();
 						return {
+							...(settings.deviceId !== undefined
+								? { deviceId: settings.deviceId }
+								: {}),
+							...(settings.groupId !== undefined
+								? { groupId: settings.groupId }
+								: {}),
 							sampleRate: settings.sampleRate,
 							channelCount: settings.channels,
 						};
@@ -460,6 +477,12 @@ export class PageMediaStreams {
 					capabilities: () => {
 						this.ensureOpen();
 						return {
+							...(settings.deviceId !== undefined
+								? { deviceId: settings.deviceId }
+								: {}),
+							...(settings.groupId !== undefined
+								? { groupId: settings.groupId }
+								: {}),
 							sampleRate: {
 								min: settings.sampleRate,
 								max: settings.sampleRate,

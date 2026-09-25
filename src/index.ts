@@ -1,3 +1,4 @@
+export { PageMediaDevices, type PageAudioInput } from "./page-media-devices.js";
 export { AudioSourceHub, type AudioSourceHubLimits } from "./audio-source-hub.js";
 export {
 	PageMediaStreams,
