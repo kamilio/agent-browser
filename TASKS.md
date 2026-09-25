@@ -46,6 +46,13 @@
   visitor comparison preserved 6116435-unit charges but improved median CPU only
   about 1%; discarded without source changes. Scope pruning would change quota
   semantics and was not implemented. Collector/provider reads must remain fresh.
+- New CPU samples still show work spread through the accounting visitor. A
+  one-measurement property-storage cache hit 14439/15933 lookups but improved
+  median CPU less than 1%; discarded. Capturing Window metadata in Sets reduced
+  Window+DOM setup from 38835 to 38065 steps, with inconsistent CPU gains.
+  That comparison excluded Event setup; full initialization still timed out.
+  Neither experiment changed runtime source. All probes are terminal and closed
+  with zero retained data; no reports or profiles were written to disk.
 - Retained accounting improvements include private ownership queries, fast
   deferred-function records, sixteen positive capture slots, explicit traversal
   continuations and shared deferred-function charges. Numeric compiler-token
