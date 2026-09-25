@@ -18,7 +18,13 @@
   deadlines. Timeout/cancellation destroys the page and pending jobs. All 15 Rust
   tests, rustfmt and Clippy with warnings denied passed.
 - TypeScript source, tests and reusable checks are preserved before the Rust port
-  in commit 8de14cc. Typechecking passed; full native-suite qualification is pending.
+  in commit 8de14cc. Typechecking passed. The complete 1126-file native run finished:
+  1093 files passed, 33 failed; 56660 tests passed, 104 failed, one skipped.
+  Failures include older replay, capability, module, CSP, passkey and layout
+  expectations plus two suites that failed to load. The archived implementation
+  is not fully passing. Lint on its 118 snapshot TypeScript files also reported
+  86 existing import-order, formatting and style errors; preserve this distinction
+  when using the old tests as porting references.
 - Rust is not yet connected to browser commands or DOM. Modules, timers, host
   objects, unhandled rejection events, networking, workers, WASM and media are
   unimplemented. Engine memory limits do not charge Rust-owned browser objects;
