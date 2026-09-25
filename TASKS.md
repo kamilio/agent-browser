@@ -16,6 +16,10 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
+- Current source: 029820ce86, tree-identical to d3ec60d811. Seventeen completed
+  SDK commits were recovered after the shared checkout's rebase omitted them;
+  prior local patches and unrelated work remain preserved. All 195 restored and
+  adjacent regression tests and 16 checks against the reused SDK build pass.
 - SafeJS d3ec60d811 gives SDK-created measurement options explicit owned defaults.
   Inherited host flags previously reduced closure/prototype charges from 1001 or
   1010 units to 1, bypassed held/unheld quotas, and exposed compile tickets to an
@@ -53,8 +57,8 @@
 - Visitor splits (including symbol accounting), object-first dispatch, alternate
   visited sets, combined private lookup storage, bound URL/function readers and
   Window/Event metadata experiments did not reliably improve initialization.
-  They were discarded. Scope pruning
-  changes quota semantics; reconsider discarded approaches only with new evidence.
+  They were discarded. Scope pruning changes quota semantics; reconsider
+  discarded approaches only with new evidence.
 - Direct reads from experimental pending-function state cells gave modest gains
   in the six-module fixture, but the full-page comparison was mixed: two of four
   pairs improved, two regressed, and aggregate CPU improved less than 1% with
