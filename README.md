@@ -27,6 +27,11 @@ and recorder. It supports an owner abort signal and pause controls; `stop()` flu
 accepted audio, while `close()` discards pending audio. Completion waits for both
 the pending read and source cleanup to settle.
 
+`AudioSourceHub` shares an existing source among independent recording readers.
+Each `open()` starts at the next packet with its own audio buffers. A slow reader
+fails at its queue limit; closing the last reader releases the source. This is
+native audio plumbing, not device acquisition or a page `MediaStream` API.
+
 ## Development
 
 ```bash

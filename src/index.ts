@@ -1,3 +1,4 @@
+export { AudioSourceHub, type AudioSourceHubLimits } from "./audio-source-hub.js";
 export {
 	AudioRecording,
 	type AudioInputPacket,

@@ -79,6 +79,13 @@
   converted 4800 frames at 48000 Hz into 1600 frames at 16000 Hz; normal and abort
   paths closed the source once with no retained buffers, reads or timers.
   This is synthetic-source evidence; actual device/meeting capture remains open.
+- AudioSourceHub gives recordings independent readers over one existing source.
+  Cancellation and queue overflow retire one reader; the last reader closes the
+  source, waiting for its pending read and close acknowledgement. All 253 audio
+  tests, build, lint and strict test typecheck passed. The built SDK scheduled
+  source check stopped one reader after five chunks while its sibling saved all
+  twenty; the source closed once with zero readers, queues, pending reads/timers.
+  This supplies shared-source ownership, not page MediaStream or real capture.
 - Post-prototype tracking, two worklet blocks made 16716696 intrinsic collector
   calls, all cache hits. An in-memory dispatch experiment saved only 1.0% CPU
   and 1.8% wall time and was discarded. Instrumented counters inflated profile
