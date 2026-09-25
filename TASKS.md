@@ -16,7 +16,13 @@
 
 - SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working build and
   /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
-- Latest SDK change f12485a557 tracks String/Number/Boolean prototypes with private
+- SDK fix 3200a1957f protects source-retention snapshots from native flatMap,
+  array-species and Map iterator hooks. Five regressions reproduced private record
+  exposure and a 20000-unit payload bypassing a 10000-unit limit (held/unheld).
+  Final validation: 188 targeted tests, strict test typecheck, lint, maintained
+  build and 16 built checks passed. Record snapshots remain stable while foreign
+  scope readers and custom iterators remain fresh. No startup speedup established.
+- Prototype update f12485a557 tracks String/Number/Boolean prototypes with private
   boxed values and captured native operations. All 339 focused tests, lint, the
   maintained build and 16 built checks passed. Array (c529ce093b) and Symbol/BigInt
   (cc5df51ba3) prototypes are also tracked. An earlier boxed-prototype experiment
@@ -26,10 +32,10 @@
   Existing safeguards cover owned accounting metadata/defaults, late deferred
   materialization, bounded closure-property recursion, class-method reservations,
   sixteen positive capture slots and fresh host-prototype links after expandos.
-- Latest normal live retry with f12485a557 completed 13 classic scripts and
+- Latest normal live retry with 3200a1957f completed 13 classic scripts and
   prepared seven modules, then expired at the unchanged 120 s module deadline.
-  No controls, name fill, join or socket attempt. Last sample: 9028713 steps,
-  7052506 data units at 114.073 s. Cleanup verified zero data/sockets.
+  No controls, name fill, join or socket attempt. Last sample: 9033009 steps,
+  6940513 data units at 113.972 s. Cleanup verified zero data/sockets.
 - Fresh-process full default DOM probes still time out at 1000 ms. A warmed
   unchanged run passed all 37 checks; it does not clear the cold-start gate.
   In-memory budget observations verified zero-data cleanup in cold and warm runs.
@@ -40,6 +46,11 @@
   No Join controls appeared; cleanup verified zero data/sockets. The diagnostic
   injected an early stop, not another normal deadline expiry. Inlined source
   positions are not independent operation timings.
+- A fresh live graph at module node 1500 contained 3703 deferred functions,
+  1649 closures and 37 host objects. Extracting deferred capture collection into
+  a separate helper preserved 6666886 units across 1000 comparison walks, but
+  increased aggregate CPU by 1.7% and wall time by 2.8%; discarded. Both probes
+  stopped deliberately and verified zero data/sockets. No Join controls appeared.
 - Earlier full-page profiling attributed 93% CPU to accounting. The six-module
   fixture omits prior page scripts: at node 30001 it charged 6116470 units with
   about 3700 deferred functions. One walk visited 17069 scopes and appended 26333
