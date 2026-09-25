@@ -16,11 +16,12 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
-- Latest normal Zoom check completed all 13 classic scripts and prepared seven
-  modules, but expired at the 120 s module deadline without name/Join controls,
+- Latest normal Zoom check with the identity-sharing SDK completed all 13 classic
+  scripts and prepared seven modules, but expired at the 120 s module deadline
+  without name/Join controls,
   a join attempt or socket attempts. Cleanup retained zero data. The probe uses
   bounded WASM/binary Worker messages and explicit 1 MiB / 30 s page-fetch limits.
-  A subsequent 600 s diagnostic also expired before controls or socket attempts,
+  An earlier 600 s diagnostic also expired before controls or socket attempts,
   after 58334 module nodes. Execution advanced through React startup tables and
   keyboard mapping to DOMPurify allowlist construction in editor-core.min.js
   (last position: line 237, column 4703). Cleanup retained zero data. No diagnostic
@@ -32,6 +33,13 @@
   Passed 141 focused accounting tests including nine GC checks, lint, maintained
   build, 13 built SDK checks and six actual browser SDK/JSPI checks. Cleanup passed.
   Full graph reconciliation remains the main unresolved startup cost.
+- Deferred functions now share their root and charge identity (SafeJS commit
+  a4684addae), removing one private identity per pending declaration. On the same
+  later Zoom graph, four alternating pairs kept identical 6116416-unit charges;
+  median CPU per 200 walks was 510 ms versus 527 ms with separate identities
+  (3.3% lower). Every pair favored the change; startup improvement is unproven.
+  Passed 61 focused tests including 12 GC checks, lint, maintained build, 13 built
+  SDK checks and five browser/JSPI checks with cleanup verified.
 - Module-only Zoom accounting fixture preserves the six-module import cycle and
   reaches 30000 nodes within the normal deadline. Between 6000 and 30000 nodes,
   it performed about 1.04 measurements per node; unvisited object entries grew
@@ -45,6 +53,10 @@
   within the run and completed in 4.8 s. Cost was spread across the generic
   visitor, metadata/type checks and visited lookups. Cleanup passed; no profile
   file remains. No runtime change is justified by these cache measurements.
+  Actual module-only call tracing found 47 retained tagged call scopes after
+  1028 completed calls, versus 30 after 143 completions earlier. It does not show
+  a retained scope per completed call; untagged scopes and other lifetimes remain
+  outside that check.
 - Retained SafeJS improvements: sixteen per-walk positive capture slots, lazy
   private-token coordinates, numeric compiler-token reads, iterative else-if
   parsing with the existing 2048-level limit, and owned constructor prototypes.
@@ -75,6 +87,9 @@
   the cost of reconciling large module scopes during small library initialization
   loops, without skipping reads or collectors.
   Longer deadlines, fixed-work diagnostics and fixture gains do not prove readiness.
+- The DOM constructor probe times out under its default 1000 ms profile with both
+  the original and identity-sharing SDK. Application-profile checks do not clear
+  this separate default-profile limit.
 - Implement and verify every notetaker capability above. Automations references:
   capture-page.js (getDisplayMedia, 16000 Hz AudioWorklet), meeting-page.js
   (48000 Hz AudioContext/MediaStream microphone/playback), track-audio-page.js
