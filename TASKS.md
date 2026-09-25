@@ -16,6 +16,15 @@
 
 - Maintained SDK: /home/kjopek/project/poe-code/packages/safe-js. Reuse its working
   build and /tmp/agent-browser-node24-runtime/bin/node with --experimental-wasm-jspi.
+- SafeJS 43082cd48d gives private scope accounting records a uniform layout,
+  preserving public snapshots and fresh readers, collectors and reconciliation.
+  The full-page comparison preserved 6664737 units; four paired 300-walk samples
+  used about 3–37% less CPU. The initial smaller fixture was mixed; reversing
+  comparison roles after the build preserved 6116470 units and used about
+  0.5–16% less CPU in four pairs. Sampled gains do not establish a startup speedup.
+  All 163 focused tests (including GC), lint,
+  the maintained build and 16 built SDK checks pass. All three full DOM attempts
+  still timed out at 1000 ms and closed with zero data.
 - SafeJS 09db17fdb4 gives frozen closure metadata explicit own fields and one
   layout. Host Object.prototype properties previously replaced private metadata,
   reducing a 1010-unit payload to 2 units or breaking deferred initialization.
@@ -32,15 +41,17 @@
 - SafeJS 84b31e2875 rechecks deferred materializations caused by later readers,
   including across nested measurements. All 16 quota regressions and 168 focused
   checks passed. Both fixes preserve fresh readers, collectors and cleanup.
-- Current built SDK profiling at editor node 30001 measured 6116463 data units;
-  1000 full walks used 2.73 CPU seconds. The main costs remain graph traversal,
-  metadata lookups and recursive closure-property visits. Final pending scans
-  are a smaller cost. Bounding closure-property recursion fixed cold-stack
-  failures without clearing startup. Next profile the full live page graph after
-  classic-script initialization: the smaller fixture omits those retained roots.
-  Preserve fresh reads, collector order and full reconciliation. The
-  bounded fixture stopped at its sample and closed with zero data/callbacks;
-  it did not attempt admission or prove module startup completion.
+- Full-page profiling on 09db17fdb4 shows accounting dominates module execution:
+  a 10.14 s window used 9.32 CPU seconds for 1558 measurements and 2021 steps.
+  A separate warmed walker measured 6670404 units across 7440 graph entries;
+  200 walks used 1.09 CPU seconds. It retained 3703 deferred roots and 1664
+  closures; 1275 function-table observations were absent, 260 materialized and
+  128 deferred. Most observed functions therefore do not have eager tables
+  to defer. Counting used a separate walker to avoid distorting timing.
+  All 13 classic scripts completed and seven modules were prepared, then the
+  diagnostic deliberately aborted at its sample. No controls or socket attempts;
+  cleanup verified zero data/sockets. This does not establish normal startup.
+  Preserve fresh reads, collector order and full reconciliation.
 - SafeJS 3e064c2e37 defers class-method name/length tables while reserving their
   full charge. Reflection materializes ordinary tables; late materialization,
   native double reads, aliases, metadata, depth, quotas, snapshots and GC are
@@ -71,12 +82,12 @@
 - Native DOM interface constructors are installed through SafeJS c2307c51ca and
   browser 5bf1dfc, with fallback for older SDKs. Construction retains ownership,
   revocation, argument retention, reentry and serializable-result restrictions.
-- Latest normal live Zoom retry with 09db17fdb4 recorded 12 successful scripts
-  out of 13 and prepared seven modules, then reached the unchanged 120 s deadline.
+- Latest normal live Zoom retry with 43082cd48d completed all 13 classic scripts
+  and prepared seven modules, then reached the unchanged 120 s deadline.
   The import observation also expired. Name/Join controls never appeared; no name
-  fill, join or socket attempt occurred. The last sample was 9006120 steps and
-  7043518 data units at 114.025 s. Cleanup verified zero data and sockets; the
-  probe is terminal. The fixture improvement did not clear live module startup.
+  fill, join or socket attempt occurred. The last sample was 9008567 steps and
+  6918712 data units at 113.049 s. Cleanup verified zero data and sockets; the
+  probe is terminal. The accounting optimization did not clear live module startup.
 - An earlier 600 s diagnostic also expired before controls or socket attempts,
   after 58334 module nodes, at DOMPurify allowlist construction in editor-core.
   Do not repeat that unchanged extended run or increase its deadline.
@@ -88,8 +99,9 @@
   Comparing nodes 6004 and 30001 shows materialized closures growing from 921
   to 1795 and closure collectors from 650 to 1521, while deferred functions stay
   near 3700. Of the 874 added closures, 592 are editor-core method functions;
-  declarations add only 45. Compare this with the full live page graph, preserving
-  identity, homeObject, private fields and fresh collector reads.
+  declarations add only 45. Full-page profiling above also includes earlier-script
+  functions missing here. Preserve identity, homeObject, private fields and fresh
+  collector reads.
   JIT tracing observed at least 46 walker deoptimizations. Splitting cold cases
   or object dispatch gave no useful startup gain; disabling Maglev also failed
   all three full DOM attempts at the unchanged 1000 ms limit. These experiments
