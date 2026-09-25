@@ -62,6 +62,14 @@
   the existing positive-membership cache already removes most duplicate work.
   Fresh CPU samples still distribute cost across traversal, visited membership
   and scope collection. Collector/provider reads must remain fresh.
+- Native URL getter/method experiment was discarded. Explicit private receiver
+  binding preserved ordinary URL reflection, freezing, subclasses and quotas in
+  focused tests and an actual-SDK probe. Warm URL read loops used less CPU, but
+  URL initialization was slower and both modes timed out in all three full DOM
+  attempts at the unchanged 1000 ms limit. No new SDK API or browser runtime
+  change remains; all six full probes cleaned up to zero retained data. This
+  does not justify another unchanged live Zoom retry. Continue with the large
+  module graph cost rather than URL getter dispatch.
 - Combining private scope/closure lookup storage produced no reliable gain.
   A fresh Set per walk was about 21% slower than the existing weak registry on
   the same 6048518-unit graph. Both experiments were discarded without runtime
