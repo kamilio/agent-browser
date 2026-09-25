@@ -157,7 +157,11 @@ function parseOption(
 		if (value === "false") return false;
 		throw new AgentBrowserError("invalid-input", `--${key} must be boolean`);
 	}
-	if (value === undefined || value === "")
+	if (
+		value === undefined ||
+		(value === "" &&
+			!(definition.kind === "string" && definition.allowEmpty === true))
+	)
 		throw new AgentBrowserError("invalid-input", `--${key} needs a value`);
 	if (definition.kind === "string") return value;
 	const number = Number(value);

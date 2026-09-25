@@ -31,12 +31,6 @@ import {
 import { cssTableProperties, isCssTableProperty } from "./css-table.js";
 import { cssOutlineProperties, isCssOutlineProperty } from "./css-outline.js";
 import {
-	cssFlexProperties,
-	isCssFlexProperty,
-	flexShorthandComponents,
-	serializeFlexShorthand,
-} from "./css-flex.js";
-import {
 	cssFlowProperties,
 	isCssFlowProperty,
 	serializeOverflow,
@@ -70,6 +64,12 @@ import type {
 } from "./script-dom.js";
 import { documentStyles } from "./styles.js";
 import { cssVariableLimits } from "./css-variables.js";
+import {
+	cssFlexProperties,
+	isCssFlexProperty,
+	flexShorthandComponents,
+	serializeFlexShorthand,
+} from "./css-flex.js";
 
 export const computedStyleProperties = Object.freeze(
 	[
@@ -178,6 +178,11 @@ export function resolvedStyleValue(
 	if (isCssListProperty(name)) return styles.list(id)[name];
 	if (name === "list-style") return serializeListStyle(styles.list(id));
 	if (isCssTableProperty(name)) return styles.table(id)[name];
+	if (isCssFlowProperty(name)) return styles.flow(id)[name];
+	if (name === "overflow") {
+		const flow = styles.flow(id);
+		return serializeOverflow(flow["overflow-x"], flow["overflow-y"]);
+	}
 	if (isCssGridProperty(name)) return styles.grid(id)[name];
 	const grid = gridShorthandComponents(name);
 	if (grid)
@@ -192,11 +197,6 @@ export function resolvedStyleValue(
 			name,
 			flex.map((property) => styles.flex(id)[property]),
 		);
-	if (isCssFlowProperty(name)) return styles.flow(id)[name];
-	if (name === "overflow") {
-		const flow = styles.flow(id);
-		return serializeOverflow(flow["overflow-x"], flow["overflow-y"]);
-	}
 	if (name.startsWith("--")) return styles.custom(id, name);
 	if (name === "display" || name === "visibility") return styles.get(id)[name];
 	if (isCssBoxProperty(name)) {

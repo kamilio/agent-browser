@@ -5,16 +5,13 @@ import {
 } from "./secret-commands.js";
 import { SecretBroker } from "./secret-providers.js";
 import { rangeKeyboardCapabilities } from "./range-keyboard.js";
+import { type WaitingAction, runWhenActionable } from "./action-wait.js";
 import { SessionTrace, sessionTraceCapabilities } from "./session-trace.js";
 import { keyboardActivationCapabilities } from "./keyboard.js";
-import { keyboardScrollCapabilities } from "./keyboard-scroll.js";
-import { selectKeyboardCapabilities } from "./select-keyboard.js";
-import { mouseCapabilities, type MouseButton } from "./mouse.js";
 import {
 	clickActionabilityCapabilities,
 	hoverActionabilityCapabilities,
 } from "./click-target.js";
-import { type WaitingAction, runWhenActionable } from "./action-wait.js";
 import { imageMediaTypes } from "./image-decoder.js";
 import {
 	CaptureArtifacts,
@@ -26,35 +23,43 @@ import {
 	cookieCommandOptions,
 	executeCookieCommand,
 } from "./cookie-commands.js";
-import { cssBoxProperties } from "./css-box.js";
-import { cssVariableCapabilities } from "./css-variables.js";
-import { inlineDeclarationLimits } from "./document-inline-declarations.js";
-import { pageCssLimits } from "./page-css.js";
-import { cssSupportsLimits } from "./css-supports.js";
-import { selectorSyntaxLimits } from "./selectors.js";
+import { cssBoxProperties, fontRelativeBoxUnits } from "./css-box.js";
+import { cssMathCapabilities, cssMathLimits } from "./css-math.js";
+import { flexStyleCapabilities } from "./css-flex.js";
+import { flowStyleCapabilities } from "./css-flow.js";
 import { interactionStyleCapabilities } from "./css-interaction.js";
-import { documentHitTesting, hitTestCapabilities } from "./hit-testing.js";
-import {
-	scrollIntoViewCapabilities,
-	scrollIntoViewOptions,
-} from "./scroll-into-view.js";
-import {
-	documentScrollPosition,
-	viewportScrollCapabilities,
-} from "./document-scroll.js";
-import { pageScrollCapabilities } from "./page-scroll.js";
-import { rootScrollCapabilities } from "./root-scroll.js";
-import { elementScrollCapabilities } from "./element-scroll.js";
-import { elementOffsetCapabilities } from "./element-offsets.js";
+import { atomicInlineCapabilities } from "./inline-atomic.js";
 import {
 	computedStyleLimits,
 	computedStyleProperties,
 } from "./computed-styles.js";
 import { cssPaintProperties } from "./css-paint.js";
 import { cssTextProperties } from "./css-text.js";
+import { cssVariableCapabilities } from "./css-variables.js";
+import { inlineDeclarationLimits } from "./document-inline-declarations.js";
+import { pageCssLimits } from "./page-css.js";
+import { cssSupportsLimits } from "./css-supports.js";
+import { selectorSyntaxLimits } from "./selectors.js";
 import { documentGeometry } from "./document-geometry.js";
+import { documentHitTesting, hitTestCapabilities } from "./hit-testing.js";
+import { mouseCapabilities, type MouseButton } from "./mouse.js";
+import { controlRenderingCapabilities } from "./control-rendering.js";
+import { selectKeyboardCapabilities } from "./select-keyboard.js";
+import { keyboardScrollCapabilities } from "./keyboard-scroll.js";
+import { rootScrollCapabilities } from "./root-scroll.js";
+import { elementScrollCapabilities } from "./element-scroll.js";
+import {
+	scrollIntoViewCapabilities,
+	scrollIntoViewOptions,
+} from "./scroll-into-view.js";
+import { borderCapabilities } from "./border-box.js";
 import { documentImages, documentImageLimits } from "./document-images.js";
 import { rasterizeDocument } from "./document-raster.js";
+import { pageScrollCapabilities } from "./page-scroll.js";
+import {
+	documentScrollPosition,
+	viewportScrollCapabilities,
+} from "./document-scroll.js";
 import { renderDocumentPdf, documentPdfLimits } from "./document-pdf.js";
 import { inspectDom } from "./dom-inspection.js";
 import { AgentBrowserError } from "./errors.js";
@@ -85,6 +90,7 @@ import type { ScriptEvaluation } from "./safejs.js";
 import { scriptMutationLimits } from "./script-mutations.js";
 import { characterDataCapabilities } from "./script-character-data.js";
 import { nodeRelationCapabilities } from "./node-relations.js";
+import { elementOffsetCapabilities } from "./element-offsets.js";
 import { scriptGeometryLimits } from "./script-geometry.js";
 import { BrowserSession, type SessionPage } from "./session.js";
 import { findInDocument } from "./snapshot-search.js";
@@ -257,6 +263,7 @@ const supportedOptions: Readonly<Record<string, readonly string[]>> = {
 	extract: [
 		"format",
 		"content-focus",
+		"json-pointer",
 		"table-metadata",
 		"table-rows",
 		"compact-tables",
@@ -658,10 +665,16 @@ export class BrowserCommandHost {
 				partial: true,
 				properties: cssBoxProperties,
 				usedGeometry: false,
-				fontRelativeLengths: false,
+				fontRelativeLengths: true,
+				fontRelativeUnits: fontRelativeBoxUnits,
+				math: cssMathCapabilities,
+				mathLimits: cssMathLimits,
 			},
 			browserEngineDependency: false,
+			flexStyles: flexStyleCapabilities,
+			flowStyles: flowStyleCapabilities,
 			interactionStyles: interactionStyleCapabilities,
+			atomicInlineLayout: atomicInlineCapabilities,
 			viewportScrolling: viewportScrollCapabilities,
 			pageScrolling: pageScrollCapabilities,
 			computedStyles: {
@@ -672,7 +685,8 @@ export class BrowserCommandHost {
 				readonly: true,
 				usedValues: "normal-flow-block-and-inline",
 				pseudoElements: false,
-				customProperties: false,
+				customProperties: true,
+				customPropertyProfile: cssVariableCapabilities.profile,
 				...computedStyleLimits,
 			},
 			clientGeometry: {
@@ -707,6 +721,8 @@ export class BrowserCommandHost {
 				guestFileFileList: false,
 				liveUploadAcceptance: false,
 			},
+			controlRendering: controlRenderingCapabilities,
+			borders: borderCapabilities,
 			keyboard: {
 				partial: true,
 				activation: keyboardActivationCapabilities,
@@ -728,8 +744,10 @@ export class BrowserCommandHost {
 				properties: elementSizeProperties,
 				profile: "normal-flow-no-quirks-no-scrollbars",
 				readonly: true,
-				offsetPositions: false,
-				scrollSizes: false,
+				offsetPositions: true,
+				scrollSizes: true,
+				scrollSizeProfile: elementScrollCapabilities.profile,
+				controlScrollSizes: false,
 				...elementSizeLimits,
 			},
 			animationFrames: {
@@ -1891,6 +1909,9 @@ export class BrowserCommandHost {
 		}
 		if (invocation.command === "extract") {
 			return extractDocument(browser.page(tabId).document, {
+				...(options["json-pointer"] === undefined
+					? {}
+					: { jsonPointer: options["json-pointer"] as string }),
 				...(options["content-focus"] === undefined
 					? {}
 					: {
@@ -2014,7 +2035,9 @@ export class BrowserCommandHost {
 							tabId,
 							Number(args[0]),
 							Number(args[1]),
-							{ signal },
+							{
+								signal,
+							},
 						)
 					: await browser[invocation.command](
 							tabId,

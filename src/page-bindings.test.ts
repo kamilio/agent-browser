@@ -81,6 +81,27 @@ afterEach(() => {
 });
 
 describe("runtime-independent page capability setup", () => {
+	it("exposes owned base64 functions on globals and Window", () => {
+		const test = fixture();
+		const bindings = new PageBindings(test.page, test.context, test.lifecycle);
+		const window = bindings.window as {
+			atob(...args: unknown[]): string;
+			btoa(...args: unknown[]): string;
+		};
+		for (const name of ["atob", "btoa"] as const) {
+			expect(pageBindingGlobalNames(test.page.document)).toContain(name);
+			expect(bindings.globals[name]).toBe(window[name]);
+		}
+		expect(window.btoa("\0\xff")).toBe("AP8=");
+		expect(window.atob(" AP8=\n")).toBe("\0\xff");
+		expect(() => window.btoa()).toThrow(TypeError);
+		const detached = window.atob;
+		expect(detached("Zg")).toBe("f");
+		test.page.document.close();
+		expect(() => detached("Zg")).toThrow(/closed/);
+		expect(() => window.btoa("f")).toThrow(/closed/);
+	});
+
 	it("dispatches Window onload with stable replacement ordering and the Window receiver", async () => {
 		const test = fixture();
 		const bindings = new PageBindings(test.page, test.context, test.lifecycle);

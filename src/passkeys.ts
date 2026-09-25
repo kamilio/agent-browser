@@ -1,5 +1,10 @@
 import { consumeConsentedPasskeyExclusionError } from "./passkey-exclusion-error.js";
 
+import {
+	type PinnedPublicSuffixSnapshot,
+	isPinnedPublicSuffixSnapshot,
+} from "./pinned-public-suffix.js";
+
 export const passkeyLimits = Object.freeze({
 	challengeBytes: 1024,
 	credentialIdBytes: 1023,
@@ -48,6 +53,9 @@ export interface PasskeyContext {
 	topLevel: boolean;
 	signal?: AbortSignal;
 	isCurrent: () => boolean;
+}
+export interface PasskeyBrokerOptions {
+	publicSuffixSnapshot?: PinnedPublicSuffixSnapshot;
 }
 export interface PasskeyCapabilities {
 	algorithms: readonly number[];
@@ -301,9 +309,29 @@ function origin(context: PasskeyContext): string {
 		return fail("SecurityError");
 	}
 }
-function rpId(value: unknown, host: string): string {
-	if (value !== undefined && value !== host) fail("SecurityError");
-	return host;
+function rpId(
+	value: unknown,
+	host: string,
+	snapshot: PinnedPublicSuffixSnapshot | undefined,
+): string {
+	if (value === undefined || value === host) return host;
+	if (!snapshot || typeof value !== "string" || value.endsWith("."))
+		fail("SecurityError");
+	try {
+		const requested = snapshot.match(value);
+		const original = snapshot.match(host);
+		if (
+			requested.domain !== value ||
+			requested.registrableDomain === null ||
+			original.domain !== host ||
+			requested.registrableDomain !== original.registrableDomain ||
+			!host.endsWith(`.${value}`)
+		)
+			fail("SecurityError");
+		return value;
+	} catch {
+		return fail("SecurityError");
+	}
 }
 function extensions(value: unknown) {
 	if (value !== undefined) object(value, []);
@@ -312,11 +340,21 @@ function extensions(value: unknown) {
 export class PasskeyBroker {
 	readonly capabilities: Readonly<PasskeyCapabilities>;
 	readonly #authenticator: PasskeyAuthenticator;
+	readonly #publicSuffixSnapshot: PinnedPublicSuffixSnapshot | undefined;
 	private active: { cancel: (name: ErrorName) => void } | undefined;
 	private starting = false;
 	private closed = false;
 
-	constructor(authenticator: PasskeyAuthenticator) {
+	constructor(
+		authenticator: PasskeyAuthenticator,
+		options?: PasskeyBrokerOptions,
+	) {
+		const configured =
+			options === undefined ? {} : object(options, ["publicSuffixSnapshot"]);
+		const snapshot = configured.publicSuffixSnapshot;
+		if (snapshot !== undefined && !isPinnedPublicSuffixSnapshot(snapshot))
+			fail("TypeError");
+		this.#publicSuffixSnapshot = snapshot;
 		this.#authenticator = authenticator;
 		const input = object(authenticator?.capabilities, [
 			"algorithms",
@@ -443,7 +481,10 @@ export class PasskeyBroker {
 		if (!algorithms.length) fail("NotSupportedError");
 		return {
 			challenge: bytes(input.challenge, passkeyLimits.challengeBytes),
-			rp: { id: rpId(rp.id, host), name: text(rp.name) },
+			rp: {
+				id: rpId(rp.id, host, this.#publicSuffixSnapshot),
+				name: text(rp.name),
+			},
 			user: {
 				id: bytes(user.id, 64),
 				name: text(user.name),
@@ -482,7 +523,7 @@ export class PasskeyBroker {
 			fail("NotSupportedError");
 		return {
 			challenge: bytes(input.challenge, passkeyLimits.challengeBytes),
-			rpId: rpId(input.rpId, host),
+			rpId: rpId(input.rpId, host, this.#publicSuffixSnapshot),
 			timeout: timeout(input.timeout),
 			allowCredentials,
 			userVerification,
@@ -522,6 +563,11 @@ export class PasskeyBroker {
 		} finally {
 			this.starting = false;
 		}
+		const relyingPartyId =
+			type === "webauthn.create"
+				? (options as PasskeyCreationOptions).rp.id
+				: (options as PasskeyRequestOptions).rpId;
+		if (typeof relyingPartyId !== "string") fail("TypeError");
 		const clientData = new TextEncoder().encode(
 			JSON.stringify({
 				type,
@@ -589,7 +635,7 @@ export class PasskeyBroker {
 					);
 					if (!valid()) return;
 					const providerContext = {
-						rpId: host,
+						rpId: relyingPartyId,
 						clientDataHash: hash,
 						clientDataJSON: new Uint8Array(clientData),
 						signal: controller.signal,
@@ -694,7 +740,7 @@ export class PasskeyBroker {
 						const rpHash = new Uint8Array(
 							await crypto.subtle.digest(
 								"SHA-256",
-								new TextEncoder().encode(host),
+								new TextEncoder().encode(relyingPartyId),
 							),
 						);
 						if (!valid()) return;

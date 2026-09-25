@@ -57,22 +57,6 @@ import {
 	svgNamespace,
 } from "./dom-namespaces.js";
 import {
-	cssInteractionProperties,
-	computePointerEvents,
-	type PointerEventsStyle,
-} from "./css-interaction.js";
-import {
-	cssFlexProperties,
-	isCssFlexProperty,
-	computeFlexStyle,
-	initialFlexStyle,
-	isFlexDisplay,
-	blockifyDisplay,
-	type CssFlexProperty,
-	type FlexStyle,
-	type FlexSpecifiedStyle,
-} from "./css-flex.js";
-import {
 	cssOutlineProperties,
 	isCssOutlineProperty,
 	computeOutlineStyle,
@@ -99,10 +83,25 @@ import {
 	type FlowSpecifiedStyle,
 	type CssFlowProperty,
 } from "./css-flow.js";
-import { lengthUsesFont } from "./css-math.js";
 import {
-	type BoxFontMetrics,
+	cssInteractionProperties,
+	computePointerEvents,
+	type PointerEventsStyle,
+} from "./css-interaction.js";
+import {
+	cssFlexProperties,
+	isCssFlexProperty,
+	computeFlexStyle,
+	initialFlexStyle,
+	isFlexDisplay,
+	blockifyDisplay,
+	type CssFlexProperty,
+	type FlexStyle,
+	type FlexSpecifiedStyle,
+} from "./css-flex.js";
+import {
 	type BoxSpecifiedStyle,
+	type BoxFontMetrics,
 	type BoxStyle,
 	type CssBoxProperty,
 	computeBoxStyle,
@@ -187,6 +186,7 @@ import {
 	buttonFlexDefaults,
 	buttonTextDefaults,
 } from "./html-button.js";
+import { lengthUsesFont } from "./css-math.js";
 import {
 	cssVariableLimits,
 	parseVariableValue,
@@ -2179,10 +2179,10 @@ export class DocumentStyles {
 				textDecorationSpecified.set(id, Object.freeze(textDecorationValues));
 		}
 		const computed = new Map<number, Readonly<VisibilityStyle>>();
-		const boxParentDisplay = new Map<number, string>();
 		const flowComputed = new Map<number, FlowStyle>();
 		const pointerEventsNone = new Set<number>();
 		const listComputed = new Map<number, ListStyle>();
+		const boxParentDisplay = new Map<number, string>();
 		const legacyCentered = new Set<number>();
 		for (const node of nodes) {
 			charge(1);

@@ -6,6 +6,7 @@ import {
 	sign,
 	verify,
 } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { inspect } from "node:util";
 import { afterEach, expect, it, vi } from "vitest";
 import {
@@ -16,12 +17,14 @@ import {
 } from "./node-passkey-authenticator.js";
 import {
 	type PasskeyAssertion,
+	type PasskeyAuthenticator,
 	PasskeyBroker,
 	type PasskeyCreationOptions,
 	type PasskeyProviderContext,
 	type PasskeyRegistration,
 	type PasskeyRequestOptions,
 } from "./passkeys.js";
+import { createPinnedPublicSuffixSnapshot } from "./pinned-public-suffix.js";
 
 const cryptoHooks = vi.hoisted(() => ({
 	afterGenerate: undefined as (() => void) | undefined,
@@ -961,4 +964,156 @@ it("does not commit counters or publish a result when aborted immediately after 
 	const result = await authenticator.get(assertion());
 	expect(buffer(result.authenticatorData).readUInt32BE(33)).toBe(1);
 	expect(sign).toHaveBeenCalledTimes(2);
+});
+
+it("verifies a real software signature across eligible child origins in one exact parent RP namespace", async () => {
+	const publicSuffixSnapshot = await createPinnedPublicSuffixSnapshot(
+		readFileSync(
+			new URL(
+				"../vendor/public-suffix/public_suffix_list.dat",
+				import.meta.url,
+			),
+		),
+	);
+	const { authenticator, approve } = fixture();
+	let registered: PasskeyRegistration | undefined;
+	const provider: PasskeyAuthenticator = {
+		capabilities: authenticator.capabilities,
+		create: async (input) => {
+			registered = await authenticator.create(input);
+			return registered;
+		},
+		get: (input) => authenticator.get(input),
+	};
+	const broker = new PasskeyBroker(provider, { publicSuffixSnapshot });
+	const trusted = (origin: string) => ({
+		origin,
+		topLevel: true,
+		isCurrent: () => true,
+	});
+	const creationOrigin = "https://login.example.com:8443";
+	const assertionOrigin = "https://accounts.example.com:9443";
+	const parent = "example.com";
+	try {
+		const created = await broker.create(
+			{
+				...creation().options,
+				rp: { id: parent, name: "Synthetic parent RP" },
+			},
+			trusted(creationOrigin),
+		);
+		if (!registered) throw new Error("Missing synthetic registration");
+		const publicKey = registrationPublicKey(registered, parent);
+		const asserted = await broker.get(
+			{
+				...assertion(created.rawId).options,
+				rpId: parent,
+				challenge: new Uint8Array([4, 5, 6]),
+			},
+			trusted(assertionOrigin),
+		);
+		const data = buffer(asserted.response.authenticatorData);
+		expect(data.subarray(0, 32)).toEqual(hash(parent));
+		expect(data[32]).toBe(1);
+		expect(data.readUInt32BE(33)).toBe(1);
+		expect(
+			verify(
+				"sha256",
+				Buffer.concat([
+					data,
+					hash(new Uint8Array(asserted.response.clientDataJSON)),
+				]),
+				{ key: publicKey, dsaEncoding: "der" },
+				buffer(asserted.response.signature),
+			),
+		).toBe(true);
+		expect(
+			JSON.parse(new TextDecoder().decode(asserted.response.clientDataJSON)),
+		).toMatchObject({
+			origin: assertionOrigin,
+			challenge: "BAUG",
+			type: "webauthn.get",
+		});
+		expect(approve.mock.calls[0][0]).toMatchObject({
+			operation: "create",
+			rpId: parent,
+			origin: creationOrigin,
+		});
+		expect(approve.mock.calls[1][0]).toMatchObject({
+			operation: "get",
+			rpId: parent,
+			origin: assertionOrigin,
+		});
+		const approvals = approve.mock.calls.length;
+		await expect(
+			broker.get(assertion(created.rawId).options, trusted(assertionOrigin)),
+		).rejects.toMatchObject({ name: "UnknownError" });
+		await expect(
+			broker.get(
+				{ ...assertion(created.rawId).options, rpId: parent },
+				trusted("https://attacker.example.net"),
+			),
+		).rejects.toMatchObject({ name: "SecurityError" });
+		expect(approve).toHaveBeenCalledTimes(approvals);
+	} finally {
+		broker.close();
+	}
+});
+
+it("keeps parent exclusions and child credentials in separate software namespaces", async () => {
+	const publicSuffixSnapshot = await createPinnedPublicSuffixSnapshot(
+		readFileSync(
+			new URL(
+				"../vendor/public-suffix/public_suffix_list.dat",
+				import.meta.url,
+			),
+		),
+	);
+	const { authenticator, approve } = fixture();
+	const broker = new PasskeyBroker(authenticator, { publicSuffixSnapshot });
+	const trusted = {
+		origin: "https://login.example.com",
+		topLevel: true,
+		isCurrent: () => true,
+	};
+	try {
+		const parentOptions = {
+			...creation().options,
+			rp: { id: "example.com", name: "Synthetic parent" },
+		};
+		const parent = await broker.create(parentOptions, trusted);
+		const excluded = [{ type: "public-key" as const, id: parent.rawId }];
+		await expect(
+			broker.create(
+				{ ...parentOptions, excludeCredentials: excluded },
+				trusted,
+			),
+		).rejects.toMatchObject({ name: "UnknownError" });
+		expect(approve).toHaveBeenCalledOnce();
+		const child = await broker.create(
+			{ ...creation().options, excludeCredentials: excluded },
+			trusted,
+		);
+		expect(child.id).not.toBe(parent.id);
+		await expect(
+			broker.get(
+				{ ...assertion(child.rawId).options, rpId: "example.com" },
+				trusted,
+			),
+		).rejects.toMatchObject({ name: "UnknownError" });
+		await expect(
+			broker.get(assertion(parent.rawId).options, trusted),
+		).rejects.toMatchObject({ name: "UnknownError" });
+		await expect(
+			broker.get(
+				{ ...assertion(parent.rawId).options, rpId: "example.com" },
+				trusted,
+			),
+		).resolves.toMatchObject({ id: parent.id });
+		await expect(
+			broker.get(assertion(child.rawId).options, trusted),
+		).resolves.toMatchObject({ id: child.id });
+	} finally {
+		broker.close();
+	}
 });

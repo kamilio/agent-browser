@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { parseInvocation } from "./cli-parser.js";
+import { BrowserCommandHost } from "./command-host.js";
 import { DocumentTree } from "./document.js";
 import {
 	type DocumentExtraction,
@@ -8,10 +10,13 @@ import {
 } from "./extraction.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import { serializeHtml } from "./html-serialization.js";
+import type { NetworkTransport } from "./network.js";
+import { BrowserSession } from "./session.js";
 import { loadTextDocument } from "./text-loader.js";
 
 const encoder = new TextEncoder();
 const trees: DocumentTree[] = [];
+const hosts: BrowserCommandHost[] = [];
 const url = "https://json-source.fixture.invalid/metadata";
 
 function load(source: string, mime = "application/json") {
@@ -60,6 +65,7 @@ function literal(result: DocumentExtraction): string {
 }
 
 afterEach(() => {
+	for (const host of hosts.splice(0)) host.close();
 	for (const tree of trees.splice(0)) tree.close();
 });
 
@@ -275,4 +281,165 @@ it("keeps ordinary extraction unchanged when JSON selection is absent", () => {
 	extractDocument(tree, { jsonPointer: "/key" });
 	expect(extractDocument(tree, { format: "json" })).toEqual(before);
 	expect(before.jsonSelection).toBeUndefined();
+});
+
+async function commandFixture(tree: DocumentTree) {
+	const requests: string[] = [];
+	let closed = false;
+	const transport: NetworkTransport = {
+		async request(input) {
+			requests.push(input.url);
+			return {
+				url: input.url,
+				status: 200,
+				headers: {},
+				body: new Uint8Array(),
+				redirects: [],
+				encodedBytes: 0,
+				elapsedMs: 0,
+			};
+		},
+		metrics: () => ({
+			requests: requests.length,
+			active: 0,
+			closed,
+			redirects: 0,
+			encodedBytes: 0,
+			decodedBytes: 0,
+		}),
+		close() {
+			closed = true;
+		},
+	};
+	const session = new BrowserSession({
+		createTransport: () => transport,
+		loadDocument: () => tree,
+	});
+	const host = new BrowserCommandHost({ createSession: () => session });
+	hosts.push(host);
+	await host.execute(["open", url]);
+	return { host, session, requests };
+}
+
+describe("native JSON pointer commands", () => {
+	it.each(["", "/", "/info", "/a~1b/~0key/0"])(
+		"parses split and equals pointer syntax %j",
+		(pointer) => {
+			for (const flags of [
+				["--json-pointer", pointer],
+				[`--json-pointer=${pointer}`],
+			]) {
+				expect(parseInvocation(["extract", ...flags])).toMatchObject({
+					command: "extract",
+					arguments: [],
+					options: { "json-pointer": pointer },
+				});
+			}
+		},
+	);
+
+	it.each([
+		["extract", "--json-pointer"],
+		["extract", "--json-pointer", "--format=json"],
+		["extract", "--json-pointer=", "--json-pointer=/info"],
+		["extract", "--json-pointer=/info", "--json-pointer="],
+		["extract", "--content-focus="],
+		["extract", "--format="],
+		["extract", "--depth="],
+		["open", "--profile="],
+		["extract", "--config="],
+		["extract", "--session="],
+		["snapshot", "--json-pointer="],
+		["extract-page", "pre", "--json-pointer=/info"],
+	])("rejects missing, duplicate or unrelated empty options %j", (...args) => {
+		expect(() => parseInvocation(args)).toThrowError(
+			expect.objectContaining({ code: "invalid-input" }),
+		);
+	});
+
+	it.each(["json", "markdown"] as const)(
+		"forwards exact literal source selection and empty roots in %s",
+		async (format) => {
+			const info = String.raw`{"large":9007199254740993123,"exponent":1e400,"body":"<script>neverRun()</script>\u0041"}`;
+			const source = ` {"info":${info},"a/b":{"~key":[false]},"":null} `;
+			const tree = load(source);
+			const { host, session, requests } = await commandFixture(tree);
+			const tabs = session.tabs();
+			const baseline = (await host.execute(["extract", `--format=${format}`]))
+				.data;
+			for (const [pointer, expected] of [
+				["/info", info],
+				["/info/large", "9007199254740993123"],
+				["/info/exponent", "1e400"],
+				["/info/body", String.raw`"<script>neverRun()</script>\u0041"`],
+				["/a~1b/~0key/0", "false"],
+				["/", "null"],
+				["", source.trim()],
+			]) {
+				const result = (
+					await host.execute([
+						"extract",
+						"--json-pointer",
+						pointer,
+						`--format=${format}`,
+					])
+				).data as DocumentExtraction;
+				expect(result).toEqual(
+					extractDocument(tree, { format, jsonPointer: pointer }),
+				);
+				expect(literal(result)).toBe(expected);
+				expect(result.jsonSelection?.pointer).toBe(pointer);
+			}
+			expect(
+				(await host.execute(["extract", `--format=${format}`])).data,
+			).toEqual(baseline);
+			expect(baseline).not.toHaveProperty("jsonSelection");
+			expect(session.tabs()).toEqual(tabs);
+			expect(requests).toEqual([url]);
+		},
+	);
+
+	it.each([
+		["--json-pointer=missing-slash"],
+		["--json-pointer=/bad~escape"],
+		["--json-pointer=/missing"],
+		["--json-pointer=", "--content-focus=main-content-v1"],
+		["pre", "--json-pointer=/info"],
+	])("fails closed for invalid or mixed selections %j", async (...flags) => {
+		const { host, requests } = await commandFixture(load('{"info":1}'));
+		await expect(host.execute(["extract", ...flags])).rejects.toThrow();
+		expect(requests).toEqual([url]);
+	});
+
+	it.each(['{"info":1,', '{"info":1,"other":2,"other":3}'])(
+		"validates unselected source too: %s",
+		async (source) => {
+			const { host, requests } = await commandFixture(load(source));
+			await expect(
+				host.execute(["extract", "--json-pointer=/info"]),
+			).rejects.toThrow();
+			expect(requests).toEqual([url]);
+		},
+	);
+
+	it("does not reinterpret HTML as JSON or recover an oversized selection", async () => {
+		const html = parseHtmlDocument('<pre>{"info":1}</pre>', url);
+		trees.push(html);
+		const htmlFixture = await commandFixture(html);
+		await expect(
+			htmlFixture.host.execute(["extract", "--json-pointer=/info"]),
+		).rejects.toThrow(/unchanged native text-loader/);
+		const jsonFixture = await commandFixture(
+			load(JSON.stringify({ info: "x".repeat(5000) })),
+		);
+		await expect(
+			jsonFixture.host.execute([
+				"extract",
+				"--json-pointer=/info",
+				"--max-bytes=256",
+			]),
+		).rejects.toThrowError(expect.objectContaining({ code: "resource-limit" }));
+		expect(htmlFixture.requests).toEqual([url]);
+		expect(jsonFixture.requests).toEqual([url]);
+	});
 });

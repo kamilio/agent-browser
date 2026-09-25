@@ -20,6 +20,7 @@ export {
 	PasskeyBroker,
 	passkeyLimits,
 	type PasskeyAuthenticator,
+	type PasskeyBrokerOptions,
 	type PasskeyContext,
 	type PasskeyCapabilities,
 	type PasskeyCreationOptions,
@@ -59,6 +60,11 @@ export type {
 	GridTrackSizing,
 } from "./grid-types.js";
 export {
+	createPinnedPublicSuffixSnapshot,
+	isPinnedPublicSuffixSnapshot,
+	type PinnedPublicSuffixSnapshot,
+} from "./pinned-public-suffix.js";
+export {
 	SecretBroker,
 	secretProviderLimits,
 	type SecretBinding,
@@ -91,35 +97,15 @@ export {
 	type ClickPoint,
 	type ClickTargetResult,
 } from "./click-target.js";
-export { keyboardScrollCapabilities } from "./keyboard-scroll.js";
-export {
-	DocumentMouse,
-	BrowserMouseEvent,
-	BrowserPointerActivationEvent,
-	BrowserWheelEvent,
-	mouseLimits,
-	mouseCapabilities,
-	type MouseButton,
-	type MouseResult,
-} from "./mouse.js";
-export {
-	interactionStyleCapabilities,
-	cssInteractionProperties,
-	type PointerEventsStyle,
-} from "./css-interaction.js";
-export {
-	DocumentHitTesting,
-	documentHitTesting,
-	hitTestLimits,
-	hitTestCapabilities,
-	type HitTestLimits,
-} from "./hit-testing.js";
-export { selectKeyboardCapabilities } from "./select-keyboard.js";
 export { fontRelativeBoxUnits, type BoxFontMetrics } from "./css-box.js";
 export { cssMathCapabilities, cssMathLimits } from "./css-math.js";
-export { cssVariableCapabilities, cssVariableLimits } from "./css-variables.js";
-export { inlineDeclarationLimits } from "./document-inline-declarations.js";
-export { borderCapabilities } from "./border-box.js";
+export {
+	cssFlexProperties,
+	flexStyleCapabilities,
+	type CssFlexProperty,
+	type FlexStyle,
+	type FlexSpecifiedStyle,
+} from "./css-flex.js";
 export {
 	measureIntrinsicWidths,
 	intrinsicWidthLimits,
@@ -145,41 +131,33 @@ export {
 	type FlexContainerLayoutOptions,
 } from "./flex-layout.js";
 export {
-	controlRenderingCapabilities,
-	controlRenderingLimits,
-} from "./control-rendering.js";
-export {
-	atomicInlineCapabilities,
-	type AtomicInlineMetrics,
-} from "./inline-atomic.js";
-
-export { flowStyleCapabilities } from "./css-flow.js";
-export { flexStyleCapabilities } from "./css-flex.js";
-export {
 	resolveFlexLines,
 	flexLineLimits,
 	type FlexLineItemInput,
 	type FlexLineOptions,
-	type FlexLines,
-	type FlexLine,
 	type FlexLineItem,
+	type FlexLine,
+	type FlexLines,
 	type FlexJustification,
 } from "./flex-line.js";
+export { cssVariableCapabilities, cssVariableLimits } from "./css-variables.js";
+export { inlineDeclarationLimits } from "./document-inline-declarations.js";
 export {
-	DocumentScroll,
-	documentScroll,
-	documentScrollPosition,
-	viewportScrollCapabilities,
-	viewportScrollLimits,
-} from "./document-scroll.js";
-export { pageScrollCapabilities, pageScrollLimits } from "./page-scroll.js";
+	ResponseArchive,
+	responseArchiveLimits,
+	type ResponseArchiveLimits,
+} from "./response-archive.js";
+export { borderCapabilities } from "./border-box.js";
+export { selectKeyboardCapabilities } from "./select-keyboard.js";
+export { keyboardScrollCapabilities } from "./keyboard-scroll.js";
 export {
-	RootScroll,
-	rootScrollCapabilities,
-	rootScrollProperties,
-	type RootScrollRequest,
-	type RootScrollProperty,
-} from "./root-scroll.js";
+	DocumentScrollIntoView,
+	documentScrollIntoView,
+	scrollIntoViewCapabilities,
+	type ScrollAlignment,
+	type ScrollIntoViewOptions,
+	type ScrollIntoViewResult,
+} from "./scroll-into-view.js";
 export {
 	DocumentElementScroll,
 	documentElementScroll,
@@ -189,13 +167,20 @@ export {
 	type ElementScrollLimits,
 } from "./element-scroll.js";
 export {
-	DocumentScrollIntoView,
-	documentScrollIntoView,
-	scrollIntoViewCapabilities,
-	type ScrollAlignment,
-	type ScrollIntoViewOptions,
-	type ScrollIntoViewResult,
-} from "./scroll-into-view.js";
+	RootScroll,
+	rootScrollCapabilities,
+	rootScrollProperties,
+	type RootScrollRequest,
+	type RootScrollProperty,
+} from "./root-scroll.js";
+export { pageScrollCapabilities, pageScrollLimits } from "./page-scroll.js";
+export {
+	DocumentScroll,
+	documentScroll,
+	documentScrollPosition,
+	viewportScrollCapabilities,
+	viewportScrollLimits,
+} from "./document-scroll.js";
 export {
 	DocumentElementOffsets,
 	documentElementOffsets,
@@ -333,6 +318,20 @@ export {
 	type KeyboardResult,
 } from "./keyboard.js";
 export {
+	DocumentMouse,
+	BrowserMouseEvent,
+	BrowserPointerActivationEvent,
+	BrowserWheelEvent,
+	mouseLimits,
+	mouseCapabilities,
+	type MouseButton,
+	type MouseResult,
+} from "./mouse.js";
+export {
+	controlRenderingCapabilities,
+	controlRenderingLimits,
+} from "./control-rendering.js";
+export {
 	BrowserCommandHost,
 	type CommandExecutor,
 	type CommandHostOptions,
@@ -355,13 +354,13 @@ export {
 	type DocumentLoader,
 	type DocumentLoaderContext,
 	type NavigationOptions,
+	type KeyPressOptions,
 	type NavigationResult,
 	type SessionClickResult,
 	type SessionHoverResult,
-	type SessionMouseResult,
-	type KeyPressOptions,
 	type SessionSubmitResult,
 	type SessionKeyResult,
+	type SessionMouseResult,
 } from "./session.js";
 export {
 	CookieJar,
@@ -420,6 +419,7 @@ export {
 } from "./events.js";
 export {
 	controlChecked,
+	controlShowsPlaceholder,
 	controlValue,
 	fillTextControl,
 	validateTextControl,
@@ -549,6 +549,7 @@ export {
 	idleCallbackBudgetMs,
 } from "./page-idle-callbacks.js";
 export type { IdleCallbackLimits } from "./page-idle-callbacks.js";
+export { pageBase64Limits } from "./page-base64.js";
 export type { PageClockSource } from "./page-performance.js";
 export {
 	PageAnimationFrames,
@@ -723,6 +724,21 @@ export {
 	type TextLine,
 } from "./text-layout.js";
 export {
+	atomicInlineCapabilities,
+	type AtomicInlineMetrics,
+} from "./inline-atomic.js";
+export {
+	cssInteractionProperties,
+	interactionStyleCapabilities,
+	type PointerEventsStyle,
+} from "./css-interaction.js";
+export {
+	cssFlowProperties,
+	flowStyleCapabilities,
+	type CssFlowProperty,
+	type FlowStyle,
+} from "./css-flow.js";
+export {
 	buildFormattingTree,
 	resolveDocumentBlockWidths,
 	formattingLimits,
@@ -761,6 +777,12 @@ export {
 	geometryLimits,
 	type ClientRectangle,
 } from "./document-geometry.js";
+export {
+	DocumentHitTesting,
+	documentHitTesting,
+	hitTestLimits,
+	hitTestCapabilities,
+} from "./hit-testing.js";
 export {
 	ComputedStyles,
 	computedStyleProperties,

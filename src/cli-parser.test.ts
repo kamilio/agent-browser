@@ -22,6 +22,30 @@ it("adds read-only viewport inspection and an optional guarded resize without ch
 	expect(() => parseInvocation(["viewport", "--expected-tab=tab-a"])).toThrow();
 });
 
+it("accepts optional wheel ownership guards without changing unguarded syntax", () => {
+	expect(parseInvocation(["mousewheel", "0", "-120"])).toMatchObject({
+		command: "mousewheel",
+		arguments: ["0", "-120"],
+	});
+	expect(
+		parseInvocation([
+			"mousewheel",
+			"0",
+			"120",
+			"--expected-viewport=owner:tab",
+			"--expected-document=doc:root",
+		]),
+	).toMatchObject({
+		options: {
+			"expected-viewport": "owner:tab",
+			"expected-document": "doc:root",
+		},
+	});
+	expect(() =>
+		parseInvocation(["mousemove", "0", "0", "--expected-document=doc:root"]),
+	).toThrow();
+});
+
 it("accepts bounded DOM subtree inspection without changing baseline command syntax", () => {
 	expect(
 		parseInvocation([
@@ -87,6 +111,16 @@ it("accepts an additive terminal frontend without changing named session semanti
 	expect(() =>
 		parseInvocation(["terminal", "https://example.com/", "extra"]),
 	).toThrow();
+});
+
+it("accepts optional identity guards for tab selection and closing", () => {
+	for (const command of ["tab-select", "tab-close"])
+		expect(
+			parseInvocation([command, "1", "--expected-key=epoch:tab-2"]).options,
+		).toEqual({ "expected-key": "epoch:tab-2" });
+	expect(
+		parseInvocation(["tab-close", "--expected-key=epoch:tab-1"]).arguments,
+	).toEqual([]);
 });
 
 it("preserves Playwright-style named session, reference and option conventions", () => {

@@ -49,12 +49,6 @@ import {
 	parseFlexDeclarations,
 	type CssFlexProperty,
 } from "./css-flex.js";
-import {
-	cssFlowProperties,
-	isCssFlowProperty,
-	parseFlowDeclarations,
-	type CssFlowProperty,
-} from "./css-flow.js";
 import { isBorderShorthand, parseBorderShorthand } from "./css-border.js";
 import { compileCssMedia, type MediaViewport } from "./css-media.js";
 import { cssSupportsLimits, evaluateCssSupports } from "./css-supports.js";
@@ -90,6 +84,12 @@ import {
 } from "./css-text.js";
 import { AgentBrowserError } from "./errors.js";
 import {
+	cssFlowProperties,
+	isCssFlowProperty,
+	parseFlowDeclarations,
+	type CssFlowProperty,
+} from "./css-flow.js";
+import {
 	cssDeclarationColon,
 	customPropertyName,
 	parseVariableValue,
@@ -117,9 +117,9 @@ export type CssProperty =
 	| CssRadiusProperty
 	| CssTextProperty
 	| CssPaintProperty
+	| CssFlexProperty
 	| CssGridProperty
 	| CssFlowProperty
-	| CssFlexProperty
 	| CssInteractionProperty
 	| CssListProperty
 	| CssTableProperty
@@ -378,7 +378,9 @@ export function parseCssDeclarations(
 			!logicalSpacingComponents(property) &&
 			!isCssTextProperty(property) &&
 			!isCssPaintProperty(property) &&
+			!isCssFlexProperty(property) &&
 			!grid &&
+			!isCssFlowProperty(property) &&
 			!isCssInteractionProperty(property) &&
 			!isCssListProperty(property) &&
 			!isCssTableProperty(property) &&
@@ -387,9 +389,7 @@ export function parseCssDeclarations(
 			!isCssTextDecorationProperty(property) &&
 			property !== "text-decoration" &&
 			property !== "list-style" &&
-			!isCssFlowProperty(property) &&
 			property !== "overflow" &&
-			!isCssFlexProperty(property) &&
 			!flexShorthandComponents(property)
 		) {
 			reject("unimplemented-css-property");
@@ -455,6 +455,7 @@ export function parseCssDeclarations(
 					value,
 					important,
 				})),
+				...cssBoxProperties.map((property) => ({ property, value, important })),
 				...cssLogicalSpacingProperties.map((property) => ({
 					property,
 					value,
@@ -475,7 +476,6 @@ export function parseCssDeclarations(
 					value,
 					important,
 				})),
-				...cssBoxProperties.map((property) => ({ property, value, important })),
 				...cssRadiusProperties.map((property) => ({
 					property,
 					value,

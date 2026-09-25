@@ -20,6 +20,10 @@ interface Style {
 	backgroundColor: string;
 	margin: string;
 	padding: string;
+	flex: string;
+	flexFlow: string;
+	gap: string;
+	alignContent: string;
 	cssText: string;
 	parentRule: null;
 	getPropertyValue(name?: unknown): string;
@@ -74,6 +78,27 @@ function fixture(css = "", content = '<div id="target">ab</div>') {
 		read: (name: string) => resolvedStyleValue(tree, id, name),
 	};
 }
+
+it("exposes live case-sensitive custom values and excludes guaranteed-invalid entries", () => {
+	const { tree, id, style } = fixture(
+		"main{--Theme:red;--theme:blue;--empty:;--bad:initial}#target{color:var(--Theme)}",
+	);
+	expect(style.getPropertyValue("--Theme")).toBe("red");
+	expect(style.getPropertyValue("--theme")).toBe("blue");
+	expect(style.getPropertyValue("--empty")).toBe(" ");
+	expect(style.getPropertyValue("--bad")).toBe("");
+	const names = Array.from(
+		{ length: style.length },
+		(_value, index) => style[index],
+	);
+	expect(names).toContain("--Theme");
+	expect(names).toContain("--empty");
+	expect(names).not.toContain("--bad");
+	tree.setAttribute(id, "style", "--Theme:green");
+	expect(style.getPropertyValue("--Theme")).toBe("green");
+	expect(style.color).toBe("rgb(0, 128, 0)");
+	expect(() => style.setProperty("--Theme", "blue")).toThrow();
+});
 afterEach(() => {
 	for (const tree of documents.splice(0)) tree.close();
 });
@@ -85,6 +110,10 @@ it("exposes live sorted longhand names, aliases and empty computed cssText", () 
 		Array.from({ length: style.length }, (_value, index) => style[index]),
 	).toEqual(computedStyleProperties);
 	expect(style.item(0)).toBe("accent-color");
+	expect(style.flex).toBe("0 1 auto");
+	expect(style.flexFlow).toBe("row nowrap");
+	expect(style.gap).toBe("normal");
+	expect(style.alignContent).toBe("normal");
 	expect(style.backgroundColor).toBe("rgb(255, 0, 0)");
 	expect(style.getPropertyValue("BACKGROUND-COLOR")).toBe(
 		style.backgroundColor,

@@ -196,6 +196,15 @@ it("advertises bounded namespace-aware node relations without claiming full Node
 	const { host } = fixture();
 	const result = await host.execute(["capabilities"]);
 	expect(result.data).toMatchObject({
+		elementOffsets: {
+			partial: true,
+			properties: ["offsetParent", "offsetTop", "offsetLeft"],
+			profile: "static-and-relative-first-box-padding-edge",
+			positionedContainingBlocks: "relative",
+			transforms: false,
+			zoom: false,
+			boxlessOffsetParents: false,
+		},
 		nodeRelations: {
 			partial: true,
 			methods: [

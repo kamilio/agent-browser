@@ -16,7 +16,7 @@ import {
 	runResearchReplayCli,
 } from "../scripts/research-replay-cli.js";
 import { AgentBrowserError } from "./errors.js";
-import { extractDocument } from "./extraction.js";
+import { type ExtractedNode, extractDocument } from "./extraction.js";
 import { parseHtmlDocument } from "./html-parser.js";
 import type { NetworkResponse } from "./network.js";
 import { NodeNetworkTransport } from "./node-transport.js";
@@ -131,12 +131,13 @@ async function fixture(
 	profile: ResearchDocumentProfileId = "default",
 	reader = true,
 	headings = true,
+	mime = "text/html; charset=utf-8",
 ): Promise<Fixture> {
 	const body = encoder.encode(source);
 	const response: NetworkResponse = {
 		url: finalUrl,
 		status: 200,
-		headers: { "content-type": ["text/html; charset=utf-8"] },
+		headers: { "content-type": [mime] },
 		body,
 		encodedBytes: body.byteLength,
 		redirects: [],
@@ -188,6 +189,16 @@ function argumentsFor(value: Fixture, selection = ["--selector", "#owned"]) {
 	];
 }
 
+function jsonFixture(source: string) {
+	return fixture(source, "default", false, false, "application/json");
+}
+
+function literalText(node: ExtractedNode): string {
+	return node.type === "text"
+		? (node.text ?? "")
+		: (node.children ?? []).map(literalText).join("");
+}
+
 async function outputLimitSelectorFixture() {
 	const destination = `https://example.com/${"x".repeat(4096)}`;
 	return fixture(
@@ -216,16 +227,16 @@ function revised(
 	};
 }
 
-function record(
+function record<Format extends replay.ResearchReplayFormat = "json">(
 	target: ReturnType<typeof sink>,
-): replay.ResearchJsonReplayReport {
+): replay.ResearchJsonReplayReport<Format> {
 	const text = target.text();
 	expect(text.endsWith("\n")).toBe(true);
 	expect(text.split("\n")).toHaveLength(2);
 	expect(Buffer.byteLength(text)).toBeLessThanOrEqual(
 		replay.researchJsonReplayLimits.maxOutputBytes,
 	);
-	return JSON.parse(text) as replay.ResearchJsonReplayReport;
+	return JSON.parse(text) as replay.ResearchJsonReplayReport<Format>;
 }
 
 beforeEach(() => {
@@ -257,6 +268,124 @@ afterEach(() => {
 });
 
 describe("bounded replay CLI arguments", () => {
+	it.each([undefined, "json", "markdown"] as const)(
+		"accepts literal JSON pointers with format %s without changing arguments",
+		(format) => {
+			for (const jsonPointer of [
+				"/info",
+				"",
+				"/a~1b/~0key/0/",
+				"/ spaced key ",
+				"/percent%2Fkey",
+				`/${"x".repeat(4095)}`,
+				"/x".repeat(128),
+			]) {
+				const args = Object.freeze([
+					...parserArgs.slice(0, 8),
+					"--json-pointer",
+					jsonPointer,
+					...(format === undefined ? [] : ["--format", format]),
+				]);
+				const before = [...args];
+				expect(parseResearchReplayArguments(args)).toEqual({
+					trusted: {
+						expectedProfile: "default",
+						expectedReceiptSha256: "a".repeat(64),
+						expectedBody: { bytes: 64, sha256: "b".repeat(64) },
+					},
+					selection: { jsonPointer },
+					...(format === undefined ? {} : { format }),
+				});
+				expect(args).toEqual(before);
+			}
+		},
+	);
+
+	it.each([
+		[],
+		["--json-pointer"],
+		["--json-pointer", "--format", "json"],
+		["--json-pointer", "", "--json-pointer", "/info"],
+		["--json-pointer", "/info", "--json-pointer", "/info"],
+		["--json-pointer=/info"],
+	])("rejects missing or duplicate JSON pointer flags %j", (...flags) => {
+		expect(() =>
+			parseResearchReplayArguments([...parserArgs.slice(0, 8), ...flags]),
+		).toThrowError(expect.objectContaining({ code: "invalid-input" }));
+	});
+
+	it.each([
+		"info",
+		"#/info",
+		" /info",
+		"/~",
+		"/~2",
+		"/info/~01~",
+		`/${"x".repeat(4096)}`,
+		"/x".repeat(129),
+	])("rejects malformed or oversized JSON pointer %j", (pointer) => {
+		expect(() =>
+			parseResearchReplayArguments([
+				...parserArgs.slice(0, 8),
+				"--json-pointer",
+				pointer,
+			]),
+		).toThrowError(expect.objectContaining({ code: "invalid-input" }));
+	});
+
+	it.each([
+		["--selector", "main"],
+		["--section", "h1"],
+		["--content-focus", "main-content-v1"],
+		["--links", "owned"],
+		["--find", "owned"],
+		["--lines", "1:2"],
+		["--headings"],
+	])("rejects JSON pointer combined with selection %j", (...flags) => {
+		for (const selections of [
+			["--json-pointer", "", ...flags],
+			[...flags, "--json-pointer", ""],
+		])
+			expect(() =>
+				parseResearchReplayArguments([
+					...parserArgs.slice(0, 8),
+					...selections,
+				]),
+			).toThrowError(expect.objectContaining({ code: "invalid-input" }));
+	});
+
+	it.each([
+		["--expected-profile", "long-v1"],
+		["--expected-profile", "other"],
+		["--recover-output-limit"],
+		["--recover-empty-outline"],
+		["--recover-loader-limit"],
+		["--expected-document-strategy", "native-reader-fallback-v1"],
+		["--reader-mime-policy", "markdown-html-document-v1"],
+		["--source-link-label-policy", "source-aria-label-v1"],
+		["--output-limit-policy", "text-prefix-v1"],
+		["--table-metadata"],
+		["--table-rows"],
+		["--compact-tables"],
+	])("rejects JSON pointer profile or policy %j", (...flags) => {
+		for (const format of ["json", "markdown"]) {
+			const args = [
+				...parserArgs.slice(0, 8),
+				"--json-pointer",
+				"",
+				"--format",
+				format,
+			];
+			expect(() =>
+				parseResearchReplayArguments(
+					flags[0] === "--expected-profile"
+						? replaceFlag(args, flags[0], flags[1])
+						: [...args, ...flags],
+				),
+			).toThrowError(expect.objectContaining({ code: "invalid-input" }));
+		}
+	});
+
 	it("accepts explicit default-profile output-limit heading discovery", () => {
 		expect(
 			parseResearchReplayArguments([
@@ -607,6 +736,268 @@ describe("bounded replay CLI arguments", () => {
 		expect(target.text()).toBe("");
 	});
 });
+
+describe.each(["json", "markdown"] as const)(
+	"pinned literal JSON pointer CLI replay in %s",
+	(format) => {
+		it.each([
+			{
+				source: '{"outside":"not selected","info":{ "name": "Owned" }}',
+				pointer: "/info",
+				selected: '{ "name": "Owned" }',
+				valueKind: "object",
+			},
+			{
+				source: ' \r\n {"info": -0, "large": 9007199254740993} \t',
+				pointer: "",
+				selected: '{"info": -0, "large": 9007199254740993}',
+				valueKind: "object",
+			},
+			{
+				source: '{"a/b":{"~key":[{"":"\\u0041\\/\\n"}]}}',
+				pointer: "/a~1b/~0key/0/",
+				selected: '"\\u0041\\/\\n"',
+				valueKind: "string",
+			},
+			{
+				source: '{"info":9007199254740993123456789}',
+				pointer: "/info",
+				selected: "9007199254740993123456789",
+				valueKind: "number",
+			},
+			{
+				source: '{"info":1.2300e+400}',
+				pointer: "/info",
+				selected: "1.2300e+400",
+				valueKind: "number",
+			},
+			{
+				source: '{"info":-0}',
+				pointer: "/info",
+				selected: "-0",
+				valueKind: "number",
+			},
+			{
+				source:
+					'{"info":"<main><script>fetch(\\"https://no-follow.invalid/\\")</script>&amp;</main>"}',
+				pointer: "/info",
+				selected:
+					'"<main><script>fetch(\\"https://no-follow.invalid/\\")</script>&amp;</main>"',
+				valueKind: "string",
+			},
+		])(
+			"preserves literal $pointer source spelling: $selected",
+			async (entry) => {
+				const value = await jsonFixture(entry.source);
+				expect(value.report.outcome).toBe("extracted-unverified");
+				const before = structuredClone(value);
+				const target = sink();
+				const ordinary = vi.spyOn(replay, "extractResearchReplayJson");
+				const strategy = vi.spyOn(replay, "extractResearchStrategyReplayJson");
+				expect(
+					await runResearchReplayCli(
+						argumentsFor(value, [
+							"--json-pointer",
+							entry.pointer,
+							"--format",
+							format,
+						]),
+						input([value.raw.subarray(0, 17), value.raw.subarray(17)]),
+						target.output,
+					),
+				).toBe(0);
+				expect(ordinary).toHaveBeenCalledOnce();
+				expect(ordinary).toHaveBeenCalledWith(
+					expect.any(Uint8Array),
+					value.trusted,
+					{ jsonPointer: entry.pointer },
+					expect.any(AbortSignal),
+					format,
+				);
+				expect(strategy).not.toHaveBeenCalled();
+				const report = record<typeof format>(target);
+				expect(report).toMatchObject({
+					kind: "native-research-json-replay-v1",
+					outcome: "extracted-unverified",
+					partial: true,
+					contentSuccess: null,
+					networkRequests: 0,
+					source: {
+						profile: "default",
+						reportedFinalUrl: finalUrl,
+						receiptSha256: value.trusted.expectedReceiptSha256,
+						body: value.trusted.expectedBody,
+					},
+					selection: {
+						method: "json-pointer",
+						pointer: entry.pointer,
+						matches: 1,
+					},
+					extraction: {
+						format,
+						jsonSelection: {
+							method: "json-pointer",
+							pointer: entry.pointer,
+							start: entry.source.indexOf(entry.selected),
+							end: entry.source.indexOf(entry.selected) + entry.selected.length,
+							sourceCodeUnits: entry.source.length,
+							selectedCodeUnits: entry.selected.length,
+							offsetBasis: "document-text-utf16",
+							valueKind: entry.valueKind,
+							duplicateMembers: "rejected",
+						},
+					},
+				});
+				const document = report.extraction;
+				if (!document) throw new Error("Expected literal JSON extraction");
+				if (document.format === "json")
+					expect(literalText(document.content)).toBe(entry.selected);
+				else
+					expect(document.content).toBe(`\`\`\`\n${entry.selected}\n\`\`\`\n`);
+				expect(report).not.toHaveProperty("recovery");
+				expect(report).not.toHaveProperty("documentStrategy");
+				expect(target.text()).not.toContain("not selected");
+				expect(value).toEqual(before);
+				expect(ordinary.mock.calls[0][0].every((byte) => byte === 0)).toBe(
+					true,
+				);
+			},
+		);
+
+		it.each([
+			'{"info":1} trailing',
+			'{"info":1,"other":}',
+			'{"info":1,}',
+			'{"info":1,"info":2}',
+			'{"info":1,"other":{"key":0,"\\u006bey":1}}',
+			'{"info":01}',
+			'{"info":"\\x41"}',
+		])(
+			"rejects malformed or duplicate-key source %s without fallback",
+			async (source) => {
+				const value = await jsonFixture(source);
+				const target = sink();
+				await expect(
+					runResearchReplayCli(
+						argumentsFor(value, [
+							"--json-pointer",
+							"/info",
+							"--format",
+							format,
+						]),
+						input([value.raw]),
+						target.output,
+					),
+				).rejects.toMatchObject({ code: "invalid-input" });
+				expect(target.text()).toBe("");
+			},
+		);
+
+		it.each(["/missing", "/info/01", "/info/-", "/info/1"])(
+			"rejects missing pointer %s rather than falling back to the root",
+			async (pointer) => {
+				const value = await jsonFixture('{"info":[1]}');
+				const target = sink();
+				await expect(
+					runResearchReplayCli(
+						argumentsFor(value, [
+							"--json-pointer",
+							pointer,
+							"--format",
+							format,
+						]),
+						input([value.raw]),
+						target.output,
+					),
+				).rejects.toMatchObject({ code: "not-found" });
+				expect(target.text()).toBe("");
+			},
+		);
+
+		it("rejects HTML documents instead of extracting embedded JSON", async () => {
+			const value = await fixture('<h1>Owned</h1><pre>{"info":1}</pre>');
+			const target = sink();
+			await expect(
+				runResearchReplayCli(
+					argumentsFor(value, ["--json-pointer", "/info", "--format", format]),
+					input([value.raw]),
+					target.output,
+				),
+			).rejects.toMatchObject({ code: "unsupported" });
+			expect(target.text()).toBe("");
+		});
+
+		it.each(["--receipt-sha256", "--body-sha256", "--body-bytes"])(
+			"retains the independent %s admission pin",
+			async (flag) => {
+				const value = await jsonFixture('{"info":1}');
+				const target = sink();
+				const args = replaceFlag(
+					argumentsFor(value, ["--json-pointer", "", "--format", format]),
+					flag,
+					flag === "--body-bytes"
+						? String(value.body.byteLength + 1)
+						: "0".repeat(64),
+				);
+				await expect(
+					runResearchReplayCli(args, input([value.raw]), target.output),
+				).rejects.toMatchObject({ code: "invalid-input" });
+				expect(target.text()).toBe("");
+			},
+		);
+
+		it.each([
+			"failed",
+			"challenge",
+			"429",
+			"missing-body",
+			"changed-body",
+			"changed-url",
+		])(
+			"does not promote a correctly pinned %s receipt into JSON content",
+			async (reason) => {
+				const original = await jsonFixture('{"info":1}');
+				const value = revised(original, (report) => {
+					if (reason === "failed") {
+						report.outcome = "failure";
+						report.contentSuccess = false;
+						report.failure = { category: "unsupported", stage: "extraction" };
+					} else if (reason === "challenge") {
+						report.outcome = "semantic-barrier";
+						report.contentSuccess = false;
+						report.classification.barrier = "challenge";
+					} else if (reason === "429") {
+						if (!report.primaryResponse)
+							throw new Error("Missing fixture response");
+						report.primaryResponse.status = 429;
+					} else if (reason === "missing-body") {
+						Reflect.deleteProperty(report, "bodyCapture");
+					} else if (reason === "changed-body") {
+						if (!report.bodyCapture) throw new Error("Missing fixture body");
+						report.bodyCapture.data =
+							Buffer.from('{"info":2}').toString("base64");
+					} else {
+						report.finalUrl = `${requestedUrl}/changed`;
+					}
+				});
+				const target = sink();
+				await expect(
+					runResearchReplayCli(
+						argumentsFor(value, [
+							"--json-pointer",
+							"/info",
+							"--format",
+							format,
+						]),
+						input([value.raw]),
+						target.output,
+					),
+				).rejects.toBeInstanceOf(Error);
+				expect(target.text()).toBe("");
+			},
+		);
+	},
+);
 
 describe("pinned offline replay integration", () => {
 	it.each([

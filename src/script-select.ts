@@ -2,6 +2,7 @@ import {
 	controlValue,
 	formOwner,
 	optionOwner,
+	optionLabel,
 	optionSelected,
 	optionText,
 	optionValue,
@@ -124,7 +125,7 @@ export function scriptSelectBindings(
 	} else {
 		properties.label = attribute(
 			"label",
-			tag === "option" ? () => optionText(tree, id) : undefined,
+			tag === "option" ? () => optionLabel(tree, id) : undefined,
 		);
 		if (tag === "option") {
 			properties.value = attribute("value", () => optionText(tree, id));

@@ -134,8 +134,13 @@ it("advertises partial geometry rather than desktop-browser equivalence", async 
 			live: true,
 			readonly: true,
 			pseudoElements: false,
-			customProperties: false,
+			customProperties: true,
+			customPropertyProfile: "unregistered-custom-properties",
 			maxObjects: 4096,
+		},
+		cssVariables: {
+			partial: true,
+			registeredProperties: false,
 		},
 		clientGeometry: {
 			partial: true,

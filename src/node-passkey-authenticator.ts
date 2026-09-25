@@ -26,6 +26,7 @@ export interface NodePasskeyAccount {
 
 export type NodePasskeyApprovalRequest = {
 	rpId: string;
+	origin?: string;
 	clientDataHash: Uint8Array<ArrayBuffer>;
 	signal: AbortSignal;
 } & (
@@ -61,6 +62,7 @@ type StoredCredential = {
 };
 type Ceremony = {
 	rpId: string;
+	origin?: string;
 	hash: Buffer;
 	signal: AbortSignal;
 	timeout: number;
@@ -165,9 +167,61 @@ function verification(value: unknown) {
 		fail("TypeError");
 }
 
+function clientOrigin(
+	request: PasskeyProviderContext,
+	hash: Buffer,
+	challenge: Buffer,
+	operation: "create" | "get",
+): string | undefined {
+	try {
+		const value = request.clientDataJSON;
+		if (value === undefined) return undefined;
+		const encoded = bytes(value, passkeyLimits.responseBytes);
+		if (!createHash("sha256").update(encoded).digest().equals(hash))
+			fail("SecurityError");
+		const decoded = new TextDecoder("utf-8", {
+			fatal: true,
+			ignoreBOM: true,
+		}).decode(encoded);
+		const fields = dictionary(JSON.parse(decoded), [
+			"type",
+			"challenge",
+			"origin",
+			"crossOrigin",
+		]);
+		if (
+			fields.type !== `webauthn.${operation}` ||
+			fields.challenge !== challenge.toString("base64url") ||
+			fields.crossOrigin !== false ||
+			typeof fields.origin !== "string"
+		)
+			fail("SecurityError");
+		let fieldCount = 0;
+		for (const token of decoded.matchAll(/"(?:[^"\\]|\\[\s\S])*"|:/g)) {
+			if (token[0] === ":") fieldCount++;
+		}
+		if (fieldCount !== 4) fail("SecurityError");
+		const origin = new URL(fields.origin);
+		if (
+			origin.protocol !== "https:" ||
+			origin.origin !== fields.origin ||
+			origin.username ||
+			origin.password ||
+			origin.pathname !== "/" ||
+			origin.search ||
+			origin.hash
+		)
+			fail("SecurityError");
+		return fields.origin;
+	} catch {
+		return fail("SecurityError");
+	}
+}
+
 function common(
 	request: PasskeyProviderContext,
 	options: Record<string, unknown>,
+	operation: "create" | "get",
 ): Ceremony {
 	const rpId = text(request.rpId);
 	if (
@@ -179,7 +233,9 @@ function common(
 	)
 		fail("SecurityError");
 	if (!(request.signal instanceof AbortSignal)) fail("TypeError");
-	bytes(options.challenge, passkeyLimits.challengeBytes);
+	const challenge = bytes(options.challenge, passkeyLimits.challengeBytes);
+	const hash = bytes(request.clientDataHash, 32, 32);
+	const origin = clientOrigin(request, hash, challenge, operation);
 	if (options.extensions !== undefined) dictionary(options.extensions, []);
 	const timeout =
 		options.timeout === undefined
@@ -189,7 +245,8 @@ function common(
 		fail("TypeError");
 	return {
 		rpId,
-		hash: bytes(request.clientDataHash, 32, 32),
+		...(origin === undefined ? {} : { origin }),
+		hash,
 		signal: request.signal,
 		timeout: Math.min(
 			Math.max(1, Math.floor(timeout)),
@@ -212,7 +269,7 @@ function creation(
 		"attestation",
 		"extensions",
 	]);
-	const context = common(request, options);
+	const context = common(request, options, "create");
 	const rp = dictionary(options.rp, ["id", "name"]);
 	if (rp.id !== undefined && rp.id !== context.rpId) fail("SecurityError");
 	const user = dictionary(options.user, ["id", "name", "displayName"]);
@@ -271,7 +328,7 @@ function assertion(
 		"userVerification",
 		"extensions",
 	]);
-	const context = common(request, options);
+	const context = common(request, options, "get");
 	if (options.rpId !== undefined && options.rpId !== context.rpId)
 		fail("SecurityError");
 	verification(options.userVerification);
@@ -448,6 +505,7 @@ export class NodePasskeyAuthenticator implements PasskeyAuthenticator {
 					{
 						operation: "create",
 						rpId: input.rpId,
+						...(input.origin === undefined ? {} : { origin: input.origin }),
 						rpName: input.rpName,
 						user: { ...input.user, id: new Uint8Array(input.user.id) },
 						clientDataHash: new Uint8Array(input.hash),
@@ -545,6 +603,7 @@ export class NodePasskeyAuthenticator implements PasskeyAuthenticator {
 					{
 						operation: "get",
 						rpId: input.rpId,
+						...(input.origin === undefined ? {} : { origin: input.origin }),
 						clientDataHash: new Uint8Array(input.hash),
 						signal,
 						credentials: candidates.map((credential) => ({

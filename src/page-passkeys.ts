@@ -7,6 +7,7 @@ import {
 	type PasskeyCreationOptions,
 	type PasskeyRequestOptions,
 } from "./passkeys.js";
+import type { PinnedPublicSuffixSnapshot } from "./pinned-public-suffix.js";
 import type {
 	ScriptHostObjectDefinition,
 	ScriptHostObjectFactory,
@@ -16,6 +17,7 @@ export interface PagePasskeyContext {
 	topLevel: boolean;
 	isCurrent: () => boolean;
 	supportedSignals?: ReadonlySet<AbortSignal>;
+	publicSuffixSnapshot?: PinnedPublicSuffixSnapshot;
 }
 
 const messages = {
@@ -116,7 +118,15 @@ export class PagePasskeys {
 		this.topLevel = context.topLevel;
 		this.documentCurrent = context.isCurrent;
 		this.supportedSignals = new WeakSet(context.supportedSignals ?? []);
-		this.broker = new PasskeyBroker(authenticator);
+		const snapshot = Object.getOwnPropertyDescriptor(
+			context,
+			"publicSuffixSnapshot",
+		);
+		if (snapshot && !Object.hasOwn(snapshot, "value"))
+			throw new PagePasskeyError("TypeError");
+		this.broker = new PasskeyBroker(authenticator, {
+			publicSuffixSnapshot: snapshot?.value,
+		});
 		try {
 			this.unregisterClose = tree.onClose(() => this.close());
 			this.credentials = this.capability({

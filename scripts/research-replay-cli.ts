@@ -2,6 +2,7 @@ import type { Readable, Writable } from "node:stream";
 import { pathToFileURL } from "node:url";
 import { AgentBrowserError } from "../src/errors.js";
 import type { ContentFocusPolicy } from "../src/extraction-content-focus.js";
+import { validateJsonSourcePointer } from "../src/json-source-selection.js";
 import { researchLongDocumentAdmission } from "../src/research-admission.js";
 import { validateSelectorSyntax } from "../src/selectors.js";
 import { validateSourceLinkLabelPolicy } from "../src/source-link-labels.js";
@@ -30,7 +31,8 @@ export const researchReplayCliLimits = Object.freeze({
 
 const usage =
 	"Explicit strategy replay: --expected-document-strategy native-reader-fallback-v1 requires the default profile and an ordinary HTML selector, section, content-focus or links selection; recovery and interpretation overrides are unsupported.\n" +
-	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--content-focus main-content-v1|main-content-v2|main-content-v3 | --selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END) [--format json|markdown] [--source-link-label-policy source-aria-label-v1] [--reader-mime-policy markdown-html-document-v1] [--output-limit-policy text-prefix-v1] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit | --recover-empty-outline | --recover-loader-limit] < receipt.jsonl\nSource link-label policy requires default-profile ordinary selector/section/content-focus HTML Markdown replay, without recovery or text-prefix output; it records a current interpretation without changing captured policy or outcome. Output-limit recovery requires the default profile and one explicit --selector, --section, --content-focus or --headings. Empty-outline recovery requires long-v1 and one explicit --selector. Recovery flags are mutually exclusive. Loader-limit recovery requires a complete pinned default-profile text/html capture that failed at loader resource limits, and one selector, section or content-focus; it retries parsing locally under current bounds, never the original request. Content focus requires an ordinary complete capture or explicit output-limit/loader-limit recovery of a complete failed capture; it cannot use empty-outline recovery. Reader MIME policy requires default-profile ordinary selector/section/content-focus replay of a complete text/markdown capture with a recognized HTML document prefix and no captured MIME policy or interpretation; it never rewrites capture metadata or admits genuine Markdown as HTML. Text-prefix output requires ordinary or explicit loader-limit selector/section/content-focus Markdown replay; it never admits incomplete bodies. Markdown requires selector/section/content-focus extraction without table metadata or literal --lines extraction. Table rows and compact tables require explicit Markdown selector/section/content-focus extraction and may be combined. Headings require output-limit recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n";
+	"Usage: research-replay-cli --expected-profile default|long-v1 --receipt-sha256 HEX --body-sha256 HEX --body-bytes N (--content-focus main-content-v1|main-content-v2|main-content-v3 | --selector CSS | --section CSS | --links TEXT | --headings | --find QUERY | --lines START:END | --json-pointer POINTER) [--format json|markdown] [--source-link-label-policy source-aria-label-v1] [--reader-mime-policy markdown-html-document-v1] [--output-limit-policy text-prefix-v1] [--table-metadata] [--table-rows] [--compact-tables] [--recover-output-limit | --recover-empty-outline | --recover-loader-limit] < receipt.jsonl\nSource link-label policy requires default-profile ordinary selector/section/content-focus HTML Markdown replay, without recovery or text-prefix output; it records a current interpretation without changing captured policy or outcome. Output-limit recovery requires the default profile and one explicit --selector, --section, --content-focus or --headings. Empty-outline recovery requires long-v1 and one explicit --selector. Recovery flags are mutually exclusive. Loader-limit recovery requires a complete pinned default-profile text/html capture that failed at loader resource limits, and one selector, section or content-focus; it retries parsing locally under current bounds, never the original request. Content focus requires an ordinary complete capture or explicit output-limit/loader-limit recovery of a complete failed capture; it cannot use empty-outline recovery. Reader MIME policy requires default-profile ordinary selector/section/content-focus replay of a complete text/markdown capture with a recognized HTML document prefix and no captured MIME policy or interpretation; it never rewrites capture metadata or admits genuine Markdown as HTML. Text-prefix output requires ordinary or explicit loader-limit selector/section/content-focus Markdown replay; it never admits incomplete bodies. Markdown requires selector/section/content-focus extraction without table metadata or literal --lines/--json-pointer extraction. Table rows and compact tables require explicit Markdown selector/section/content-focus extraction and may be combined. Headings require output-limit recovery and do not accept table flags. Text modes require the default profile, without table flags or recovery. Find is literal, case-sensitive, preserves spaces, accepts 1..256 UTF-16 code units without CR/LF, and requires JSON. Lines use canonical positive decimal integers (no leading zeros), START <= END <= 2000001, and accept JSON or Markdown.\n" +
+	"JSON pointer requires the default profile and a complete pinned literal JSON source, without recovery, document strategy, reader MIME, source link-label or output-prefix overrides, or table flags. The pointer is empty for the root or starts with / and uses ~0/~1 escapes; it accepts JSON or Markdown output, never HTML reinterpretation or fallback.\n";
 
 function invalidArguments(): never {
 	throw new AgentBrowserError(
@@ -74,6 +76,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		"--links",
 		"--find",
 		"--lines",
+		"--json-pointer",
 		"--format",
 		"--output-limit-policy",
 		"--reader-mime-policy",
@@ -149,6 +152,7 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 		"--links",
 		"--find",
 		"--lines",
+		"--json-pointer",
 	].filter((flag) => fields.has(flag));
 	if (modes.length + Number(headings) !== 1) invalidArguments();
 	if (
@@ -247,6 +251,21 @@ export function parseResearchReplayArguments(args: readonly string[]): {
 	)
 		invalidArguments();
 	const target = fields.get(mode);
+	if (mode === "--json-pointer") {
+		if (profile !== "default" || tableMetadata || tableRows || compactTables)
+			invalidArguments();
+		let jsonPointer: string;
+		try {
+			jsonPointer = validateJsonSourcePointer(target);
+		} catch {
+			invalidArguments();
+		}
+		return {
+			trusted,
+			selection: { jsonPointer },
+			...(format === undefined ? {} : { format }),
+		};
+	}
 	if (mode === "--find" || mode === "--lines") {
 		if (
 			profile !== "default" ||

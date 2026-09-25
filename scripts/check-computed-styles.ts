@@ -34,7 +34,7 @@ try {
 	);
 	await guest(
 		"Indexed names, aliases, cssText and rule metadata",
-		'return saved.length === 31 && saved[0] === "background-attachment" && saved.item(0) === saved[0] && saved.item(99) === "" && saved[99] === undefined && saved.cssText === "" && saved.parentRule === null && saved.getPropertyValue("COLOR") === saved.color;',
+		'return saved.length === 66 && saved[0] === "align-content" && saved.item(0) === saved[0] && saved.item(99) === "" && saved[99] === undefined && saved.cssText === "" && saved.parentRule === null && saved.getPropertyValue("COLOR") === saved.color;',
 	);
 	await guest(
 		"Cascade inheritance and percentage used edges",
@@ -72,7 +72,7 @@ try {
 	);
 	await guest(
 		"Detached styles empty and refill after reattachment",
-		'var parent = target.parentNode; target.remove(); var empty = saved.length === 0 && saved.width === ""; parent.appendChild(target); return empty && saved.length === 31 && saved.width === "100px";',
+		'var parent = target.parentNode; target.remove(); var empty = saved.length === 0 && saved.width === ""; parent.appendChild(target); return empty && saved.length === 66 && saved.width === "100px";',
 	);
 	await guest(
 		"Pseudo-elements fail explicitly instead of pretending to match",

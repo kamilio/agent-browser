@@ -62,6 +62,7 @@ import { nativeHeadlessDisplay } from "./native-headless-display.js";
 import { createPageScreen } from "./page-screen.js";
 import { documentStyles } from "./styles.js";
 import { PageFocus, type PageFocusRegistration } from "./page-focus.js";
+import { pageAtob, pageBtoa } from "./page-base64.js";
 import {
 	PageIdleCallbacks,
 	type IdleCallbackLimits,
@@ -157,6 +158,8 @@ export function pageBindingGlobalNames(
 		"requestIdleCallback",
 		"cancelIdleCallback",
 		"performance",
+		"atob",
+		"btoa",
 		"console",
 		"document",
 		"window",
@@ -423,6 +426,16 @@ export class PageBindings {
 				this.ensureOpen();
 				return this.media.matchMedia(...args);
 			};
+			const base64Methods = {
+				atob: (...args: unknown[]) => {
+					this.ensureOpen();
+					return pageAtob(...args);
+				},
+				btoa: (...args: unknown[]) => {
+					this.ensureOpen();
+					return pageBtoa(...args);
+				},
+			};
 			this.scrolling = new PageScroll(
 				page.document,
 				events,
@@ -649,6 +662,7 @@ export class PageBindings {
 						: {}),
 				},
 				methods: {
+					...base64Methods,
 					...this.animationFrames.methods,
 					...this.idleCallbacks.methods,
 					...this.scrolling.methods,
@@ -797,6 +811,7 @@ export class PageBindings {
 				navigator: this.navigator,
 				screen: this.screen,
 				CSS: this.css,
+				...base64Methods,
 				...(this.storage
 					? {
 							localStorage: this.storage.localStorage,

@@ -6,6 +6,7 @@ export interface OptionDefinition {
 	maximum?: number;
 	integer?: boolean;
 	repeated?: boolean;
+	allowEmpty?: boolean;
 }
 
 export interface CommandDefinition {
@@ -243,6 +244,7 @@ const definitions: CommandDefinition[] = [
 		{
 			format: stringOption,
 			"content-focus": stringOption,
+			"json-pointer": { kind: "string", allowEmpty: true },
 			"table-metadata": booleanOption,
 			"table-rows": booleanOption,
 			"compact-tables": booleanOption,

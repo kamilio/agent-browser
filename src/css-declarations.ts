@@ -56,6 +56,13 @@ import {
 	parseInteractionValue,
 } from "./css-interaction.js";
 import {
+	cssFlowProperties,
+	isCssFlowProperty,
+	parseFlowValue,
+	parseFlowDeclarations,
+	serializeOverflow,
+} from "./css-flow.js";
+import {
 	cssFlexProperties,
 	isCssFlexProperty,
 	parseFlexValue,
@@ -64,12 +71,10 @@ import {
 	serializeFlexShorthand,
 } from "./css-flex.js";
 import {
-	cssFlowProperties,
-	isCssFlowProperty,
-	parseFlowValue,
-	parseFlowDeclarations,
-	serializeOverflow,
-} from "./css-flow.js";
+	isCssLengthMath,
+	normalizeLengthMath,
+	splitLengthComponents,
+} from "./css-math.js";
 import {
 	borderWidthProperties,
 	borderStyleProperties,
@@ -80,11 +85,6 @@ import {
 	normalizeBorderWidth,
 	normalizeBorderStyle,
 } from "./css-border.js";
-import {
-	isCssLengthMath,
-	normalizeLengthMath,
-	splitLengthComponents,
-} from "./css-math.js";
 import {
 	cssDeclarationStatements,
 	parseCssDeclarations,
@@ -153,12 +153,12 @@ export const inlineProperties = [
 	"grid-row",
 	"grid-column",
 	"grid-area",
+	...cssFlowProperties,
+	"overflow",
 	...cssFlexProperties,
 	"flex",
 	"flex-flow",
 	"gap",
-	...cssFlowProperties,
-	"overflow",
 	...borderWidthProperties,
 	...borderStyleProperties,
 	...borderColorProperties,
@@ -563,9 +563,9 @@ export function inlineDeclarationComponents(name: string): readonly string[] {
 	if (logical) return logical;
 	const grid = gridShorthandComponents(name);
 	if (grid) return grid;
+	if (name === "overflow") return ["overflow-x", "overflow-y"];
 	const flex = flexShorthandComponents(name);
 	if (flex) return flex;
-	if (name === "overflow") return ["overflow-x", "overflow-y"];
 	if (name === "all") {
 		allComponents ??= Object.freeze([
 			...new Set(

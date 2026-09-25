@@ -46,7 +46,7 @@ try {
 	);
 	await guest(
 		"Guest sees resolved background aliases and all neutral components",
-		'var target = document.getElementById("target"); var computed = getComputedStyle(target); return computed.backgroundColor === "rgba(0, 0, 0, 0)" && computed.backgroundImage === "none" && computed.backgroundPosition === "0% 0%" && computed.backgroundSize === "auto" && computed.backgroundRepeat === "repeat" && computed.backgroundAttachment === "scroll" && computed.backgroundOrigin === "padding-box" && computed.backgroundClip === "border-box" && computed.length === 31;',
+		'var target = document.getElementById("target"); var computed = getComputedStyle(target); return computed.backgroundColor === "rgba(0, 0, 0, 0)" && computed.backgroundImage === "none" && computed.backgroundPosition === "0% 0%" && computed.backgroundSize === "auto" && computed.backgroundRepeat === "repeat" && computed.backgroundAttachment === "scroll" && computed.backgroundOrigin === "padding-box" && computed.backgroundClip === "border-box" && computed.length === 43;',
 	);
 	await guest(
 		"Actual interpreted setter expands and resets eight inline components",
